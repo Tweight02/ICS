@@ -1,0 +1,22 @@
+# Laravel
+.env
+.env.backup
+.env.production
+/vendor/
+/storage/*.key
+
+# Angular / Node
+node_modules/
+dist/
+.angular/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PHP
+.phpunit.result.cache
