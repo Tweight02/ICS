@@ -1,325 +1,155 @@
 import {
-  Component,
   ChangeDetectorRef,
-  NgZone,
+  Component,
   OnInit,
   inject
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-
-import {
-  ActivatedRoute,
-  Router
-} from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ChurchService } from '../../../core/services/church/church-service';
-
 import { Church } from '../../../core/models/church.model';
-
-
-interface MonitoringRow {
-  q1: boolean;
-  q2: boolean;
-  q3: number;
-  q4: boolean;
-}
-
 
 @Component({
   selector: 'app-reports-details',
   standalone: true,
-
-  imports: [
-    CommonModule
-  ],
-
+  imports: [CommonModule],
   templateUrl: './reports-details.html',
   styleUrl: './reports-details.css'
 })
 export class ReportsDetails implements OnInit {
 
-  private readonly route =
-    inject(ActivatedRoute);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+  private churchService = inject(ChurchService);
 
-  private readonly router =
-    inject(Router);
-
-  private readonly churchService =
-    inject(ChurchService);
-
-  private readonly zone =
-    inject(NgZone);
-
-  private readonly cdr =
-    inject(ChangeDetectorRef);
-
-
-  // ==============================
-  // DATA
-  // ==============================
+  districtId = 0;
+  districtName = '';
 
   district: Church | null = null;
-
   churches: Church[] = [];
-
-  loading = false;
 
   errorMessage = '';
 
-
   ngOnInit(): void {
 
-    this.route.queryParamMap.subscribe(
-      params => {
+    const id = this.route.snapshot.paramMap.get('id');
 
-        const districtId =
-          Number(
-            params.get('district_id')
-          );
+    if (!id) {
+      this.errorMessage = 'District ID was not provided.';
+      return;
+    }
 
-        if (!districtId) {
+    this.districtId = Number(id);
 
-          this.errorMessage =
-            'No district was selected.';
+    this.loadChurches();
+  }
 
-          return;
-        }
+  loadChurches(): void {
 
-        this.loadDistrict(
-          districtId
+    this.churchService.getChurches(this.districtId).subscribe({
+
+      next: (response) => {
+
+        this.district = response.district;
+
+        this.districtName =
+          response.district?.name || '';
+
+        this.churches =
+          Array.isArray(response.data)
+            ? response.data
+            : [];
+
+        console.log(
+          '[REPORT DETAILS] District:',
+          this.district
         );
+
+        console.log(
+          '[REPORT DETAILS] Churches:',
+          this.churches
+        );
+
+        this.cdr.detectChanges();
+      },
+
+      error: (error) => {
+
+        console.error(
+          '[REPORT DETAILS] API error:',
+          error
+        );
+
+        this.district = null;
+        this.churches = [];
+
+        this.errorMessage =
+          'Unable to load district details.';
+
+        this.cdr.detectChanges();
+      }
+
+    });
+
+  }
+
+  openDepartmentReports(): void {
+
+    this.router.navigate(
+      ['/pastor/reports/programs'],
+      {
+        queryParams: {
+          district_id: this.districtId,
+          district_name: this.districtName
+        }
       }
     );
+
   }
-
-
-  // ==============================
-  // LOAD PARENT + CHILDREN
-  // ==============================
-
-  loadDistrict(
-    districtId: number
-  ): void {
-
-    this.loading = true;
-
-    this.errorMessage = '';
-
-    this.district = null;
-
-    this.churches = [];
-
-
-    console.log(
-      '[REPORT DETAILS] Loading district:',
-      districtId
-    );
-
-
-    this.churchService
-      .getChurches(districtId)
-      .subscribe({
-
-        next: (response) => {
-
-          console.log(
-            '[REPORT DETAILS] API response:',
-            response
-          );
-
-
-          this.zone.run(() => {
-
-            if (
-              response &&
-              response.success
-            ) {
-
-              /*
-               * THIS IS THE PARENT.
-               */
-              this.district =
-                response.district;
-
-
-              /*
-               * These are the children
-               * where parent_id =
-               * district.church_id
-               */
-              this.churches =
-                Array.isArray(
-                  response.data
-                )
-                  ? response.data
-                  : [];
-
-
-              console.log(
-                '[REPORT DETAILS] Parent district:',
-                this.district
-              );
-
-
-              console.log(
-                '[REPORT DETAILS] Churches:',
-                this.churches
-              );
-
-
-            } else {
-
-              this.errorMessage =
-                'Unable to load district data.';
-
-            }
-
-
-            this.loading = false;
-
-            this.cdr.detectChanges();
-
-          });
-
-        },
-
-
-        error: (error) => {
-
-          console.error(
-            '[REPORT DETAILS] API error:',
-            error
-          );
-
-
-          this.zone.run(() => {
-
-            this.loading = false;
-
-            this.district = null;
-
-            this.churches = [];
-
-            this.errorMessage =
-              'Unable to load churches for this district.';
-
-            this.cdr.detectChanges();
-
-          });
-
-        }
-
-      });
-  }
-
-
-  // ==============================
-  // BACK
-  // ==============================
 
   backToDistricts(): void {
 
     this.router.navigate(
       ['/pastor/reports']
     );
+
   }
 
-
-  // ==============================
-  // OPEN CHURCH
-  // ==============================
-
-  openChurch(
-    church: Church
-  ): void {
-
-    if (!this.district) {
-      return;
-    }
-
+  openChurch(church: Church): void {
 
     console.log(
       '[REPORT DETAILS] Opening church:',
       church
     );
 
-
-    /*
-     * Send BOTH:
-     *
-     * parent district
-     * selected church
-     *
-     * to the next report page.
-     */
-
     this.router.navigate(
-      ['/pastor/reports/details'],   // was '/pastor/reports-details'
+      ['/pastor/reports/programs'],
       {
         queryParams: {
-          district_id: this.district.church_id,
-          church_id: church.church_id
+          district_id: this.districtId,
+          district_name: this.districtName,
+          church_id: church.church_id,
+          church_name: church.name
         }
       }
     );
+
   }
 
+  getMonitoring(index: number) {
 
-  // ==============================
-  // CHURCH COUNT
-  // ==============================
-
-  get churchCount(): number {
-
-    return this.churches.length;
-  }
-
-
-  // ==============================
-  // MONITORING
-  // ==============================
-
-  getMonitoring(
-    index: number
-  ): MonitoringRow {
-
-    const values = [
-      60,
-      57,
-      63,
-      57,
-      53,
-      53,
-      47,
-      63,
-      60,
-      57,
-      53,
-      63
+    const monitoring = [
+      { q1: true, q2: true, q3: 50, q4: false },
+      { q1: true, q2: true, q3: 60, q4: false },
+      { q1: true, q2: true, q3: 45, q4: false },
+      { q1: true, q2: true, q3: 55, q4: false },
+      { q1: true, q2: true, q3: 40, q4: false }
     ];
 
-    return {
-
-      q1: true,
-
-      q2: true,
-
-      q3:
-        values[index] ??
-        55,
-
-      q4: false
-
-    };
+    return monitoring[index % monitoring.length];
   }
 
-
-  trackChurch(
-    index: number,
-    church: Church
-  ): number {
-
-    return church.church_id;
-  }
 }

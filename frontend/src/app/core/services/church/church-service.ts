@@ -29,6 +29,12 @@ export interface ChurchesResponse {
   providedIn: 'root'
 })
 export class ChurchService {
+  getDistrictDetails(districtId: number) {
+    throw new Error('Method not implemented.');
+  }
+  getChurchesByDistrict(districtId: number) {
+    throw new Error('Method not implemented.');
+  }
 
   private readonly apiUrl =
     'http://127.0.0.1:8000/api';
