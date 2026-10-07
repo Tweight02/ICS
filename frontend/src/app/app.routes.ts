@@ -31,12 +31,12 @@ export const routes: Routes = [
      DIRECTOR
   ============================== */
 
-//   {
-//     path: 'director',
-//     loadChildren: () =>
-//       import('./features/director/director.routes')
-//         .then(m => m.DirectorRoute)
-//   },
+  {
+    path: 'director',
+    loadChildren: () =>
+      import('./features/director/director.routes')
+        .then(m => m.DIRECTOR_ROUTES)
+  },
 
 
   /* ==============================

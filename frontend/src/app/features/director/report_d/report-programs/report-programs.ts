@@ -20,7 +20,7 @@ import {
   Particular,
   ReportQuarter,
   ReportComment
-} from '../../../core/services/report/report';
+} from '../../../../core/services/report/report';
 
 
 @Component({
