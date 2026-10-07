@@ -8,8 +8,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { ChurchService } from '../../../core/services/church/church-service';
-import { Church } from '../../../core/models/church.model';
+import { ChurchService } from '../../../../core/services/church/church-service';
+import { Church } from '../../../../core/models/church.model';
 
 @Component({
   selector: 'app-reports-details',

@@ -1,0 +1,590 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.report-page {
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 28px 30px 60px;
+  color: #222;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+
+/* =====================================================
+   BACK BUTTON
+   ===================================================== */
+
+.head-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.page-back-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 0;
+  border: 0;
+  background: transparent;
+  color: #222;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.page-back-btn:hover {
+  opacity: .65;
+}
+
+.page-back-btn span {
+  font-size: 18px;
+}
+
+
+/* =====================================================
+   TITLE
+   ===================================================== */
+
+.page-title {
+  margin-bottom: 20px;
+}
+
+.page-title h1 {
+  margin: 0;
+  font-size: 42px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -1.2px;
+  color: #20252a;
+}
+
+.page-title small {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #4d555b;
+}
+
+.title-divider {
+  height: 1px;
+  margin: 18px 0 22px;
+  border: 0;
+  background: rgba(0, 0, 0, .16);
+}
+
+
+/* =====================================================
+   STATES
+   ===================================================== */
+
+.state-note {
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .58);
+  border: 1px solid rgba(255, 255, 255, .65);
+  color: #555;
+  font-size: 14px;
+}
+
+.error-note {
+  padding: 12px 14px;
+  margin-top: 12px;
+  border-radius: 10px;
+  background: rgba(220, 60, 60, .10);
+  border: 1px solid rgba(220, 60, 60, .25);
+  color: #a12828;
+  font-size: 13px;
+}
+
+
+/* =====================================================
+   DEPARTMENT CARD
+   ===================================================== */
+
+.dept-card {
+  width: 100%;
+  max-width: 900px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .55);
+  border: 1px solid rgba(255, 255, 255, .70);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+  backdrop-filter: blur(8px);
+}
+
+
+/* =====================================================
+   DEPARTMENT TABLE
+   ===================================================== */
+
+.dept-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.dept-table thead {
+  background: rgba(209, 209, 209, .48);
+}
+
+.dept-table th,
+.dept-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, .08);
+  vertical-align: middle;
+}
+
+.dept-table th {
+  font-size: 13px;
+  font-weight: 750;
+  color: #222;
+  text-align: left;
+}
+
+.dept-table th.c-q,
+.dept-table th.c-q3 {
+  width: 75px;
+  text-align: center;
+}
+
+.dept-table td {
+  font-size: 14px;
+  color: #333;
+}
+
+.dept-table td.name {
+  font-weight: 500;
+}
+
+.dept-table td.center {
+  text-align: center;
+}
+
+.dept-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.dept-table tr.clickable {
+  cursor: pointer;
+}
+
+.dept-table tr.clickable:hover {
+  background: rgba(255, 255, 255, .45);
+}
+
+
+/* =====================================================
+   APPROVED
+   ===================================================== */
+
+.approved-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: #18b96b;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dash {
+  color: #777;
+}
+
+
+/* =====================================================
+   REPORT
+   ===================================================== */
+
+.report-view {
+  width: 100%;
+}
+
+.report-type-nav {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.report-type-nav .tab {
+  padding: 10px 16px;
+  border: 1px solid rgba(0, 0, 0, .10);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .50);
+  color: #333;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.report-type-nav .tab.active {
+  background: rgba(255, 255, 255, .72);
+}
+
+
+/* =====================================================
+   REPORT LAYOUT
+   ===================================================== */
+
+.report-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    330px;
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+
+.report-main {
+  min-width: 0;
+}
+
+
+/* =====================================================
+   REPORT CARD
+   ===================================================== */
+
+.report-card {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .58);
+  border: 1px solid rgba(255, 255, 255, .72);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+  backdrop-filter: blur(8px);
+}
+
+.report-card h2 {
+  margin: 0;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, .10);
+  font-size: 18px;
+  font-weight: 750;
+}
+
+
+/* =====================================================
+   TABLE
+   ===================================================== */
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.data-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, .07);
+  vertical-align: middle;
+}
+
+.data-table tr.main-header {
+  background: rgba(209, 209, 209, .48);
+}
+
+.data-table tr.main-header td {
+  border-bottom: 1px solid rgba(0, 0, 0, .12);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.data-table td.section-name {
+  text-align: left;
+}
+
+.data-table td.quarter-in-header {
+  width: 72px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.data-table td.particular {
+  padding-left: 20px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.data-table td.num {
+  width: 72px;
+  text-align: center;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+
+/* =====================================================
+   COMMENT CARD
+   ===================================================== */
+
+.department-comment-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .62);
+  border: 1px solid rgba(255, 255, 255, .72);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 20px;
+}
+
+.department-comment-title {
+  font-size: 18px;
+  font-weight: 750;
+  color: #222;
+}
+
+.department-comment-help {
+  margin-top: 7px;
+  margin-bottom: 18px;
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+}
+
+
+/* =====================================================
+   COMMENT FORM
+   ===================================================== */
+
+.commenting-as {
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: #666;
+}
+
+.commenting-as strong {
+  color: #222;
+}
+
+.comment-label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
+}
+
+.department-comment-input {
+  display: block;
+  width: 100%;
+  min-height: 115px;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, .14);
+  background: rgba(255, 255, 255, .72);
+  color: #222;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  outline: none;
+}
+
+.department-comment-input:focus {
+  border-color: rgba(0, 0, 0, .30);
+  background: rgba(255, 255, 255, .90);
+}
+
+.department-comment-publish {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #111;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.department-comment-publish:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+
+/* =====================================================
+   APPROVED MESSAGE
+   ===================================================== */
+
+.comment-approved {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  margin-top: 14px;
+  border-radius: 12px;
+  background: rgba(24, 185, 107, .10);
+  border: 1px solid rgba(24, 185, 107, .30);
+}
+
+.comment-approved-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #18b96b;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.comment-approved strong {
+  display: block;
+  color: #16794c;
+  font-size: 14px;
+}
+
+.comment-approved p {
+  margin: 4px 0 0;
+  color: #555;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+
+/* =====================================================
+   COMMENTS LIST
+   ===================================================== */
+
+.department-comment-list {
+  margin-top: 20px;
+}
+
+.department-comment-item {
+  padding: 13px 0;
+  border-top: 1px solid rgba(0, 0, 0, .10);
+}
+
+.department-comment-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.department-comment-who {
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
+}
+
+.department-comment-role {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #777;
+}
+
+.department-comment-time {
+  font-size: 11px;
+  color: #777;
+  white-space: nowrap;
+}
+
+.department-comment-text {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #333;
+  word-break: break-word;
+}
+
+.no-comments {
+  padding: 15px 0;
+  color: #777;
+  font-size: 13px;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1100px) {
+
+  .report-layout {
+    grid-template-columns:
+      minmax(0, 1fr)
+      300px;
+  }
+
+}
+
+
+@media (max-width: 850px) {
+
+  .report-page {
+    padding: 24px 20px 50px;
+  }
+
+  .page-title h1 {
+    font-size: 34px;
+  }
+
+  .report-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .department-comment-card {
+    position: static;
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .report-page {
+    padding: 20px 14px 40px;
+  }
+
+  .page-title h1 {
+    font-size: 30px;
+  }
+
+  .dept-card {
+    overflow-x: auto;
+  }
+
+  .dept-table {
+    min-width: 560px;
+  }
+
+  .report-card h2 {
+    padding: 15px;
+    font-size: 16px;
+  }
+
+  .department-comment-card {
+    padding: 16px;
+  }
+
+}
