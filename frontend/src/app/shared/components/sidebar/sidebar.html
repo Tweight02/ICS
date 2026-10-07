@@ -1,46 +1,41 @@
 <aside class="sidebar">
 
-  <!-- Logo / Header -->
-  <div class="sidebar-header">
+  <!-- BRAND -->
+  <div class="sidebar-brand">
 
-    <div class="logo">
-      <img src="assets/logo.png" alt="Northeast Luzon Mission">
+    <div class="brand-logo">
+      ICS
     </div>
 
-    <div class="organization">
-      <h2>Northeast Luzon Mission</h2>
-      <span>{{ user?.roleLabel }}</span>
+    <div class="brand-text">
+      <strong>ICS</strong>
+      <span>NELM</span>
     </div>
 
   </div>
 
 
-  <!-- Divider -->
-  <div class="divider"></div>
+  <!-- MENU -->
+  <nav class="sidebar-nav">
 
-
-  <!-- Access -->
-  <div class="access-box">
-    <span class="status-dot"></span>
-    <span>{{ user?.roleLabel }} access</span>
-  </div>
-
-
-  <!-- Navigation -->
-  <nav class="navigation">
+    <div class="nav-section-title">
+      MENU
+    </div>
 
     @for (item of menuItems; track item.route) {
 
       <a
+        class="nav-item"
         [routerLink]="item.route"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: true }"
-        class="nav-item"
       >
 
-        <span class="material-symbols-outlined">
-          {{ item.icon }}
-        </span>
+        @if (item.icon) {
+          <span class="nav-icon">
+            {{ item.icon }}
+          </span>
+        }
 
         <span class="nav-label">
           {{ item.label }}
@@ -53,36 +48,47 @@
   </nav>
 
 
-  <!-- Bottom -->
+  <!-- USER AREA -->
   <div class="sidebar-bottom">
 
-    <div class="divider"></div>
+    @if (user) {
 
-    <div class="profile">
+      <div class="user-card">
 
-      <div class="avatar">
-        {{ user?.name?.substring(0, 2)?.toUpperCase() }}
+        <div class="user-avatar">
+          {{ userInitials }}
+        </div>
+
+        <div class="user-info">
+
+          <strong>
+            {{ userName }}
+          </strong>
+
+          <span>
+            {{ roleName }}
+          </span>
+
+        </div>
+
       </div>
 
-      <div class="profile-info">
-        <strong>{{ user?.name }}</strong>
-        <span>{{ user?.roleLabel }}</span>
-      </div>
-
-    </div>
+    }
 
 
     <button
       type="button"
-      class="logout"
+      class="logout-button"
       (click)="logout()"
     >
 
-      <span class="material-symbols-outlined">
-        logout
+      <span class="logout-icon">
+        ↪
       </span>
 
-      <span>Log out</span>
+      <span>
+        Logout
+      </span>
 
     </button>
 

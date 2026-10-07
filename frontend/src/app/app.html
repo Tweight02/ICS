@@ -1,1 +1,19 @@
-<router-outlet></router-outlet>
+<div class="app-layout">
+
+  <!-- GLOBAL SIDEBAR -->
+  <app-sidebar
+    [user]="currentUser">
+  </app-sidebar>
+
+  <!-- MAIN CONTENT -->
+  <main class="app-main">
+
+    <div class="page-container">
+
+      <router-outlet></router-outlet>
+
+    </div>
+
+  </main>
+
+</div>
