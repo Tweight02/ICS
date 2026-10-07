@@ -1,40 +1,66 @@
-<aside class="sidebar">
+<aside class="sidebar d-flex flex-column" [class.collapsed]="collapsed">
 
-  <!-- BRAND -->
-  <div class="sidebar-brand">
+  <!-- ===================== BRAND ===================== -->
+  <div class="sidebar-brand d-flex align-items-center gap-2">
 
-    <div class="brand-logo">
-      ICS
+    <img
+      src="/assets/logo.png"
+      alt="NELM logo"
+      class="brand-logo"
+    />
+
+    <div class="brand-text lh-1">
+      <div class="brand-title">
+        Northeast Luzon Mission
+      </div>
     </div>
 
-    <div class="brand-text">
-      <strong>ICS</strong>
-      <span>NELM</span>
+    <button
+      type="button"
+      class="toggle-btn ms-auto"
+      (click)="toggleSidebar()"
+      [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+      [attr.aria-expanded]="!collapsed"
+    >
+      <i
+        class="bi"
+        [class.bi-chevron-double-left]="!collapsed"
+        [class.bi-chevron-double-right]="collapsed"
+      ></i>
+    </button>
+
+  </div>
+
+
+  <!-- ===================== ROLE ===================== -->
+  <div class="role-wrap px-3 mt-3">
+
+    <div class="role-pill d-flex align-items-center gap-2">
+
+      <span class="role-dot"></span>
+
+      <span>{{ roleName }}</span>
+
     </div>
 
   </div>
 
 
-  <!-- MENU -->
-  <nav class="sidebar-nav">
-
-    <div class="nav-section-title">
-      MENU
-    </div>
+  <!-- ===================== MENU ===================== -->
+  <nav class="nav flex-column gap-1 px-3 mt-4 flex-grow-1">
 
     @for (item of menuItems; track item.route) {
 
       <a
-        class="nav-item"
+        class="nav-link sidebar-link d-flex align-items-center gap-2"
         [routerLink]="item.route"
         routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
+        [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+        [attr.title]="collapsed ? item.label : null"
       >
 
         @if (item.icon) {
-          <span class="nav-icon">
-            {{ item.icon }}
-          </span>
+          <i class="bi {{ item.icon }}"></i>
         }
 
         <span class="nav-label">
@@ -48,26 +74,22 @@
   </nav>
 
 
-  <!-- USER AREA -->
-  <div class="sidebar-bottom">
+  <!-- ===================== USER AREA ===================== -->
+  <div class="sidebar-bottom py-3">
 
     @if (user) {
 
-      <div class="user-card">
+      <div class="user-row d-flex align-items-center gap-2 mb-3">
 
         <div class="user-avatar">
           {{ userInitials }}
         </div>
 
-        <div class="user-info">
+        <div class="user-info lh-sm overflow-hidden">
 
-          <strong>
+          <div class="user-name text-truncate">
             {{ userName }}
-          </strong>
-
-          <span>
-            {{ roleName }}
-          </span>
+          </div>
 
         </div>
 
@@ -76,18 +98,18 @@
     }
 
 
+    <!-- LOGOUT -->
     <button
       type="button"
-      class="logout-button"
+      class="btn logout-btn d-flex align-items-center gap-2 p-0"
       (click)="logout()"
+      [attr.title]="collapsed ? 'Log out' : null"
     >
 
-      <span class="logout-icon">
-        ↪
-      </span>
+      <i class="bi bi-box-arrow-left"></i>
 
       <span>
-        Logout
+        Log out
       </span>
 
     </button>

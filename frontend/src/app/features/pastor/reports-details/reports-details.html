@@ -1,131 +1,107 @@
 <div class="details-page">
 
-  <!-- =====================================================
-       HEADER
-  ====================================================== -->
+
+  <!-- ================================= -->
+  <!-- HEADER -->
+  <!-- ================================= -->
 
   <section class="details-header">
 
-    <button
-      type="button"
-      class="back-button"
-      (click)="backToDistricts()"
-    >
-      <span>←</span>
-      Back to Districts
-    </button>
+
+    <div class="header-left">
 
 
-    @if (district) {
+      <button
+        type="button"
+        class="back-button"
+        (click)="backToDistricts()"
+      >
 
-      <div class="district-heading">
+        <span>
+          ←
+        </span>
+
+        Back to Districts
+
+      </button>
+
+
+      @if (district) {
+
+        <span class="eyebrow">
+          DISTRICT REPORTS
+        </span>
+
+
+        <h1>
+          {{ district.name }}
+        </h1>
+
+
+        @if (district.address) {
+
+          <p>
+            {{ district.address }}
+          </p>
+
+        }
+
+      } @else {
 
         <span class="eyebrow">
           DISTRICT REPORTS
         </span>
 
         <h1>
-          {{ district.name }}
+          District Reports
         </h1>
 
-        <p>
-          {{ district.address }}
-        </p>
+      }
 
-      </div>
 
-    }
+    </div>
+
+
+    <!-- ================================= -->
+    <!-- STAT -->
+    <!-- ================================= -->
+
+    <div class="church-stat">
+
+      <strong>
+        {{ churchCount }}
+      </strong>
+
+      <span>
+        Churches / Companies
+      </span>
+
+    </div>
+
 
   </section>
 
 
-  <!-- =====================================================
-       SUMMARY
-  ====================================================== -->
 
-  @if (district) {
+  <!-- ================================= -->
+  <!-- TABLE -->
+  <!-- ================================= -->
 
-    <div class="summary-row">
-
-      <div class="summary-card">
-
-        <strong>
-          {{ churchCount }}
-        </strong>
-
-        <span>
-          Churches / Companies
-        </span>
-
-      </div>
-
-    </div>
-
-  }
+  <section class="monitoring-card">
 
 
-  <!-- =====================================================
-       ERROR
-  ====================================================== -->
-
-  @if (errorMessage) {
-
-    <div class="error-box">
-
-      <span>
-        {{ errorMessage }}
-      </span>
-
-      <button
-        type="button"
-        (click)="retry()"
-      >
-        Retry
-      </button>
-
-    </div>
-
-  }
+    <div class="table-wrapper">
 
 
-  <!-- =====================================================
-       LOADING
-  ====================================================== -->
+      <table class="monitoring-table">
 
-  @if (loading) {
-
-    <div class="loading-box">
-
-      <div class="loading-spinner"></div>
-
-      <span>
-        Loading churches and companies...
-      </span>
-
-    </div>
-
-  }
-
-
-  <!-- =====================================================
-       CHURCH TABLE
-  ====================================================== -->
-
-  @if (
-    !loading &&
-    churches.length > 0
-  ) {
-
-    <section class="church-card">
-
-      <table class="church-table">
 
         <thead>
 
           <tr>
 
-            <th>
-              Church / Company
+            <th class="church-column">
+              Church
             </th>
 
             <th>
@@ -136,7 +112,7 @@
               Q2
             </th>
 
-            <th class="q3-column">
+            <th>
               Q3
             </th>
 
@@ -151,122 +127,25 @@
 
         <tbody>
 
-          @for (
-            church of churches;
-            track church.church_id
-          ) {
 
-            <tr
-              class="church-row"
-              (click)="openChurch(church)"
-            >
+          <!-- LOADING -->
 
-              <td>
+          @if (loading) {
 
-                <div class="church-name">
+            <tr>
 
-                  <span>
-                    {{ church.name }}
-                  </span>
+              <td
+                colspan="5"
+                class="loading-cell"
+              >
+
+                <div class="loading-content">
+
+                  <span class="spinner"></span>
+
+                  Loading churches...
 
                 </div>
-
-              </td>
-
-
-              <!-- Q1 -->
-
-              <td>
-
-                @if (church.q1) {
-
-                  <span class="check">
-                    ✓
-                  </span>
-
-                } @else {
-
-                  <span class="dash">
-                    –
-                  </span>
-
-                }
-
-              </td>
-
-
-              <!-- Q2 -->
-
-              <td>
-
-                @if (church.q2) {
-
-                  <span class="check">
-                    ✓
-                  </span>
-
-                } @else {
-
-                  <span class="dash">
-                    –
-                  </span>
-
-                }
-
-              </td>
-
-
-              <!-- Q3 -->
-
-              <td>
-
-                @if (church.q3 !== null) {
-
-                  <div class="progress">
-
-                    <span>
-                      {{ church.q3 }}%
-                    </span>
-
-                    <div class="progress-track">
-
-                      <div
-                        class="progress-bar"
-                        [style.width.%]="church.q3"
-                      ></div>
-
-                    </div>
-
-                  </div>
-
-                } @else {
-
-                  <span class="dash">
-                    –
-                  </span>
-
-                }
-
-              </td>
-
-
-              <!-- Q4 -->
-
-              <td>
-
-                @if (church.q4 !== null) {
-
-                  <span class="q4">
-                    {{ church.q4 }}%
-                  </span>
-
-                } @else {
-
-                  <span class="dash">
-                    –
-                  </span>
-
-                }
 
               </td>
 
@@ -274,38 +153,197 @@
 
           }
 
+
+          <!-- ERROR -->
+
+          @else if (errorMessage) {
+
+            <tr>
+
+              <td
+                colspan="5"
+                class="message-cell error"
+              >
+
+                {{ errorMessage }}
+
+              </td>
+
+            </tr>
+
+          }
+
+
+          <!-- NO CHURCH -->
+
+          @else if (churches.length === 0) {
+
+            <tr>
+
+              <td
+                colspan="5"
+                class="message-cell"
+              >
+
+                No churches or companies
+                found for this district.
+
+              </td>
+
+            </tr>
+
+          }
+
+
+          <!-- CHURCHES -->
+
+          @else {
+
+            @for (
+              church of churches;
+              track trackChurch($index, church)
+            ) {
+
+              <tr
+                class="church-row"
+                tabindex="0"
+                (click)="openChurch(church)"
+                (keydown.enter)="openChurch(church)"
+              >
+
+
+                <!-- CHURCH -->
+
+                <td class="church-name">
+
+                  <div class="church-link">
+
+                    <span class="branch">
+                      └
+                    </span>
+
+                    <span>
+                      {{ church.name }}
+                    </span>
+
+                  </div>
+
+                </td>
+
+
+                <!-- Q1 -->
+
+                <td class="quarter-cell">
+
+                  @if (
+                    getMonitoring($index).q1
+                  ) {
+
+                    <span class="check">
+                      ✓
+                    </span>
+
+                  } @else {
+
+                    <span class="dash">
+                      –
+                    </span>
+
+                  }
+
+                </td>
+
+
+                <!-- Q2 -->
+
+                <td class="quarter-cell">
+
+                  @if (
+                    getMonitoring($index).q2
+                  ) {
+
+                    <span class="check">
+                      ✓
+                    </span>
+
+                  } @else {
+
+                    <span class="dash">
+                      –
+                    </span>
+
+                  }
+
+                </td>
+
+
+                <!-- Q3 -->
+
+                <td class="quarter-cell">
+
+                  <div class="progress-wrapper">
+
+                    <span class="percentage">
+
+                      {{
+                        getMonitoring($index).q3
+                      }}%
+
+                    </span>
+
+
+                    <div class="progress-bar">
+
+                      <div
+                        class="progress-value"
+                        [style.width.%]="
+                          getMonitoring($index).q3
+                        "
+                      ></div>
+
+                    </div>
+
+                  </div>
+
+                </td>
+
+
+                <!-- Q4 -->
+
+                <td class="quarter-cell">
+
+                  @if (
+                    getMonitoring($index).q4
+                  ) {
+
+                    <span class="check">
+                      ✓
+                    </span>
+
+                  } @else {
+
+                    <span class="dash">
+                      –
+                    </span>
+
+                  }
+
+                </td>
+
+
+              </tr>
+
+            }
+
+          }
+
+
         </tbody>
 
       </table>
 
-    </section>
-
-  }
-
-
-  <!-- =====================================================
-       NO CHURCHES
-  ====================================================== -->
-
-  @if (
-    !loading &&
-    churches.length === 0 &&
-    !errorMessage
-  ) {
-
-    <div class="empty-box">
-
-      <strong>
-        No churches or companies found
-      </strong>
-
-      <span>
-        This district currently has no registered
-        churches or companies.
-      </span>
-
     </div>
 
-  }
+  </section>
 
 </div>

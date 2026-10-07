@@ -1,534 +1,151 @@
-:host {
-  display: block;
+/* =========================================================
+   REPORTS CONTAINER
+   ========================================================= */
+
+.reports-container {
   width: 100%;
 }
 
-* {
-  box-sizing: border-box;
-}
 
-.reports-page {
-  width: 100%;
-  max-width: 1450px;
-  margin: 0 auto;
-}
 
-/* =========================================
-   HEADER
-========================================= */
-
-.reports-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-
-  gap: 24px;
-
-  margin-bottom: 22px;
-}
-
-.header-text {
-  min-width: 0;
-}
-
-.eyebrow {
-  display: block;
-
-  margin-bottom: 8px;
-
-  color: #58708b;
-
-  font-size: 10px;
-  font-weight: 800;
-
-  letter-spacing: 1.5px;
-}
-
-.header-text h1 {
-  margin: 0;
-
-  color: #102d4d;
-
-  font-size: clamp(26px, 3vw, 36px);
-  font-weight: 800;
-
-  line-height: 1.15;
-}
-
-.header-text p {
-  margin: 8px 0 0;
-
-  color: #6f8194;
-
-  font-size: 13px;
-}
-
-/* =========================================
-   STATS
-========================================= */
-
-.header-stats {
-  display: flex;
-
-  gap: 12px;
-
-  flex-shrink: 0;
-}
-
-.stat-card {
-  width: 120px;
-  min-height: 76px;
-
-  display: flex;
-  flex-direction: column;
-
-  justify-content: center;
-  align-items: center;
-
-  border: 1px solid #dfe5ea;
-
-  border-radius: 12px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 2px 8px rgba(20, 40, 60, 0.03);
-}
-
-.stat-card strong {
-  color: #102d4d;
-
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.stat-card span {
-  margin-top: 4px;
-
-  color: #718096;
-
-  font-size: 9px;
-}
-
-/* =========================================
-   ERROR
-========================================= */
-
-.error-message {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  gap: 16px;
-
-  padding: 12px 16px;
-
-  margin-bottom: 14px;
-
-  border: 1px solid #f2c5c5;
-
-  border-radius: 8px;
-
-  background: #fff5f5;
-
-  color: #a33a3a;
-
-  font-size: 13px;
-}
-
-.error-message button {
-  border: 0;
-
-  border-radius: 6px;
-
-  padding: 7px 12px;
-
-  background: #123f6d;
-
-  color: #ffffff;
-
-  cursor: pointer;
-}
-
-/* =========================================
-   TABLE
-========================================= */
-
-.monitoring-card {
-  width: 100%;
-
-  overflow: hidden;
-
-  border: 1px solid #dfe5ea;
-
-  border-radius: 12px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 2px 8px rgba(20, 40, 60, 0.025);
-}
-
-.monitoring-table {
-  width: 100%;
-}
-
-.table-row {
-  display: grid;
-
-  grid-template-columns:
-    minmax(260px, 2.5fr)
-    minmax(80px, 0.7fr)
-    minmax(80px, 0.7fr)
-    minmax(180px, 1fr)
-    minmax(80px, 0.7fr);
-
-  align-items: center;
-
-  min-height: 44px;
-
-  border-bottom: 1px solid #e6e9ec;
-}
-
-.table-row:last-child {
-  border-bottom: 0;
-}
-
-.table-row > div {
-  min-width: 0;
-
-  padding: 0 16px;
-
-  color: #102d4d;
-
-  font-size: 12px;
-}
-
-.table-header {
-  min-height: 36px;
-
-  background: #fbfcfd;
-
-  color: #64748b;
-
-  font-size: 9px;
-
-  font-weight: 700;
-
-  text-transform: uppercase;
-}
-
-.table-header > div {
-  color: #617286;
-}
-
-/* =========================================
-   DISTRICT
-========================================= */
+/* =========================================================
+   DISTRICT ROW
+   ========================================================= */
 
 .district-row {
-  width: 100%;
-
-  border-top: 0;
-  border-left: 0;
-  border-right: 0;
-
-  background: #ffffff;
-
-  text-align: left;
-
   cursor: pointer;
-
   transition:
-    background 0.15s ease;
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
+
+
+
+/* =========================================================
+   DISTRICT ROW HOVER
+   ========================================================= */
 
 .district-row:hover {
-  background: #f7fafc;
+  background-color: #f8fafc;
 }
 
-.district-name {
-  display: flex;
-  align-items: center;
 
-  gap: 8px;
 
-  font-weight: 700;
+/* =========================================================
+   DISTRICT ROW FOCUS
+   ========================================================= */
+
+.district-row:focus {
+  outline: 2px solid #86b7fe;
+  outline-offset: -2px;
 }
 
-.arrow {
-  width: 14px;
 
-  color: #718096;
 
-  font-size: 19px;
+/* =========================================================
+   DISTRICT ARROW
+   ========================================================= */
 
-  transition: transform 0.15s ease;
+.district-arrow {
+  width: 22px;
+  min-width: 22px;
+
+  font-size: 14px;
+
+  color: #6c757d;
+
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
 }
 
-.district-row:hover .arrow {
-  color: #123f6d;
+
+
+/* =========================================================
+   DISTRICT ARROW HOVER
+   ========================================================= */
+
+.district-row:hover .district-arrow {
+  transform: translateX(3px);
+
+  color: #0d6efd;
 }
 
-/* =========================================
-   CHURCH
-========================================= */
 
-.church-row {
-  width: 100%;
 
-  border-top: 0;
-  border-left: 0;
-  border-right: 0;
+/* =========================================================
+   TABLE
+   ========================================================= */
 
-  background: #fafbfc;
-
-  text-align: left;
-
-  cursor: pointer;
+.table > :not(caption) > * > * {
+  vertical-align: middle;
 }
 
-.church-row:hover {
-  background: #f1f5f8;
+
+
+/* =========================================================
+   TABLE HEADER
+   ========================================================= */
+
+.table-light th {
+  font-weight: 600;
+
+  color: #212529;
 }
 
-.church-name {
-  display: flex;
-  align-items: center;
 
-  gap: 8px;
 
-  padding-left: 36px !important;
-
-  color: #435466 !important;
-
-  font-weight: 500;
-}
-
-.tree-line {
-  color: #9aa8b5;
-
-  font-size: 15px;
-}
-
-/* =========================================
-   CHECK
-========================================= */
-
-.check {
-  display: inline-flex;
-
-  width: 18px;
-  height: 18px;
-
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 4px;
-
-  background: #21865f;
-
-  color: #ffffff;
-
-  font-size: 12px;
-  font-weight: 800;
-}
-
-/* =========================================
-   PROGRESS
-========================================= */
-
-.progress-cell {
-  display: flex;
-
-  align-items: center;
-
-  gap: 10px;
-}
-
-.progress-cell > span {
-  width: 32px;
-
-  color: #102d4d;
-
-  font-size: 11px;
-}
+/* =========================================================
+   PROGRESS BAR
+   ========================================================= */
 
 .progress {
-  flex: 1;
+  background-color: #e9ecef;
 
-  max-width: 140px;
-
-  height: 5px;
+  border-radius: 10px;
 
   overflow: hidden;
-
-  border-radius: 999px;
-
-  background: #e1e6eb;
 }
 
-.progress-value {
-  height: 100%;
 
-  border-radius: inherit;
+.progress-bar {
+  border-radius: 10px;
 
-  background: #df9419;
+  transition:
+    width 0.3s ease;
 }
 
-.dash {
-  color: #102d4d;
 
-  text-align: center;
+
+/* =========================================================
+   STATISTICS CARDS
+   ========================================================= */
+
+.card {
+  border-radius: 8px;
 }
 
-/* =========================================
-   LOADING
-========================================= */
 
-.loading-row,
-.church-loading {
-  min-height: 130px;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
 
-  gap: 10px;
+@media (max-width: 768px) {
 
-  color: #718096;
-
-  font-size: 12px;
-}
-
-.spinner {
-  width: 16px;
-  height: 16px;
-
-  border: 2px solid #dce3e8;
-
-  border-top-color: #2776a8;
-
-  border-radius: 50%;
-
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-
-  to {
-    transform: rotate(360deg);
+  .reports-container {
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
-}
 
-/* =========================================
-   EMPTY
-========================================= */
-
-.empty-row,
-.church-empty {
-  min-height: 110px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  color: #7a8795;
-
-  font-size: 12px;
-}
-
-.church-empty {
-  background: #fafbfc;
-}
-
-/* =========================================
-   TABLET
-========================================= */
-
-@media (max-width: 1000px) {
-
-  .reports-header {
-    align-items: stretch;
-
-    flex-direction: column;
+  .display-6 {
+    font-size: 1.8rem;
   }
 
-  .header-stats {
-    width: 100%;
-  }
 
-  .stat-card {
-    flex: 1;
-
-    width: auto;
-  }
-
-  .table-row {
-    grid-template-columns:
-      minmax(220px, 2fr)
-      70px
-      70px
-      minmax(150px, 1fr)
-      70px;
-  }
-
-}
-
-/* =========================================
-   MOBILE
-========================================= */
-
-@media (max-width: 700px) {
-
-  .reports-header {
-    margin-bottom: 16px;
-  }
-
-  .header-text h1 {
-    font-size: 25px;
-  }
-
-  .header-text p {
-    font-size: 12px;
-  }
-
-  .monitoring-card {
-    overflow-x: auto;
-  }
-
-  .monitoring-table {
-    min-width: 720px;
-  }
-
-  .table-row {
-    grid-template-columns:
-      280px
-      80px
-      80px
-      180px
-      80px;
-  }
-
-}
-
-/* =========================================
-   SMALL MOBILE
-========================================= */
-
-@media (max-width: 480px) {
-
-  .header-stats {
-    gap: 8px;
-  }
-
-  .stat-card {
-    min-height: 65px;
-  }
-
-  .stat-card strong {
-    font-size: 17px;
+  .progress {
+    width: 80px !important;
   }
 
 }
