@@ -1,0 +1,118 @@
+<div class="mx-auto px-3 py-3">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate
+    class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+    <!-- Header -->
+    <header class="flex items-center gap-3 border-b border-slate-200 px-4 py-3">
+      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M19 8v6M22 11h-6" />
+        </svg>
+      </span>
+      <div class="leading-tight">
+        <h1 class="text-base font-semibold text-slate-900">Add a new user</h1>
+      </div>
+    </header>
+
+    <!-- Fields -->
+    <div class="grid grid-cols-1 gap-x-2 gap-y-2 px-4 py-3 sm:grid-cols-6">
+
+      <div class="sm:col-span-3">
+        <label for="first-name" class="block text-xs font-medium text-slate-700">First name</label>
+        <input id="first-name" formControlName="first_name" type="text" autocomplete="given-name"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20" />
+      </div>
+
+      <div class="sm:col-span-3">
+        <label for="middle-name" class="block text-xs font-medium text-slate-700">Middle name</label>
+        <input id="middle-name" formControlName="middle_name" type="text" autocomplete="additional-name"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20" />
+      </div>
+
+      <div class="sm:col-span-3">
+        <label for="last-name" class="block text-xs font-medium text-slate-700">Last name</label>
+        <input id="last-name" formControlName="last_name" type="text" autocomplete="family-name"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20" />
+      </div>
+
+      <div class="sm:col-span-3">
+        <label for="extension-name" class="block text-xs font-medium text-slate-700">
+          Suffix <span class="font-normal text-slate-400">(optional)</span>
+        </label>
+        <input id="extension-name" formControlName="extension_name" type="text" placeholder="Jr., Sr., III"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20" />
+      </div>
+
+      <div class="sm:col-span-3">
+        <label for="birthdate" class="block text-xs font-medium text-slate-700">Birthdate</label>
+        <input id="birthdate" formControlName="birthdate" type="date" autocomplete="bday"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20" />
+      </div>
+
+      <div class="sm:col-span-3">
+        <label for="gender" class="block text-xs font-medium text-slate-700">Gender</label>
+        <select id="gender" formControlName="gender"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20">
+          <option value="">Select gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+
+      <!-- Department -->
+      <div class="sm:col-span-3"> 
+        <label for="department-id" class="block text-xs font-medium text-slate-700"> Department </label> 
+        <select id="department-id" formControlName="department_id"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20">
+            @for (department of departments; track department.department_id) {
+              <option [value]="department.department_id">
+                {{ department.department_name }}
+              </option>
+            }
+        </select>
+      </div>
+      <!-- Church -->
+      <div class="sm:col-span-3"> 
+        <label for="church-id" class="block text-xs font-medium text-slate-700"> Church </label> 
+        <select id="church-id" formControlName="church_id"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20">
+            @for (district of districts; track district.church_id) { 
+              <option [value]="district.church_id"> {{ district.name }} </option> 
+            }
+        </select>
+      </div>
+
+      <div class="sm:col-span-3">
+        <label for="email" class="block text-xs font-medium text-slate-700">Email address</label>
+        <input id="email" formControlName="email" type="email" autocomplete="email" placeholder="name@company.com"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20" />
+      </div>
+
+      <div class="sm:col-span-3">
+        <label for="password" class="block text-xs font-medium text-slate-700">Password</label>
+        <input id="password" formControlName="password" type="password" autocomplete="new-password"
+          placeholder="At least 8 characters"
+          class="mt-0.5 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20" />
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <footer class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-2.5">
+      <button type="button" (click)="form.reset()"
+        class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/30">
+        Cancel
+      </button>
+      <button type="submit"
+        class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600/40">
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+        Create user
+      </button>
+    </footer>
+  </form>
+</div>
