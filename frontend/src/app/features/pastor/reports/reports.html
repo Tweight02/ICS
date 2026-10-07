@@ -1,99 +1,33 @@
-<div class="container-fluid reports-container">
+<div class="reports-container">
 
-  <!-- ===================================================== -->
   <!-- HEADER -->
-  <!-- ===================================================== -->
+  <div class="reports-header">
 
-  <div class="row align-items-center g-3 mb-4">
-
-    <!-- TITLE -->
-    <div class="col-12 col-lg">
-
-      <div
-        class="text-uppercase fw-semibold small text-primary-emphasis mb-1"
-      >
-        Reports Management
-      </div>
-
-
-      <h1 class="display-6 fw-bold mb-1">
-        Report Monitoring
-      </h1>
-
-
-      <p class="text-secondary mb-0">
-        Monitor quarterly report submissions by district,
-        church, and company.
-      </p>
-
+    <div class="title-section">
+      <h1>Report Monitoring</h1>
     </div>
 
-
-    <!-- ================================================= -->
     <!-- STATISTICS -->
-    <!-- ================================================= -->
+    <div class="statistics">
 
-    <div class="col-12 col-lg-auto">
-
-      <div class="row g-2">
-
-        <!-- DISTRICTS -->
-        <div class="col-6">
-
-          <div class="card border shadow-sm h-100">
-
-            <div
-              class="card-body text-center px-4 py-3"
-            >
-
-              <div class="fs-3 fw-bold">
-
-                {{ districtCount }}
-
-              </div>
-
-
-              <div class="small text-secondary">
-
-                Districts
-
-              </div>
-
-            </div>
-
-          </div>
-
+      <div class="stat-card">
+        <div class="stat-number">
+          {{ districtCount }}
         </div>
 
+        <div class="stat-label">
+          Districts
+        </div>
+      </div>
 
-        <!-- CHURCHES -->
-        <div class="col-6">
-
-          <div class="card border shadow-sm h-100">
-
-            <div
-              class="card-body text-center px-4 py-3"
-            >
-
-              <div class="fs-3 fw-bold">
-
-                —
-
-              </div>
-
-
-              <div class="small text-secondary">
-
-                Churches / Companies
-
-              </div>
-
-            </div>
-
-          </div>
-
+      <div class="stat-card">
+        <div class="stat-number">
+          —
         </div>
 
+        <div class="stat-label">
+          Churches / Companies
+        </div>
       </div>
 
     </div>
@@ -101,33 +35,25 @@
   </div>
 
 
-
-  <!-- ===================================================== -->
-  <!-- ERROR MESSAGE -->
-  <!-- ===================================================== -->
-
+  <!-- ERROR -->
   @if (errorMessage) {
 
-    <div
-      class="alert alert-danger d-flex align-items-center"
-      role="alert"
-    >
+    <div class="error-message" role="alert">
 
-      <div>
+      <div class="error-text">
+        <span class="error-icon">!</span>
 
-        {{ errorMessage }}
-
+        <span>
+          {{ errorMessage }}
+        </span>
       </div>
-
 
       <button
         type="button"
-        class="btn btn-sm btn-outline-danger ms-auto"
+        class="retry-button"
         (click)="loadDistricts()"
       >
-
         Retry
-
       </button>
 
     </div>
@@ -135,99 +61,160 @@
   }
 
 
-
-  <!-- ===================================================== -->
   <!-- REPORT TABLE -->
-  <!-- ===================================================== -->
+  <div class="reports-table-wrapper">
 
-  <div class="card border shadow-sm">
+    <table class="reports-table">
 
-    <div class="table-responsive">
+      <thead>
+        <tr>
 
-      <table
-        class="table table-hover align-middle mb-0"
-      >
+          <th class="district-column">
+            District
+          </th>
+
+          <th>
+            Q1
+          </th>
+
+          <th>
+            Q2
+          </th>
+
+          <th>
+            Q3
+          </th>
+
+          <th>
+            Q4
+          </th>
+
+        </tr>
+      </thead>
 
 
-        <!-- ================================================= -->
-        <!-- TABLE HEADER -->
-        <!-- ================================================= -->
+      <tbody>
 
-        <thead class="table-light">
+        <!-- LOADING -->
+        @if (loadingDistricts) {
 
           <tr>
 
-            <th class="py-3 px-3">
+            <td
+              colspan="5"
+              class="loading-cell"
+            >
 
-              District
-
-            </th>
-
-
-            <th class="text-center py-3">
-
-              Q1
-
-            </th>
-
-
-            <th class="text-center py-3">
-
-              Q2
-
-            </th>
-
-
-            <th class="text-center py-3">
-
-              Q3
-
-            </th>
-
-
-            <th class="text-center py-3">
-
-              Q4
-
-            </th>
-
-          </tr>
-
-        </thead>
-
-
-
-        <!-- ================================================= -->
-        <!-- TABLE BODY -->
-        <!-- ================================================= -->
-
-        <tbody>
-
-
-          <!-- =============================================== -->
-          <!-- LOADING -->
-          <!-- =============================================== -->
-
-          @if (loadingDistricts) {
-
-            <tr>
-
-              <td
-                colspan="5"
-                class="text-center py-5"
-              >
+              <div class="loading-content">
 
                 <div
-                  class="spinner-border spinner-border-sm text-primary me-2"
-                  role="status"
+                  class="spinner"
                   aria-hidden="true"
                 ></div>
 
-
-                <span class="text-secondary">
-
+                <span>
                   Loading districts...
+                </span>
 
+              </div>
+
+            </td>
+
+          </tr>
+
+        }
+
+
+        <!-- DISTRICTS -->
+        @else if (districts.length > 0) {
+
+          @for (
+            district of districts;
+            track district.church_id
+          ) {
+
+            <tr
+              class="district-row"
+              role="button"
+              tabindex="0"
+
+              (click)="openDistrict(district.church_id)"
+
+              (keydown.enter)="
+                openDistrict(district.church_id)
+              "
+            >
+
+              <!-- DISTRICT -->
+              <td class="district-name">
+
+                <span>
+                  {{ district.name }}
+                </span>
+
+              </td>
+
+
+              <!-- Q1 -->
+              <td class="quarter-cell">
+
+                <span class="check">
+                  ✓
+                </span>
+
+              </td>
+
+
+              <!-- Q2 -->
+              <td class="quarter-cell">
+
+                <span class="check">
+                  ✓
+                </span>
+
+              </td>
+
+
+              <!-- Q3 -->
+              <td class="q3-cell">
+
+                <div class="progress-container">
+
+                  <span class="percentage">
+
+                    {{ getMonitoringPercentage(district) }}%
+
+                  </span>
+
+                  <div class="progress">
+
+                    <div
+                      class="progress-bar"
+
+                      [style.width.%]="
+                        getMonitoringPercentage(district)
+                      "
+
+                      [attr.aria-valuenow]="
+                        getMonitoringPercentage(district)
+                      "
+
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+
+                  </div>
+
+                </div>
+
+              </td>
+
+
+              <!-- Q4 -->
+              <td class="quarter-cell">
+
+                <span class="empty-quarter">
+                  –
                 </span>
 
               </td>
@@ -236,209 +223,30 @@
 
           }
 
+        }
 
 
-          <!-- =============================================== -->
-          <!-- DISTRICTS -->
-          <!-- =============================================== -->
+        <!-- EMPTY -->
+        @else {
 
-          @else if (districts.length > 0) {
+          <tr>
 
-            @for (
-              district of districts;
-              track district.church_id
-            ) {
+            <td
+              colspan="5"
+              class="empty-cell"
+            >
 
-              <tr
-                class="district-row"
-                role="button"
-                tabindex="0"
+              No districts found.
 
-                (click)="
-                  openDistrict(district.church_id)
-                "
+            </td>
 
-                (keydown.enter)="
-                  openDistrict(district.church_id)
-                "
-              >
+          </tr>
 
+        }
 
-                <!-- ========================================= -->
-                <!-- DISTRICT NAME -->
-                <!-- ========================================= -->
+      </tbody>
 
-                <td class="px-3 py-3">
-
-                  <div
-                    class="d-flex align-items-center gap-2"
-                  >
-
-                    <span class="district-arrow">
-
-                      →
-
-                    </span>
-
-
-                    <span class="fw-semibold">
-
-                      {{ district.name }}
-
-                    </span>
-
-                  </div>
-
-                </td>
-
-
-
-                <!-- ========================================= -->
-                <!-- Q1 -->
-                <!-- ========================================= -->
-
-                <td class="text-center">
-
-                  <span
-                    class="badge rounded-1 bg-success"
-                  >
-
-                    ✓
-
-                  </span>
-
-                </td>
-
-
-
-                <!-- ========================================= -->
-                <!-- Q2 -->
-                <!-- ========================================= -->
-
-                <td class="text-center">
-
-                  <span
-                    class="badge rounded-1 bg-success"
-                  >
-
-                    ✓
-
-                  </span>
-
-                </td>
-
-
-
-                <!-- ========================================= -->
-                <!-- Q3 -->
-                <!-- ========================================= -->
-
-                <td>
-
-                  <div
-                    class="
-                      d-flex
-                      align-items-center
-                      justify-content-center
-                      gap-2
-                    "
-                  >
-
-                    <span
-                      class="small fw-semibold"
-                    >
-
-                      {{ getMonitoringPercentage(district) }}%
-
-                    </span>
-
-
-                    <div
-                      class="progress"
-                      style="
-                        width: 120px;
-                        height: 5px;
-                      "
-                    >
-
-                      <div
-                        class="progress-bar bg-warning"
-                        role="progressbar"
-
-                        [style.width.%]="
-                          getMonitoringPercentage(district)
-                        "
-
-                        [attr.aria-valuenow]="
-                          getMonitoringPercentage(district)
-                        "
-
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-
-                    </div>
-
-                  </div>
-
-                </td>
-
-
-
-                <!-- ========================================= -->
-                <!-- Q4 -->
-                <!-- ========================================= -->
-
-                <td class="text-center">
-
-                  <span class="text-secondary">
-
-                    –
-
-                  </span>
-
-                </td>
-
-
-              </tr>
-
-            }
-
-          }
-
-
-
-          <!-- =============================================== -->
-          <!-- EMPTY -->
-          <!-- =============================================== -->
-
-          @else {
-
-            <tr>
-
-              <td
-                colspan="5"
-                class="text-center py-5"
-              >
-
-                <div class="text-secondary">
-
-                  No districts found.
-
-                </div>
-
-              </td>
-
-            </tr>
-
-          }
-
-
-        </tbody>
-
-      </table>
-
-    </div>
+    </table>
 
   </div>
 

@@ -1,25 +1,116 @@
+/* ================================
+   MAIN CONTENT
+================================ */
+
 .content {
-  margin-left: 240px;
+  position: relative;
   min-height: 100vh;
-  transition: margin-left 0.2s ease;
+  margin-left: 240px;
+
+  overflow: hidden;
+
+  transition: margin-left 0.25s ease;
+
+  /* Main mountain background */
+  background-image: url('/assets/mountain.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  background-attachment: fixed;
 }
 
+/* Collapsed sidebar */
 .content.collapsed {
   margin-left: 64px;
 }
 
-/* login page / logged out */
-.content.no-sidebar {
-  margin-left: 0;
+/* ================================
+   BACKGROUND OVERLAY
+================================ */
+
+.content::before {
+  content: "";
+  position: fixed;
+
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 240px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.88),
+      rgba(245, 252, 250, 0.72),
+      rgba(255, 255, 255, 0.82)
+    );
+
+  pointer-events: none;
+  z-index: 0;
+
+  transition: left 0.25s ease;
 }
 
+/* Overlay when sidebar is collapsed */
+.content.collapsed::before {
+  left: 64px;
+}
+
+/* ================================
+   CONTENT LAYER
+================================ */
+
+.content-inner {
+  position: relative;
+  z-index: 1;
+
+  min-height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* ================================
+   NO SIDEBAR / LOGIN
+================================ */
+
+.content.no-sidebar {
+  margin-left: 0;
+
+  background-image: url('/assets/images/mountain-bg.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.content.no-sidebar::before {
+  left: 0;
+}
+
+/* ================================
+   MOBILE
+================================ */
+
 @media (max-width: 600px) {
+
   .content,
   .content.collapsed {
     margin-left: 64px;
   }
 
+  .content::before,
+  .content.collapsed::before {
+    left: 64px;
+  }
+
   .content.no-sidebar {
     margin-left: 0;
+  }
+
+  .content.no-sidebar::before {
+    left: 0;
+  }
+
+  .content-inner {
+    padding: 16px;
   }
 }

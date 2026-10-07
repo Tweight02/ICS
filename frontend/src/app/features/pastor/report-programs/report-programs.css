@@ -1,430 +1,590 @@
-/* ---------- Page + theme ---------- */
-.report-page {
-  --green-900: #16342A;
-  --green-800: #1F4A3A;
-  --green-700: #3E7A54;
-  --green-tint: #E8F1E9;
-  --bg: #FAF8F3;
-  --ink: #20261F;
-  --ink-soft: #6E6759;
-  --ink-faint: #9A9484;
-  --line: #E8E2D4;
-  --line-strong: #D9D2C0;
-  --amber: #D99A2B;
-
-  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  color: var(--ink);
-  background: var(--bg);
-  padding: 24px;
-}
-
-.page-title h1 {
-  font-family: 'Source Serif 4', serif;
-  font-size: 26px;
-  font-weight: 700;
-  margin: 0 0 4px;
-  line-height: 1.2;
-}
-
-.page-title small {
+:host {
   display: block;
-  font-size: 14px;
-  color: var(--ink-soft);
+  width: 100%;
 }
+
+.report-page {
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 28px 30px 60px;
+  color: #222;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+
+/* =====================================================
+   BACK BUTTON
+   ===================================================== */
 
 .head-row {
-  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .page-back-btn {
-  padding: 8px 13px;
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--green-800);
-  font-size: 12.5px;
-  font-weight: 600;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 0;
+  border: 0;
+  background: transparent;
+  color: #222;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
 }
 
 .page-back-btn:hover {
-  background: var(--green-tint);
-  border-color: var(--green-700);
+  opacity: .65;
 }
 
+.page-back-btn span {
+  font-size: 18px;
+}
+
+
+/* =====================================================
+   TITLE
+   ===================================================== */
+
+.page-title {
+  margin-bottom: 20px;
+}
+
+.page-title h1 {
+  margin: 0;
+  font-size: 42px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -1.2px;
+  color: #20252a;
+}
+
+.page-title small {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #4d555b;
+}
+
+.title-divider {
+  height: 1px;
+  margin: 18px 0 22px;
+  border: 0;
+  background: rgba(0, 0, 0, .16);
+}
+
+
+/* =====================================================
+   STATES
+   ===================================================== */
+
 .state-note {
-  text-align: center;
-  color: var(--ink-soft);
-  padding: 24px;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .58);
+  border: 1px solid rgba(255, 255, 255, .65);
+  color: #555;
+  font-size: 14px;
 }
 
 .error-note {
-  background: #f7dede;
-  color: #8a2c2c;
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 14px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  border-radius: 10px;
+  background: rgba(220, 60, 60, .10);
+  border: 1px solid rgba(220, 60, 60, .25);
+  color: #a12828;
+  font-size: 13px;
 }
 
-/* ---------- Departments table ---------- */
+
+/* =====================================================
+   DEPARTMENT CARD
+   ===================================================== */
+
 .dept-card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  width: 100%;
+  max-width: 900px;
   overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .55);
+  border: 1px solid rgba(255, 255, 255, .70);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+  backdrop-filter: blur(8px);
 }
+
+
+/* =====================================================
+   DEPARTMENT TABLE
+   ===================================================== */
 
 .dept-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
-.dept-table thead th {
+.dept-table thead {
+  background: rgba(209, 209, 209, .48);
+}
+
+.dept-table th,
+.dept-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, .08);
+  vertical-align: middle;
+}
+
+.dept-table th {
+  font-size: 13px;
+  font-weight: 750;
+  color: #222;
   text-align: left;
-  font-size: 10.5px;
-  letter-spacing: 0.03em;
-  color: var(--ink-faint);
-  font-weight: 600;
-  padding: 9px 20px;
-  border-bottom: 1px solid var(--line);
-  background: #FBFBFC;
 }
 
-.dept-table .c-name { width: 37%; }
-.dept-table .c-q    { width: 11%; }
-.dept-table .c-q3   { width: 20%; }
-
-.dept-table tbody td {
-  padding: 14px 20px;
-  font-size: 13.5px;
-  border-bottom: 1px solid var(--line);
+.dept-table th.c-q,
+.dept-table th.c-q3 {
+  width: 75px;
+  text-align: center;
 }
 
-.dept-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.dept-table tbody tr:nth-child(even) {
-  background: #FAFAFB;
-}
-
-.dept-table tbody tr.clickable {
-  cursor: pointer;
-}
-
-.dept-table tbody tr.clickable:hover {
-  background: var(--green-tint);
+.dept-table td {
+  font-size: 14px;
+  color: #333;
 }
 
 .dept-table td.name {
-  font-weight: 600;
+  font-weight: 500;
 }
 
-/* Green check box */
+.dept-table td.center {
+  text-align: center;
+}
+
+.dept-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.dept-table tr.clickable {
+  cursor: pointer;
+}
+
+.dept-table tr.clickable:hover {
+  background: rgba(255, 255, 255, .45);
+}
+
+
+/* =====================================================
+   APPROVED
+   ===================================================== */
+
 .approved-check {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  background: #20734f;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: #18b96b;
   color: #fff;
-  font-size: 11px;
-  font-weight: 900;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
 }
-
-/* Percent + bar */
-.cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 110px;
-}
-
-.cell .pct {
-  font-size: 12px;
-  font-weight: 700;
-  width: 30px;
-  flex-shrink: 0;
-}
-
-.bar {
-  flex: 1;
-  height: 6px;
-  border-radius: 4px;
-  background: #EFEAE0;
-  overflow: hidden;
-  min-width: 36px;
-}
-
-.bar span {
-  display: block;
-  height: 100%;
-  border-radius: 4px;
-}
-
-.fill-good { background: var(--green-700); }
-.fill-warn { background: var(--amber); }
 
 .dash {
-  font-weight: 700;
+  color: #777;
 }
 
-/* ---------- Report view ---------- */
+
+/* =====================================================
+   REPORT
+   ===================================================== */
+
 .report-view {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 24px;
+  width: 100%;
 }
 
-.title-divider {
-  border: none;
-  border-top: 1px solid var(--line);
-  margin: 16px 0 18px;
-}
-
-/* Tab bar */
 .report-type-nav {
   display: flex;
-  margin: 0 -24px 20px;
-  padding: 0 10px;
-  background: #f4f6f8;
-  border-top: 1px solid #dfe4e8;
-  border-bottom: 1px solid #dfe4e8;
-  overflow-x: auto;
+  margin-bottom: 20px;
 }
 
 .report-type-nav .tab {
-  min-height: 48px;
-  padding: 0 18px;
-  border: 0;
-  border-right: 1px solid #e0e4e8;
-  background: transparent;
-  color: #263746;
+  padding: 10px 16px;
+  border: 1px solid rgba(0, 0, 0, .10);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .50);
+  color: #333;
   font-size: 13px;
   font-weight: 700;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .report-type-nav .tab.active {
-  background: #e7edf3;
-  color: #1769c2;
-  box-shadow: inset 0 -3px 0 #1769c2;
+  background: rgba(255, 255, 255, .72);
 }
 
-/* Layout: report left, comments right */
+
+/* =====================================================
+   REPORT LAYOUT
+   ===================================================== */
+
 .report-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    330px;
   gap: 24px;
-  align-items: flex-start;
+  align-items: start;
+  width: 100%;
 }
 
 .report-main {
-  flex: 1;
   min-width: 0;
 }
 
+
+/* =====================================================
+   REPORT CARD
+   ===================================================== */
+
 .report-card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 16px 17px 18px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .58);
+  border: 1px solid rgba(255, 255, 255, .72);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+  backdrop-filter: blur(8px);
 }
 
 .report-card h2 {
-  font-size: 14px;
-  font-weight: 700;
-  margin: 0 0 12px;
-  color: var(--green-900);
+  margin: 0;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, .10);
+  font-size: 18px;
+  font-weight: 750;
+}
+
+
+/* =====================================================
+   TABLE
+   ===================================================== */
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .data-table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
-  font-size: 12px;
+  table-layout: fixed;
 }
 
 .data-table td {
-  border: 1px solid var(--line-strong);
-  padding: 5px 6px;
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, .07);
+  vertical-align: middle;
+}
+
+.data-table tr.main-header {
+  background: rgba(209, 209, 209, .48);
 }
 
 .data-table tr.main-header td {
-  background: var(--green-800);
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  padding-top: 9px;
-  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(0, 0, 0, .12);
+  font-size: 12px;
+  font-weight: 800;
 }
 
-.data-table td.section-name,
-.data-table td.particular {
+.data-table td.section-name {
   text-align: left;
 }
 
 .data-table td.quarter-in-header {
+  width: 72px;
   text-align: center;
-  width: 70px;
   white-space: nowrap;
 }
 
+.data-table td.particular {
+  padding-left: 20px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .data-table td.num {
+  width: 72px;
   text-align: center;
-  width: 70px;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
-.data-table tbody tr:not(.main-header):nth-child(even) td {
-  background: var(--bg);
-}
 
-/* ---------- Comments panel ---------- */
+/* =====================================================
+   COMMENT CARD
+   ===================================================== */
+
 .department-comment-card {
-  width: 340px;
-  flex-shrink: 0;
-  background: #fff;
-  border: 1px solid #dbe9e4;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(20, 80, 60, 0.05);
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .62);
+  border: 1px solid rgba(255, 255, 255, .72);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 20px;
 }
 
 .department-comment-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--green-900);
+  font-size: 18px;
+  font-weight: 750;
+  color: #222;
 }
 
 .department-comment-help {
-  font-size: 11.5px;
-  color: var(--ink-soft);
-  margin-top: 3px;
-  line-height: 1.45;
+  margin-top: 7px;
+  margin-bottom: 18px;
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
 }
 
+
+/* =====================================================
+   COMMENT FORM
+   ===================================================== */
+
 .commenting-as {
-  font-size: 11px;
-  color: var(--ink-soft);
-  margin: 10px 0 5px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: #666;
 }
 
 .commenting-as strong {
-  color: var(--green-900);
+  color: #222;
 }
 
 .comment-label {
   display: block;
-  font-size: 10.5px;
-  font-weight: 800;
-  color: var(--ink-soft);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 10px 0 5px;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
 }
 
 .department-comment-input {
+  display: block;
   width: 100%;
-  min-height: 105px;
+  min-height: 115px;
+  box-sizing: border-box;
   resize: vertical;
-  border: 1px solid #cfded8;
-  border-radius: 8px;
-  font-size: 12.5px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, .14);
+  background: rgba(255, 255, 255, .72);
+  color: #222;
+  font-family: inherit;
+  font-size: 13px;
   line-height: 1.5;
-  padding: 9px;
+  outline: none;
 }
 
 .department-comment-input:focus {
-  outline: 2px solid var(--green-700);
-  outline-offset: -2px;
+  border-color: rgba(0, 0, 0, .30);
+  background: rgba(255, 255, 255, .90);
 }
 
 .department-comment-publish {
   width: 100%;
-  height: 36px;
-  margin-top: 9px;
-  border: 1px solid var(--green-700);
-  border-radius: 8px;
-  background: var(--green-700);
+  margin-top: 10px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #111;
   color: #fff;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.department-comment-publish:hover:not(:disabled) {
-  background: var(--green-800);
-}
-
 .department-comment-publish:disabled {
-  opacity: 0.6;
+  opacity: .45;
   cursor: not-allowed;
 }
 
-.department-comment-status {
-  font-size: 10.5px;
-  color: var(--ink-soft);
-  margin-top: 7px;
+
+/* =====================================================
+   APPROVED MESSAGE
+   ===================================================== */
+
+.comment-approved {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  margin-top: 14px;
+  border-radius: 12px;
+  background: rgba(24, 185, 107, .10);
+  border: 1px solid rgba(24, 185, 107, .30);
 }
 
-.department-comment-list {
+.comment-approved-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
   display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 13px;
-  max-height: 360px;
-  overflow: auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #18b96b;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.comment-approved strong {
+  display: block;
+  color: #16794c;
+  font-size: 14px;
+}
+
+.comment-approved p {
+  margin: 4px 0 0;
+  color: #555;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+
+/* =====================================================
+   COMMENTS LIST
+   ===================================================== */
+
+.department-comment-list {
+  margin-top: 20px;
 }
 
 .department-comment-item {
-  border: 1px solid #e0e9e5;
-  border-radius: 8px;
-  padding: 9px;
-  background: #fbfdfc;
+  padding: 13px 0;
+  border-top: 1px solid rgba(0, 0, 0, .10);
 }
 
 .department-comment-meta {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 12px;
 }
 
 .department-comment-who {
-  font-size: 11.5px;
-  font-weight: 800;
-  color: var(--green-900);
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
 }
 
 .department-comment-role {
-  font-size: 9.5px;
-  color: var(--ink-soft);
-  margin-top: 1px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #777;
 }
 
 .department-comment-time {
-  font-size: 9.5px;
-  color: var(--ink-soft);
-  text-align: right;
+  font-size: 11px;
+  color: #777;
   white-space: nowrap;
 }
 
 .department-comment-text {
-  font-size: 12px;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #333;
+  word-break: break-word;
 }
 
-/* Small screens: comments go below the report */
-@media (max-width: 1050px) {
+.no-comments {
+  padding: 15px 0;
+  color: #777;
+  font-size: 13px;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1100px) {
+
   .report-layout {
-    flex-direction: column;
+    grid-template-columns:
+      minmax(0, 1fr)
+      300px;
+  }
+
+}
+
+
+@media (max-width: 850px) {
+
+  .report-page {
+    padding: 24px 20px 50px;
+  }
+
+  .page-title h1 {
+    font-size: 34px;
+  }
+
+  .report-layout {
+    grid-template-columns: 1fr;
   }
 
   .department-comment-card {
-    width: 100%;
+    position: static;
   }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .report-page {
+    padding: 20px 14px 40px;
+  }
+
+  .page-title h1 {
+    font-size: 30px;
+  }
+
+  .dept-card {
+    overflow-x: auto;
+  }
+
+  .dept-table {
+    min-width: 560px;
+  }
+
+  .report-card h2 {
+    padding: 15px;
+    font-size: 16px;
+  }
+
+  .department-comment-card {
+    padding: 16px;
+  }
+
 }

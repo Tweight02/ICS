@@ -1,234 +1,950 @@
-<!-- One reusable cell for Q1-Q4 in the Departments table -->
-<ng-template #qcell let-v>
-  <span *ngIf="v === null" class="dash">—</span>
-
-  <span *ngIf="v === 100" class="approved-check">✓</span>
-
-  <div *ngIf="v !== null && v !== 100" class="cell">
-    <span class="pct">{{ v }}%</span>
-    <div class="bar">
-      <span
-        [class.fill-good]="v >= 75"
-        [class.fill-warn]="v < 75"
-        [style.width.%]="v"
-      ></span>
-    </div>
-  </div>
-</ng-template>
-
 <div class="report-page">
 
-  <!-- Departments -->
+  <!-- ===================================================== -->
+  <!-- DEPARTMENT LIST -->
+  <!-- ===================================================== -->
+
   <ng-container *ngIf="!selectedDepartment">
 
-    <div class="page-title">
-      <h1>Departments</h1>
-      <small>{{ districtName }}</small>
-    </div>
-
     <div class="head-row">
-      <button type="button" class="page-back-btn" (click)="backToReportDetails()">Back</button>
+
+      <button
+        type="button"
+        class="page-back-btn"
+        (click)="backToReportDetails()"
+      >
+
+        <span>←</span>
+
+        Back to Church
+
+      </button>
+
     </div>
 
-    <div *ngIf="loadingDepartments" class="state-note">Loading...</div>
 
-    <div *ngIf="errorMessage" class="error-note">{{ errorMessage }}</div>
+    <div class="page-title">
+
+      <h1>
+        Departments
+      </h1>
+
+      <small>
+
+        {{ districtName }}
+
+        <span *ngIf="churchName">
+          · {{ churchName }}
+        </span>
+
+      </small>
+
+    </div>
+
+
+    <!-- LOADING -->
 
     <div
-      *ngIf="!loadingDepartments && departments.length === 0 && !errorMessage"
+      *ngIf="loadingDepartments"
       class="state-note"
     >
-      No departments found.
+
+      Loading departments...
+
     </div>
 
-    <div *ngIf="!loadingDepartments && departments.length > 0" class="dept-card">
+
+    <!-- ERROR -->
+
+    <div
+      *ngIf="
+        errorMessage &&
+        !loadingDepartments
+      "
+      class="error-note"
+    >
+
+      {{ errorMessage }}
+
+    </div>
+
+
+    <!-- EMPTY -->
+
+    <div
+      *ngIf="
+        !loadingDepartments &&
+        departments.length === 0 &&
+        !errorMessage
+      "
+      class="state-note"
+    >
+
+      No departments found.
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- DEPARTMENT TABLE -->
+    <!-- ================================================= -->
+
+    <div
+      *ngIf="
+        !loadingDepartments &&
+        departments.length > 0
+      "
+      class="dept-card"
+    >
+
       <table class="dept-table">
+
         <thead>
+
           <tr>
-            <th class="c-name">Department</th>
-            <th class="c-q">Q1</th>
-            <th class="c-q">Q2</th>
-            <th class="c-q3">Q3</th>
-            <th>Q4</th>
+
+            <th class="c-name">
+              Department
+            </th>
+
+            <th class="c-q">
+              Q1
+            </th>
+
+            <th class="c-q">
+              Q2
+            </th>
+
+            <th class="c-q3">
+              Q3
+            </th>
+
+            <th class="c-q">
+              Q4
+            </th>
+
           </tr>
+
         </thead>
 
+
         <tbody>
+
           <tr
-            *ngFor="let department of departments; let i = index"
+            *ngFor="
+              let department of departments
+            "
             class="clickable"
-            (click)="openDepartment(department)"
+            (click)="
+              openDepartment(department)
+            "
           >
-            <td class="name">{{ department.department_name }}</td>
 
-            <td>
-              <ng-container
-                *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q1 }"
-              ></ng-container>
+            <td class="name">
+
+              {{
+                department.department_name
+              }}
+
             </td>
 
-            <td>
-              <ng-container
-                *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q2 }"
-              ></ng-container>
+
+            <!-- Q1 -->
+
+            <td class="center">
+
+              <span
+                *ngIf="
+                  department.q1_approved
+                "
+                class="approved-check"
+                title="Approved"
+              >
+                ✓
+              </span>
+
+              <span
+                *ngIf="
+                  !department.q1_approved
+                "
+                class="dash"
+              >
+                —
+              </span>
+
             </td>
 
-            <td>
-              <ng-container
-                *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q3 }"
-              ></ng-container>
+
+            <!-- Q2 -->
+
+            <td class="center">
+
+              <span
+                *ngIf="
+                  department.q2_approved
+                "
+                class="approved-check"
+                title="Approved"
+              >
+                ✓
+              </span>
+
+              <span
+                *ngIf="
+                  !department.q2_approved
+                "
+                class="dash"
+              >
+                —
+              </span>
+
             </td>
 
-            <td>
-              <ng-container
-                *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q4 }"
-              ></ng-container>
+
+            <!-- Q3 -->
+
+            <td class="center">
+
+              <span
+                *ngIf="
+                  department.q3_approved
+                "
+                class="approved-check"
+                title="Approved"
+              >
+                ✓
+              </span>
+
+              <span
+                *ngIf="
+                  !department.q3_approved
+                "
+                class="dash"
+              >
+                —
+              </span>
+
             </td>
+
+
+            <!-- Q4 -->
+
+            <td class="center">
+
+              <span
+                *ngIf="
+                  department.q4_approved
+                "
+                class="approved-check"
+                title="Approved"
+              >
+                ✓
+              </span>
+
+              <span
+                *ngIf="
+                  !department.q4_approved
+                "
+                class="dash"
+              >
+                —
+              </span>
+
+            </td>
+
           </tr>
+
         </tbody>
+
       </table>
+
     </div>
 
   </ng-container>
 
 
-  <!-- Department Report -->
-  <ng-container *ngIf="selectedDepartment && departmentReport">
+
+  <!-- ===================================================== -->
+  <!-- DEPARTMENT REPORT -->
+  <!-- ===================================================== -->
+
+  <ng-container *ngIf="selectedDepartment">
 
     <div class="head-row">
-      <button type="button" class="page-back-btn" (click)="backToDepartments()">Back</button>
+
+      <button
+        type="button"
+        class="page-back-btn"
+        (click)="backToDepartments()"
+      >
+
+        <span>←</span>
+
+        Back to Departments
+
+      </button>
+
     </div>
 
-    <div *ngIf="loadingReport" class="state-note">Loading...</div>
 
-    <div *ngIf="errorMessage" class="error-note">{{ errorMessage }}</div>
+    <!-- LOADING -->
 
-    <div class="report-view">
+    <div
+      *ngIf="loadingReport"
+      class="state-note"
+    >
 
-      <!-- Title -->
+      Loading report...
+
+    </div>
+
+
+    <!-- ERROR -->
+
+    <div
+      *ngIf="
+        errorMessage &&
+        !loadingReport
+      "
+      class="error-note"
+    >
+
+      {{ errorMessage }}
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- REPORT -->
+    <!-- ================================================= -->
+
+    <div
+      *ngIf="
+        departmentReport &&
+        !loadingReport
+      "
+      class="report-view"
+    >
+
       <div class="page-title">
-        <h1>{{ departmentReport.department.department_name }}</h1>
+
+        <h1>
+
+          {{
+            departmentReport.department
+              .department_name
+          }}
+
+        </h1>
+
+
         <small>
-          District: {{ districtName }} · Department:
-          {{ departmentReport.department.department_name }}
+
+          {{ districtName }}
+
+          <span *ngIf="churchName">
+            · {{ churchName }}
+          </span>
+
         </small>
+
       </div>
 
-      <hr class="title-divider" />
 
-      <!-- Tab -->
+      <hr class="title-divider">
+
+
       <div class="report-type-nav">
-        <button type="button" class="tab active">
-          {{ departmentReport.department.department_name }} Quarterly Report
+
+        <button
+          type="button"
+          class="tab active"
+        >
+
+          {{
+            departmentReport.department
+              .department_name
+          }}
+
+          Quarterly Report
+
         </button>
+
       </div>
+
+
+      <!-- ================================================= -->
+      <!-- REPORT + COMMENTS -->
+      <!-- ================================================= -->
 
       <div class="report-layout">
 
-        <!-- LEFT: report -->
+
+        <!-- ================================================= -->
+        <!-- REPORT TABLE -->
+        <!-- ================================================= -->
+
         <div class="report-main">
+
           <div class="report-card">
 
-            <h2>{{ departmentReport.department.department_name }} QUARTERLY REPORT</h2>
+            <h2>
 
-            <table class="data-table">
-              <ng-container *ngFor="let program of departmentReport.programs">
+              {{
+                departmentReport.department
+                  .department_name
+              }}
 
-                <tbody *ngFor="let section of program.sections">
+              QUARTERLY REPORT
 
-                  <tr class="main-header">
-                    <td class="section-name">{{ section.program_name }}</td>
-                    <td class="quarter-in-header">Q1</td>
-                    <td class="quarter-in-header">Q2</td>
-                    <td class="quarter-in-header">Q3</td>
-                    <td class="quarter-in-header">Q4</td>
-                    <td class="quarter-in-header">TOTAL</td>
-                  </tr>
+            </h2>
 
-                  <tr *ngFor="let particular of section.particulars">
-                    <td class="particular">{{ particular.particular_name }}</td>
-                    <td class="num">{{ getQuarterValue(particular, 'Q1') }}</td>
-                    <td class="num">{{ getQuarterValue(particular, 'Q2') }}</td>
-                    <td class="num">{{ getQuarterValue(particular, 'Q3') }}</td>
-                    <td class="num">{{ getQuarterValue(particular, 'Q4') }}</td>
-                    <td class="num"><b>{{ getTotal(particular) }}</b></td>
-                  </tr>
 
-                </tbody>
+            <div class="table-scroll">
 
-              </ng-container>
-            </table>
+              <table class="data-table">
+
+                <ng-container
+                  *ngFor="
+                    let program
+                    of departmentReport.programs
+                  "
+                >
+
+                  <tbody
+                    *ngFor="
+                      let section
+                      of program.sections
+                    "
+                  >
+
+                    <!-- SECTION HEADER -->
+
+                    <tr class="main-header">
+
+                      <td class="section-name">
+
+                        {{
+                          section.program_name
+                        }}
+
+                      </td>
+
+                      <td
+                        class="quarter-in-header"
+                      >
+                        Q1
+                      </td>
+
+                      <td
+                        class="quarter-in-header"
+                      >
+                        Q2
+                      </td>
+
+                      <td
+                        class="quarter-in-header"
+                      >
+                        Q3
+                      </td>
+
+                      <td
+                        class="quarter-in-header"
+                      >
+                        Q4
+                      </td>
+
+                      <td
+                        class="quarter-in-header"
+                      >
+                        TOTAL
+                      </td>
+
+                    </tr>
+
+
+                    <!-- PARTICULARS -->
+
+                    <tr
+                      *ngFor="
+                        let particular
+                        of section.particulars
+                      "
+                    >
+
+                      <td class="particular">
+
+                        {{
+                          particular
+                            .particular_name
+                        }}
+
+                      </td>
+
+
+                      <!-- Q1 -->
+
+                      <td class="num">
+
+                        <span
+                          *ngIf="
+                            isApproved(
+                              particular,
+                              'Q1'
+                            )
+                          "
+                          class="approved-check"
+                          title="Approved by Administration"
+                        >
+                          ✓
+                        </span>
+
+                        <span
+                          *ngIf="
+                            !isApproved(
+                              particular,
+                              'Q1'
+                            )
+                          "
+                        >
+
+                          {{
+                            getQuarterValue(
+                              particular,
+                              'Q1'
+                            )
+                          }}
+
+                        </span>
+
+                      </td>
+
+
+                      <!-- Q2 -->
+
+                      <td class="num">
+
+                        <span
+                          *ngIf="
+                            isApproved(
+                              particular,
+                              'Q2'
+                            )
+                          "
+                          class="approved-check"
+                          title="Approved by Administration"
+                        >
+                          ✓
+                        </span>
+
+                        <span
+                          *ngIf="
+                            !isApproved(
+                              particular,
+                              'Q2'
+                            )
+                          "
+                        >
+
+                          {{
+                            getQuarterValue(
+                              particular,
+                              'Q2'
+                            )
+                          }}
+
+                        </span>
+
+                      </td>
+
+
+                      <!-- Q3 -->
+
+                      <td class="num">
+
+                        <span
+                          *ngIf="
+                            isApproved(
+                              particular,
+                              'Q3'
+                            )
+                          "
+                          class="approved-check"
+                          title="Approved by Administration"
+                        >
+                          ✓
+                        </span>
+
+                        <span
+                          *ngIf="
+                            !isApproved(
+                              particular,
+                              'Q3'
+                            )
+                          "
+                        >
+
+                          {{
+                            getQuarterValue(
+                              particular,
+                              'Q3'
+                            )
+                          }}
+
+                        </span>
+
+                      </td>
+
+
+                      <!-- Q4 -->
+
+                      <td class="num">
+
+                        <span
+                          *ngIf="
+                            isApproved(
+                              particular,
+                              'Q4'
+                            )
+                          "
+                          class="approved-check"
+                          title="Approved by Administration"
+                        >
+                          ✓
+                        </span>
+
+                        <span
+                          *ngIf="
+                            !isApproved(
+                              particular,
+                              'Q4'
+                            )
+                          "
+                        >
+
+                          {{
+                            getQuarterValue(
+                              particular,
+                              'Q4'
+                            )
+                          }}
+
+                        </span>
+
+                      </td>
+
+
+                      <!-- TOTAL -->
+
+                      <td class="num">
+
+                        <b>
+
+                          {{
+                            getTotal(
+                              particular
+                            )
+                          }}
+
+                        </b>
+
+                      </td>
+
+                    </tr>
+
+                  </tbody>
+
+                </ng-container>
+
+              </table>
+
+            </div>
 
           </div>
+
         </div>
 
-        <!-- RIGHT: comments -->
-        <aside class="department-comment-card">
 
-          <div class="department-comment-title">Report Comments</div>
-          <div class="department-comment-help">
-            Add a comment to this department report. Published comments show who
-            commented and when. An Administrative Assistant sample is shown for reference.
-          </div>
 
-          <div class="commenting-as">
-            Commenting as <strong>District Pastor</strong>
-          </div>
+        <!-- ================================================= -->
+        <!-- COMMENTS -->
+        <!-- ================================================= -->
 
-          <label class="comment-label">Comment</label>
-          <textarea
-            class="department-comment-input"
-            placeholder="Write your comment for this report..."
-            [value]="newComment"
-            (input)="onCommentInput($event)"
-          ></textarea>
+        <aside
+          class="department-comment-card"
+        >
 
-          <button
-            type="button"
-            class="department-comment-publish"
-            [disabled]="!newComment.trim()"
-            (click)="publishComment()"
+          <div
+            class="department-comment-title"
           >
-            Publish Comment
-          </button>
+            Report Comments
+          </div>
 
-          <div class="department-comment-status">Comments are saved in this browser.</div>
 
-          <div class="department-comment-list">
+          <!-- CURRENT QUARTER -->
 
-            <!-- Sample first -->
-            <div class="department-comment-item">
-              <div class="department-comment-meta">
-                <div>
-                  <div class="department-comment-who">{{ sampleComment.author }}</div>
-                  <div class="department-comment-role">{{ sampleComment.role }}</div>
-                </div>
-                <div class="department-comment-time">
-                  {{ sampleComment.date | date: 'MMM d, y, h:mm a' }}
-                </div>
-              </div>
-              <div class="department-comment-text">{{ sampleComment.text }}</div>
+          <div
+            class="department-comment-help"
+          >
+
+            Q3 2026 · Current Quarter
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- NO Q3 REPORT -->
+          <!-- ================================================= -->
+
+          <div
+            *ngIf="
+              !hasCurrentQuarter()
+            "
+            class="no-comments"
+          >
+
+            No report is available for
+            Q3 2026.
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- APPROVED -->
+          <!-- ================================================= -->
+
+          <div
+            *ngIf="
+              hasCurrentQuarter() &&
+              isCurrentQuarterApproved()
+            "
+            class="comment-approved"
+          >
+
+            <div
+              class="comment-approved-icon"
+            >
+
+              ✓
+
             </div>
 
-            <!-- Published comments (newest first) -->
-            <div *ngFor="let c of comments" class="department-comment-item">
-              <div class="department-comment-meta">
-                <div>
-                  <div class="department-comment-who">{{ c.author }}</div>
-                  <div class="department-comment-role">{{ c.role }}</div>
-                </div>
-                <div class="department-comment-time">
-                  {{ c.date | date: 'MMM d, y, h:mm a' }}
-                </div>
-              </div>
-              <div class="department-comment-text">{{ c.text }}</div>
+
+            <div>
+
+              <strong>
+                Report Approved
+              </strong>
+
+              <p>
+
+                The Q3 2026 report has
+                already been approved.
+                No more comments can be added.
+
+              </p>
+
             </div>
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- COMMENT FORM -->
+          <!-- ================================================= -->
+
+          <ng-container
+            *ngIf="
+              hasCurrentQuarter() &&
+              !isCurrentQuarterApproved()
+            "
+          >
+
+            <div class="commenting-as">
+
+              Commenting as
+
+              <strong>
+                District Pastor
+              </strong>
+
+            </div>
+
+
+            <label
+              class="comment-label"
+            >
+
+              Comment for Q3 2026
+
+            </label>
+
+
+            <textarea
+              class="department-comment-input"
+              [(ngModel)]="newComment"
+              placeholder="Write your comment for this report..."
+            ></textarea>
+
+
+            <button
+              type="button"
+              class="department-comment-publish"
+              [disabled]="
+                !newComment.trim() ||
+                savingComment
+              "
+              (click)="publishComment()"
+            >
+
+              {{
+                savingComment
+                  ? 'Saving...'
+                  : 'Publish Comment'
+              }}
+
+            </button>
+
+          </ng-container>
+
+
+          <!-- ================================================= -->
+          <!-- ERROR -->
+          <!-- ================================================= -->
+
+          <div
+            *ngIf="errorMessage"
+            class="error-note"
+          >
+
+            {{ errorMessage }}
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- LOADING COMMENTS -->
+          <!-- ================================================= -->
+
+          <div
+            *ngIf="loadingComments"
+            class="no-comments"
+          >
+
+            Loading comments...
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- EXISTING COMMENTS -->
+          <!-- ================================================= -->
+
+          <div
+            *ngIf="
+              !loadingComments &&
+              comments.length > 0
+            "
+            class="department-comment-list"
+          >
+
+            <div
+              *ngFor="
+                let comment of comments
+              "
+              class="department-comment-item"
+            >
+
+              <div
+                class="department-comment-meta"
+              >
+
+                <div>
+
+                  <div
+                    class="department-comment-who"
+                  >
+
+                    {{ comment.first_name }}
+
+                    <span
+                      *ngIf="
+                        comment.middle_name
+                      "
+                    >
+
+                      {{ comment.middle_name }}
+
+                    </span>
+
+                    {{ comment.last_name }}
+
+                  </div>
+
+
+                  <div
+                    class="department-comment-role"
+                  >
+
+                    {{
+                      comment.role ||
+                      'User'
+                    }}
+
+                  </div>
+
+                </div>
+
+
+                <div
+                  class="department-comment-time"
+                >
+
+                  {{
+                    comment.date_commented
+                    | date:'MMM d, y'
+                  }}
+
+                </div>
+
+              </div>
+
+
+              <div
+                class="department-comment-text"
+              >
+
+                {{ comment.details }}
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- NO COMMENTS -->
+          <!-- ================================================= -->
+
+          <div
+            *ngIf="
+              !loadingComments &&
+              comments.length === 0 &&
+              hasCurrentQuarter() &&
+              !isCurrentQuarterApproved()
+            "
+            class="no-comments"
+          >
+
+            No comments yet.
 
           </div>
 
         </aside>
 
       </div>
+
     </div>
 
   </ng-container>
