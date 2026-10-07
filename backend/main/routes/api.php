@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\SampleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ChurchController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -14,3 +15,6 @@ Route::get('/user', function (Request $request) {
 Route::get('/sample', [SampleController::class, 'sample']);
 
 Route::post('/users', [UserController::class, 'create_user']);
+
+Route::get('/districts', [ChurchController::class, 'districts']);
+Route::get('/districts/{district}/churches', [ChurchController::class, 'churches']);
