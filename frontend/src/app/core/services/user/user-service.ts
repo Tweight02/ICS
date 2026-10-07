@@ -1,7 +1,6 @@
 // import { HttpClient } from '@angular/common/http';
 // import { inject, Injectable, Service } from '@angular/core';
 // import { User } from '../../models/user.model';
->>>>>>>>> Temporary merge branch 2
 
 // @Injectable({
 //     providedIn: 'root'
