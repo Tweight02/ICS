@@ -19,6 +19,8 @@ class User extends Authenticatable
     public $timestamps = false;
 
     protected $fillable = [
+        'department_id',
+        'church_id',
         'first_name',
         'middle_name',
         'last_name',
@@ -45,5 +47,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id', 'department_id');
+    }
+
+    public function church()
+    {
+        return $this->belongsTo(Church::class, 'church_id', 'church_id');
     }
 }
