@@ -10,50 +10,58 @@ export const PASTOR_ROUTES: Routes = [
 
   {
     path: 'reports',
+
     loadComponent: () =>
-      import('./reports/reports').then(m => m.Reports)
+      import('./reports/reports')
+        .then(m => m.Reports)
   },
 
   {
-    // nested under /reports so the Reports link stays highlighted
-    path: 'reports/details',
+    path: 'reports-details',
+
     loadComponent: () =>
-      import('./reports-details/reports-details').then(m => m.ReportsDetails)
+      import('./reports-details/reports-details')
+        .then(m => m.ReportsDetails)
   },
 
   {
     path: 'events',
+
     loadComponent: () =>
-      import('./events/events').then(m => m.Events)
+      import('./events/events')
+        .then(m => m.Events)
   },
 
-  // Uncomment once the components exist
   // {
   //   path: 'baptism',
+
   //   loadComponent: () =>
-  //     import('./baptism/baptism').then(m => m.Baptism)
-  // },
-  // {
-  //   path: 'death',
-  //   loadComponent: () =>
-  //     import('./death/death').then(m => m.Death)
+  //     import('./baptism/baptism')
+  //       .then(m => m.Baptism)
   // },
 
-  {
-    path: 'church-role',
-    loadComponent: () =>
-      import('./church-role/church-role').then(m => m.ChurchRole)
-  },
+  // {
+  //   path: 'death',
+
+  //   loadComponent: () =>
+  //     import('./death/death')
+  //       .then(m => m.Death)
+  // },
 
   {
     path: 'stewardship',
+
     loadComponent: () =>
-      import('./stewardship/stewardship').then(m => m.Stewardship)
+      import('./stewardship/stewardship')
+        .then(m => m.Stewardship)
   },
 
-  // Temporary fallback so the Baptism and Death links don't break the app
   {
-    path: '**',
-    redirectTo: 'reports'
+    path: 'church-role',
+
+    loadComponent: () =>
+      import('./church-role/church-role')
+        .then(m => m.ChurchRole)
   }
+
 ];
