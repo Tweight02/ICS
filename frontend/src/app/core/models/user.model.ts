@@ -1,14 +1,28 @@
 export type UserRole =
-  | 'representative'
   | 'pastor'
-  | 'director'
+  | 'representative'
   | 'assistant'
-  | 'participant';
+  | 'director'
+  | 'events';
 
 export interface User {
-  id: string;
-  name: string;
+  user_id: number;
+
+  first_name: string;
+  middle_name?: string | null;
+  last_name: string;
+  extension_name?: string | null;
+
+  birthdate?: string | null;
+  gender?: string | null;
+
   email: string;
+
   role: UserRole;
-  roleLabel: string;
+
+  department_id?: number;
+  church_id?: number;
+
+  created_at?: string;
+  updated_at?: string;
 }

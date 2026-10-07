@@ -1,1 +1,312 @@
-<p>reports works!</p>
+<div class="reports-page">
+
+  <!-- HEADER -->
+  <section class="reports-header">
+
+    <div class="header-text">
+
+      <span class="eyebrow">
+        REPORTS MANAGEMENT
+      </span>
+
+      <h1>
+        Report Monitoring
+      </h1>
+
+      <p>
+        Monitor quarterly report submissions by district,
+        church, and company.
+      </p>
+
+    </div>
+
+
+    <div class="header-stats">
+
+      <div class="stat-card">
+
+        <strong>
+          {{ districtCount }}
+        </strong>
+
+        <span>
+          Districts
+        </span>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <strong>
+          {{ churchCount || '—' }}
+        </strong>
+
+        <span>
+          Churches / Companies
+        </span>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ERROR -->
+  @if (errorMessage) {
+
+    <div class="error-message">
+
+      {{ errorMessage }}
+
+      <button
+        type="button"
+        (click)="loadDistricts()"
+      >
+        Retry
+      </button>
+
+    </div>
+
+  }
+
+
+  <!-- TABLE -->
+  <section class="monitoring-card">
+
+    <div class="monitoring-table">
+
+      <!-- TABLE HEADER -->
+      <div class="table-row table-header">
+
+        <div class="name-column">
+          District
+        </div>
+
+        <div>
+          Q1
+        </div>
+
+        <div>
+          Q2
+        </div>
+
+        <div>
+          Q3
+        </div>
+
+        <div>
+          Q4
+        </div>
+
+      </div>
+
+
+      <!-- LOADING -->
+      @if (loadingDistricts) {
+
+        <div class="loading-row">
+
+          <div class="spinner"></div>
+
+          <span>
+            Loading districts...
+          </span>
+
+        </div>
+
+      }
+
+
+      <!-- EMPTY -->
+      @if (
+        !loadingDistricts &&
+        districts.length === 0 &&
+        !errorMessage
+      ) {
+
+        <div class="empty-row">
+
+          No districts found.
+
+        </div>
+
+      }
+
+
+      <!-- DISTRICTS -->
+      @if (!loadingDistricts) {
+
+        @for (
+          district of districts;
+          track district.church_id
+        ) {
+
+          <!-- DISTRICT -->
+          <button
+            type="button"
+            class="table-row district-row"
+            (click)="selectDistrict(district)"
+          >
+
+            <div class="name-column district-name">
+
+              <span class="arrow">
+                ›
+              </span>
+
+              <span>
+                {{ district.name }}
+              </span>
+
+            </div>
+
+
+            <div>
+              <span class="check">
+                ✓
+              </span>
+            </div>
+
+
+            <div>
+              <span class="check">
+                ✓
+              </span>
+            </div>
+
+
+            <div class="progress-cell">
+
+              <span>
+                56%
+              </span>
+
+              <div class="progress">
+                <div
+                  class="progress-value"
+                  style="width: 56%"
+                ></div>
+              </div>
+
+            </div>
+
+
+            <div class="dash">
+              −
+            </div>
+
+          </button>
+
+
+          <!-- CHURCHES -->
+          @if (
+            selectedDistrict?.church_id ===
+            district.church_id
+          ) {
+
+            @if (loadingChurches) {
+
+              <div class="church-loading">
+
+                <div class="spinner"></div>
+
+                Loading churches...
+
+              </div>
+
+            }
+
+
+            @if (
+              !loadingChurches &&
+              churches.length === 0
+            ) {
+
+              <div class="church-empty">
+
+                No churches or companies found.
+
+              </div>
+
+            }
+
+
+            @if (!loadingChurches) {
+
+              @for (
+                church of churches;
+                track church.church_id
+              ) {
+
+                <button
+                  type="button"
+                  class="table-row church-row"
+                  (click)="openChurch(church)"
+                >
+
+                  <div class="name-column church-name">
+
+                    <span class="tree-line">
+                      └
+                    </span>
+
+                    <span>
+                      {{ church.name }}
+                    </span>
+
+                  </div>
+
+
+                  <div>
+                    <span class="check">
+                      ✓
+                    </span>
+                  </div>
+
+
+                  <div>
+                    <span class="check">
+                      ✓
+                    </span>
+                  </div>
+
+
+                  <div class="progress-cell">
+
+                    <span>
+                      56%
+                    </span>
+
+                    <div class="progress">
+                      <div
+                        class="progress-value"
+                        style="width: 56%"
+                      ></div>
+                    </div>
+
+                  </div>
+
+
+                  <div class="dash">
+                    −
+                  </div>
+
+                </button>
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+
+    </div>
+
+  </section>
+
+</div>

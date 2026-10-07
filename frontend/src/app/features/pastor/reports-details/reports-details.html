@@ -1,1 +1,311 @@
-<p>reports-details works!</p>
+<div class="details-page">
+
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
+
+  <section class="details-header">
+
+    <button
+      type="button"
+      class="back-button"
+      (click)="backToDistricts()"
+    >
+      <span>←</span>
+      Back to Districts
+    </button>
+
+
+    @if (district) {
+
+      <div class="district-heading">
+
+        <span class="eyebrow">
+          DISTRICT REPORTS
+        </span>
+
+        <h1>
+          {{ district.name }}
+        </h1>
+
+        <p>
+          {{ district.address }}
+        </p>
+
+      </div>
+
+    }
+
+  </section>
+
+
+  <!-- =====================================================
+       SUMMARY
+  ====================================================== -->
+
+  @if (district) {
+
+    <div class="summary-row">
+
+      <div class="summary-card">
+
+        <strong>
+          {{ churchCount }}
+        </strong>
+
+        <span>
+          Churches / Companies
+        </span>
+
+      </div>
+
+    </div>
+
+  }
+
+
+  <!-- =====================================================
+       ERROR
+  ====================================================== -->
+
+  @if (errorMessage) {
+
+    <div class="error-box">
+
+      <span>
+        {{ errorMessage }}
+      </span>
+
+      <button
+        type="button"
+        (click)="retry()"
+      >
+        Retry
+      </button>
+
+    </div>
+
+  }
+
+
+  <!-- =====================================================
+       LOADING
+  ====================================================== -->
+
+  @if (loading) {
+
+    <div class="loading-box">
+
+      <div class="loading-spinner"></div>
+
+      <span>
+        Loading churches and companies...
+      </span>
+
+    </div>
+
+  }
+
+
+  <!-- =====================================================
+       CHURCH TABLE
+  ====================================================== -->
+
+  @if (
+    !loading &&
+    churches.length > 0
+  ) {
+
+    <section class="church-card">
+
+      <table class="church-table">
+
+        <thead>
+
+          <tr>
+
+            <th>
+              Church / Company
+            </th>
+
+            <th>
+              Q1
+            </th>
+
+            <th>
+              Q2
+            </th>
+
+            <th class="q3-column">
+              Q3
+            </th>
+
+            <th>
+              Q4
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          @for (
+            church of churches;
+            track church.church_id
+          ) {
+
+            <tr
+              class="church-row"
+              (click)="openChurch(church)"
+            >
+
+              <td>
+
+                <div class="church-name">
+
+                  <span>
+                    {{ church.name }}
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- Q1 -->
+
+              <td>
+
+                @if (church.q1) {
+
+                  <span class="check">
+                    ✓
+                  </span>
+
+                } @else {
+
+                  <span class="dash">
+                    –
+                  </span>
+
+                }
+
+              </td>
+
+
+              <!-- Q2 -->
+
+              <td>
+
+                @if (church.q2) {
+
+                  <span class="check">
+                    ✓
+                  </span>
+
+                } @else {
+
+                  <span class="dash">
+                    –
+                  </span>
+
+                }
+
+              </td>
+
+
+              <!-- Q3 -->
+
+              <td>
+
+                @if (church.q3 !== null) {
+
+                  <div class="progress">
+
+                    <span>
+                      {{ church.q3 }}%
+                    </span>
+
+                    <div class="progress-track">
+
+                      <div
+                        class="progress-bar"
+                        [style.width.%]="church.q3"
+                      ></div>
+
+                    </div>
+
+                  </div>
+
+                } @else {
+
+                  <span class="dash">
+                    –
+                  </span>
+
+                }
+
+              </td>
+
+
+              <!-- Q4 -->
+
+              <td>
+
+                @if (church.q4 !== null) {
+
+                  <span class="q4">
+                    {{ church.q4 }}%
+                  </span>
+
+                } @else {
+
+                  <span class="dash">
+                    –
+                  </span>
+
+                }
+
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </section>
+
+  }
+
+
+  <!-- =====================================================
+       NO CHURCHES
+  ====================================================== -->
+
+  @if (
+    !loading &&
+    churches.length === 0 &&
+    !errorMessage
+  ) {
+
+    <div class="empty-box">
+
+      <strong>
+        No churches or companies found
+      </strong>
+
+      <span>
+        This district currently has no registered
+        churches or companies.
+      </span>
+
+    </div>
+
+  }
+
+</div>

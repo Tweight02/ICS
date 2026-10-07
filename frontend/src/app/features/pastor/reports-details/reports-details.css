@@ -1,0 +1,521 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+
+.details-page {
+  min-height: 100vh;
+
+  padding: 30px 34px;
+
+  box-sizing: border-box;
+
+  background: #f7f8fa;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.details-header {
+  margin-bottom: 20px;
+}
+
+
+.back-button {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-bottom: 20px;
+
+  padding: 8px 12px;
+
+  border: 1px solid #dce1e6;
+
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  color: #344054;
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease;
+}
+
+
+.back-button:hover {
+  background: #f2f4f7;
+}
+
+
+.district-heading {
+  margin-left: 2px;
+}
+
+
+.eyebrow {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #66758a;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+}
+
+
+.district-heading h1 {
+  margin: 0;
+
+  color: #142033;
+
+  font-size: 27px;
+
+  font-weight: 750;
+}
+
+
+.district-heading p {
+  margin: 6px 0 0;
+
+  color: #728096;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+.summary-row {
+  display: flex;
+
+  justify-content: flex-end;
+
+  margin-bottom: 15px;
+}
+
+
+.summary-card {
+  min-width: 130px;
+
+  padding: 11px 18px;
+
+  border: 1px solid #e1e5e9;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  text-align: center;
+}
+
+
+.summary-card strong {
+  display: block;
+
+  color: #172033;
+
+  font-size: 19px;
+}
+
+
+.summary-card span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #718096;
+
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.church-card {
+  overflow: hidden;
+
+  border: 1px solid #dedbd5;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+}
+
+
+.church-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  table-layout: fixed;
+}
+
+
+.church-table th {
+  height: 38px;
+
+  padding: 0 18px;
+
+  border-bottom: 1px solid #dedbd5;
+
+  background: #fbfbfa;
+
+  color: #667085;
+
+  font-size: 10px;
+
+  font-weight: 600;
+
+  text-align: center;
+}
+
+
+.church-table th:first-child {
+  width: 42%;
+
+  text-align: left;
+}
+
+
+.church-table th:nth-child(2) {
+  width: 12%;
+}
+
+
+.church-table th:nth-child(3) {
+  width: 12%;
+}
+
+
+.church-table th:nth-child(4) {
+  width: 22%;
+}
+
+
+.church-table th:nth-child(5) {
+  width: 12%;
+}
+
+
+.church-table td {
+  height: 48px;
+
+  padding: 0 18px;
+
+  border-bottom: 1px solid #e4e1dc;
+
+  color: #172033;
+
+  font-size: 12px;
+
+  text-align: center;
+}
+
+
+.church-table td:first-child {
+  text-align: left;
+}
+
+
+/* =========================================================
+   CHURCH ROW
+========================================================= */
+
+.church-row {
+  cursor: pointer;
+
+  background: #ffffff;
+
+  transition:
+    background 0.15s ease;
+}
+
+
+.church-row:hover {
+  background: #f4f7f8;
+}
+
+
+.church-name {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  font-weight: 600;
+}
+
+
+.branch {
+  color: #a0a8b2;
+
+  font-size: 16px;
+}
+
+
+/* =========================================================
+   CHECK
+========================================================= */
+
+.check {
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 18px;
+
+  height: 18px;
+
+  border-radius: 4px;
+
+  background: #21865d;
+
+  color: #ffffff;
+
+  font-size: 11px;
+
+  font-weight: 800;
+}
+
+
+.dash {
+  color: #172033;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   PROGRESS
+========================================================= */
+
+.progress {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+}
+
+
+.progress > span {
+  width: 32px;
+
+  color: #172033;
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  text-align: right;
+}
+
+
+.progress-track {
+  width: 145px;
+
+  height: 5px;
+
+  overflow: hidden;
+
+  border-radius: 10px;
+
+  background: #e1e5e9;
+}
+
+
+.progress-bar {
+  height: 100%;
+
+  border-radius: 10px;
+
+  background: #d99a25;
+}
+
+
+.q4 {
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.loading-box {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  min-height: 180px;
+
+  border: 1px solid #e0ddd7;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  color: #718096;
+
+  font-size: 12px;
+}
+
+
+.loading-spinner {
+  width: 17px;
+
+  height: 17px;
+
+  border: 2px solid #e1e5e9;
+
+  border-top-color: #68778b;
+
+  border-radius: 50%;
+
+  animation:
+    spin 0.75s linear infinite;
+}
+
+
+@keyframes spin {
+
+  to {
+    transform: rotate(360deg);
+  }
+
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.error-box {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-bottom: 18px;
+
+  padding: 12px 15px;
+
+  border: 1px solid #ead5d5;
+
+  border-radius: 9px;
+
+  background: #fffafa;
+
+  color: #a33a32;
+
+  font-size: 12px;
+}
+
+
+.error-box button {
+  padding: 7px 13px;
+
+  border: 0;
+
+  border-radius: 6px;
+
+  background: #172033;
+
+  color: white;
+
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.empty-box {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-height: 180px;
+
+  border: 1px solid #e0ddd7;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+}
+
+
+.empty-box strong {
+  color: #172033;
+
+  font-size: 14px;
+}
+
+
+.empty-box span {
+  margin-top: 5px;
+
+  color: #7a8595;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+
+  .details-page {
+    padding: 22px;
+  }
+
+
+  .church-card {
+    overflow-x: auto;
+  }
+
+
+  .church-table {
+    min-width: 760px;
+  }
+
+}

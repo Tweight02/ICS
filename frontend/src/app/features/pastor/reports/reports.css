@@ -1,785 +1,534 @@
-/* =========================================================
-   REPORTS CONTAINER
-   ========================================================= */
-
-.reports-container {
+:host {
+  display: block;
   width: 100%;
-  max-width: 1400px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.reports-page {
+  width: 100%;
+  max-width: 1450px;
   margin: 0 auto;
-  padding: 32px 36px 50px;
-  box-sizing: border-box;
 }
 
-/* =========================================================
+/* =========================================
    HEADER
-   ========================================================= */
+========================================= */
 
-.reports-header,
-.district-detail-header {
-  width: 100%;
+.reports-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: flex-start;
+
   gap: 24px;
-  margin-bottom: 28px;
+
+  margin-bottom: 22px;
 }
 
-.header-information,
-.district-detail-information {
+.header-text {
   min-width: 0;
 }
 
-.section-label {
+.eyebrow {
   display: block;
+
   margin-bottom: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  color: #64748b;
+
+  color: #58708b;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
 }
 
-.reports-header h1,
-.district-detail-header h1 {
+.header-text h1 {
   margin: 0;
-  font-size: 32px;
-  line-height: 1.2;
-  font-weight: 700;
-  color: #111827;
+
+  color: #102d4d;
+
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 800;
+
+  line-height: 1.15;
 }
 
-.reports-header p,
-.district-detail-header p {
+.header-text p {
   margin: 8px 0 0;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #64748b;
-}
 
-/* =========================================================
-   COUNTER
-   ========================================================= */
+  color: #6f8194;
 
-.district-counter {
-  flex: 0 0 auto;
-  min-width: 150px;
-  padding: 18px 22px;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #ffffff;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.district-counter strong {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 30px;
-  line-height: 1;
-  font-weight: 700;
-  color: #111827;
-}
-
-.district-counter span {
-  display: block;
-  font-size: 12px;
-  color: #64748b;
-}
-
-/* =========================================================
-   BACK BUTTON
-   ========================================================= */
-
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  margin-bottom: 26px;
-  padding: 9px 15px;
-  border: 1px solid #dbe3ea;
-  border-radius: 9px;
-  background: #ffffff;
-  color: #334155;
   font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.back-button:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+/* =========================================
+   STATS
+========================================= */
+
+.header-stats {
+  display: flex;
+
+  gap: 12px;
+
+  flex-shrink: 0;
 }
 
-.back-button span {
-  font-size: 16px;
+.stat-card {
+  width: 120px;
+  min-height: 76px;
+
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: center;
+
+  border: 1px solid #dfe5ea;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 8px rgba(20, 40, 60, 0.03);
 }
 
-/* =========================================================
-   TOOLBAR
-   ========================================================= */
+.stat-card strong {
+  color: #102d4d;
 
-.reports-toolbar {
-  width: 100%;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.stat-card span {
+  margin-top: 4px;
+
+  color: #718096;
+
+  font-size: 9px;
+}
+
+/* =========================================
+   ERROR
+========================================= */
+
+.error-message {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 16px;
-  margin-bottom: 18px;
-}
 
-.search-wrapper {
-  position: relative;
-  width: 390px;
-  max-width: 100%;
-}
+  padding: 12px 16px;
 
-.search-wrapper input {
-  width: 100%;
-  height: 44px;
-  padding: 0 42px 0 40px;
-  border: 1px solid #dbe3ea;
-  border-radius: 10px;
-  outline: none;
-  background: #ffffff;
-  color: #1e293b;
-  font-size: 14px;
-  box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
+  margin-bottom: 14px;
 
-.search-wrapper input::placeholder {
-  color: #94a3b8;
-}
+  border: 1px solid #f2c5c5;
 
-.search-wrapper input:focus {
-  border-color: #94a3b8;
-  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
-}
+  border-radius: 8px;
 
-.search-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  z-index: 1;
-  transform: translateY(-50%);
-  font-size: 16px;
-  pointer-events: none;
-}
+  background: #fff5f5;
 
-.clear-search {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  width: 28px;
-  height: 28px;
-  transform: translateY(-50%);
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: #64748b;
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-}
+  color: #a33a3a;
 
-.clear-search:hover {
-  background: #f1f5f9;
-}
-
-/* =========================================================
-   REFRESH BUTTON
-   ========================================================= */
-
-.refresh-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-width: 102px;
-  height: 44px;
-  padding: 0 15px;
-  border: 1px solid #dbe3ea;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #64748b;
   font-size: 13px;
-  font-weight: 600;
+}
+
+.error-message button {
+  border: 0;
+
+  border-radius: 6px;
+
+  padding: 7px 12px;
+
+  background: #123f6d;
+
+  color: #ffffff;
+
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.refresh-button:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #334155;
-}
-
-.refresh-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-/* =========================================================
-   MAIN PANEL
-   ========================================================= */
-
-.reports-panel {
-  width: 100%;
-  min-height: 280px;
-  border: 1px solid #dfe6ec;
-  border-radius: 14px;
-  background: #ffffff;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-/* =========================================================
+/* =========================================
    TABLE
-   ========================================================= */
+========================================= */
 
-.table-wrapper {
+.monitoring-card {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
+
+  overflow: hidden;
+
+  border: 1px solid #dfe5ea;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 8px rgba(20, 40, 60, 0.025);
 }
 
-.reports-table {
+.monitoring-table {
   width: 100%;
-  min-width: 650px;
-  border-collapse: collapse;
-  table-layout: fixed;
 }
 
-.reports-table thead {
-  background: #f8fafc;
-}
+.table-row {
+  display: grid;
 
-.reports-table th {
-  height: 52px;
-  padding: 0 18px;
-  border-bottom: 1px solid #e2e8f0;
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.7px;
-  text-align: center;
-  white-space: nowrap;
-}
+  grid-template-columns:
+    minmax(260px, 2.5fr)
+    minmax(80px, 0.7fr)
+    minmax(80px, 0.7fr)
+    minmax(180px, 1fr)
+    minmax(80px, 0.7fr);
 
-.reports-table th.district-column {
-  width: 55%;
-  text-align: left;
-}
-
-.reports-table th.quarter-column {
-  width: 11.25%;
-}
-
-.reports-table td {
-  height: 68px;
-  padding: 10px 18px;
-  border-bottom: 1px solid #eef2f6;
-  color: #334155;
-  font-size: 14px;
-  text-align: center;
-  vertical-align: middle;
-  box-sizing: border-box;
-}
-
-.reports-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.district-row,
-.church-row {
-  transition: background 0.15s ease;
-}
-
-.district-row {
-  cursor: pointer;
-}
-
-.district-row:hover,
-.church-row:hover {
-  background: #f8fafc;
-}
-
-/* =========================================================
-   DISTRICT / CHURCH INFORMATION
-   ========================================================= */
-
-.district-information {
-  text-align: left !important;
-}
-
-.district-main {
-  display: flex;
   align-items: center;
-  gap: 13px;
+
+  min-height: 44px;
+
+  border-bottom: 1px solid #e6e9ec;
+}
+
+.table-row:last-child {
+  border-bottom: 0;
+}
+
+.table-row > div {
   min-width: 0;
-}
 
-.district-main > div:last-child {
-  min-width: 0;
-}
+  padding: 0 16px;
 
-.district-main strong {
-  display: block;
-  overflow: hidden;
-  color: #1e293b;
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+  color: #102d4d;
 
-.district-main small {
-  display: block;
-  max-width: 100%;
-  margin-top: 3px;
-  overflow: hidden;
-  color: #94a3b8;
   font-size: 12px;
-  line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* =========================================================
-   DISTRICT ICON
-   ========================================================= */
+.table-header {
+  min-height: 36px;
 
-.district-icon,
-.church-icon {
-  flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: #f1f5f9;
-  color: #475569;
-  font-size: 15px;
+  background: #fbfcfd;
+
+  color: #64748b;
+
+  font-size: 9px;
+
   font-weight: 700;
+
   text-transform: uppercase;
 }
 
-/* =========================================================
-   QUARTER STATUS
-   ========================================================= */
-
-.quarter-status {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #f1f5f9;
-  color: #94a3b8;
-  font-size: 14px;
-  font-weight: 700;
+.table-header > div {
+  color: #617286;
 }
 
-.quarter-status.completed {
-  background: #dcfce7;
-  color: #15803d;
-}
+/* =========================================
+   DISTRICT
+========================================= */
 
-/* =========================================================
-   LOADING
-   ========================================================= */
+.district-row {
+  width: 100%;
 
-.loading-state {
-  min-height: 280px;
-  padding: 50px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  box-sizing: border-box;
-}
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
 
-.loading-spinner {
-  width: 34px;
-  height: 34px;
-  margin-bottom: 18px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #64748b;
-  border-radius: 50%;
-  animation: reports-spin 0.8s linear infinite;
-}
-
-@keyframes reports-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-state h3,
-.error-state h3,
-.empty-state h3 {
-  margin: 0;
-  color: #1e293b;
-  font-size: 15px;
-  font-weight: 650;
-}
-
-.loading-state p,
-.error-state p,
-.empty-state p {
-  margin: 7px 0 0;
-  color: #94a3b8;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-/* =========================================================
-   ERROR
-   ========================================================= */
-
-.error-state,
-.empty-state {
-  min-height: 280px;
-  padding: 50px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.error-icon {
-  width: 38px;
-  height: 38px;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #fef2f2;
-  color: #dc2626;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.retry-button,
-.clear-button {
-  margin-top: 18px;
-  padding: 9px 15px;
-  border: 1px solid #dbe3ea;
-  border-radius: 8px;
   background: #ffffff;
-  color: #334155;
-  font-size: 13px;
-  font-weight: 600;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease;
+}
+
+.district-row:hover {
+  background: #f7fafc;
+}
+
+.district-name {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  font-weight: 700;
+}
+
+.arrow {
+  width: 14px;
+
+  color: #718096;
+
+  font-size: 19px;
+
+  transition: transform 0.15s ease;
+}
+
+.district-row:hover .arrow {
+  color: #123f6d;
+}
+
+/* =========================================
+   CHURCH
+========================================= */
+
+.church-row {
+  width: 100%;
+
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+
+  background: #fafbfc;
+
+  text-align: left;
+
   cursor: pointer;
 }
 
-.retry-button:hover,
-.clear-button:hover {
-  background: #f8fafc;
+.church-row:hover {
+  background: #f1f5f8;
 }
 
-.empty-icon {
-  width: 38px;
-  height: 38px;
-  margin-bottom: 15px;
+.church-name {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding-left: 36px !important;
+
+  color: #435466 !important;
+
+  font-weight: 500;
+}
+
+.tree-line {
+  color: #9aa8b5;
+
+  font-size: 15px;
+}
+
+/* =========================================
+   CHECK
+========================================= */
+
+.check {
+  display: inline-flex;
+
+  width: 18px;
+  height: 18px;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 4px;
+
+  background: #21865f;
+
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* =========================================
+   PROGRESS
+========================================= */
+
+.progress-cell {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.progress-cell > span {
+  width: 32px;
+
+  color: #102d4d;
+
+  font-size: 11px;
+}
+
+.progress {
+  flex: 1;
+
+  max-width: 140px;
+
+  height: 5px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #e1e6eb;
+}
+
+.progress-value {
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: #df9419;
+}
+
+.dash {
+  color: #102d4d;
+
+  text-align: center;
+}
+
+/* =========================================
+   LOADING
+========================================= */
+
+.loading-row,
+.church-loading {
+  min-height: 130px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
-  font-size: 28px;
+
+  gap: 10px;
+
+  color: #718096;
+
+  font-size: 12px;
 }
 
-/* =========================================================
+.spinner {
+  width: 16px;
+  height: 16px;
+
+  border: 2px solid #dce3e8;
+
+  border-top-color: #2776a8;
+
+  border-radius: 50%;
+
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+
+  to {
+    transform: rotate(360deg);
+  }
+
+}
+
+/* =========================================
+   EMPTY
+========================================= */
+
+.empty-row,
+.church-empty {
+  min-height: 110px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #7a8795;
+
+  font-size: 12px;
+}
+
+.church-empty {
+  background: #fafbfc;
+}
+
+/* =========================================
    TABLET
-   ========================================================= */
+========================================= */
 
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
 
-  .reports-container {
-    padding: 26px 24px 40px;
+  .reports-header {
+    align-items: stretch;
+
+    flex-direction: column;
   }
 
-  .reports-header,
-  .district-detail-header {
-    align-items: flex-start;
+  .header-stats {
+    width: 100%;
   }
 
-  .reports-header h1,
-  .district-detail-header h1 {
-    font-size: 28px;
+  .stat-card {
+    flex: 1;
+
+    width: auto;
   }
 
-  .district-counter {
-    min-width: 130px;
-    padding: 15px 18px;
+  .table-row {
+    grid-template-columns:
+      minmax(220px, 2fr)
+      70px
+      70px
+      minmax(150px, 1fr)
+      70px;
   }
 
-  .district-counter strong {
-    font-size: 26px;
-  }
-
-  .search-wrapper {
-    width: 320px;
-  }
-
-  .reports-table {
-    min-width: 620px;
-  }
-
-  .reports-table th,
-  .reports-table td {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
 }
 
-/* =========================================================
-   MOBILE / PHONE
-   ========================================================= */
+/* =========================================
+   MOBILE
+========================================= */
 
-@media (max-width: 650px) {
+@media (max-width: 700px) {
 
-  .reports-container {
-    width: 100%;
-    padding: 20px 14px 35px;
+  .reports-header {
+    margin-bottom: 16px;
   }
 
-  /* Header becomes vertical */
-  .reports-header,
-  .district-detail-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 18px;
-    margin-bottom: 20px;
-  }
-
-  .reports-header h1,
-  .district-detail-header h1 {
+  .header-text h1 {
     font-size: 25px;
   }
 
-  .reports-header p,
-  .district-detail-header p {
-    font-size: 13px;
-  }
-
-  .district-counter {
-    width: 100%;
-    min-width: 0;
-    padding: 13px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .district-counter strong {
-    margin: 0;
-    font-size: 24px;
-  }
-
-  .district-counter span {
+  .header-text p {
     font-size: 12px;
   }
 
-  /* Back button */
-  .back-button {
-    width: 100%;
-    justify-content: center;
-    margin-bottom: 20px;
-  }
-
-  /* Toolbar becomes vertical */
-  .reports-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .search-wrapper {
-    width: 100%;
-  }
-
-  .refresh-button {
-    width: 100%;
-  }
-
-  /* Panel */
-  .reports-panel {
-    border-radius: 11px;
-  }
-
-  /*
-   * Keep table scrollable instead of squeezing
-   * the columns too much.
-   */
-  .table-wrapper {
+  .monitoring-card {
     overflow-x: auto;
   }
 
-  .reports-table {
-    min-width: 620px;
+  .monitoring-table {
+    min-width: 720px;
   }
 
-  .reports-table th {
-    height: 48px;
-    padding: 0 10px;
-    font-size: 10px;
+  .table-row {
+    grid-template-columns:
+      280px
+      80px
+      80px
+      180px
+      80px;
   }
 
-  .reports-table td {
-    height: 62px;
-    padding: 8px 10px;
-    font-size: 13px;
-  }
-
-  .reports-table th.district-column {
-    width: 52%;
-  }
-
-  .reports-table th.quarter-column {
-    width: 12%;
-  }
-
-  .district-main {
-    gap: 9px;
-  }
-
-  .district-icon,
-  .church-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    font-size: 13px;
-  }
-
-  .district-main strong {
-    font-size: 13px;
-  }
-
-  .district-main small {
-    font-size: 11px;
-  }
-
-  .quarter-status {
-    width: 25px;
-    height: 25px;
-    font-size: 12px;
-  }
-
-  .loading-state,
-  .error-state,
-  .empty-state {
-    min-height: 230px;
-    padding: 40px 18px;
-  }
 }
 
-/* =========================================================
-   SMALL PHONES
-   ========================================================= */
+/* =========================================
+   SMALL MOBILE
+========================================= */
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
 
-  .reports-container {
-    padding: 16px 10px 30px;
-  }
-
-  .reports-header h1,
-  .district-detail-header h1 {
-    font-size: 22px;
-  }
-
-  .section-label {
-    font-size: 10px;
-  }
-
-  .reports-header p,
-  .district-detail-header p {
-    font-size: 12px;
-  }
-
-  .district-counter strong {
-    font-size: 22px;
-  }
-
-  .district-counter span {
-    font-size: 11px;
-  }
-
-  .search-wrapper input {
-    height: 42px;
-    font-size: 13px;
-  }
-
-  .refresh-button {
-    height: 42px;
-  }
-
-  .reports-table {
-    min-width: 580px;
-  }
-
-  .reports-table th {
-    font-size: 9px;
-  }
-
-  .reports-table td {
-    padding-left: 8px;
-    padding-right: 8px;
-  }
-
-  .district-icon,
-  .church-icon {
-    width: 31px;
-    height: 31px;
-    font-size: 12px;
-  }
-
-  .district-main {
+  .header-stats {
     gap: 8px;
   }
 
-  .district-main strong {
-    font-size: 12px;
+  .stat-card {
+    min-height: 65px;
   }
 
-  .district-main small {
-    font-size: 10px;
+  .stat-card strong {
+    font-size: 17px;
   }
 
-  .quarter-status {
-    width: 23px;
-    height: 23px;
-  }
-}
-
-/* =========================================================
-   VERY SMALL DEVICES
-   ========================================================= */
-
-@media (max-width: 320px) {
-
-  .reports-container {
-    padding-left: 8px;
-    padding-right: 8px;
-  }
-
-  .reports-table {
-    min-width: 550px;
-  }
-
-  .district-main strong {
-    max-width: 180px;
-  }
 }

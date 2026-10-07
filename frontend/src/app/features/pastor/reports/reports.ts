@@ -1,278 +1,396 @@
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  NgZone,
+  inject
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { ChurchService } from '../../../core/services/church/church-service';
-import { Church } from '../../../core/models/church.model';
 
-type Quarter = 'q1' | 'q2' | 'q3' | 'q4';
+import {
+  Router
+} from '@angular/router';
 
-type QuarterStatus = Record<Quarter, boolean>;
+import {
+  finalize
+} from 'rxjs/operators';
 
-const EMPTY_STATUS: QuarterStatus = {
-  q1: false,
-  q2: false,
-  q3: false,
-  q4: false
-};
+import {
+  ChurchService
+} from '../../../core/services/church/church-service';
+
+import {
+  Church
+} from '../../../core/models/church.model';
+
 
 @Component({
   selector: 'app-reports',
+
   standalone: true,
-  imports: [CommonModule, FormsModule],
+
+  imports: [
+    CommonModule
+  ],
+
   templateUrl: './reports.html',
-  styleUrls: ['./reports.css']
+
+  styleUrl: './reports.css'
 })
 export class Reports implements OnInit {
 
-  private churchService = inject(ChurchService);
+  private readonly churchService =
+    inject(ChurchService);
 
-  readonly quarters: Quarter[] = ['q1', 'q2', 'q3', 'q4'];
+  private readonly router =
+    inject(Router);
+
+  private readonly zone =
+    inject(NgZone);
+
+
+  /* =========================================
+     DATA
+  ========================================= */
 
   districts: Church[] = [];
+
   churches: Church[] = [];
+
   selectedDistrict: Church | null = null;
 
-  searchText = '';
+
+  /* =========================================
+     STATE
+  ========================================= */
 
   loadingDistricts = false;
+
   loadingChurches = false;
 
-  districtError = '';
-  churchError = '';
+  errorMessage = '';
 
-  // church_id -> quarters with a submitted report
-  private statusMap: Record<number, QuarterStatus> = {};
+
+  /* =========================================
+     INIT
+  ========================================= */
 
   ngOnInit(): void {
-    // Load cached districts first so the page
-    // can immediately display existing data.
-    this.loadCachedDistricts();
 
-    // Refresh districts from the API in the background.
     this.loadDistricts();
+
   }
 
-  // ============================================================
-  // DERIVED LISTS
-  // ============================================================
 
-  get filteredDistricts(): Church[] {
-    return this.filterBySearch(this.districts);
-  }
-
-  get filteredChurches(): Church[] {
-    return this.filterBySearch(this.churches);
-  }
-
-  private filterBySearch(list: Church[]): Church[] {
-    const search = this.searchText.trim().toLowerCase();
-
-    if (!search) {
-      return list;
-    }
-
-    return list.filter(c =>
-      (c.name ?? '').toLowerCase().includes(search) ||
-      (c.address ?? '').toLowerCase().includes(search)
-    );
-  }
-
-  // ============================================================
-  // TEMPLATE HELPERS
-  // ============================================================
-
-  getStatus(churchId: number): QuarterStatus {
-    return this.statusMap[churchId] ?? EMPTY_STATUS;
-  }
-
-  /**
-   * Call this once your reports endpoint returns data.
-   *
-   * Example:
-   *
-   * this.setStatuses(response.data);
-   *
-   * Each row should look like:
-   * {
-   *   church_id: 1,
-   *   q1: true,
-   *   q2: false,
-   *   q3: true,
-   *   q4: false
-   * }
-   */
-  setStatuses(
-    rows: Array<{ church_id: number } & Partial<QuarterStatus>>
-  ): void {
-
-    const map: Record<number, QuarterStatus> = {};
-
-    for (const row of rows) {
-      map[row.church_id] = {
-        q1: !!row.q1,
-        q2: !!row.q2,
-        q3: !!row.q3,
-        q4: !!row.q4
-      };
-    }
-
-    this.statusMap = map;
-  }
-
-  trackByChurchId(index: number, item: Church): number {
-    return item.church_id;
-  }
-
-  // ============================================================
-  // DISTRICTS
-  // ============================================================
-
-  private loadCachedDistricts(): void {
-    try {
-      const cached = localStorage.getItem('ics_districts');
-
-      if (!cached) {
-        return;
-      }
-
-      const districts: Church[] = JSON.parse(cached);
-
-      if (Array.isArray(districts) && districts.length > 0) {
-        this.districts = districts;
-      }
-
-    } catch (error) {
-      console.warn(
-        'Unable to read district cache:',
-        error
-      );
-    }
-  }
+  /* =========================================
+     LOAD DISTRICTS
+  ========================================= */
 
   loadDistricts(): void {
-    this.districtError = '';
 
-    this.churchService.getDistricts().subscribe({
-      next: (response) => {
-        if (response?.success && Array.isArray(response.data)) {
-          this.districts = response.data;
-          console.log(this.districts)
-          try {
-            localStorage.setItem(
-              'ics_districts',
-              JSON.stringify(response.data)
+    this.loadingDistricts = true;
+
+    this.errorMessage = '';
+
+    console.log(
+      '[REPORTS] Loading districts...'
+    );
+
+
+    this.churchService
+      .getDistricts()
+
+      .pipe(
+
+        finalize(() => {
+
+          this.zone.run(() => {
+
+            this.loadingDistricts = false;
+
+            console.log(
+              '[REPORTS] District loading finished'
             );
-          } catch {
-            // Storage unavailable/full
-          }
-        } else if (this.districts.length === 0) {
-          this.districtError =
-            'No district data was returned by the server.';
-        }
-      },
 
-      error: (error: any) => {
-        console.error('Failed to load districts:', error);
+          });
 
-        if (this.districts.length === 0) {
-          this.districtError =
-            'Unable to connect to the district server.';
+        })
+
+      )
+
+      .subscribe({
+
+        next: (response) => {
+
+          console.log(
+            '[REPORTS] District API response:',
+            response
+          );
+
+
+          this.zone.run(() => {
+
+            if (
+              response &&
+              response.success &&
+              Array.isArray(response.data)
+            ) {
+
+              this.districts =
+                [...response.data];
+
+              console.log(
+                '[REPORTS] Districts loaded:',
+                this.districts.length
+              );
+
+              this.errorMessage = '';
+
+              return;
+            }
+
+
+            this.districts = [];
+
+            this.errorMessage =
+              'Unable to load districts.';
+
+          });
+
+        },
+
+
+        error: (error) => {
+
+          console.error(
+            '[REPORTS] District API error:',
+            error
+          );
+
+
+          this.zone.run(() => {
+
+            this.districts = [];
+
+            this.errorMessage =
+              'Unable to connect to the district server.';
+
+          });
+
         }
-      }
-    });
+
+      });
+
   }
 
-  // ============================================================
-  // REFRESH
-  // ============================================================
 
-  refresh(): void {
+  /* =========================================
+     SELECT DISTRICT
+  ========================================= */
 
-    if (this.selectedDistrict) {
+  selectDistrict(
+    district: Church
+  ): void {
 
-      this.selectDistrict(
-        this.selectedDistrict
-      );
+    console.log(
+      '[REPORTS] Selected district:',
+      district
+    );
 
-    } else {
 
-      this.loadDistricts();
-    }
+    this.selectedDistrict =
+      district;
+
+    this.loadChurches(
+      district.church_id
+    );
+
   }
 
-  // ============================================================
-  // CHURCHES
-  // ============================================================
 
-  selectDistrict(district: Church): void {
-    this.selectedDistrict = district;
-    this.searchText = '';
-    this.churchError = '';
+  /* =========================================
+     LOAD CHURCHES
+  ========================================= */
 
-    const cacheKey = `ics_churches_${district.church_id}`;
+  loadChurches(
+    districtId: number
+  ): void {
 
-    // Load cached churches immediately
-    try {
-      const cached = localStorage.getItem(cacheKey);
+    this.loadingChurches = true;
 
-      if (cached) {
-        const cachedChurches: Church[] = JSON.parse(cached);
+    this.errorMessage = '';
 
-        this.churches = Array.isArray(cachedChurches)
-          ? cachedChurches
-          : [];
-      } else {
-        this.churches = [];
-      }
+    this.churches = [];
 
-    } catch (error) {
-      console.warn('Unable to read church cache:', error);
-      this.churches = [];
-    }
 
-    // Get latest data in background
-    this.churchService.getChurches(district.church_id).subscribe({
-      next: (response) => {
+    console.log(
+      '[REPORTS] Loading churches for:',
+      districtId
+    );
 
-        if (response?.success && Array.isArray(response.data)) {
-          this.churches = response.data;
 
-          try {
-            localStorage.setItem(
-              cacheKey,
-              JSON.stringify(response.data)
+    this.churchService
+
+      .getChurches(districtId)
+
+      .pipe(
+
+        finalize(() => {
+
+          this.zone.run(() => {
+
+            this.loadingChurches = false;
+
+            console.log(
+              '[REPORTS] Church loading finished:',
+              this.churches.length
             );
-          } catch {
-            // Storage unavailable/full
-          }
 
-        } else if (this.churches.length === 0) {
-          this.churchError =
-            'No church data was returned by the server.';
+          });
+
+        })
+
+      )
+
+      .subscribe({
+
+        next: (response) => {
+
+          console.log(
+            '[REPORTS] Church API response:',
+            response
+          );
+
+
+          this.zone.run(() => {
+
+            if (
+              response &&
+              response.success &&
+              Array.isArray(response.data)
+            ) {
+
+              this.churches =
+                [...response.data];
+
+
+              if (response.district) {
+
+                this.selectedDistrict =
+                  response.district;
+
+              }
+
+
+              this.errorMessage = '';
+
+              console.log(
+                '[REPORTS] Churches loaded:',
+                this.churches.length
+              );
+
+              return;
+            }
+
+
+            this.churches = [];
+
+            this.errorMessage =
+              'No churches found for this district.';
+
+          });
+
+        },
+
+
+        error: (error) => {
+
+          console.error(
+            '[REPORTS] Church API error:',
+            error
+          );
+
+
+          this.zone.run(() => {
+
+            this.churches = [];
+
+            this.errorMessage =
+              'Unable to load churches.';
+
+          });
+
         }
-      },
 
-      error: (error: any) => {
-        console.error('Failed to load churches:', error);
+      });
 
-        // Keep cached data if available
-        if (this.churches.length === 0) {
-          this.churchError =
-            'Unable to load churches for this district.';
-        }
-      }
-    });
   }
 
-  // ============================================================
-  // BACK TO DISTRICTS
-  // ============================================================
+
+  /* =========================================
+     BACK
+  ========================================= */
 
   backToDistricts(): void {
-    this.selectedDistrict = null;
-    this.churches = [];
-    this.searchText = '';
-    this.churchError = '';
+
+    this.zone.run(() => {
+
+      this.selectedDistrict = null;
+
+      this.churches = [];
+
+      this.errorMessage = '';
+
+    });
+
+  }
+
+
+  /* =========================================
+     OPEN CHURCH REPORT
+  ========================================= */
+
+  openChurch(
+    church: Church
+  ): void {
+
+    console.log(
+      '[REPORTS] Opening church:',
+      church
+    );
+
+
+    this.router.navigate(
+      ['/pastor/reports-details'],
+      {
+        queryParams: {
+          church_id:
+            church.church_id,
+
+          parent_id:
+            church.parent_id
+        }
+      }
+    );
+
+  }
+
+
+  /* =========================================
+     COUNTERS
+  ========================================= */
+
+  get districtCount(): number {
+
+    return this.districts.length;
+
+  }
+
+
+  get churchCount(): number {
+
+    return this.churches.length;
+
   }
 
 }
