@@ -1,0 +1,89 @@
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.app-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background: #f5f7f9;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+
+  /*
+   * Sidebar width
+   */
+  margin-left: 230px;
+
+  padding: 0;
+}
+
+.page-container {
+  width: 100%;
+  min-height: 100vh;
+
+  /*
+   * Small responsive spacing.
+   */
+  padding: 28px 32px;
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 1100px) {
+
+  .app-main {
+    margin-left: 230px;
+  }
+
+  .page-container {
+    padding: 24px;
+  }
+
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+
+  .app-main {
+    margin-left: 0;
+  }
+
+  .page-container {
+    padding: 18px 14px;
+  }
+
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+
+  .page-container {
+    padding: 14px 10px;
+  }
+
+}
