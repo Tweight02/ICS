@@ -1,24 +1,14 @@
-export interface User {
-    id: number;
-    first_name: string;
-    middle_name: string;
-    last_name: string;
-    extension_name: string | null;
-    birthdate: string;
-    gender: string;
-    role: string;
-    email: string;
-}
+export type UserRole =
+  | 'representative'
+  | 'pastor'
+  | 'director'
+  | 'assistant'
+  | 'participant';
 
-export interface CreateUser { 
-    first_name: string; 
-    middle_name: string; 
-    last_name: string; 
-    extension_name: string | null; 
-    birthdate: string; 
-    gender: string; 
-    role: string; 
-    email: string; 
-    password: string; 
-    password_confirmation: string; 
-}
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  roleLabel: string;
+
