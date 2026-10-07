@@ -10,5 +10,9 @@
   [class.no-sidebar]="!showSidebar"
   [class.collapsed]="collapsed"
 >
-  <router-outlet />
+  <div class="content-bg"></div>
+
+  <div class="content-inner">
+    <router-outlet />
+  </div>
 </main>

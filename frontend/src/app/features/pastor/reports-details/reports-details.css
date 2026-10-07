@@ -1,188 +1,257 @@
+/* =========================================================
+   DEPARTMENT / DISTRICT REPORT
+   Transparent + Glass + Zebra Table
+   No Black Table Borders
+   ========================================================= */
+
+
+/* =========================================================
+   HOST
+   ========================================================= */
+
 :host {
   display: block;
   width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
 }
 
 
-/* =========================================
-   PAGE
-========================================= */
+/* =========================================================
+   MAIN PAGE
+   ========================================================= */
 
 .details-page {
   width: 100%;
+  min-height: 100vh;
 
-  max-width: 1280px;
+  margin: 0;
+  padding: 0;
 
-  margin: 0 auto;
+  box-sizing: border-box;
 
-  padding:
-    clamp(24px, 4vw, 52px)
-    clamp(16px, 3vw, 40px)
-    40px;
+  background: transparent;
 }
 
 
-/* =========================================
+/* =========================================================
    HEADER
-========================================= */
+   ========================================================= */
 
 .details-header {
+  width: 100%;
+
   display: flex;
-
   align-items: flex-start;
-
   justify-content: space-between;
 
   gap: 30px;
 
-  margin-bottom: 28px;
+  margin: 0;
+  padding: 28px 32px 24px;
+
+  box-sizing: border-box;
 }
 
+
+/* =========================================================
+   LEFT HEADER
+   ========================================================= */
 
 .header-left {
   min-width: 0;
 }
 
 
+/* =========================================================
+   BACK BUTTON
+   ========================================================= */
+
 .back-button {
   display: inline-flex;
-
   align-items: center;
 
-  gap: 7px;
+  gap: 8px;
 
-  margin-bottom: 20px;
+  margin: 0 0 18px;
+  padding: 8px 14px;
 
-  padding:
-    8px
-    13px;
-
-  border:
-    1px solid #d8e1e9;
-
+  border: 1px solid rgba(255, 255, 255, 0.70);
   border-radius: 8px;
 
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.55);
 
-  color: #24415e;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  color: #000000;
 
   font-size: 12px;
-
   font-weight: 600;
 
   cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 
 .back-button:hover {
-  background: #f5f8fa;
+  background: rgba(255, 255, 255, 0.80);
+
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.08);
+
+  transform: translateX(-2px);
 }
 
+
+.back-button:focus-visible {
+  outline: 2px solid #168463;
+  outline-offset: 2px;
+}
+
+
+.back-button span {
+  font-size: 16px;
+  line-height: 1;
+}
+
+
+/* =========================================================
+   EYEBROW
+   ========================================================= */
 
 .eyebrow {
   display: block;
 
   margin-bottom: 7px;
 
-  color: #657991;
+  color: #000000;
 
   font-size: 10px;
-
   font-weight: 700;
 
   letter-spacing: 1.5px;
 }
 
 
+/* =========================================================
+   TITLE
+   ========================================================= */
+
 h1 {
   margin: 0;
 
-  color: #08294b;
+  color: #000000;
 
-  font-size:
-    clamp(28px, 3vw, 40px);
-
+  font-size: clamp(28px, 3vw, 40px);
   line-height: 1.1;
 
   font-weight: 800;
+
+  letter-spacing: -0.5px;
 }
 
 
-.header-left p {
-  margin:
-    8px
-    0
-    0;
+/* =========================================================
+   ADDRESS / SUBTEXT
+   ========================================================= */
 
-  color: #71829a;
+.header-left p {
+  margin: 8px 0 0;
+
+  color: #000000;
 
   font-size: 13px;
 }
 
 
-/* =========================================
-   STAT
-========================================= */
+/* =========================================================
+   CHURCH STAT
+   ========================================================= */
 
 .church-stat {
-  width: 130px;
+  width: 190px;
   min-height: 90px;
 
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
   justify-content: center;
 
   flex-shrink: 0;
 
-  background: #ffffff;
+  padding: 15px 20px;
 
-  border:
-    1px solid #dfe6ed;
+  box-sizing: border-box;
 
-  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.50);
+
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 12px;
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  box-shadow:
+    0 4px 15px rgba(0, 0, 0, 0.06);
 }
 
 
 .church-stat strong {
-  color: #08294b;
+  color: #063f3c;
 
-  font-size: 22px;
+  font-size: 28px;
+  line-height: 1;
 
   font-weight: 800;
 }
 
 
 .church-stat span {
-  margin-top: 7px;
+  margin-top: 8px;
 
-  color: #6b7c93;
+  color: #4d6d6a;
 
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 500;
 
   text-align: center;
 }
 
 
-/* =========================================
-   CARD
-========================================= */
+/* =========================================================
+   MONITORING CARD
+   ========================================================= */
 
 .monitoring-card {
-  width: 100%;
+  width: auto;
+
+  margin: 0 32px;
 
   overflow: hidden;
 
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.38);
 
-  border:
-    1px solid #dce4eb;
+  border: 1px solid rgba(255, 255, 255, 0.70);
+  border-radius: 12px;
 
-  border-radius: 13px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  box-shadow:
+    0 5px 20px rgba(0, 0, 0, 0.06);
 }
 
+
+/* =========================================================
+   TABLE WRAPPER
+   ========================================================= */
 
 .table-wrapper {
   width: 100%;
@@ -193,9 +262,10 @@ h1 {
 }
 
 
-/* =========================================
+/* =========================================================
    TABLE
-========================================= */
+   NO BLACK BORDERS
+   ========================================================= */
 
 .monitoring-table {
   width: 100%;
@@ -205,36 +275,42 @@ h1 {
   border-collapse: collapse;
 
   table-layout: fixed;
+
+  /* NO BLACK BORDER */
+  border: none;
+}
+
+
+/* =========================================================
+   TABLE HEADER
+   ========================================================= */
+
+.monitoring-table thead {
+  background: rgba(209, 209, 209, 0.773);
 }
 
 
 .monitoring-table th {
-  height: 42px;
+  height: 54px;
 
-  padding:
-    0
-    18px;
+  padding: 0 20px;
 
-  border-bottom:
-    1px solid #dfe5eb;
+  color: #000000;
 
-  color: #51647c;
-
-  font-size: 10px;
-
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
 
   text-align: center;
-}
 
-
-.monitoring-table th:first-child {
-  text-align: left;
+  /* NO BORDER */
+  border: none;
 }
 
 
 .monitoring-table th:first-child {
   width: 32%;
+
+  text-align: left;
 }
 
 
@@ -243,86 +319,105 @@ h1 {
 }
 
 
-.monitoring-table tbody tr {
-  height: 50px;
-
-  border-bottom:
-    1px solid #e1e6eb;
-}
-
-
-.monitoring-table tbody tr:last-child {
-  border-bottom: none;
-}
-
+/* =========================================================
+   TABLE CELLS
+   ========================================================= */
 
 .monitoring-table td {
-  padding:
-    0
-    18px;
+  height: 60px;
 
-  font-size: 12px;
+  padding: 0 20px;
 
-  color: #142c46;
+  color: #000000;
+
+  font-size: 13px;
+
+  /* NO BORDER */
+  border: none;
 }
 
 
-/* =========================================
-   CHURCH
-========================================= */
+/* =========================================================
+   ZEBRA STRIPING
+   ========================================================= */
+
+.monitoring-table tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+
+.monitoring-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.48);
+}
+
+
+/* =========================================================
+   ROW
+   ========================================================= */
 
 .church-row {
   cursor: pointer;
 
   transition:
-    background 0.15s ease;
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
+
+/* =========================================================
+   ROW HOVER
+   ========================================================= */
 
 .church-row:hover {
-  background: #f7fafc;
+  background: rgba(255, 255, 255, 0.70) !important;
 }
 
+
+/* =========================================================
+   ROW FOCUS
+   ========================================================= */
 
 .church-row:focus-visible {
-  background: #f1f7fb;
-
   outline: none;
 
+  background: rgba(255, 255, 255, 0.70) !important;
+
   box-shadow:
-    inset 3px 0 #1d7f61;
+    inset 4px 0 #168463;
 }
 
 
+/* =========================================================
+   CHURCH NAME
+   ========================================================= */
+
 .church-name {
-  font-weight: 500;
+  font-weight: 600;
+
+  text-align: left;
 }
 
 
 .church-link {
   display: flex;
-
   align-items: center;
 
   gap: 8px;
 }
 
 
-.branch {
-  color: #8aa0b5;
-
-  font-size: 16px;
-}
-
+/* =========================================================
+   QUARTER CELLS
+   ========================================================= */
 
 .quarter-cell {
   text-align: center;
 }
 
 
-/* =========================================
-   CHECK
-========================================= */
+/* =========================================================
+   CHECK MARK
+   ========================================================= */
 
 .check {
   display: inline-flex;
@@ -330,35 +425,43 @@ h1 {
   align-items: center;
   justify-content: center;
 
-  width: 17px;
-  height: 17px;
+  width: 23px;
+  height: 23px;
 
-  border-radius: 4px;
+  border-radius: 50%;
 
-  background: #208b66;
+  background: #18b96b;
 
   color: #ffffff;
 
-  font-size: 11px;
-
+  font-size: 14px;
   font-weight: 800;
+
+  box-shadow:
+    0 2px 5px rgba(24, 185, 107, 0.25);
 }
 
+
+/* =========================================================
+   DASH
+   ========================================================= */
 
 .dash {
-  color: #142c46;
+  color: #000000;
+
+  font-size: 15px;
+  font-weight: 500;
 }
 
 
-/* =========================================
-   PROGRESS
-========================================= */
+/* =========================================================
+   Q3 PROGRESS
+   ========================================================= */
 
 .progress-wrapper {
   display: flex;
 
   align-items: center;
-
   justify-content: center;
 
   gap: 10px;
@@ -366,11 +469,12 @@ h1 {
 
 
 .percentage {
-  width: 32px;
+  width: 36px;
 
-  font-size: 11px;
+  color: #000000;
 
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
 
   text-align: right;
 }
@@ -378,16 +482,15 @@ h1 {
 
 .progress-bar {
   width: 140px;
-
   max-width: 55%;
 
-  height: 5px;
+  height: 7px;
 
   overflow: hidden;
 
   border-radius: 10px;
 
-  background: #e0e5ea;
+  background: rgba(0, 0, 0, 0.12);
 }
 
 
@@ -396,18 +499,44 @@ h1 {
 
   border-radius: inherit;
 
-  background: #d99a22;
+  background: #ffbd22;
+
+  transition: width 0.3s ease;
 }
 
 
-/* =========================================
-   LOADING
-========================================= */
+/* =========================================================
+   ERROR / EMPTY MESSAGE
+   ========================================================= */
 
-.loading-cell {
-  height: 145px;
+.message-cell {
+  height: 140px;
 
   text-align: center;
+
+  color: #587370;
+
+  background: rgba(255, 255, 255, 0.30);
+}
+
+
+.message-cell.error {
+  color: #b42318;
+
+  background: rgba(255, 235, 235, 0.55);
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.loading-cell {
+  height: 140px;
+
+  text-align: center;
+
+  background: rgba(255, 255, 255, 0.30);
 }
 
 
@@ -419,78 +548,78 @@ h1 {
 
   gap: 10px;
 
-  color: #71829a;
+  color: #000000;
 
-  font-size: 12px;
+  font-size: 13px;
 }
 
 
+/* =========================================================
+   SPINNER
+   ========================================================= */
+
 .spinner {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
 
-  border:
-    2px solid #dce5ec;
+  border: 2px solid rgba(0, 80, 75, 0.18);
 
-  border-top-color: #1976a3;
+  border-top-color: #000000;
 
   border-radius: 50%;
 
-  animation:
-    spin 0.7s linear infinite;
+  animation: spin 0.7s linear infinite;
 }
 
 
 @keyframes spin {
-
   to {
     transform: rotate(360deg);
   }
-
 }
 
 
-/* =========================================
-   MESSAGE
-========================================= */
+/* =========================================================
+   TABLET
+   ========================================================= */
 
-.message-cell {
-  height: 145px;
+@media (max-width: 900px) {
 
-  text-align: center;
-
-  color: #71829a;
-}
-
-
-.message-cell.error {
-  color: #b42318;
-}
-
-
-/* =========================================
-   RESPONSIVE
-========================================= */
-
-@media (max-width: 700px) {
-
-  .details-page {
-    padding:
-      22px
-      14px
-      28px;
+  .details-header {
+    padding: 22px 20px;
   }
 
+  .monitoring-card {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
 
   .details-header {
     flex-direction: column;
 
     align-items: stretch;
+
+    gap: 18px;
   }
 
 
   .church-stat {
     width: 100%;
+  }
+
+
+  .monitoring-card {
+    margin-left: 14px;
+    margin-right: 14px;
   }
 
 
@@ -501,18 +630,30 @@ h1 {
 }
 
 
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
 @media (max-width: 420px) {
 
-  .details-page {
-    padding:
-      18px
-      10px
-      24px;
+  .details-header {
+    padding: 18px 14px;
   }
 
 
   h1 {
-    font-size: 25px;
+    font-size: 26px;
+  }
+
+
+  .monitoring-card {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+
+  .back-button {
+    padding: 7px 11px;
   }
 
 }

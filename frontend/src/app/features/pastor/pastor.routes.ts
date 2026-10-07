@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 
 export const PASTOR_ROUTES: Routes = [
-
   {
     path: '',
     redirectTo: 'reports',
@@ -11,62 +10,59 @@ export const PASTOR_ROUTES: Routes = [
   {
     path: 'reports',
     loadComponent: () =>
-      import('./reports/reports').then(m => m.Reports)
+      import('./reports/reports')
+        .then(m => m.Reports)
   },
 
   {
-    // nested under /reports so the Reports link stays highlighted
     path: 'reports/details/:id',
     loadComponent: () =>
-      import('./reports-details/reports-details').then(m => m.ReportsDetails)
+      import('./reports-details/reports-details')
+        .then(m => m.ReportsDetails)
+  },
+
+  {
+    path: 'reports/programs',
+    loadComponent: () =>
+      import('./report-programs/report-programs')
+        .then(m => m.ReportPrograms)
   },
 
   {
     path: 'events',
     loadComponent: () =>
-      import('./events/events').then(m => m.Events)
+      import('./events/events')
+        .then(m => m.Events)
   },
 
+  {
+    path: 'baptism',
+    loadComponent: () =>
+      import('./personalreport/baptism/baptism.component')
+        .then(m => m.BaptismComponent)
+  },
 
- {
-  path: 'baptism',
-  loadComponent: () =>
-    import('./personalreport/baptism/baptism.component')
-      .then(m => m.BaptismComponent)
-},
-
-{
-  path: 'death',
-  loadComponent: () =>
-    import('./personalreport/death/death.component')
-      .then(m => m.DeathComponent)
-},
-
+  {
+    path: 'death',
+    loadComponent: () =>
+      import('./personalreport/death/death.component')
+        .then(m => m.DeathComponent)
+  },
 
   {
     path: 'church-role',
     loadComponent: () =>
-      import('./church-role/church-role').then(m => m.ChurchRole)
+      import('./church-role/church-role')
+        .then(m => m.ChurchRole)
   },
-
-  // =====================================================
-  // ADDED:
-  // SELECTED CHURCH → DEPARTMENTS → REPORT
-  // =====================================================
-{
-  path: 'reports/programs',
-  loadComponent: () =>
-    import('./report-programs/report-programs')
-      .then(m => m.ReportPrograms)
-},
 
   {
     path: 'stewardship',
     loadComponent: () =>
-      import('./stewardship/stewardship').then(m => m.Stewardship)
+      import('./stewardship/stewardship')
+        .then(m => m.Stewardship)
   },
 
-  // Temporary fallback so the Baptism and Death links don't break the app
   {
     path: '**',
     redirectTo: 'reports'
