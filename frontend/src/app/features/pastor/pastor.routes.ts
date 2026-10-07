@@ -27,18 +27,21 @@ export const PASTOR_ROUTES: Routes = [
       import('./events/events').then(m => m.Events)
   },
 
-  // Uncomment once the components exist
-  // {
-  //   path: 'baptism',
-  //   loadComponent: () =>
-  //     import('./baptism/baptism').then(m => m.Baptism)
-  // },
 
-  // {
-  //   path: 'death',
-  //   loadComponent: () =>
-  //     import('./death/death').then(m => m.Death)
-  // },
+ {
+  path: 'baptism',
+  loadComponent: () =>
+    import('./personalreport/baptism/baptism.component')
+      .then(m => m.BaptismComponent)
+},
+
+{
+  path: 'death',
+  loadComponent: () =>
+    import('./personalreport/death/death.component')
+      .then(m => m.DeathComponent)
+},
+
 
   {
     path: 'church-role',
