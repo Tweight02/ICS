@@ -4,23 +4,43 @@
 }
 
 
+/* =========================================
+   PAGE
+========================================= */
+
 .details-page {
-  min-height: 100vh;
+  width: 100%;
 
-  padding: 30px 34px;
+  max-width: 1280px;
 
-  box-sizing: border-box;
+  margin: 0 auto;
 
-  background: #f7f8fa;
+  padding:
+    clamp(24px, 4vw, 52px)
+    clamp(16px, 3vw, 40px)
+    40px;
 }
 
 
-/* =========================================================
+/* =========================================
    HEADER
-========================================================= */
+========================================= */
 
 .details-header {
-  margin-bottom: 20px;
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 30px;
+
+  margin-bottom: 28px;
+}
+
+
+.header-left {
+  min-width: 0;
 }
 
 
@@ -33,137 +53,154 @@
 
   margin-bottom: 20px;
 
-  padding: 8px 12px;
+  padding:
+    8px
+    13px;
 
-  border: 1px solid #dce1e6;
+  border:
+    1px solid #d8e1e9;
 
-  border-radius: 7px;
+  border-radius: 8px;
 
   background: #ffffff;
 
-  color: #344054;
+  color: #24415e;
 
-  font-size: 11px;
+  font-size: 12px;
 
   font-weight: 600;
 
   cursor: pointer;
-
-  transition:
-    background 0.15s ease;
 }
 
 
 .back-button:hover {
-  background: #f2f4f7;
-}
-
-
-.district-heading {
-  margin-left: 2px;
+  background: #f5f8fa;
 }
 
 
 .eyebrow {
   display: block;
 
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 
-  color: #66758a;
+  color: #657991;
 
   font-size: 10px;
 
-  font-weight: 800;
+  font-weight: 700;
 
   letter-spacing: 1.5px;
 }
 
 
-.district-heading h1 {
+h1 {
   margin: 0;
 
-  color: #142033;
+  color: #08294b;
 
-  font-size: 27px;
+  font-size:
+    clamp(28px, 3vw, 40px);
 
-  font-weight: 750;
+  line-height: 1.1;
+
+  font-weight: 800;
 }
 
 
-.district-heading p {
-  margin: 6px 0 0;
+.header-left p {
+  margin:
+    8px
+    0
+    0;
 
-  color: #728096;
+  color: #71829a;
 
-  font-size: 12px;
+  font-size: 13px;
 }
 
 
-/* =========================================================
-   SUMMARY
-========================================================= */
+/* =========================================
+   STAT
+========================================= */
 
-.summary-row {
+.church-stat {
+  width: 130px;
+  min-height: 90px;
+
   display: flex;
 
-  justify-content: flex-end;
+  flex-direction: column;
 
-  margin-bottom: 15px;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  background: #ffffff;
+
+  border:
+    1px solid #dfe6ed;
+
+  border-radius: 13px;
 }
 
 
-.summary-card {
-  min-width: 130px;
+.church-stat strong {
+  color: #08294b;
 
-  padding: 11px 18px;
+  font-size: 22px;
 
-  border: 1px solid #e1e5e9;
+  font-weight: 800;
+}
 
-  border-radius: 10px;
 
-  background: #ffffff;
+.church-stat span {
+  margin-top: 7px;
+
+  color: #6b7c93;
+
+  font-size: 10px;
 
   text-align: center;
 }
 
 
-.summary-card strong {
-  display: block;
+/* =========================================
+   CARD
+========================================= */
 
-  color: #172033;
+.monitoring-card {
+  width: 100%;
 
-  font-size: 19px;
-}
-
-
-.summary-card span {
-  display: block;
-
-  margin-top: 3px;
-
-  color: #718096;
-
-  font-size: 9px;
-}
-
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-.church-card {
   overflow: hidden;
 
-  border: 1px solid #dedbd5;
-
-  border-radius: 12px;
-
   background: #ffffff;
+
+  border:
+    1px solid #dce4eb;
+
+  border-radius: 13px;
 }
 
 
-.church-table {
+.table-wrapper {
   width: 100%;
+
+  overflow-x: auto;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+
+/* =========================================
+   TABLE
+========================================= */
+
+.monitoring-table {
+  width: 100%;
+
+  min-width: 700px;
 
   border-collapse: collapse;
 
@@ -171,16 +208,17 @@
 }
 
 
-.church-table th {
-  height: 38px;
+.monitoring-table th {
+  height: 42px;
 
-  padding: 0 18px;
+  padding:
+    0
+    18px;
 
-  border-bottom: 1px solid #dedbd5;
+  border-bottom:
+    1px solid #dfe5eb;
 
-  background: #fbfbfa;
-
-  color: #667085;
+  color: #51647c;
 
   font-size: 10px;
 
@@ -190,61 +228,51 @@
 }
 
 
-.church-table th:first-child {
-  width: 42%;
-
+.monitoring-table th:first-child {
   text-align: left;
 }
 
 
-.church-table th:nth-child(2) {
-  width: 12%;
+.monitoring-table th:first-child {
+  width: 32%;
 }
 
 
-.church-table th:nth-child(3) {
-  width: 12%;
+.monitoring-table th:not(:first-child) {
+  width: 17%;
 }
 
 
-.church-table th:nth-child(4) {
-  width: 22%;
+.monitoring-table tbody tr {
+  height: 50px;
+
+  border-bottom:
+    1px solid #e1e6eb;
 }
 
 
-.church-table th:nth-child(5) {
-  width: 12%;
+.monitoring-table tbody tr:last-child {
+  border-bottom: none;
 }
 
 
-.church-table td {
-  height: 48px;
-
-  padding: 0 18px;
-
-  border-bottom: 1px solid #e4e1dc;
-
-  color: #172033;
+.monitoring-table td {
+  padding:
+    0
+    18px;
 
   font-size: 12px;
 
-  text-align: center;
+  color: #142c46;
 }
 
 
-.church-table td:first-child {
-  text-align: left;
-}
-
-
-/* =========================================================
-   CHURCH ROW
-========================================================= */
+/* =========================================
+   CHURCH
+========================================= */
 
 .church-row {
   cursor: pointer;
-
-  background: #ffffff;
 
   transition:
     background 0.15s ease;
@@ -252,46 +280,62 @@
 
 
 .church-row:hover {
-  background: #f4f7f8;
+  background: #f7fafc;
+}
+
+
+.church-row:focus-visible {
+  background: #f1f7fb;
+
+  outline: none;
+
+  box-shadow:
+    inset 3px 0 #1d7f61;
 }
 
 
 .church-name {
+  font-weight: 500;
+}
+
+
+.church-link {
   display: flex;
 
   align-items: center;
 
-  gap: 9px;
-
-  font-weight: 600;
+  gap: 8px;
 }
 
 
 .branch {
-  color: #a0a8b2;
+  color: #8aa0b5;
 
   font-size: 16px;
 }
 
 
-/* =========================================================
+.quarter-cell {
+  text-align: center;
+}
+
+
+/* =========================================
    CHECK
-========================================================= */
+========================================= */
 
 .check {
   display: inline-flex;
 
   align-items: center;
-
   justify-content: center;
 
-  width: 18px;
-
-  height: 18px;
+  width: 17px;
+  height: 17px;
 
   border-radius: 4px;
 
-  background: #21865d;
+  background: #208b66;
 
   color: #ffffff;
 
@@ -302,17 +346,15 @@
 
 
 .dash {
-  color: #172033;
-
-  font-weight: 600;
+  color: #142c46;
 }
 
 
-/* =========================================================
+/* =========================================
    PROGRESS
-========================================================= */
+========================================= */
 
-.progress {
+.progress-wrapper {
   display: flex;
 
   align-items: center;
@@ -323,10 +365,8 @@
 }
 
 
-.progress > span {
+.percentage {
   width: 32px;
-
-  color: #172033;
 
   font-size: 11px;
 
@@ -336,8 +376,10 @@
 }
 
 
-.progress-track {
-  width: 145px;
+.progress-bar {
+  width: 140px;
+
+  max-width: 55%;
 
   height: 5px;
 
@@ -345,66 +387,57 @@
 
   border-radius: 10px;
 
-  background: #e1e5e9;
+  background: #e0e5ea;
 }
 
 
-.progress-bar {
+.progress-value {
   height: 100%;
 
-  border-radius: 10px;
+  border-radius: inherit;
 
-  background: #d99a25;
+  background: #d99a22;
 }
 
 
-.q4 {
-  font-size: 11px;
-
-  font-weight: 600;
-}
-
-
-/* =========================================================
+/* =========================================
    LOADING
-========================================================= */
+========================================= */
 
-.loading-box {
+.loading-cell {
+  height: 145px;
+
+  text-align: center;
+}
+
+
+.loading-content {
   display: flex;
 
   align-items: center;
-
   justify-content: center;
 
   gap: 10px;
 
-  min-height: 180px;
-
-  border: 1px solid #e0ddd7;
-
-  border-radius: 12px;
-
-  background: #ffffff;
-
-  color: #718096;
+  color: #71829a;
 
   font-size: 12px;
 }
 
 
-.loading-spinner {
-  width: 17px;
+.spinner {
+  width: 16px;
+  height: 16px;
 
-  height: 17px;
+  border:
+    2px solid #dce5ec;
 
-  border: 2px solid #e1e5e9;
-
-  border-top-color: #68778b;
+  border-top-color: #1976a3;
 
   border-radius: 50%;
 
   animation:
-    spin 0.75s linear infinite;
+    spin 0.7s linear infinite;
 }
 
 
@@ -417,105 +450,69 @@
 }
 
 
-/* =========================================================
-   ERROR
-========================================================= */
+/* =========================================
+   MESSAGE
+========================================= */
 
-.error-box {
-  display: flex;
+.message-cell {
+  height: 145px;
 
-  align-items: center;
+  text-align: center;
 
-  justify-content: space-between;
-
-  margin-bottom: 18px;
-
-  padding: 12px 15px;
-
-  border: 1px solid #ead5d5;
-
-  border-radius: 9px;
-
-  background: #fffafa;
-
-  color: #a33a32;
-
-  font-size: 12px;
+  color: #71829a;
 }
 
 
-.error-box button {
-  padding: 7px 13px;
-
-  border: 0;
-
-  border-radius: 6px;
-
-  background: #172033;
-
-  color: white;
-
-  cursor: pointer;
+.message-cell.error {
+  color: #b42318;
 }
 
 
-/* =========================================================
-   EMPTY
-========================================================= */
-
-.empty-box {
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-  justify-content: center;
-
-  min-height: 180px;
-
-  border: 1px solid #e0ddd7;
-
-  border-radius: 12px;
-
-  background: #ffffff;
-}
-
-
-.empty-box strong {
-  color: #172033;
-
-  font-size: 14px;
-}
-
-
-.empty-box span {
-  margin-top: 5px;
-
-  color: #7a8595;
-
-  font-size: 12px;
-}
-
-
-/* =========================================================
+/* =========================================
    RESPONSIVE
-========================================================= */
+========================================= */
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
 
   .details-page {
-    padding: 22px;
+    padding:
+      22px
+      14px
+      28px;
   }
 
 
-  .church-card {
-    overflow-x: auto;
+  .details-header {
+    flex-direction: column;
+
+    align-items: stretch;
   }
 
 
-  .church-table {
-    min-width: 760px;
+  .church-stat {
+    width: 100%;
+  }
+
+
+  .monitoring-table {
+    min-width: 650px;
+  }
+
+}
+
+
+@media (max-width: 420px) {
+
+  .details-page {
+    padding:
+      18px
+      10px
+      24px;
+  }
+
+
+  h1 {
+    font-size: 25px;
   }
 
 }

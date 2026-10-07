@@ -2,18 +2,17 @@ import {
   Component,
   OnInit,
   NgZone,
+  ChangeDetectorRef,
   inject
 } from '@angular/core';
 
-import { CommonModule } from '@angular/common';
+import {
+  CommonModule
+} from '@angular/common';
 
 import {
   Router
 } from '@angular/router';
-
-import {
-  finalize
-} from 'rxjs/operators';
 
 import {
   ChurchService
@@ -26,7 +25,6 @@ import {
 
 @Component({
   selector: 'app-reports',
-
   standalone: true,
 
   imports: [
@@ -34,10 +32,15 @@ import {
   ],
 
   templateUrl: './reports.html',
-
   styleUrl: './reports.css'
 })
 export class Reports implements OnInit {
+
+  /*
+   * ==========================================
+   * SERVICES
+   * ==========================================
+   */
 
   private readonly churchService =
     inject(ChurchService);
@@ -48,32 +51,35 @@ export class Reports implements OnInit {
   private readonly zone =
     inject(NgZone);
 
+  private readonly cdr =
+    inject(ChangeDetectorRef);
 
-  /* =========================================
-     DATA
-  ========================================= */
+
+  /*
+   * ==========================================
+   * DATA
+   * ==========================================
+   */
 
   districts: Church[] = [];
 
-  churches: Church[] = [];
 
-  selectedDistrict: Church | null = null;
-
-
-  /* =========================================
-     STATE
-  ========================================= */
+  /*
+   * ==========================================
+   * STATE
+   * ==========================================
+   */
 
   loadingDistricts = false;
-
-  loadingChurches = false;
 
   errorMessage = '';
 
 
-  /* =========================================
-     INIT
-  ========================================= */
+  /*
+   * ==========================================
+   * INITIALIZATION
+   * ==========================================
+   */
 
   ngOnInit(): void {
 
@@ -82,9 +88,11 @@ export class Reports implements OnInit {
   }
 
 
-  /* =========================================
-     LOAD DISTRICTS
-  ========================================= */
+  /*
+   * ==========================================
+   * LOAD DISTRICTS
+   * ==========================================
+   */
 
   loadDistricts(): void {
 
@@ -97,28 +105,23 @@ export class Reports implements OnInit {
     );
 
 
+    /*
+     * Make Angular update the loading state
+     * immediately.
+     */
+
+    this.cdr.detectChanges();
+
+
     this.churchService
       .getDistricts()
-
-      .pipe(
-
-        finalize(() => {
-
-          this.zone.run(() => {
-
-            this.loadingDistricts = false;
-
-            console.log(
-              '[REPORTS] District loading finished'
-            );
-
-          });
-
-        })
-
-      )
-
       .subscribe({
+
+        /*
+         * ======================================
+         * SUCCESS
+         * ======================================
+         */
 
         next: (response) => {
 
@@ -130,6 +133,10 @@ export class Reports implements OnInit {
 
           this.zone.run(() => {
 
+            /*
+             * Check API response
+             */
+
             if (
               response &&
               response.success &&
@@ -139,26 +146,55 @@ export class Reports implements OnInit {
               this.districts =
                 [...response.data];
 
+
               console.log(
                 '[REPORTS] Districts loaded:',
                 this.districts.length
               );
 
-              this.errorMessage = '';
+            }
 
-              return;
+            else {
+
+              this.districts = [];
+
+              this.errorMessage =
+                'Unable to load districts.';
+
             }
 
 
-            this.districts = [];
+            /*
+             * Stop loading
+             */
 
-            this.errorMessage =
-              'Unable to load districts.';
+            this.loadingDistricts = false;
+
+
+            console.log(
+              '[REPORTS] District loading finished'
+            );
+
+
+            /*
+             * IMPORTANT:
+             *
+             * Force Angular to refresh the
+             * template after NgZone updates.
+             */
+
+            this.cdr.detectChanges();
 
           });
 
         },
 
+
+        /*
+         * ======================================
+         * ERROR
+         * ======================================
+         */
 
         error: (error) => {
 
@@ -172,8 +208,17 @@ export class Reports implements OnInit {
 
             this.districts = [];
 
+            this.loadingDistricts = false;
+
             this.errorMessage =
               'Unable to connect to the district server.';
+
+
+            /*
+             * Force UI update
+             */
+
+            this.cdr.detectChanges();
 
           });
 
@@ -184,191 +229,48 @@ export class Reports implements OnInit {
   }
 
 
-  /* =========================================
-     SELECT DISTRICT
-  ========================================= */
+  /*
+   * ==========================================
+   * MONITORING PERCENTAGE
+   * ==========================================
+   *
+   * Temporary value.
+   *
+   * Replace this later with the actual
+   * quarterly report monitoring data.
+   */
 
-  selectDistrict(
+  getMonitoringPercentage(
+    _district: Church
+  ): number {
+
+    return 50;
+
+  }
+
+
+  /*
+   * ==========================================
+   * OPEN DISTRICT
+   * ==========================================
+   */
+
+  openDistrict(
     district: Church
   ): void {
 
     console.log(
-      '[REPORTS] Selected district:',
+      '[REPORTS] Opening district:',
       district
     );
 
 
-    this.selectedDistrict =
-      district;
-
-    this.loadChurches(
-      district.church_id
-    );
-
-  }
-
-
-  /* =========================================
-     LOAD CHURCHES
-  ========================================= */
-
-  loadChurches(
-    districtId: number
-  ): void {
-
-    this.loadingChurches = true;
-
-    this.errorMessage = '';
-
-    this.churches = [];
-
-
-    console.log(
-      '[REPORTS] Loading churches for:',
-      districtId
-    );
-
-
-    this.churchService
-
-      .getChurches(districtId)
-
-      .pipe(
-
-        finalize(() => {
-
-          this.zone.run(() => {
-
-            this.loadingChurches = false;
-
-            console.log(
-              '[REPORTS] Church loading finished:',
-              this.churches.length
-            );
-
-          });
-
-        })
-
-      )
-
-      .subscribe({
-
-        next: (response) => {
-
-          console.log(
-            '[REPORTS] Church API response:',
-            response
-          );
-
-
-          this.zone.run(() => {
-
-            if (
-              response &&
-              response.success &&
-              Array.isArray(response.data)
-            ) {
-
-              this.churches =
-                [...response.data];
-
-
-              if (response.district) {
-
-                this.selectedDistrict =
-                  response.district;
-
-              }
-
-
-              this.errorMessage = '';
-
-              console.log(
-                '[REPORTS] Churches loaded:',
-                this.churches.length
-              );
-
-              return;
-            }
-
-
-            this.churches = [];
-
-            this.errorMessage =
-              'No churches found for this district.';
-
-          });
-
-        },
-
-
-        error: (error) => {
-
-          console.error(
-            '[REPORTS] Church API error:',
-            error
-          );
-
-
-          this.zone.run(() => {
-
-            this.churches = [];
-
-            this.errorMessage =
-              'Unable to load churches.';
-
-          });
-
-        }
-
-      });
-
-  }
-
-
-  /* =========================================
-     BACK
-  ========================================= */
-
-  backToDistricts(): void {
-
-    this.zone.run(() => {
-
-      this.selectedDistrict = null;
-
-      this.churches = [];
-
-      this.errorMessage = '';
-
-    });
-
-  }
-
-
-  /* =========================================
-     OPEN CHURCH REPORT
-  ========================================= */
-
-  openChurch(
-    church: Church
-  ): void {
-
-    console.log(
-      '[REPORTS] Opening church:',
-      church
-    );
-
-
     this.router.navigate(
-      ['/pastor/reports-details'],
+      ['/pastor/reports/details'],   // was '/pastor/reports-details'
       {
         queryParams: {
-          church_id:
-            church.church_id,
-
-          parent_id:
-            church.parent_id
+          district_id: district.church_id,
+          district_name: district.name
         }
       }
     );
@@ -376,20 +278,15 @@ export class Reports implements OnInit {
   }
 
 
-  /* =========================================
-     COUNTERS
-  ========================================= */
+  /*
+   * ==========================================
+   * DISTRICT COUNT
+   * ==========================================
+   */
 
   get districtCount(): number {
 
     return this.districts.length;
-
-  }
-
-
-  get churchCount(): number {
-
-    return this.churches.length;
 
   }
 
