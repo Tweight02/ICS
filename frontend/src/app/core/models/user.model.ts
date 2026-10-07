@@ -11,4 +11,4 @@ export interface User {
   email: string;
   role: UserRole;
   roleLabel: string;
-}
+
