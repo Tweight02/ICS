@@ -1,527 +1,346 @@
-/* =========================================================
-   SIDEBAR
-   ========================================================= */
+:host {
+  display: block;
+}
 
 .sidebar {
-  --sidebar-width: 235px;
-  --sidebar-collapsed-width: 76px;
-
-  width: var(--sidebar-width);
-  height: 100vh;
-
   position: fixed;
+
   top: 0;
   left: 0;
+  bottom: 0;
 
-  z-index: 1000;
+  width: 230px;
 
   display: flex;
   flex-direction: column;
 
-  color: #ffffff;
+  background: #ffffff;
 
-  overflow: hidden;
+  border-right: 1px solid #e3e7eb;
 
-  background:
-    linear-gradient(
-      180deg,
-      rgba(3, 72, 43, 0.82) 0%,
-      rgba(0, 91, 54, 0.78) 45%,
-      rgba(0, 55, 35, 0.94) 100%
-    ),
-    url('/assets/mountain.png') center center / cover no-repeat;
+  z-index: 1000;
 
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
-
-  transition:
-    width 0.3s ease,
-    background-position 0.3s ease;
+  overflow-y: auto;
 }
 
-
-/* =========================================================
-   MOUNTAIN OVERLAY
-   ========================================================= */
-
-.sidebar::before {
-  content: "";
-  position: absolute;
-
-  inset: 0;
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(0, 63, 39, 0.35),
-      rgba(0, 75, 45, 0.15) 45%,
-      rgba(0, 42, 27, 0.55)
-    );
-
-  pointer-events: none;
-
-  z-index: 0;
-}
-
-
-/* Put sidebar content above overlay */
-
-.sidebar > * {
-  position: relative;
-  z-index: 1;
-}
-
-
-/* =========================================================
-   COLLAPSED
-   ========================================================= */
-
-.sidebar.collapsed {
-  width: var(--sidebar-collapsed-width);
-}
-
-
-/* =========================================================
+/* =========================================
    BRAND
-   ========================================================= */
+========================================= */
 
 .sidebar-brand {
-  min-height: 92px;
+  height: 70px;
 
-  padding: 18px 14px 15px;
+  display: flex;
+  align-items: center;
 
-  margin: 0 12px;
+  gap: 12px;
 
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 0 22px;
+
+  border-bottom: 1px solid #edf0f2;
 }
-
-
-/* LOGO */
 
 .brand-logo {
-  width: 48px;
-  height: 48px;
-
-  object-fit: contain;
-
-  flex-shrink: 0;
-
-  filter:
-    drop-shadow(0 2px 5px rgba(0, 0, 0, 0.25));
-}
-
-
-/* BRAND TEXT */
-
-.brand-text {
-  min-width: 0;
-
-  transition:
-    opacity 0.2s ease,
-    width 0.2s ease;
-}
-
-
-.brand-title {
-  color: #ffffff;
-
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
-
-  font-size: 16px;
-
-  font-weight: 700;
-
-  line-height: 1.15;
-
-  white-space: normal;
-}
-
-
-.brand-sub {
-  display: block;
-
-  margin-top: 5px;
-
-  color: rgba(255, 255, 255, 0.72);
-
-  font-size: 11px;
-
-  letter-spacing: 0.2px;
-}
-
-
-/* =========================================================
-   TOGGLE BUTTON
-   ========================================================= */
-
-.toggle-btn {
   width: 38px;
   height: 38px;
-
-  flex-shrink: 0;
-
-  border: none;
-
-  border-radius: 10px;
-
-  color: #ffffff;
-
-  background: rgba(255, 255, 255, 0.12);
-
-  backdrop-filter: blur(8px);
-
-  cursor: pointer;
-
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
-}
-
-
-.toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
-
-  transform: scale(1.04);
-}
-
-
-.toggle-btn i {
-  font-size: 15px;
-}
-
-
-/* =========================================================
-   ROLE PILL
-   ========================================================= */
-
-.role-wrap {
-  margin-top: 14px !important;
-}
-
-
-.role-pill {
-  min-height: 42px;
-
-  padding: 0 14px;
-
-  border-radius: 22px;
-
-  color: #ffffff;
-
-  font-size: 13px;
-
-  font-weight: 600;
-
-  background: rgba(255, 255, 255, 0.10);
-
-  border: 1px solid rgba(255, 255, 255, 0.13);
-
-  backdrop-filter: blur(8px);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-
-.role-dot {
-  width: 9px;
-  height: 9px;
-
-  flex-shrink: 0;
-
-  border-radius: 50%;
-
-  background: #59e36a;
-
-  box-shadow:
-    0 0 8px rgba(89, 227, 106, 0.7);
-}
-
-
-/* =========================================================
-   MENU
-   ========================================================= */
-
-.sidebar .nav {
-  padding-bottom: 15px;
-}
-
-
-.sidebar-link {
-  min-height: 46px;
-
-  padding: 10px 14px !important;
-
-  border-radius: 9px;
-
-  color: rgba(255, 255, 255, 0.90) !important;
-
-  font-size: 14px;
-
-  font-weight: 500;
-
-  text-decoration: none;
-
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
-}
-
-
-.sidebar-link i {
-  width: 24px;
-
-  flex-shrink: 0;
-
-  text-align: center;
-
-  font-size: 18px;
-}
-
-
-/* HOVER */
-
-.sidebar-link:hover {
-  color: #ffffff !important;
-
-  background: rgba(255, 255, 255, 0.12);
-
-  transform: translateX(2px);
-}
-
-
-/* ACTIVE */
-
-.sidebar-link.active {
-  color: #ffffff !important;
-
-  background:
-    linear-gradient(
-      90deg,
-      #64bd3c,
-      #76ce45
-    );
-
-  box-shadow:
-    0 5px 15px rgba(55, 150, 45, 0.30);
-
-  font-weight: 600;
-}
-
-
-/* =========================================================
-   USER AREA
-   ========================================================= */
-
-.sidebar-bottom {
-  padding-left: 14px !important;
-  padding-right: 14px !important;
-
-  margin: 0 12px;
-
-  border-top: 1px solid rgba(255, 255, 255, 0.20);
-}
-
-
-/* USER */
-
-.user-row {
-  min-width: 0;
-
-  padding-top: 14px;
-}
-
-
-.user-avatar {
-  width: 44px;
-  height: 44px;
-
-  flex-shrink: 0;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border-radius: 50%;
+  border-radius: 9px;
+
+  background: #123f6d;
 
   color: #ffffff;
 
-  background:
-    linear-gradient(
-      135deg,
-      #8bcf45,
-      #4b9e38
-    );
-
-  font-size: 14px;
-
-  font-weight: 700;
-
-  box-shadow:
-    0 4px 10px rgba(0, 0, 0, 0.18);
+  font-size: 12px;
+  font-weight: 800;
 }
 
+.brand-text {
+  display: flex;
+  flex-direction: column;
+
+  line-height: 1.1;
+}
+
+.brand-text strong {
+  color: #102d4d;
+
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.brand-text span {
+  margin-top: 4px;
+
+  color: #718096;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+/* =========================================
+   NAVIGATION
+========================================= */
+
+.sidebar-nav {
+  flex: 1;
+
+  padding: 22px 12px;
+}
+
+.nav-section-title {
+  padding: 0 10px;
+  margin-bottom: 10px;
+
+  color: #7a8795;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+
+  min-height: 42px;
+
+  padding: 0 12px;
+
+  margin-bottom: 4px;
+
+  border-radius: 8px;
+
+  color: #344054;
+
+  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.nav-item:hover {
+  background: #f1f5f8;
+}
+
+.nav-item.active {
+  background: #eaf2f8;
+
+  color: #123f6d;
+
+  font-weight: 700;
+}
+
+.nav-icon {
+  width: 25px;
+
+  margin-right: 8px;
+
+  text-align: center;
+}
+
+.nav-label {
+  white-space: nowrap;
+}
+
+/* =========================================
+   BOTTOM
+========================================= */
+
+.sidebar-bottom {
+  padding: 12px;
+
+  border-top: 1px solid #edf0f2;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 10px;
+
+  margin-bottom: 8px;
+
+  border-radius: 8px;
+
+  background: #f7f9fb;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: #123f6d;
+
+  color: white;
+
+  font-size: 11px;
+  font-weight: 800;
+}
 
 .user-info {
   min-width: 0;
+
+  display: flex;
+  flex-direction: column;
 }
 
+.user-info strong {
+  overflow: hidden;
 
-.user-name {
-  color: #ffffff;
-
-  font-size: 13px;
-
-  font-weight: 600;
-}
-
-
-.user-role {
-  color: rgba(255, 255, 255, 0.65);
+  color: #172b4d;
 
   font-size: 11px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+.user-info span {
+  margin-top: 3px;
 
-/* =========================================================
-   LOGOUT
-   ========================================================= */
+  color: #7b8794;
 
-.logout-btn {
-  color: rgba(255, 255, 255, 0.92) !important;
-
-  font-size: 14px;
-
-  font-weight: 500;
-
-  background: transparent !important;
-
-  border: none !important;
-
-  transition:
-    color 0.2s ease,
-    transform 0.2s ease;
+  font-size: 9px;
 }
 
-
-.logout-btn i {
-  font-size: 19px;
-}
-
-
-.logout-btn:hover {
-  color: #ffffff !important;
-
-  transform: translateX(3px);
-}
-
-
-/* =========================================================
-   COLLAPSED SIDEBAR
-   ========================================================= */
-
-.sidebar.collapsed .brand-text,
-.sidebar.collapsed .role-pill span:not(.role-dot),
-.sidebar.collapsed .nav-label,
-.sidebar.collapsed .user-info,
-.sidebar.collapsed .logout-btn span {
-  display: none;
-}
-
-
-.sidebar.collapsed .sidebar-brand {
-  justify-content: center;
-
-  padding-left: 8px;
-  padding-right: 8px;
-}
-
-
-.sidebar.collapsed .brand-logo {
-  width: 42px;
-  height: 42px;
-}
-
-
-.sidebar.collapsed .toggle-btn {
-  margin-left: 4px !important;
-}
-
-
-.sidebar.collapsed .role-wrap {
-  padding-left: 14px !important;
-  padding-right: 14px !important;
-}
-
-
-.sidebar.collapsed .role-pill {
-  justify-content: center;
-
-  padding: 0;
-
-  background: rgba(255, 255, 255, 0.10);
-}
-
-
-.sidebar.collapsed .nav {
-  padding-left: 10px !important;
-  padding-right: 10px !important;
-}
-
-
-.sidebar.collapsed .sidebar-link {
-  justify-content: center;
-
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-
-
-.sidebar.collapsed .sidebar-link i {
-  width: auto;
-
-  font-size: 19px;
-}
-
-
-.sidebar.collapsed .sidebar-bottom {
-  margin-left: 10px;
-  margin-right: 10px;
-
-  padding-left: 8px !important;
-  padding-right: 8px !important;
-}
-
-
-.sidebar.collapsed .user-row {
-  justify-content: center;
-}
-
-
-.sidebar.collapsed .logout-btn {
-  justify-content: center;
-
+.logout-button {
   width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  min-height: 40px;
+
+  padding: 0 12px;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #465568;
+
+  font-size: 12px;
+
+  cursor: pointer;
+
+  text-align: left;
 }
 
+.logout-button:hover {
+  background: #f4f6f8;
 
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
+  color: #123f6d;
+}
+
+/* =========================================
+   TABLET
+========================================= */
 
 @media (max-width: 768px) {
 
   .sidebar {
-    width: 235px;
+    width: 210px;
   }
 
-  .sidebar.collapsed {
-    width: 0;
+  .sidebar-brand {
+    padding: 0 16px;
+  }
 
-    box-shadow: none;
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+  .sidebar {
+    width: 64px;
+  }
+
+  .sidebar-brand {
+    height: 64px;
+
+    justify-content: center;
+
+    padding: 0;
+  }
+
+  .brand-text {
+    display: none;
+  }
+
+  .sidebar-nav {
+    padding: 14px 8px;
+  }
+
+  .nav-section-title {
+    display: none;
+  }
+
+  .nav-item {
+    justify-content: center;
+
+    padding: 0;
+
+    min-height: 44px;
+  }
+
+  .nav-icon {
+    margin: 0;
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .sidebar-bottom {
+    padding: 8px;
+  }
+
+  .user-card {
+    justify-content: center;
+
+    padding: 6px;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .logout-button {
+    justify-content: center;
+
+    padding: 0;
+  }
+
+  .logout-button span:last-child {
+    display: none;
   }
 
 }
