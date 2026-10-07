@@ -1,14 +1,19 @@
-@if (showSidebar) {
-  <app-sidebar
-    [user]="currentUser"
-    (collapsedChange)="collapsed = $event"
-  />
-}
+<div class="app-layout">
 
-<main
-  class="content"
-  [class.no-sidebar]="!showSidebar"
-  [class.collapsed]="collapsed"
->
-  <router-outlet />
-</main>
+  <!-- GLOBAL SIDEBAR -->
+  <app-sidebar
+    [user]="currentUser">
+  </app-sidebar>
+
+  <!-- MAIN CONTENT -->
+  <main class="app-main">
+
+    <div class="page-container">
+
+      <router-outlet></router-outlet>
+
+    </div>
+
+  </main>
+
+</div>

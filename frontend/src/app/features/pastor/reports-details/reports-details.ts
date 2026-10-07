@@ -1,6 +1,6 @@
 import {
-  Component,
   ChangeDetectorRef,
+  Component,
   NgZone,
   OnInit,
   inject
@@ -13,16 +13,25 @@ import {
   Router
 } from '@angular/router';
 
-import { ChurchService } from '../../../core/services/church/church-service';
+import {
+  ChurchService
+} from '../../../core/services/church/church-service';
 
-import { Church } from '../../../core/models/church.model';
+import {
+  Church
+} from '../../../core/models/church.model';
 
 
-interface MonitoringRow {
+interface ChurchMonitoring extends Church {
+
   q1: boolean;
+
   q2: boolean;
-  q3: number;
-  q4: boolean;
+
+  q3: number | null;
+
+  q4: number | null;
+
 }
 
 
@@ -35,68 +44,109 @@ interface MonitoringRow {
   ],
 
   templateUrl: './reports-details.html',
+
   styleUrl: './reports-details.css'
 })
-export class ReportsDetails implements OnInit {
+export class ReportsDetails
+  implements OnInit {
+
 
   private readonly route =
     inject(ActivatedRoute);
 
+
   private readonly router =
     inject(Router);
+
 
   private readonly churchService =
     inject(ChurchService);
 
+
   private readonly zone =
     inject(NgZone);
+
 
   private readonly cdr =
     inject(ChangeDetectorRef);
 
 
-  // ==============================
-  // DATA
-  // ==============================
+  /*
+   * =========================================================
+   * DISTRICT
+   * =========================================================
+   */
+
+  districtId: number | null = null;
 
   district: Church | null = null;
 
-  churches: Church[] = [];
+
+  /*
+   * =========================================================
+   * CHURCHES
+   * =========================================================
+   */
+
+  churches: ChurchMonitoring[] = [];
+
+
+  /*
+   * =========================================================
+   * STATE
+   * =========================================================
+   */
 
   loading = false;
 
   errorMessage = '';
 
 
+  /*
+   * =========================================================
+   * INIT
+   * =========================================================
+   */
+
   ngOnInit(): void {
 
     this.route.queryParamMap.subscribe(
       params => {
 
-        const districtId =
+        const id =
           Number(
             params.get('district_id')
           );
 
-        if (!districtId) {
+
+        if (
+          !id ||
+          Number.isNaN(id)
+        ) {
 
           this.errorMessage =
             'No district was selected.';
 
           return;
+
         }
 
-        this.loadDistrict(
-          districtId
-        );
+
+        this.districtId = id;
+
+        this.loadDistrict(id);
+
       }
     );
+
   }
 
 
-  // ==============================
-  // LOAD PARENT + CHILDREN
-  // ==============================
+  /*
+   * =========================================================
+   * LOAD DISTRICT + CHILDREN
+   * =========================================================
+   */
 
   loadDistrict(
     districtId: number
@@ -106,15 +156,7 @@ export class ReportsDetails implements OnInit {
 
     this.errorMessage = '';
 
-    this.district = null;
-
     this.churches = [];
-
-
-    console.log(
-      '[REPORT DETAILS] Loading district:',
-      districtId
-    );
 
 
     this.churchService
@@ -124,7 +166,7 @@ export class ReportsDetails implements OnInit {
         next: (response) => {
 
           console.log(
-            '[REPORT DETAILS] API response:',
+            'District / Church response:',
             response
           );
 
@@ -132,46 +174,59 @@ export class ReportsDetails implements OnInit {
           this.zone.run(() => {
 
             if (
-              response &&
-              response.success
+              response?.success
             ) {
 
               /*
-               * THIS IS THE PARENT.
+               * Parent district
                */
               this.district =
                 response.district;
 
 
               /*
-               * These are the children
-               * where parent_id =
-               * district.church_id
+               * Children
                */
-              this.churches =
+              if (
                 Array.isArray(
                   response.data
                 )
-                  ? response.data
-                  : [];
+              ) {
 
+                this.churches =
+                  response.data.map(
+                    (church: Church) => {
 
-              console.log(
-                '[REPORT DETAILS] Parent district:',
-                this.district
-              );
+                      return {
 
+                        ...church,
 
-              console.log(
-                '[REPORT DETAILS] Churches:',
-                this.churches
-              );
+                        q1: true,
 
+                        q2: true,
+
+                        q3:
+                          this.getQ3Value(
+                            church.church_id
+                          ),
+
+                        q4: null
+
+                      };
+
+                    }
+                  );
+
+              } else {
+
+                this.churches = [];
+
+              }
 
             } else {
 
               this.errorMessage =
-                'Unable to load district data.';
+                'Unable to load churches.';
 
             }
 
@@ -188,7 +243,7 @@ export class ReportsDetails implements OnInit {
         error: (error) => {
 
           console.error(
-            '[REPORT DETAILS] API error:',
+            'Church API error:',
             error
           );
 
@@ -196,8 +251,6 @@ export class ReportsDetails implements OnInit {
           this.zone.run(() => {
 
             this.loading = false;
-
-            this.district = null;
 
             this.churches = [];
 
@@ -211,115 +264,120 @@ export class ReportsDetails implements OnInit {
         }
 
       });
+
   }
 
 
-  // ==============================
-  // BACK
-  // ==============================
+  /*
+   * =========================================================
+   * Q3 SAMPLE
+   * =========================================================
+   */
 
-  backToDistricts(): void {
+  private getQ3Value(
+    id: number
+  ): number {
 
-    this.router.navigate(
-      ['/pastor/reports']
-    );
+    const values = [
+      47,
+      53,
+      57,
+      60,
+      63
+    ];
+
+    return values[
+      id % values.length
+    ];
+
   }
 
 
-  // ==============================
-  // OPEN CHURCH
-  // ==============================
+  /*
+   * =========================================================
+   * OPEN CHURCH REPORT
+   *
+   * Only the individual church opens its
+   * actual report details.
+   * =========================================================
+   */
 
   openChurch(
-    church: Church
+    church: ChurchMonitoring
   ): void {
 
-    if (!this.district) {
-      return;
-    }
-
-
     console.log(
-      '[REPORT DETAILS] Opening church:',
+      'Opening church:',
       church
     );
 
 
-    /*
-     * Send BOTH:
-     *
-     * parent district
-     * selected church
-     *
-     * to the next report page.
-     */
-
     this.router.navigate(
-      ['/pastor/reports/details'],   // was '/pastor/reports-details'
+      [
+        '/pastor/reports-details'
+      ],
       {
         queryParams: {
-          district_id: this.district.church_id,
-          church_id: church.church_id
+          district_id:
+            this.districtId,
+
+          church_id:
+            church.church_id
         }
       }
     );
+
   }
 
 
-  // ==============================
-  // CHURCH COUNT
-  // ==============================
+  /*
+   * =========================================================
+   * BACK
+   * =========================================================
+   */
+
+  backToDistricts(): void {
+
+    this.router.navigate(
+      [
+        '/pastor/reports'
+      ]
+    );
+
+  }
+
+
+  /*
+   * =========================================================
+   * RETRY
+   * =========================================================
+   */
+
+  retry(): void {
+
+    if (
+      this.districtId
+    ) {
+
+      this.loadDistrict(
+        this.districtId
+      );
+
+    }
+
+  }
+
+
+  /*
+   * =========================================================
+   * COUNT
+   * =========================================================
+   */
 
   get churchCount(): number {
 
     return this.churches.length;
+
   }
 
-
-  // ==============================
-  // MONITORING
-  // ==============================
-
-  getMonitoring(
-    index: number
-  ): MonitoringRow {
-
-    const values = [
-      60,
-      57,
-      63,
-      57,
-      53,
-      53,
-      47,
-      63,
-      60,
-      57,
-      53,
-      63
-    ];
-
-    return {
-
-      q1: true,
-
-      q2: true,
-
-      q3:
-        values[index] ??
-        55,
-
-      q4: false
-
-    };
-  }
-
-
-  trackChurch(
-    index: number,
-    church: Church
-  ): number {
-
-    return church.church_id;
-  }
 }

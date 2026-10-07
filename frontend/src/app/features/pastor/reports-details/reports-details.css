@@ -4,43 +4,23 @@
 }
 
 
-/* =========================================
-   PAGE
-========================================= */
-
 .details-page {
-  width: 100%;
+  min-height: 100vh;
 
-  max-width: 1280px;
+  padding: 30px 34px;
 
-  margin: 0 auto;
+  box-sizing: border-box;
 
-  padding:
-    clamp(24px, 4vw, 52px)
-    clamp(16px, 3vw, 40px)
-    40px;
+  background: #f7f8fa;
 }
 
 
-/* =========================================
+/* =========================================================
    HEADER
-========================================= */
+========================================================= */
 
 .details-header {
-  display: flex;
-
-  align-items: flex-start;
-
-  justify-content: space-between;
-
-  gap: 30px;
-
-  margin-bottom: 28px;
-}
-
-
-.header-left {
-  min-width: 0;
+  margin-bottom: 20px;
 }
 
 
@@ -53,225 +33,20 @@
 
   margin-bottom: 20px;
 
-  padding:
-    8px
-    13px;
+  padding: 8px 12px;
 
-  border:
-    1px solid #d8e1e9;
+  border: 1px solid #dce1e6;
 
-  border-radius: 8px;
+  border-radius: 7px;
 
   background: #ffffff;
 
-  color: #24415e;
+  color: #344054;
 
-  font-size: 12px;
+  font-size: 11px;
 
   font-weight: 600;
 
-  cursor: pointer;
-}
-
-
-.back-button:hover {
-  background: #f5f8fa;
-}
-
-
-.eyebrow {
-  display: block;
-
-  margin-bottom: 7px;
-
-  color: #657991;
-
-  font-size: 10px;
-
-  font-weight: 700;
-
-  letter-spacing: 1.5px;
-}
-
-
-h1 {
-  margin: 0;
-
-  color: #08294b;
-
-  font-size:
-    clamp(28px, 3vw, 40px);
-
-  line-height: 1.1;
-
-  font-weight: 800;
-}
-
-
-.header-left p {
-  margin:
-    8px
-    0
-    0;
-
-  color: #71829a;
-
-  font-size: 13px;
-}
-
-
-/* =========================================
-   STAT
-========================================= */
-
-.church-stat {
-  width: 130px;
-  min-height: 90px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-  justify-content: center;
-
-  flex-shrink: 0;
-
-  background: #ffffff;
-
-  border:
-    1px solid #dfe6ed;
-
-  border-radius: 13px;
-}
-
-
-.church-stat strong {
-  color: #08294b;
-
-  font-size: 22px;
-
-  font-weight: 800;
-}
-
-
-.church-stat span {
-  margin-top: 7px;
-
-  color: #6b7c93;
-
-  font-size: 10px;
-
-  text-align: center;
-}
-
-
-/* =========================================
-   CARD
-========================================= */
-
-.monitoring-card {
-  width: 100%;
-
-  overflow: hidden;
-
-  background: #ffffff;
-
-  border:
-    1px solid #dce4eb;
-
-  border-radius: 13px;
-}
-
-
-.table-wrapper {
-  width: 100%;
-
-  overflow-x: auto;
-
-  -webkit-overflow-scrolling: touch;
-}
-
-
-/* =========================================
-   TABLE
-========================================= */
-
-.monitoring-table {
-  width: 100%;
-
-  min-width: 700px;
-
-  border-collapse: collapse;
-
-  table-layout: fixed;
-}
-
-
-.monitoring-table th {
-  height: 42px;
-
-  padding:
-    0
-    18px;
-
-  border-bottom:
-    1px solid #dfe5eb;
-
-  color: #51647c;
-
-  font-size: 10px;
-
-  font-weight: 600;
-
-  text-align: center;
-}
-
-
-.monitoring-table th:first-child {
-  text-align: left;
-}
-
-
-.monitoring-table th:first-child {
-  width: 32%;
-}
-
-
-.monitoring-table th:not(:first-child) {
-  width: 17%;
-}
-
-
-.monitoring-table tbody tr {
-  height: 50px;
-
-  border-bottom:
-    1px solid #e1e6eb;
-}
-
-
-.monitoring-table tbody tr:last-child {
-  border-bottom: none;
-}
-
-
-.monitoring-table td {
-  padding:
-    0
-    18px;
-
-  font-size: 12px;
-
-  color: #142c46;
-}
-
-
-/* =========================================
-   CHURCH
-========================================= */
-
-.church-row {
   cursor: pointer;
 
   transition:
@@ -279,63 +54,244 @@ h1 {
 }
 
 
-.church-row:hover {
-  background: #f7fafc;
+.back-button:hover {
+  background: #f2f4f7;
 }
 
 
-.church-row:focus-visible {
-  background: #f1f7fb;
+.district-heading {
+  margin-left: 2px;
+}
 
-  outline: none;
 
-  box-shadow:
-    inset 3px 0 #1d7f61;
+.eyebrow {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #66758a;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+}
+
+
+.district-heading h1 {
+  margin: 0;
+
+  color: #142033;
+
+  font-size: 27px;
+
+  font-weight: 750;
+}
+
+
+.district-heading p {
+  margin: 6px 0 0;
+
+  color: #728096;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+.summary-row {
+  display: flex;
+
+  justify-content: flex-end;
+
+  margin-bottom: 15px;
+}
+
+
+.summary-card {
+  min-width: 130px;
+
+  padding: 11px 18px;
+
+  border: 1px solid #e1e5e9;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  text-align: center;
+}
+
+
+.summary-card strong {
+  display: block;
+
+  color: #172033;
+
+  font-size: 19px;
+}
+
+
+.summary-card span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #718096;
+
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.church-card {
+  overflow: hidden;
+
+  border: 1px solid #dedbd5;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+}
+
+
+.church-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  table-layout: fixed;
+}
+
+
+.church-table th {
+  height: 38px;
+
+  padding: 0 18px;
+
+  border-bottom: 1px solid #dedbd5;
+
+  background: #fbfbfa;
+
+  color: #667085;
+
+  font-size: 10px;
+
+  font-weight: 600;
+
+  text-align: center;
+}
+
+
+.church-table th:first-child {
+  width: 42%;
+
+  text-align: left;
+}
+
+
+.church-table th:nth-child(2) {
+  width: 12%;
+}
+
+
+.church-table th:nth-child(3) {
+  width: 12%;
+}
+
+
+.church-table th:nth-child(4) {
+  width: 22%;
+}
+
+
+.church-table th:nth-child(5) {
+  width: 12%;
+}
+
+
+.church-table td {
+  height: 48px;
+
+  padding: 0 18px;
+
+  border-bottom: 1px solid #e4e1dc;
+
+  color: #172033;
+
+  font-size: 12px;
+
+  text-align: center;
+}
+
+
+.church-table td:first-child {
+  text-align: left;
+}
+
+
+/* =========================================================
+   CHURCH ROW
+========================================================= */
+
+.church-row {
+  cursor: pointer;
+
+  background: #ffffff;
+
+  transition:
+    background 0.15s ease;
+}
+
+
+.church-row:hover {
+  background: #f4f7f8;
 }
 
 
 .church-name {
-  font-weight: 500;
-}
-
-
-.church-link {
   display: flex;
 
   align-items: center;
 
-  gap: 8px;
+  gap: 9px;
+
+  font-weight: 600;
 }
 
 
 .branch {
-  color: #8aa0b5;
+  color: #a0a8b2;
 
   font-size: 16px;
 }
 
 
-.quarter-cell {
-  text-align: center;
-}
-
-
-/* =========================================
+/* =========================================================
    CHECK
-========================================= */
+========================================================= */
 
 .check {
   display: inline-flex;
 
   align-items: center;
+
   justify-content: center;
 
-  width: 17px;
-  height: 17px;
+  width: 18px;
+
+  height: 18px;
 
   border-radius: 4px;
 
-  background: #208b66;
+  background: #21865d;
 
   color: #ffffff;
 
@@ -346,15 +302,17 @@ h1 {
 
 
 .dash {
-  color: #142c46;
+  color: #172033;
+
+  font-weight: 600;
 }
 
 
-/* =========================================
+/* =========================================================
    PROGRESS
-========================================= */
+========================================================= */
 
-.progress-wrapper {
+.progress {
   display: flex;
 
   align-items: center;
@@ -365,8 +323,10 @@ h1 {
 }
 
 
-.percentage {
+.progress > span {
   width: 32px;
+
+  color: #172033;
 
   font-size: 11px;
 
@@ -376,10 +336,8 @@ h1 {
 }
 
 
-.progress-bar {
-  width: 140px;
-
-  max-width: 55%;
+.progress-track {
+  width: 145px;
 
   height: 5px;
 
@@ -387,57 +345,66 @@ h1 {
 
   border-radius: 10px;
 
-  background: #e0e5ea;
+  background: #e1e5e9;
 }
 
 
-.progress-value {
+.progress-bar {
   height: 100%;
 
-  border-radius: inherit;
+  border-radius: 10px;
 
-  background: #d99a22;
+  background: #d99a25;
 }
 
 
-/* =========================================
+.q4 {
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
    LOADING
-========================================= */
+========================================================= */
 
-.loading-cell {
-  height: 145px;
-
-  text-align: center;
-}
-
-
-.loading-content {
+.loading-box {
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
   gap: 10px;
 
-  color: #71829a;
+  min-height: 180px;
+
+  border: 1px solid #e0ddd7;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  color: #718096;
 
   font-size: 12px;
 }
 
 
-.spinner {
-  width: 16px;
-  height: 16px;
+.loading-spinner {
+  width: 17px;
 
-  border:
-    2px solid #dce5ec;
+  height: 17px;
 
-  border-top-color: #1976a3;
+  border: 2px solid #e1e5e9;
+
+  border-top-color: #68778b;
 
   border-radius: 50%;
 
   animation:
-    spin 0.7s linear infinite;
+    spin 0.75s linear infinite;
 }
 
 
@@ -450,69 +417,105 @@ h1 {
 }
 
 
-/* =========================================
-   MESSAGE
-========================================= */
+/* =========================================================
+   ERROR
+========================================================= */
 
-.message-cell {
-  height: 145px;
+.error-box {
+  display: flex;
 
-  text-align: center;
+  align-items: center;
 
-  color: #71829a;
+  justify-content: space-between;
+
+  margin-bottom: 18px;
+
+  padding: 12px 15px;
+
+  border: 1px solid #ead5d5;
+
+  border-radius: 9px;
+
+  background: #fffafa;
+
+  color: #a33a32;
+
+  font-size: 12px;
 }
 
 
-.message-cell.error {
-  color: #b42318;
+.error-box button {
+  padding: 7px 13px;
+
+  border: 0;
+
+  border-radius: 6px;
+
+  background: #172033;
+
+  color: white;
+
+  cursor: pointer;
 }
 
 
-/* =========================================
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.empty-box {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-height: 180px;
+
+  border: 1px solid #e0ddd7;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+}
+
+
+.empty-box strong {
+  color: #172033;
+
+  font-size: 14px;
+}
+
+
+.empty-box span {
+  margin-top: 5px;
+
+  color: #7a8595;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
    RESPONSIVE
-========================================= */
+========================================================= */
 
-@media (max-width: 700px) {
-
-  .details-page {
-    padding:
-      22px
-      14px
-      28px;
-  }
-
-
-  .details-header {
-    flex-direction: column;
-
-    align-items: stretch;
-  }
-
-
-  .church-stat {
-    width: 100%;
-  }
-
-
-  .monitoring-table {
-    min-width: 650px;
-  }
-
-}
-
-
-@media (max-width: 420px) {
+@media (max-width: 900px) {
 
   .details-page {
-    padding:
-      18px
-      10px
-      24px;
+    padding: 22px;
   }
 
 
-  h1 {
-    font-size: 25px;
+  .church-card {
+    overflow-x: auto;
+  }
+
+
+  .church-table {
+    min-width: 760px;
   }
 
 }
