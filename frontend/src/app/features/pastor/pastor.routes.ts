@@ -16,7 +16,7 @@ export const PASTOR_ROUTES: Routes = [
 
   {
     // nested under /reports so the Reports link stays highlighted
-    path: 'reports/details',
+    path: 'reports/details/:id',
     loadComponent: () =>
       import('./reports-details/reports-details').then(m => m.ReportsDetails)
   },
@@ -48,6 +48,17 @@ export const PASTOR_ROUTES: Routes = [
     loadComponent: () =>
       import('./church-role/church-role').then(m => m.ChurchRole)
   },
+
+  // =====================================================
+  // ADDED:
+  // SELECTED CHURCH → DEPARTMENTS → REPORT
+  // =====================================================
+{
+  path: 'reports/programs',
+  loadComponent: () =>
+    import('./report-programs/report-programs')
+      .then(m => m.ReportPrograms)
+},
 
   {
     path: 'stewardship',

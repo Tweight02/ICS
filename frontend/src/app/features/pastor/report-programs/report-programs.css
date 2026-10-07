@@ -1,0 +1,430 @@
+/* ---------- Page + theme ---------- */
+.report-page {
+  --green-900: #16342A;
+  --green-800: #1F4A3A;
+  --green-700: #3E7A54;
+  --green-tint: #E8F1E9;
+  --bg: #FAF8F3;
+  --ink: #20261F;
+  --ink-soft: #6E6759;
+  --ink-faint: #9A9484;
+  --line: #E8E2D4;
+  --line-strong: #D9D2C0;
+  --amber: #D99A2B;
+
+  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg);
+  padding: 24px;
+}
+
+.page-title h1 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+
+.page-title small {
+  display: block;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.head-row {
+  margin: 16px 0;
+}
+
+.page-back-btn {
+  padding: 8px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--green-800);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.page-back-btn:hover {
+  background: var(--green-tint);
+  border-color: var(--green-700);
+}
+
+.state-note {
+  text-align: center;
+  color: var(--ink-soft);
+  padding: 24px;
+}
+
+.error-note {
+  background: #f7dede;
+  color: #8a2c2c;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+/* ---------- Departments table ---------- */
+.dept-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dept-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dept-table thead th {
+  text-align: left;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  color: var(--ink-faint);
+  font-weight: 600;
+  padding: 9px 20px;
+  border-bottom: 1px solid var(--line);
+  background: #FBFBFC;
+}
+
+.dept-table .c-name { width: 37%; }
+.dept-table .c-q    { width: 11%; }
+.dept-table .c-q3   { width: 20%; }
+
+.dept-table tbody td {
+  padding: 14px 20px;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dept-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dept-table tbody tr:nth-child(even) {
+  background: #FAFAFB;
+}
+
+.dept-table tbody tr.clickable {
+  cursor: pointer;
+}
+
+.dept-table tbody tr.clickable:hover {
+  background: var(--green-tint);
+}
+
+.dept-table td.name {
+  font-weight: 600;
+}
+
+/* Green check box */
+.approved-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #20734f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+/* Percent + bar */
+.cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 110px;
+}
+
+.cell .pct {
+  font-size: 12px;
+  font-weight: 700;
+  width: 30px;
+  flex-shrink: 0;
+}
+
+.bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 4px;
+  background: #EFEAE0;
+  overflow: hidden;
+  min-width: 36px;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.fill-good { background: var(--green-700); }
+.fill-warn { background: var(--amber); }
+
+.dash {
+  font-weight: 700;
+}
+
+/* ---------- Report view ---------- */
+.report-view {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.title-divider {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 16px 0 18px;
+}
+
+/* Tab bar */
+.report-type-nav {
+  display: flex;
+  margin: 0 -24px 20px;
+  padding: 0 10px;
+  background: #f4f6f8;
+  border-top: 1px solid #dfe4e8;
+  border-bottom: 1px solid #dfe4e8;
+  overflow-x: auto;
+}
+
+.report-type-nav .tab {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-right: 1px solid #e0e4e8;
+  background: transparent;
+  color: #263746;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.report-type-nav .tab.active {
+  background: #e7edf3;
+  color: #1769c2;
+  box-shadow: inset 0 -3px 0 #1769c2;
+}
+
+/* Layout: report left, comments right */
+.report-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.report-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 17px 18px;
+}
+
+.report-card h2 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: var(--green-900);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.data-table td {
+  border: 1px solid var(--line-strong);
+  padding: 5px 6px;
+}
+
+.data-table tr.main-header td {
+  background: var(--green-800);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.data-table td.section-name,
+.data-table td.particular {
+  text-align: left;
+}
+
+.data-table td.quarter-in-header {
+  text-align: center;
+  width: 70px;
+  white-space: nowrap;
+}
+
+.data-table td.num {
+  text-align: center;
+  width: 70px;
+}
+
+.data-table tbody tr:not(.main-header):nth-child(even) td {
+  background: var(--bg);
+}
+
+/* ---------- Comments panel ---------- */
+.department-comment-card {
+  width: 340px;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid #dbe9e4;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(20, 80, 60, 0.05);
+}
+
+.department-comment-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--green-900);
+}
+
+.department-comment-help {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 3px;
+  line-height: 1.45;
+}
+
+.commenting-as {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin: 10px 0 5px;
+}
+
+.commenting-as strong {
+  color: var(--green-900);
+}
+
+.comment-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 10px 0 5px;
+}
+
+.department-comment-input {
+  width: 100%;
+  min-height: 105px;
+  resize: vertical;
+  border: 1px solid #cfded8;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 9px;
+}
+
+.department-comment-input:focus {
+  outline: 2px solid var(--green-700);
+  outline-offset: -2px;
+}
+
+.department-comment-publish {
+  width: 100%;
+  height: 36px;
+  margin-top: 9px;
+  border: 1px solid var(--green-700);
+  border-radius: 8px;
+  background: var(--green-700);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.department-comment-publish:hover:not(:disabled) {
+  background: var(--green-800);
+}
+
+.department-comment-publish:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.department-comment-status {
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  margin-top: 7px;
+}
+
+.department-comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 13px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.department-comment-item {
+  border: 1px solid #e0e9e5;
+  border-radius: 8px;
+  padding: 9px;
+  background: #fbfdfc;
+}
+
+.department-comment-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.department-comment-who {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--green-900);
+}
+
+.department-comment-role {
+  font-size: 9.5px;
+  color: var(--ink-soft);
+  margin-top: 1px;
+}
+
+.department-comment-time {
+  font-size: 9.5px;
+  color: var(--ink-soft);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.department-comment-text {
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Small screens: comments go below the report */
+@media (max-width: 1050px) {
+  .report-layout {
+    flex-direction: column;
+  }
+
+  .department-comment-card {
+    width: 100%;
+  }
+}

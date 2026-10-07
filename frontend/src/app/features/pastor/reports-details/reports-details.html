@@ -1,28 +1,23 @@
 <div class="details-page">
 
-
   <!-- ================================= -->
   <!-- HEADER -->
   <!-- ================================= -->
 
   <section class="details-header">
 
-
     <div class="header-left">
-
 
       <button
         type="button"
         class="back-button"
         (click)="backToDistricts()"
       >
-
         <span>
           ←
         </span>
 
         Back to Districts
-
       </button>
 
 
@@ -32,11 +27,9 @@
           DISTRICT REPORTS
         </span>
 
-
         <h1>
           {{ district.name }}
         </h1>
-
 
         @if (district.address) {
 
@@ -58,18 +51,13 @@
 
       }
 
-
     </div>
 
-
-    <!-- ================================= -->
-    <!-- STAT -->
-    <!-- ================================= -->
 
     <div class="church-stat">
 
       <strong>
-        {{ churchCount }}
+        {{ churches.length }}
       </strong>
 
       <span>
@@ -77,7 +65,6 @@
       </span>
 
     </div>
-
 
   </section>
 
@@ -89,12 +76,9 @@
 
   <section class="monitoring-card">
 
-
     <div class="table-wrapper">
 
-
       <table class="monitoring-table">
-
 
         <thead>
 
@@ -127,36 +111,7 @@
 
         <tbody>
 
-
-          <!-- LOADING -->
-
-          @if (loading) {
-
-            <tr>
-
-              <td
-                colspan="5"
-                class="loading-cell"
-              >
-
-                <div class="loading-content">
-
-                  <span class="spinner"></span>
-
-                  Loading churches...
-
-                </div>
-
-              </td>
-
-            </tr>
-
-          }
-
-
-          <!-- ERROR -->
-
-          @else if (errorMessage) {
+          @if (errorMessage) {
 
             <tr>
 
@@ -172,9 +127,6 @@
             </tr>
 
           }
-
-
-          <!-- NO CHURCH -->
 
           @else if (churches.length === 0) {
 
@@ -194,149 +146,105 @@
 
           }
 
-
-          <!-- CHURCHES -->
-
           @else {
 
-            @for (
-              church of churches;
-              track trackChurch($index, church)
-            ) {
+           @for (church of churches; track church.church_id) {
 
-              <tr
-                class="church-row"
-                tabindex="0"
-                (click)="openChurch(church)"
-                (keydown.enter)="openChurch(church)"
-              >
+  <tr
+    class="church-row"
+    tabindex="0"
+    (click)="openChurch(church)"
+    (keydown.enter)="openChurch(church)"
+  >
 
+    <td class="church-name">
+      <div class="church-link">
+        <span>
+          {{ church.name }}
+        </span>
+      </div>
+    </td>
 
-                <!-- CHURCH -->
+    <td class="quarter-cell">
 
-                <td class="church-name">
+      @if (getMonitoring($index).q1) {
 
-                  <div class="church-link">
+        <span class="check">
+          ✓
+        </span>
 
-                    <span class="branch">
-                      └
-                    </span>
+      } @else {
 
-                    <span>
-                      {{ church.name }}
-                    </span>
+        <span class="dash">
+          –
+        </span>
 
-                  </div>
+      }
 
-                </td>
+    </td>
 
+    <td class="quarter-cell">
 
-                <!-- Q1 -->
+      @if (getMonitoring($index).q2) {
 
-                <td class="quarter-cell">
+        <span class="check">
+          ✓
+        </span>
 
-                  @if (
-                    getMonitoring($index).q1
-                  ) {
+      } @else {
 
-                    <span class="check">
-                      ✓
-                    </span>
+        <span class="dash">
+          –
+        </span>
 
-                  } @else {
+      }
 
-                    <span class="dash">
-                      –
-                    </span>
+    </td>
 
-                  }
+    <td class="quarter-cell">
 
-                </td>
+      <div class="progress-wrapper">
 
+        <span class="percentage">
+          {{ getMonitoring($index).q3 }}%
+        </span>
 
-                <!-- Q2 -->
+        <div class="progress-bar">
 
-                <td class="quarter-cell">
+          <div
+            class="progress-value"
+            [style.width.%]="getMonitoring($index).q3"
+          ></div>
 
-                  @if (
-                    getMonitoring($index).q2
-                  ) {
+        </div>
 
-                    <span class="check">
-                      ✓
-                    </span>
+      </div>
 
-                  } @else {
+    </td>
 
-                    <span class="dash">
-                      –
-                    </span>
+    <td class="quarter-cell">
 
-                  }
+      @if (getMonitoring($index).q4) {
 
-                </td>
+        <span class="check">
+          ✓
+        </span>
 
+      } @else {
 
-                <!-- Q3 -->
+        <span class="dash">
+          –
+        </span>
 
-                <td class="quarter-cell">
+      }
 
-                  <div class="progress-wrapper">
+    </td>
 
-                    <span class="percentage">
+  </tr>
 
-                      {{
-                        getMonitoring($index).q3
-                      }}%
-
-                    </span>
-
-
-                    <div class="progress-bar">
-
-                      <div
-                        class="progress-value"
-                        [style.width.%]="
-                          getMonitoring($index).q3
-                        "
-                      ></div>
-
-                    </div>
-
-                  </div>
-
-                </td>
-
-
-                <!-- Q4 -->
-
-                <td class="quarter-cell">
-
-                  @if (
-                    getMonitoring($index).q4
-                  ) {
-
-                    <span class="check">
-                      ✓
-                    </span>
-
-                  } @else {
-
-                    <span class="dash">
-                      –
-                    </span>
-
-                  }
-
-                </td>
-
-
-              </tr>
-
-            }
+}
 
           }
-
 
         </tbody>
 

@@ -6,22 +6,11 @@ import {
   inject
 } from '@angular/core';
 
-import {
-  CommonModule
-} from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
-import {
-  Router
-} from '@angular/router';
-
-import {
-  ChurchService
-} from '../../../core/services/church/church-service';
-
-import {
-  Church
-} from '../../../core/models/church.model';
-
+import { ChurchService } from '../../../core/services/church/church-service';
+import { Church } from '../../../core/models/church.model';
 
 @Component({
   selector: 'app-reports',
@@ -36,12 +25,6 @@ import {
 })
 export class Reports implements OnInit {
 
-  /*
-   * ==========================================
-   * SERVICES
-   * ==========================================
-   */
-
   private readonly churchService =
     inject(ChurchService);
 
@@ -54,75 +37,27 @@ export class Reports implements OnInit {
   private readonly cdr =
     inject(ChangeDetectorRef);
 
-
-  /*
-   * ==========================================
-   * DATA
-   * ==========================================
-   */
-
   districts: Church[] = [];
-
-
-  /*
-   * ==========================================
-   * STATE
-   * ==========================================
-   */
 
   loadingDistricts = false;
 
   errorMessage = '';
 
-
-  /*
-   * ==========================================
-   * INITIALIZATION
-   * ==========================================
-   */
-
   ngOnInit(): void {
-
     this.loadDistricts();
-
   }
 
-
-  /*
-   * ==========================================
-   * LOAD DISTRICTS
-   * ==========================================
-   */
-
   loadDistricts(): void {
-
     this.loadingDistricts = true;
-
     this.errorMessage = '';
 
-    console.log(
-      '[REPORTS] Loading districts...'
-    );
-
-
-    /*
-     * Make Angular update the loading state
-     * immediately.
-     */
+    console.log('[REPORTS] Loading districts...');
 
     this.cdr.detectChanges();
-
 
     this.churchService
       .getDistricts()
       .subscribe({
-
-        /*
-         * ======================================
-         * SUCCESS
-         * ======================================
-         */
-
         next: (response) => {
 
           console.log(
@@ -130,12 +65,7 @@ export class Reports implements OnInit {
             response
           );
 
-
           this.zone.run(() => {
-
-            /*
-             * Check API response
-             */
 
             if (
               response &&
@@ -143,58 +73,32 @@ export class Reports implements OnInit {
               Array.isArray(response.data)
             ) {
 
-              this.districts =
-                [...response.data];
-
+              this.districts = [
+                ...response.data
+              ];
 
               console.log(
                 '[REPORTS] Districts loaded:',
                 this.districts.length
               );
 
-            }
-
-            else {
+            } else {
 
               this.districts = [];
 
               this.errorMessage =
                 'Unable to load districts.';
-
             }
 
-
-            /*
-             * Stop loading
-             */
-
             this.loadingDistricts = false;
-
 
             console.log(
               '[REPORTS] District loading finished'
             );
 
-
-            /*
-             * IMPORTANT:
-             *
-             * Force Angular to refresh the
-             * template after NgZone updates.
-             */
-
             this.cdr.detectChanges();
-
           });
-
         },
-
-
-        /*
-         * ======================================
-         * ERROR
-         * ======================================
-         */
 
         error: (error) => {
 
@@ -202,7 +106,6 @@ export class Reports implements OnInit {
             '[REPORTS] District API error:',
             error
           );
-
 
           this.zone.run(() => {
 
@@ -213,81 +116,27 @@ export class Reports implements OnInit {
             this.errorMessage =
               'Unable to connect to the district server.';
 
-
-            /*
-             * Force UI update
-             */
-
             this.cdr.detectChanges();
-
           });
-
         }
-
       });
-
   }
-
-
-  /*
-   * ==========================================
-   * MONITORING PERCENTAGE
-   * ==========================================
-   *
-   * Temporary value.
-   *
-   * Replace this later with the actual
-   * quarterly report monitoring data.
-   */
 
   getMonitoringPercentage(
     _district: Church
   ): number {
-
     return 50;
-
   }
-
-
-  /*
-   * ==========================================
-   * OPEN DISTRICT
-   * ==========================================
-   */
 
   openDistrict(
-    district: Church
+    districtid: number
   ): void {
 
-    console.log(
-      '[REPORTS] Opening district:',
-      district
-    );
 
-
-    this.router.navigate(
-      ['/pastor/reports/details'],   // was '/pastor/reports-details'
-      {
-        queryParams: {
-          district_id: district.church_id,
-          district_name: district.name
-        }
-      }
-    );
-
+    this.router.navigate([`pastor/reports/details/${districtid}`]);
   }
-
-
-  /*
-   * ==========================================
-   * DISTRICT COUNT
-   * ==========================================
-   */
 
   get districtCount(): number {
-
     return this.districts.length;
-
   }
-
 }
