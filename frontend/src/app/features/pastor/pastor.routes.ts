@@ -65,7 +65,7 @@ export const PASTOR_ROUTES: Routes = [
   {
     path: 'stewardship',
     loadComponent: () =>
-      import('./stewardship/stewardship')
+      import('../representative/stewardship/stewardship')
         .then(m => m.Stewardship)
   },
 
