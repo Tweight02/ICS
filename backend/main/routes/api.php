@@ -9,6 +9,7 @@ use App\Http\Controllers\ChurchController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\BaptismController;
 
 Route::get('/test-speed', function () {
     return 'OK';
@@ -37,3 +38,7 @@ Route::get(
 Route::get('/assistant/districts', [ChurchController::class, 'districts']);
 Route::get('/assistant/departments', [DepartmentController::class, 'getDepartment']);
 Route::post('/assistant/users', [UserController::class, 'create_user']);
+
+
+Route::apiResource('baptisms', BaptismController::class);
+Route::get('/churches', [BaptismController::class, 'allChurches']);
