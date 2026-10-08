@@ -1,8 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable, Service } from '@angular/core';
 import { User } from '../../models/user.model';
 import { Church } from '../../models/church.model';
 import { Department } from '../../models/department.model';
+import { Paginated, Pastor, PastorFilters } from '../../models/pastor.model';
 
 @Injectable({
     providedIn: 'root'
@@ -33,6 +34,21 @@ export class UserService {
             // {
             // withCredentials: true,
             // }
+        );
+    }
+
+    getPastors(filters: PastorFilters = {}) {
+        let params = new HttpParams();
+
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                params = params.set(key, String(value));
+            }
+        });
+
+        return this.http.get<Paginated<Pastor>>(
+            `${this.apiUrl}/pastors`,
+            { params, withCredentials: true }
         );
     }
 }
