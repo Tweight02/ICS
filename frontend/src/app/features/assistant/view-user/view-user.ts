@@ -5,9 +5,10 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { UserService } from '../../../core/services/user/user-service'; // adjust the path
 import { Pastor } from '../../../core/models/pastor.model';
 import { Church } from '../../../core/models/church.model';
+import { RouterLink } from '@angular/router';
 
 @Component({
-  imports: [DatePipe, TitleCasePipe],
+  imports: [DatePipe, TitleCasePipe, RouterLink],
   selector: 'app-view-user',
   styleUrl: './view-user.css',
   templateUrl: './view-user.html',

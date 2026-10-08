@@ -10,7 +10,7 @@ export const AssistantRoute: Routes = [
         loadComponent: () => import('./view-user/view-user').then(m => m.ViewUser)
     },
     {
-        path: 'edit-user',
+        path: 'edit-user/:id',
         loadComponent: () => import('./edit-user/edit-user').then(m => m.EditUser)
     }
 ];
