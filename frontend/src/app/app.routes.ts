@@ -5,12 +5,17 @@ export const routes: Routes = [
   /* ==============================
      HOME
   ============================== */
-
   {
-    path: '',
-    redirectTo: 'representative/reports',
-    pathMatch: 'full'
+    path: 'login',
+    loadComponent: () =>
+      import('./features/login/login')
+        .then(m => m.Login)
   },
+
+  // {
+  //   path: '',
+  //   redirectTo: 'representative/reports',
+  // },
 
 
   /* ==============================
@@ -49,6 +54,7 @@ export const routes: Routes = [
   },
 
 
+
   /* ==============================
      REPRESENTATIVE
   ============================== */
@@ -72,7 +78,15 @@ export const routes: Routes = [
 
   {
     path: '**',
-    redirectTo: 'representative/reports'
+    redirectTo: 'pastor/reports'
+  },
+
+  {
+    path: '',
+    redirectTo:'login',
+    pathMatch:'full'
+
   }
+
 
 ];

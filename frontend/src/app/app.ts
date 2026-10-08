@@ -1,45 +1,8 @@
-import {
-  Component,
-  inject
-} from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 
-import {
-  Router,
-  RouterOutlet
-} from '@angular/router';
-
-import {
-  SidebarComponent
-} from './shared/components/sidebar/sidebar';
-
-import { User } from './core/models/user.model';
-
-
-const CURRENT_USER: User = {
-
-  user_id: 1,
-
-  department_id: 1,
-
-  church_id: 214,
-
-  first_name: 'Juan',
-
-  middle_name: 'Santos',
-
-  last_name: 'Dela Cruz',
-
-  extension_name: null,
-
-  birthdate: '1980-05-15',
-
-  gender: 'Male',
-
-  email: 'district.representative@example.com',
-
-  role: 'representative'
-
-};
+import { SidebarComponent } from './shared/components/sidebar/sidebar';
+import { AuthService } from './core/services/auth/auth-service';
 
 
 @Component({
@@ -56,18 +19,18 @@ const CURRENT_USER: User = {
 })
 export class App {
 
-  private readonly router =
-    inject(Router);
+  private readonly router = inject(Router);
+
+  private readonly auth = inject(AuthService);
 
 
   /*
   |--------------------------------------------------------------------------
-  | CURRENT USER
+  | CURRENT USER (signal from AuthService, set on login, cleared on logout)
   |--------------------------------------------------------------------------
   */
 
-  currentUser: User =
-    CURRENT_USER;
+  readonly currentUser = this.auth.currentUser;
 
 
   /*
@@ -77,6 +40,23 @@ export class App {
   */
 
   collapsed = false;
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | SHOW SIDEBAR
+  |--------------------------------------------------------------------------
+  |
+  | Only when someone is logged in. Reads the AuthService signal, so it
+  | updates right after login/logout without a page reload.
+  |
+  */
+
+  get showSidebar(): boolean {
+
+    return !!this.currentUser();
+
+  }
 
 
   /*

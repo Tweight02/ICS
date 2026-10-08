@@ -12,5 +12,9 @@ export const AssistantRoute: Routes = [
     {
         path: 'edit-user/:id',
         loadComponent: () => import('./edit-user/edit-user').then(m => m.EditUser)
+    },
+    {
+        path: 'reports',
+        loadComponent: () => import('../pastor/report_p/reports/reports').then(m => m.Reports)
     }
 ];
