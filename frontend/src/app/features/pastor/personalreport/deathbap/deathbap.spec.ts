@@ -1,18 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Deathbap } from './deathbap';
 
-import { DeathComponent } from './death.component';
-
-describe('DeathComponent', () => {
-  let component: DeathComponent;
-  let fixture: ComponentFixture<DeathComponent>;
+describe('Deathbap', () => {
+  let component: Deathbap;
+  let fixture: ComponentFixture<Deathbap>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DeathComponent]
-    })
-    .compileComponents();
+      imports: [Deathbap],
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(DeathComponent);
+    fixture = TestBed.createComponent(Deathbap);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

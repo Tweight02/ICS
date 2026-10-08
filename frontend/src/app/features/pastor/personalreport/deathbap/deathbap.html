@@ -1,0 +1,307 @@
+<div class="page">
+
+  <header class="top-header">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <div class="brand-circle">DP</div>
+
+        <div class="brand-info">
+          <h1>Eastern Nueva Vizcaya</h1>
+          <p>Baptism Record &amp; Death Record</p>
+        </div>
+      </div>
+
+      <div class="records-badge">✓ Records</div>
+    </div>
+  </header>
+
+  <section class="selector-section">
+    <div class="d-flex align-items-center">
+      <span class="selector-label">SELECT RECORD:</span>
+
+      <button
+        type="button"
+        class="record-btn"
+        [class.active]="selectedRecord === 'baptism'"
+        (click)="selectRecord('baptism')">
+        Baptism Record
+      </button>
+
+      <button
+        type="button"
+        class="record-btn"
+        [class.active]="selectedRecord === 'death'"
+        (click)="selectRecord('death')">
+        Death Record
+      </button>
+    </div>
+  </section>
+
+  <main class="content-section">
+    <div class="row g-4">
+
+      <div class="col-lg-9 records-column">
+
+        <div class="records-heading d-flex align-items-end justify-content-between">
+          <div>
+            <div class="section-label">SECRETARIAT</div>
+
+            <div class="section-description">
+              {{ selectedRecord === 'baptism' ? 'Baptism records' : 'Death records' }}
+            </div>
+          </div>
+
+          <button class="add-record-btn">
+            + Add Record
+          </button>
+        </div>
+
+        <div class="table-responsive">
+
+          <!-- Baptism Record -->
+          <table
+            class="table records-table"
+            *ngIf="selectedRecord === 'baptism'">
+
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Name</th>
+                <th>Church</th>
+                <th>Birthdate</th>
+                <th>Date of Baptism</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Marital</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td class="member-name">Maria Santos</td>
+                <td>Kingkingan Company</td>
+                <td>May 14, 1998</td>
+                <td>January 4, 2026</td>
+                <td>28</td>
+                <td>Female</td>
+                <td>Single</td>
+              </tr>
+
+              <tr>
+                <td>2</td>
+                <td class="member-name">Juan Dela Cruz</td>
+                <td>Canamasi Company</td>
+                <td>February 18, 1992</td>
+                <td>January 7, 2026</td>
+                <td>34</td>
+                <td>Male</td>
+                <td>Married</td>
+              </tr>
+
+              <tr>
+                <td>3</td>
+                <td class="member-name">Angelica Reyes</td>
+                <td>Cordon</td>
+                <td>September 2, 2007</td>
+                <td>February 10, 2026</td>
+                <td>19</td>
+                <td>Female</td>
+                <td>Single</td>
+              </tr>
+
+              <tr>
+                <td>4</td>
+                <td class="member-name">Mark Anthony Torres</td>
+                <td>Macalong</td>
+                <td>March 22, 1985</td>
+                <td>March 13, 2026</td>
+                <td>41</td>
+                <td>Male</td>
+                <td>Married</td>
+              </tr>
+
+              <tr>
+                <td>5</td>
+                <td class="member-name">Grace Villanueva</td>
+                <td>Kongkong Company</td>
+                <td>November 5, 2004</td>
+                <td>April 16, 2026</td>
+                <td>22</td>
+                <td>Female</td>
+                <td>Single</td>
+              </tr>
+
+              <tr>
+                <td>6</td>
+                <td class="member-name">Ronnie Bautista</td>
+                <td>Paqui</td>
+                <td>June 17, 1989</td>
+                <td>May 19, 2026</td>
+                <td>37</td>
+                <td>Male</td>
+                <td>Married</td>
+              </tr>
+
+              <tr>
+                <td>7</td>
+                <td class="member-name">Christine Domingo</td>
+                <td>Moya Company</td>
+                <td>January 11, 2010</td>
+                <td>June 22, 2026</td>
+                <td>16</td>
+                <td>Female</td>
+                <td>Single</td>
+              </tr>
+
+              <tr>
+                <td>8</td>
+                <td class="member-name">Ferdinand Ocampo</td>
+                <td>Maglan</td>
+                <td>August 29, 1974</td>
+                <td>July 25, 2026</td>
+                <td>52</td>
+                <td>Male</td>
+                <td>Widowed</td>
+              </tr>
+
+              <tr>
+                <td>9</td>
+                <td class="member-name">Josephine Aquino</td>
+                <td>Palia</td>
+                <td>December 3, 2002</td>
+                <td>August 4, 2026</td>
+                <td>24</td>
+                <td>Female</td>
+                <td>Single</td>
+              </tr>
+
+              <tr>
+                <td>10</td>
+                <td class="member-name">Michael Fontanilla</td>
+                <td>Poblacion</td>
+                <td>April 9, 1995</td>
+                <td>September 7, 2026</td>
+                <td>31</td>
+                <td>Male</td>
+                <td>Married</td>
+              </tr>
+
+              <tr>
+                <td>11</td>
+                <td class="member-name">dsds</td>
+                <td>Cordon</td>
+                <td>October 16, 2026</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Death Record -->
+          <table
+            class="table records-table"
+            *ngIf="selectedRecord === 'death'">
+
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Name</th>
+                <th>Church</th>
+                <th>Birthdate</th>
+                <th>Date of Death</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Marital</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td class="member-name">Sample Deceased Member</td>
+                <td>Poblacion</td>
+                <td>April 12, 1952</td>
+                <td>February 14, 2026</td>
+                <td>73</td>
+                <td>Male</td>
+                <td>Married</td>
+              </tr>
+
+              <tr>
+                <td>2</td>
+                <td class="member-name">Sample Deceased Member 2</td>
+                <td>Cordon</td>
+                <td>September 8, 1947</td>
+                <td>June 18, 2026</td>
+                <td>78</td>
+                <td>Female</td>
+                <td>Widowed</td>
+              </tr>
+
+              <tr>
+                <td>3</td>
+                <td class="member-name">Allesfg</td>
+                <td>Kinokgiran Company</td>
+                <td>October 16, 2026</td>
+                <td>October 10, 2026</td>
+                <td>7</td>
+                <td>Male</td>
+                <td>Married</td>
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+
+      <div class="col-lg-3 comments-column">
+
+        <h2>Comments</h2>
+
+        <div class="comments-subtitle">
+          Administrative Assistant
+        </div>
+
+        <div class="comment-card">
+
+          <div class="comment-top">
+
+            <div>
+              <div class="comment-author">
+                Administrative Assistant
+              </div>
+
+              <div class="comment-role">
+                Administrative Assistant · Sample comment
+              </div>
+            </div>
+
+            <div class="comment-date">
+              Sep 15, 2026, 3:00 PM
+            </div>
+
+          </div>
+
+          <p class="comment-text">
+            The report has been reviewed by the Administrative Assistant.
+            Please ensure the entries are complete and any supporting notes
+            are included before final submission.
+          </p>
+
+        </div>
+
+        <div class="comment-line"></div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+  rel="stylesheet">
