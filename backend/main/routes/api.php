@@ -25,7 +25,26 @@ Route::get(
     [ReportController::class, 'departmentsByChurch']
 );
 
+
 Route::get(
     '/churches/{churchId}/departments/{departmentId}/report',
     [ReportController::class, 'departmentReport']
+);
+
+
+Route::get(
+    '/churches/{churchId}/departments/{departmentId}/quarters',
+    [ReportController::class, 'reportQuarters']
+);
+
+
+Route::get(
+    '/quarters/{quarterId}/comments',
+    [ReportController::class, 'comments']
+);
+
+
+Route::post(
+    '/comments',
+    [ReportController::class, 'addComment']
 );
