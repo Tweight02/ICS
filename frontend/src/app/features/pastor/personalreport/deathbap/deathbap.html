@@ -1,6 +1,7 @@
 <div class="page">
 
   <header class="top-header">
+
     <div class="d-flex align-items-center justify-content-between">
 
       <div class="d-flex align-items-center">
@@ -21,6 +22,7 @@
       </div>
 
     </div>
+
   </header>
 
 
@@ -118,9 +120,9 @@
         <div class="table-responsive">
 
 
-          <!-- ========================= -->
+          <!-- ================================================= -->
           <!-- BAPTISM RECORD -->
-          <!-- ========================= -->
+          <!-- ================================================= -->
 
           <table
             class="table records-table"
@@ -169,10 +171,29 @@
               </tr>
 
 
+              <!-- Error -->
+              <tr
+                *ngIf="
+                  !loadingBaptisms &&
+                  baptismError
+                ">
+
+                <td
+                  colspan="8"
+                  class="text-center">
+
+                  {{ baptismError }}
+
+                </td>
+
+              </tr>
+
+
               <!-- No records -->
               <tr
                 *ngIf="
                   !loadingBaptisms &&
+                  !baptismError &&
                   baptisms.length === 0
                 ">
 
@@ -187,7 +208,7 @@
               </tr>
 
 
-              <!-- Records -->
+              <!-- Baptism Records -->
               <tr
                 *ngFor="
                   let baptism of baptisms;
@@ -198,13 +219,11 @@
                   {{ i + 1 }}
                 </td>
 
-
                 <td class="member-name">
 
                   {{ getFullName(baptism) }}
 
                 </td>
-
 
                 <td>
 
@@ -212,13 +231,11 @@
 
                 </td>
 
-
                 <td>
 
                   {{ formatDate(baptism.birthdate) }}
 
                 </td>
-
 
                 <td>
 
@@ -226,20 +243,17 @@
 
                 </td>
 
-
                 <td>
 
                   {{ calculateAge(baptism.birthdate) }}
 
                 </td>
 
-
                 <td>
 
                   {{ baptism.gender }}
 
                 </td>
-
 
                 <td>
 
@@ -256,9 +270,9 @@
 
 
 
-          <!-- ========================= -->
+          <!-- ================================================= -->
           <!-- DEATH RECORD -->
-          <!-- ========================= -->
+          <!-- ================================================= -->
 
           <table
             class="table records-table"
@@ -269,12 +283,19 @@
               <tr>
 
                 <th>No.</th>
+
                 <th>Name</th>
+
                 <th>Church</th>
+
                 <th>Birthdate</th>
+
                 <th>Date of Death</th>
+
                 <th>Age</th>
+
                 <th>Gender</th>
+
                 <th>Marital</th>
 
               </tr>
@@ -284,109 +305,149 @@
 
             <tbody>
 
-              <tr>
 
-                <td>1</td>
+              <!-- Loading -->
+              <tr
+                *ngIf="loadingDeaths">
 
-                <td class="member-name">
-                  Sample Deceased Member
-                </td>
+                <td
+                  colspan="8"
+                  class="text-center">
 
-                <td>
-                  Poblacion
-                </td>
+                  Loading death records...
 
-                <td>
-                  April 12, 1952
-                </td>
-
-                <td>
-                  February 14, 2026
-                </td>
-
-                <td>
-                  73
-                </td>
-
-                <td>
-                  Male
-                </td>
-
-                <td>
-                  Married
                 </td>
 
               </tr>
 
 
-              <tr>
+              <!-- Error -->
+              <tr
+                *ngIf="
+                  !loadingDeaths &&
+                  deathError
+                ">
 
-                <td>2</td>
+                <td
+                  colspan="8"
+                  class="text-center">
 
-                <td class="member-name">
-                  Sample Deceased Member 2
-                </td>
+                  {{ deathError }}
 
-                <td>
-                  Cordon
-                </td>
-
-                <td>
-                  September 8, 1947
-                </td>
-
-                <td>
-                  June 18, 2026
-                </td>
-
-                <td>
-                  78
-                </td>
-
-                <td>
-                  Female
-                </td>
-
-                <td>
-                  Widowed
                 </td>
 
               </tr>
 
 
-              <tr>
+              <!-- No records -->
+              <tr
+                *ngIf="
+                  !loadingDeaths &&
+                  !deathError &&
+                  deaths.length === 0
+                ">
 
-                <td>3</td>
+                <td
+                  colspan="8"
+                  class="text-center">
 
-                <td class="member-name">
-                  Allesfg
-                </td>
+                  No death records found.
 
-                <td>
-                  Kinokgiran Company
-                </td>
-
-                <td>
-                  October 16, 2026
-                </td>
-
-                <td>
-                  October 10, 2026
-                </td>
-
-                <td>
-                  7
-                </td>
-
-                <td>
-                  Male
-                </td>
-
-                <td>
-                  Married
                 </td>
 
               </tr>
+
+
+              <!-- Death Records -->
+              <tr
+                *ngFor="
+                  let death of deaths;
+                  let i = index
+                ">
+
+                <td>
+                  {{ i + 1 }}
+                </td>
+
+
+                <!-- Name -->
+                <td class="member-name">
+
+                  {{
+                    getFullName(
+                      getDeathBaptism(death)
+                    )
+                  }}
+
+                </td>
+
+
+                <!-- Church -->
+                <td>
+
+                  {{
+                    getChurchName(
+                      getDeathBaptism(death)?.church_id
+                    )
+                  }}
+
+                </td>
+
+
+                <!-- Birthdate -->
+                <td>
+
+                  {{
+                    formatDate(
+                      getDeathBaptism(death)?.birthdate || ''
+                    )
+                  }}
+
+                </td>
+
+
+                <!-- Date of Death -->
+                <td>
+
+                  {{ formatDate(death.date_of_death) }}
+
+                </td>
+
+
+                <!-- Age -->
+                <td>
+
+                  {{
+                    calculateAgeAtDeath(
+                      getDeathBaptism(death)?.birthdate || '',
+                      death.date_of_death
+                    )
+                  }}
+
+                </td>
+
+
+                <!-- Gender -->
+                <td>
+
+                  {{
+                    getDeathBaptism(death)?.gender || '—'
+                  }}
+
+                </td>
+
+
+                <!-- Marital -->
+                <td>
+
+                  {{
+                    getDeathBaptism(death)?.marital_status || '—'
+                  }}
+
+                </td>
+
+              </tr>
+
 
             </tbody>
 
@@ -399,9 +460,9 @@
 
 
 
-      <!-- ========================= -->
+      <!-- ================================================= -->
       <!-- COMMENTS -->
-      <!-- ========================= -->
+      <!-- ================================================= -->
 
       <div class="col-lg-3 comments-column">
 
