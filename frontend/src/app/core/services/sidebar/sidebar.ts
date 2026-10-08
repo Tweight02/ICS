@@ -21,8 +21,7 @@ export class SidebarService {
       case 'pastor':
         return [
           { label: 'Reports',     route: '/pastor/reports',     icon: 'bi-bar-chart' },
-          { label: 'Baptism',     route: '/pastor/baptism',     icon: 'bi-droplet' },
-          { label: 'Death',       route: '/pastor/death',       icon: 'bi-flower1' },
+          { label: 'Baptism and Death',     route: '/pastor/baptism',     icon: 'bi-droplet' },
           { label: 'Stewardship', route: '/pastor/stewardship', icon: 'bi-cash-coin' },
           { label: 'Events',      route: '/pastor/events',      icon: 'bi-calendar-event' },
           { label: 'Church Role', route: '/pastor/church-role', icon: 'bi-people' }

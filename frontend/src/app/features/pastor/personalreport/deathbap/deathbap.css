@@ -1,0 +1,284 @@
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+.page {
+  min-height: 100vh;
+  border-top: 1px solid #dddddd;
+}
+
+.top-header {
+  padding: 34px 42px 26px;
+}
+
+.brand-circle {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #e9f1eb;
+  color: #0f4b3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  margin-right: 18px;
+}
+
+.brand-info h1 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.brand-info p {
+  margin: 5px 0 0;
+  color: #6d6d73;
+  font-size: 15px;
+}
+
+.records-badge {
+  background: #e8f1ea;
+  color: #0e4b3b;
+  padding: 7px 13px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.selector-section {
+  padding: 3px 42px 48px;
+}
+
+.selector-label {
+  margin-right: 9px;
+  color: #4b4b4b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.record-btn {
+  background: #ffffff;
+  color: #0e4b3b;
+  border: 1px solid #cfdbd7;
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-right: 7px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.record-btn:hover {
+  background: #f3f7f5;
+}
+
+.record-btn.active {
+  background: #1f5a47;
+  color: #ffffff;
+  border-color: #1f5a47;
+}
+
+.content-section {
+  padding: 0 42px 25px;
+}
+
+.records-column {
+  padding-right: 12px;
+}
+
+.records-heading {
+  margin-bottom: 16px;
+}
+
+.section-label {
+  color: #008978;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  margin-bottom: 8px;
+}
+
+.section-description {
+  color: #77716c;
+  font-size: 14px;
+}
+
+.add-record-btn {
+  background: #ffffff;
+  border: 1px solid #e5ddcf;
+  border-radius: 11px;
+  padding: 10px 19px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.records-table {
+  width: 100%;
+  margin-bottom: 0;
+  border: 1px solid #d7dfdd;
+}
+
+.records-table thead th {
+  background: #f4f7f5;
+  color: #8a7d6c;
+  border-bottom: 1px solid #d7dfdd;
+  padding: 10px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.records-table tbody td {
+  padding: 10px 8px;
+  border-color: #e2e6e4;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.records-table tbody tr:nth-child(even) {
+  background: #fcfcfc;
+}
+
+.member-name {
+  color: #0b4250 !important;
+  font-weight: 700;
+}
+
+.comments-column {
+  padding-left: 0;
+}
+
+.comments-column h2 {
+  margin: -2px 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.comments-subtitle {
+  color: #77716c;
+  font-size: 13px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e7e9e8;
+}
+
+.comment-card {
+  margin-top: 13px;
+  padding: 14px 15px;
+  border: 1px solid #d7dfdd;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.comment-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.comment-author {
+  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.comment-role {
+  color: #786e67;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.comment-date {
+  color: #7b746e;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.comment-text {
+  margin: 12px 0 0;
+  color: #252525;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.comment-line {
+  margin-top: 16px;
+  border-bottom: 1px solid #ededed;
+}
+
+@media (min-width: 992px) {
+  .records-column {
+    flex: 0 0 76.5%;
+    max-width: 76.5%;
+  }
+
+  .comments-column {
+    flex: 0 0 23.5%;
+    max-width: 23.5%;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .top-header,
+  .selector-section,
+  .content-section {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .comments-column {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .top-header {
+    padding-top: 22px;
+  }
+
+  .brand-circle {
+    width: 58px;
+    height: 58px;
+    font-size: 17px;
+    margin-right: 12px;
+  }
+
+  .brand-info h1 {
+    font-size: 19px;
+  }
+
+  .brand-info p {
+    font-size: 13px;
+  }
+
+  .records-badge {
+    display: none;
+  }
+
+  .selector-section {
+    padding-bottom: 28px;
+  }
+
+  .selector-label {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .record-btn {
+    font-size: 14px;
+    padding: 10px 14px;
+  }
+
+  .comment-top {
+    flex-direction: column;
+  }
+
+  .comment-date {
+    white-space: normal;
+  }
+}

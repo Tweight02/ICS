@@ -1,0 +1,170 @@
+<div class="reports-page">
+
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
+
+  <div class="reports-header">
+
+    <div class="header-information">
+
+      <button
+        type="button"
+        class="back-button"
+        (click)="backToReports()"
+      >
+        ← Back
+      </button>
+
+
+      <span class="section-label">
+        REPORT MANAGEMENT
+      </span>
+
+
+      <h1>
+        {{ churchName }}
+      </h1>
+
+
+      <p>
+        {{ districtName }}
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       ERROR
+  ====================================================== -->
+
+  <div
+    class="alert alert-danger"
+    *ngIf="errorMessage"
+  >
+
+    {{ errorMessage }}
+
+  </div>
+
+
+  <!-- =====================================================
+       LOADING
+  ====================================================== -->
+
+  <div
+    class="loading-container"
+    *ngIf="loading"
+  >
+
+    <div class="spinner"></div>
+
+    <p>
+      Loading reports...
+    </p>
+
+  </div>
+
+
+  <!-- =====================================================
+       REPORT LIST
+  ====================================================== -->
+
+  <div
+    class="department-grid"
+    *ngIf="
+      !loading &&
+      !errorMessage &&
+      representativeDepartments.length > 0
+    "
+  >
+
+    <div
+      class="department-card"
+
+      *ngFor="
+        let department of representativeDepartments;
+        trackBy: trackDepartment
+      "
+
+      (click)="openDepartment(department)"
+    >
+
+      <!-- ICON -->
+
+      <div class="department-icon">
+
+        <span>
+          {{
+            getDepartmentIcon(
+              department.department_name
+            )
+          }}
+        </span>
+
+      </div>
+
+
+      <!-- INFORMATION -->
+
+      <div class="department-content">
+
+        <h2>
+          {{ department.department_name }}
+        </h2>
+
+
+        <p>
+          View and manage the report for this department.
+        </p>
+
+      </div>
+
+
+      <!-- ARROW -->
+
+      <div class="department-arrow">
+
+        →
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       EMPTY STATE
+  ====================================================== -->
+
+  <div
+    class="empty-state"
+
+    *ngIf="
+      !loading &&
+      !errorMessage &&
+      representativeDepartments.length === 0
+    "
+  >
+
+    <div class="empty-icon">
+      📋
+    </div>
+
+
+    <h3>
+      No Reports Available
+    </h3>
+
+
+    <p>
+      There are currently no reports assigned
+      to the church representative.
+    </p>
+
+  </div>
+
+</div>

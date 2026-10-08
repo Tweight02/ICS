@@ -14,14 +14,16 @@ import {
 } from '@angular/router';
 
 import {
-  ReportService,
+  ReportService
+} from '../../../../core/services/report/report';
+
+import {
   Department,
   DepartmentReport,
   Particular,
   ReportQuarter,
   ReportComment
-} from '../../../../core/services/report/report';
-
+} from '../../../../core/models/report.model';
 
 @Component({
   selector: 'app-report-programs',

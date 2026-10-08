@@ -8,35 +8,11 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | CURRENT REPORTING PERIOD
-    |--------------------------------------------------------------------------
-    |
-    | Your organization is currently using Q3 2026
-    | as the current reporting quarter.
-    |
-    */
+    /* =========================================================
+       GET DEPARTMENTS
+    ========================================================= */
 
-    private string $currentQuarter = 'Q3';
-
-    private string $currentYear = '2026';
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | GET DEPARTMENTS BY CHURCH
-    |--------------------------------------------------------------------------
-    |
-    | GET:
-    | /api/churches/{churchId}/departments
-    |
-    | Returns all departments and their approval status
-    | for Q1, Q2, Q3 and Q4.
-    |
-    */
-
-    public function departmentsByChurch($churchId)
+    public function getDepartments($churchId)
     {
         /*
         |--------------------------------------------------------------------------
@@ -69,10 +45,7 @@ class ReportController extends Controller
 
         $departments = DB::table('departments')
             ->orderBy('department_name')
-            ->get([
-                'department_id',
-                'department_name',
-            ]);
+            ->get();
 
 
         /*
@@ -230,24 +203,15 @@ class ReportController extends Controller
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET DEPARTMENT REPORT
-    |--------------------------------------------------------------------------
-    |
-    | GET:
-    | /api/churches/{churchId}/departments/{departmentId}/report
-    |
-    */
+    /* =========================================================
+       GET DEPARTMENT REPORT
+    ========================================================= */
 
-    public function departmentReport(
-        $churchId,
-        $departmentId
-    ) {
-
+    public function departmentReport($churchId, $departmentId)
+    {
         /*
         |--------------------------------------------------------------------------
-        | Check department
+        | GET DEPARTMENT
         |--------------------------------------------------------------------------
         */
 
@@ -271,11 +235,8 @@ class ReportController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Get programs
+        | GET MAIN PROGRAMS
         |--------------------------------------------------------------------------
-        |
-        | Parent programs only.
-        |
         */
 
         $programs = DB::table('programs')
@@ -287,8 +248,8 @@ class ReportController extends Controller
             ->orderBy('program_id')
             ->get();
 
+        $reportPrograms = [];
 
-        $result = [];
 
 
         /*
@@ -299,10 +260,40 @@ class ReportController extends Controller
 
         foreach ($programs as $program) {
 
+            /*
+            |--------------------------------------------------------------------------
+            | GET QUARTERS FROM THE MAIN PROGRAM
+            |--------------------------------------------------------------------------
+            |
+            | Example:
+            |
+            | Main program: 48
+            | Children's Ministries: 49
+            | Family Ministries: 50
+            |
+            | Both sections use quarters belonging to program 48.
+            |
+            */
+
+            $quarters = DB::table('quarters')
+                ->where('church_id', $churchId)
+                ->where('program_id', $program->program_id)
+                ->orderBy('year')
+                ->orderByRaw("
+                    CASE
+                        WHEN quarter LIKE '%1%' THEN 1
+                        WHEN quarter LIKE '%2%' THEN 2
+                        WHEN quarter LIKE '%3%' THEN 3
+                        WHEN quarter LIKE '%4%' THEN 4
+                        ELSE 5
+                    END
+                ")
+                ->get();
+
 
             /*
             |--------------------------------------------------------------------------
-            | Get sections
+            | GET PROGRAM SECTIONS
             |--------------------------------------------------------------------------
             */
 
@@ -314,18 +305,8 @@ class ReportController extends Controller
                 ->orderBy('program_id')
                 ->get();
 
+            $sectionData = [];
 
-            $programData = [
-
-                'program_id' =>
-                    (int) $program->program_id,
-
-                'program_name' =>
-                    $program->program_name,
-
-                'sections' => []
-
-            ];
 
 
             /*
@@ -336,10 +317,9 @@ class ReportController extends Controller
 
             foreach ($sections as $section) {
 
-
                 /*
                 |--------------------------------------------------------------------------
-                | Get particulars
+                | GET PARTICULARS
                 |--------------------------------------------------------------------------
                 */
 
@@ -355,64 +335,48 @@ class ReportController extends Controller
                 $particularData = [];
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | Loop particulars
-                |--------------------------------------------------------------------------
-                */
-
                 foreach ($particulars as $particular) {
-
 
                     /*
                     |--------------------------------------------------------------------------
-                    | Get quarter values
+                    | ATTACH QUARTERS AND SAVED VALUES
                     |--------------------------------------------------------------------------
-                    |
-                    | quarter_id is VERY IMPORTANT because comments
-                    | are connected to quarters.quarter_id.
-                    |
                     */
 
-                    $items = DB::table('particular_items')
-                        ->join(
-                            'quarters',
-                            'particular_items.quarter_id',
-                            '=',
-                            'quarters.quarter_id'
-                        )
-                        ->where(
-                            'particular_items.particular_id',
-                            $particular->particular_id
-                        )
-                        ->where(
-                            'quarters.church_id',
-                            $churchId
-                        )
-                        ->select(
+                    $particularQuarters = $quarters->map(
+                        function ($quarter) use ($particular) {
 
-                            'quarters.quarter_id',
+                            $savedItem = DB::table('particular_items')
+                                ->where(
+                                    'particular_id',
+                                    $particular->particular_id
+                                )
+                                ->where(
+                                    'quarter_id',
+                                    $quarter->quarter_id
+                                )
+                                ->first();
 
-                            'quarters.quarter',
+                            return [
+                                'quarter_id' => (int) $quarter->quarter_id,
 
-                            'quarters.year',
+                                'quarter' => $quarter->quarter,
 
-                            'quarters.date_submitted',
+                                'year' => $quarter->year,
 
-                            'quarters.district_endorse',
+                                'date_submitted' => $quarter->date_submitted,
 
-                            'quarters.mission_approve',
+                                'district_endorse' => $quarter->district_endorse,
 
-                            'particular_items.value'
+                                'mission_approve' => $quarter->mission_approve,
 
-                        )
-                        ->orderBy(
-                            'quarters.year'
-                        )
-                        ->orderBy(
-                            'quarters.quarter'
-                        )
-                        ->get();
+                                'value' => $savedItem
+                                    ? $savedItem->value
+                                    : null,
+                            ];
+                        }
+                    )->values();
+
 
 
                     /*
@@ -422,17 +386,11 @@ class ReportController extends Controller
                     */
 
                     $particularData[] = [
+                        'particular_id' => (int) $particular->particular_id,
 
-                        'particular_id' =>
-                            (int)
-                            $particular->particular_id,
+                        'particular_name' => $particular->particular_name,
 
-                        'particular_name' =>
-                            $particular->particular_name,
-
-                        'quarters' =>
-                            $items
-
+                        'quarters' => $particularQuarters,
                     ];
 
                 }
@@ -440,22 +398,16 @@ class ReportController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | Section
+                | SECTION RESPONSE
                 |--------------------------------------------------------------------------
                 */
 
-                $programData['sections'][] = [
+                $sectionData[] = [
+                    'program_id' => (int) $section->program_id,
 
-                    'program_id' =>
-                        (int)
-                        $section->program_id,
+                    'program_name' => $section->program_name,
 
-                    'program_name' =>
-                        $section->program_name,
-
-                    'particulars' =>
-                        $particularData
-
+                    'particulars' => $particularData,
                 ];
 
             }
@@ -463,377 +415,389 @@ class ReportController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | Program
+            | MAIN PROGRAM RESPONSE
             |--------------------------------------------------------------------------
             */
 
-            $result[] =
-                $programData;
+            $reportPrograms[] = [
+                'program_id' => (int) $program->program_id,
 
+                'program_name' => $program->program_name,
+
+                'sections' => $sectionData,
+            ];
         }
 
 
         /*
         |--------------------------------------------------------------------------
-        | Return report
+        | LOG REPORT REQUEST
+        |--------------------------------------------------------------------------
+        */
+
+        \Log::info('Department Report Loaded', [
+            'church_id' => $churchId,
+
+            'department_id' => $departmentId,
+
+            'program_count' => count($reportPrograms),
+        ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESPONSE
         |--------------------------------------------------------------------------
         */
 
         return response()->json([
-
-            'church_id' =>
-                (int) $churchId,
+            'church_id' => (int) $churchId,
 
             'department' => [
+                'department_id' => (int) $department->department_id,
 
-                'department_id' =>
-                    (int)
-                    $department->department_id,
-
-                'department_name' =>
-                    $department->department_name,
-
+                'department_name' => $department->department_name,
             ],
 
-            'programs' =>
-                $result
-
+            'programs' => $reportPrograms,
         ]);
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET COMMENTS
-    |--------------------------------------------------------------------------
-    |
-    | GET:
-    | /api/quarters/{quarterId}/comments
-    |
-    */
+    /* =========================================================
+       SAVE DEPARTMENT REPORT
+    ========================================================= */
 
-    public function comments($quarterId)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | Check quarter exists
-        |--------------------------------------------------------------------------
-        */
-
-        $quarter = DB::table('quarters')
-            ->where(
-                'quarter_id',
-                $quarterId
-            )
-            ->first();
-
-
-        if (!$quarter) {
-
-            return response()->json([
-                'message' =>
-                    'Quarter report not found.'
-            ], 404);
-
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Get comments
-        |--------------------------------------------------------------------------
-        */
-
-        $comments = DB::table('comments')
-            ->join(
-                'users',
-                'comments.commented_by',
-                '=',
-                'users.user_id'
-            )
-            ->where(
-                'comments.quarter_id',
-                $quarterId
-            )
-            ->orderByDesc(
-                'comments.comment_id'
-            )
-            ->select(
-
-                'comments.comment_id',
-
-                'comments.quarter_id',
-
-                'comments.commented_by',
-
-                'comments.details',
-
-                'comments.date_commented',
-
-                'users.first_name',
-
-                'users.middle_name',
-
-                'users.last_name',
-
-                'users.role'
-
-            )
-            ->get();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Return comments
-        |--------------------------------------------------------------------------
-        */
-
-        return response()->json(
-            $comments
-        );
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | ADD COMMENT
-    |--------------------------------------------------------------------------
-    |
-    | POST:
-    | /api/comments
-    |
-    | Current reporting period:
-    | Q3 2026
-    |
-    */
-
-    public function addComment(
-        Request $request
+    public function saveDepartmentReport(
+        Request $request,
+        $churchId,
+        $departmentId
     ) {
 
         /*
         |--------------------------------------------------------------------------
-        | Validate request
+        | VALIDATE REQUEST
         |--------------------------------------------------------------------------
         */
 
         $validated = $request->validate([
+            'items' => [
+                'required',
+                'array',
+                'min:1',
+            ],
 
-            'quarter_id' => [
+            'items.*.particular_id' => [
                 'required',
                 'integer',
-                'exists:quarters,quarter_id'
             ],
 
-            'commented_by' => [
+            'items.*.quarter_id' => [
                 'required',
                 'integer',
-                'exists:users,user_id'
             ],
 
-            'details' => [
-                'required',
-                'string',
-                'max:255'
+            'items.*.value' => [
+                'nullable',
+                'integer',
+                'min:0',
             ],
-
         ]);
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Current reporting period
-        |--------------------------------------------------------------------------
-        */
+        DB::beginTransaction();
 
-        $currentQuarter =
-            $this->currentQuarter;
+        try {
 
-        $currentYear =
-            $this->currentYear;
+            $savedCount = 0;
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Get quarter
-        |--------------------------------------------------------------------------
-        */
+            /*
+            |--------------------------------------------------------------------------
+            | PROCESS EACH REPORT ITEM
+            |--------------------------------------------------------------------------
+            */
 
-        $quarter = DB::table('quarters')
-            ->where(
-                'quarter_id',
-                $validated['quarter_id']
-            )
-            ->first();
+            foreach ($validated['items'] as $item) {
+
+                /*
+                |--------------------------------------------------------------------------
+                | FIND PARTICULAR AND ITS MAIN PROGRAM
+                |--------------------------------------------------------------------------
+                |
+                | particular
+                |     -> section program
+                |     -> main program
+                |     -> department
+                |
+                */
+
+                $particular = DB::table('particulars as p')
+                    ->join(
+                        'programs as section',
+                        'p.program_id',
+                        '=',
+                        'section.program_id'
+                    )
+                    ->join(
+                        'programs as program',
+                        'section.parent_id',
+                        '=',
+                        'program.program_id'
+                    )
+                    ->where(
+                        'p.particular_id',
+                        $item['particular_id']
+                    )
+                    ->where(
+                        'program.department_id',
+                        $departmentId
+                    )
+                    ->whereNull('program.parent_id')
+                    ->select([
+                        'p.particular_id',
+                        'section.program_id as section_program_id',
+                        'program.program_id as main_program_id',
+                    ])
+                    ->first();
 
 
-        if (!$quarter) {
+                if (!$particular) {
+                    throw new \Exception(
+                        'Invalid particular for this department.'
+                    );
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | FIND QUARTER
+                |--------------------------------------------------------------------------
+                |
+                | IMPORTANT:
+                |
+                | Use main_program_id, NOT section_program_id.
+                |
+                */
+
+                $quarter = DB::table('quarters')
+                    ->where(
+                        'quarter_id',
+                        $item['quarter_id']
+                    )
+                    ->where(
+                        'church_id',
+                        $churchId
+                    )
+                    ->where(
+                        'program_id',
+                        $particular->main_program_id
+                    )
+                    ->lockForUpdate()
+                    ->first();
+
+
+                if (!$quarter) {
+                    throw new \Exception(
+                        'Invalid quarter for this church or program.'
+                    );
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | APPROVED QUARTERS CANNOT BE EDITED
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $quarter->mission_approve !== null &&
+                    $quarter->mission_approve !== ''
+                ) {
+                    throw new \Exception(
+                        'This quarter has already been approved and cannot be edited.'
+                    );
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | ENFORCE SEQUENTIAL QUARTER APPROVAL
+                |--------------------------------------------------------------------------
+                |
+                | Q1 can be saved first.
+                | Q2 requires Q1 approval.
+                | Q3 requires Q2 approval.
+                | Q4 requires Q3 approval.
+                |
+                */
+
+                $quarterNumber = $this->getQuarterNumber(
+                    $quarter->quarter
+                );
+
+                if ($quarterNumber === null) {
+                    throw new \Exception(
+                        'Invalid quarter name.'
+                    );
+                }
+
+
+                if ($quarterNumber > 1) {
+
+                    $previousQuarterName = 'Q' . ($quarterNumber - 1);
+
+                    $previousQuarter = DB::table('quarters')
+                        ->where(
+                            'church_id',
+                            $churchId
+                        )
+                        ->where(
+                            'program_id',
+                            $particular->main_program_id
+                        )
+                        ->where(
+                            'year',
+                            $quarter->year
+                        )
+                        ->where(
+                            'quarter',
+                            $previousQuarterName
+                        )
+                        ->first();
+
+
+                    if (!$previousQuarter) {
+                        throw new \Exception(
+                            $previousQuarterName .
+                            ' must exist before this quarter can be submitted.'
+                        );
+                    }
+
+
+                    if (
+                        $previousQuarter->mission_approve === null ||
+                        $previousQuarter->mission_approve === ''
+                    ) {
+                        throw new \Exception(
+                            $previousQuarterName .
+                            ' must be approved before saving ' .
+                            $quarter->quarter . '.'
+                        );
+                    }
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | FIND EXISTING PARTICULAR ITEM
+                |--------------------------------------------------------------------------
+                */
+
+                $existing = DB::table('particular_items')
+                    ->where(
+                        'particular_id',
+                        $item['particular_id']
+                    )
+                    ->where(
+                        'quarter_id',
+                        $item['quarter_id']
+                    )
+                    ->first();
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | UPDATE EXISTING ITEM
+                |--------------------------------------------------------------------------
+                */
+
+                if ($existing) {
+
+                    DB::table('particular_items')
+                        ->where(
+                            'item_id',
+                            $existing->item_id
+                        )
+                        ->update([
+                            'value' => $item['value'],
+                        ]);
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | INSERT NEW ITEM
+                |--------------------------------------------------------------------------
+                */
+
+                else {
+
+                    DB::table('particular_items')
+                        ->insert([
+                            'particular_id' => $item['particular_id'],
+
+                            'quarter_id' => $item['quarter_id'],
+
+                            'value' => $item['value'],
+                        ]);
+                }
+
+
+                $savedCount++;
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | COMMIT TRANSACTION
+            |--------------------------------------------------------------------------
+            */
+
+            DB::commit();
 
             return response()->json([
-                'message' =>
-                    'Quarter report not found.'
-            ], 404);
+                'message' => 'Report saved successfully.',
 
-        }
+                'saved_count' => $savedCount,
+            ]);
+        } catch (\Throwable $e) {
 
+            DB::rollBack();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Only Q3 2026 can receive comments
-        |--------------------------------------------------------------------------
-        */
+            \Log::error('Save Department Report Failed', [
+                'church_id' => $churchId,
 
-        if (
-            $quarter->quarter !==
-                $currentQuarter
-            ||
-            (string) $quarter->year !==
-                $currentYear
-        ) {
+                'department_id' => $departmentId,
+
+                'error' => $e->getMessage(),
+            ]);
 
             return response()->json([
+                'message' => 'Unable to save report.',
 
-                'message' =>
-                    'Comments can only be added to the current quarter: '
-                    . $currentQuarter
-                    . ' '
-                    . $currentYear
-
+                'error' => $e->getMessage(),
             ], 422);
+        }
+    }
 
+
+    /* =========================================================
+       GET QUARTER NUMBER
+    ========================================================= */
+
+    private function getQuarterNumber($quarter)
+    {
+        $quarter = strtoupper(trim((string) $quarter));
+
+        if (preg_match('/(?:^|[^A-Z0-9])Q([1-4])(?:$|[^A-Z0-9])/', $quarter, $matches)) {
+            return (int) $matches[1];
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Check approval
-        |--------------------------------------------------------------------------
-        |
-        | mission_approve is a DATE field.
-        |
-        | NULL:
-        | Not approved
-        |
-        | Date:
-        | Approved
-        |
-        */
-
-        if (
-            !empty(
-                $quarter->mission_approve
-            )
-        ) {
-
-            return response()->json([
-
-                'message' =>
-                    'This report has already been approved. No more comments are allowed.'
-
-            ], 422);
-
+        if (preg_match('/^Q([1-4])$/', $quarter, $matches)) {
+            return (int) $matches[1];
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Clean comment
-        |--------------------------------------------------------------------------
-        */
-
-        $details =
-            trim(
-                $validated['details']
-            );
-
-
-        if ($details === '') {
-
-            return response()->json([
-
-                'message' =>
-                    'Comment cannot be empty.'
-
-            ], 422);
-
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Save comment
-        |--------------------------------------------------------------------------
-        */
-
-        $commentId =
-            DB::table('comments')
-                ->insertGetId([
-
-                    'quarter_id' =>
-                        $validated['quarter_id'],
-
-                    'commented_by' =>
-                        $validated['commented_by'],
-
-                    'details' =>
-                        $details,
-
-                    'date_commented' =>
-                        now()->toDateString(),
-
-                ]);
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Get newly saved comment
-        |--------------------------------------------------------------------------
-        */
-
-        $comment = DB::table('comments')
-            ->join(
-                'users',
-                'comments.commented_by',
-                '=',
-                'users.user_id'
-            )
-            ->where(
-                'comments.comment_id',
-                $commentId
-            )
-            ->select(
-
-                'comments.comment_id',
-
-                'comments.quarter_id',
-
-                'comments.commented_by',
-
-                'comments.details',
-
-                'comments.date_commented',
-
-                'users.first_name',
-
-                'users.middle_name',
-
-                'users.last_name',
-
-                'users.role'
-
-            )
-            ->first();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Return saved comment
-        |--------------------------------------------------------------------------
-        */
-
-        return response()->json(
-            $comment,
-            201
-        );
+        return null;
     }
 }

@@ -1,0 +1,292 @@
+<div class="form-page">
+
+  <div class="form-card">
+
+    <!-- Header -->
+    <div class="form-header">
+
+      <div>
+        <div class="record-label">BAPTISM RECORD</div>
+
+        <h1>Add Baptism Record</h1>
+
+        <p>
+          Eastern Nueva Vizcaya · District Pastor Records · 2026
+        </p>
+      </div>
+
+      <button
+        type="button"
+        routerLink="/pastor/deathbap"
+        class="back-button">
+        ← Back to Records
+      </button>
+
+    </div>
+
+    <!-- Form -->
+    <form
+      #baptismForm="ngForm"
+      (ngSubmit)="saveBaptism()">
+
+      <div class="form-body">
+
+        <div class="form-grid">
+
+          <!-- First Name -->
+          <div class="form-group">
+            <label for="first_name">
+              First Name
+            </label>
+
+            <input
+              id="first_name"
+              type="text"
+              name="first_name"
+              class="form-control"
+              [(ngModel)]="baptism.first_name"
+              placeholder="First name"
+              autocomplete="given-name"
+              required>
+          </div>
+
+
+          <!-- Middle Name -->
+          <div class="form-group">
+            <label for="middle_name">
+              Middle Name
+            </label>
+
+            <input
+              id="middle_name"
+              type="text"
+              name="middle_name"
+              class="form-control"
+              [(ngModel)]="baptism.middle_name"
+              placeholder="Middle name"
+              autocomplete="additional-name">
+          </div>
+
+
+          <!-- Last Name -->
+          <div class="form-group">
+            <label for="last_name">
+              Last Name
+            </label>
+
+            <input
+              id="last_name"
+              type="text"
+              name="last_name"
+              class="form-control"
+              [(ngModel)]="baptism.last_name"
+              placeholder="Last name"
+              autocomplete="family-name"
+              required>
+          </div>
+
+
+          <!-- Extension Name -->
+          <div class="form-group">
+            <label for="extension_name">
+              Extension Name
+            </label>
+
+            <input
+              id="extension_name"
+              type="text"
+              name="extension_name"
+              class="form-control"
+              [(ngModel)]="baptism.extension_name"
+              placeholder="Jr., Sr., III, IV, etc.">
+          </div>
+
+
+          <!-- Church -->
+          <div class="form-group">
+            <label for="church_id">
+              Church
+            </label>
+
+            <select
+              id="church_id"
+              class="form-control"
+              name="church_id"
+              [(ngModel)]="baptism.church_id"
+              required>
+
+              <option
+                [ngValue]="null"
+                disabled>
+                {{ churches.length === 0
+                  ? 'Loading churches...'
+                  : 'Select church' }}
+              </option>
+
+              <option
+                *ngFor="let church of churches"
+                [ngValue]="church.church_id">
+
+                {{ church.name }}
+
+              </option>
+
+            </select>
+
+            <small
+              *ngIf="churches.length === 0"
+              class="form-help">
+
+              No churches loaded. Please make sure the Laravel server is running.
+
+            </small>
+          </div>
+
+
+          <!-- Birthdate -->
+          <div class="form-group">
+            <label for="birthdate">
+              Birthdate
+            </label>
+
+            <input
+              id="birthdate"
+              type="date"
+              name="birthdate"
+              class="form-control"
+              [(ngModel)]="baptism.birthdate"
+              (change)="calculateAge()"
+              required>
+          </div>
+
+
+          <!-- Date of Baptism -->
+          <div class="form-group">
+            <label for="date_of_baptism">
+              Date of Baptism
+            </label>
+
+            <input
+              id="date_of_baptism"
+              type="date"
+              name="date_of_baptism"
+              class="form-control"
+              [(ngModel)]="baptism.date_of_baptism"
+              required>
+          </div>
+
+
+          <!-- Age -->
+          <div class="form-group">
+            <label for="age">
+              Age
+            </label>
+
+            <input
+              id="age"
+              type="number"
+              name="age"
+              class="form-control"
+              [(ngModel)]="age"
+              placeholder="Age"
+              min="0"
+              readonly>
+          </div>
+
+
+          <!-- Gender -->
+          <div class="form-group">
+            <label for="gender">
+              Gender
+            </label>
+
+            <select
+              id="gender"
+              class="form-control"
+              name="gender"
+              [(ngModel)]="baptism.gender"
+              required>
+
+              <option
+                [ngValue]="null"
+                disabled>
+                Select gender
+              </option>
+
+              <option value="Female">
+                Female
+              </option>
+
+              <option value="Male">
+                Male
+              </option>
+
+            </select>
+          </div>
+
+
+          <!-- Marital Status -->
+          <div class="form-group">
+            <label for="marital_status">
+              Marital
+            </label>
+
+            <select
+              id="marital_status"
+              class="form-control"
+              name="marital_status"
+              [(ngModel)]="baptism.marital_status"
+              required>
+
+              <option
+                [ngValue]="null"
+                disabled>
+                Select marital status
+              </option>
+
+              <option value="Single">
+                Single
+              </option>
+
+              <option value="Married">
+                Married
+              </option>
+
+              <option value="Widowed">
+                Widowed
+              </option>
+
+            </select>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- Footer -->
+      <div class="form-footer">
+
+        <button
+          type="button"
+          routerLink="/pastor/deathbap"
+          class="cancel-button">
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          class="save-button"
+          [disabled]="saving || baptismForm.invalid">
+
+          {{ saving ? 'Saving...' : 'Save' }}
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
