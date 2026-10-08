@@ -3,107 +3,449 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+
 use App\Models\User;
+
+use Illuminate\Support\Facades\DB;
+
 use Illuminate\Support\Facades\Hash;
+
 use Illuminate\Validation\Rule;
+
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
-    //
+    // =========================================================
+    // CREATE USER
+    // =========================================================
+
     public function create_user(Request $request)
     {
         $data = $request->validate([
-            'department_id' => 'required|exists:departments,department_id',
-            'church_id' => 'required|exists:churches,church_id',
-            'first_name' => 'required|string|max:255',
-            'middle_name' => 'nullable|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'extension_name' => 'nullable|string|max:50',
-            'birthdate' => 'required|date|before:today',
-            'gender' => 'required|string|in:male,female,other',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
+
+            'department_id' =>
+                'required|exists:departments,department_id',
+
+            'church_id' =>
+                'required|exists:churches,church_id',
+
+            'first_name' =>
+                'required|string|max:255',
+
+            'middle_name' =>
+                'nullable|string|max:255',
+
+            'last_name' =>
+                'required|string|max:255',
+
+            'extension_name' =>
+                'nullable|string|max:50',
+
+            'birthdate' =>
+                'required|date|before:today',
+
+            'gender' =>
+                'required|string|in:male,female,other',
+
+            'email' =>
+                'required|email|unique:users,email',
+
+            'password' =>
+                'required|string|min:8',
+
         ]);
 
-        $data['role'] = 'pastor';
-        $data['password'] = Hash::make($data['password']);
 
-        $user = User::create($data);
+        $data['role'] = 'pastor';
+
+        $data['password'] =
+            Hash::make(
+                $data['password']
+            );
+
+
+        $user =
+            User::create($data);
+
 
         return response()->json([
-            'message' => 'User created successfully',
-            'user' => $user,
+
+            'message' =>
+                'User created successfully',
+
+            'user' =>
+                $user,
+
         ], 201);
     }
 
+
+    // =========================================================
+    // VIEW PASTORS
+    // =========================================================
+
     public function view_pastors(Request $request)
     {
-        $pastors = User::query()
-            ->where('role', 'pastor')
-            ->with([
-                'department:department_id,department_name',
-                'church:church_id,name',
-            ])
-            ->when($request->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->department_id, fn($q, $id) => $q->where('department_id', $id))
-            ->when($request->church_id, fn($q, $id) => $q->where('church_id', $id))
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->paginate($request->integer('per_page', 15));
+        $pastors =
+            User::query()
 
-        return response()->json($pastors);
+                ->where(
+                    'role',
+                    'pastor'
+                )
+
+                ->with([
+
+                    'department:department_id,department_name',
+
+                    'church:church_id,name',
+
+                ])
+
+                ->when(
+                    $request->search,
+                    function ($query, $search) {
+
+                        $query->where(
+                            function ($q) use ($search) {
+
+                                $q->where(
+                                    'first_name',
+                                    'like',
+                                    "%{$search}%"
+                                )
+
+                                ->orWhere(
+                                    'last_name',
+                                    'like',
+                                    "%{$search}%"
+                                )
+
+                                ->orWhere(
+                                    'email',
+                                    'like',
+                                    "%{$search}%"
+                                );
+
+                            }
+                        );
+
+                    }
+                )
+
+                ->when(
+                    $request->department_id,
+                    fn($q, $id) =>
+                        $q->where(
+                            'department_id',
+                            $id
+                        )
+                )
+
+                ->when(
+                    $request->church_id,
+                    fn($q, $id) =>
+                        $q->where(
+                            'church_id',
+                            $id
+                        )
+                )
+
+                ->orderBy(
+                    'last_name'
+                )
+
+                ->orderBy(
+                    'first_name'
+                )
+
+                ->paginate(
+                    $request->integer(
+                        'per_page',
+                        15
+                    )
+                );
+
+
+        return response()->json(
+            $pastors
+        );
     }
+
+
+    // =========================================================
+    // VIEW SINGLE PASTOR
+    // =========================================================
 
     public function view_pastor($id)
     {
-        $pastor = User::where('role', 'pastor')
+        $pastor =
+            User::where(
+                'role',
+                'pastor'
+            )
+
             ->with([
+
                 'department:department_id,department_name',
+
                 'church:church_id,name',
+
             ])
-            ->findOrFail($id);
 
-        return response()->json(['data' => $pastor]);
-    }
+            ->findOrFail(
+                $id
+            );
 
-    public function update_pastor(Request $request, $id)
-    {
-        $pastor = User::where('role', 'pastor')->findOrFail($id);
-
-        $data = $request->validate([
-            'department_id' => 'required|exists:departments,department_id',
-            'church_id' => 'required|exists:churches,church_id',
-            'first_name' => 'required|string|max:255',
-            'middle_name' => 'nullable|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'extension_name' => 'nullable|string|max:50',
-            'birthdate' => 'required|date|before:today',
-            'gender' => 'required|string|in:male,female,other',
-            'email' => [
-                'required',
-                'email',
-                Rule::unique('users', 'email')->ignore($pastor->getKey(), $pastor->getKeyName()),
-            ],
-            'password' => 'nullable|string|min:8',
-        ]);
-
-        if (empty($data['password'])) {
-            unset($data['password']); // blank means keep the current password
-        } else {
-            $data['password'] = Hash::make($data['password']);
-        }
-
-        $pastor->update($data);
 
         return response()->json([
-            'message' => 'User updated successfully',
-            'user' => $pastor->fresh(['department', 'church']),
+
+            'data' =>
+                $pastor
+
         ]);
     }
+
+
+    // =========================================================
+    // UPDATE SINGLE PASTOR
+    // =========================================================
+
+    public function update_pastor(
+        Request $request,
+        $id
+    ) {
+
+        $pastor =
+            User::where(
+                'role',
+                'pastor'
+            )
+            ->findOrFail($id);
+
+
+        $data =
+            $request->validate([
+
+                'department_id' =>
+                    'required|exists:departments,department_id',
+
+                'church_id' =>
+                    'required|exists:churches,church_id',
+
+                'first_name' =>
+                    'required|string|max:255',
+
+                'middle_name' =>
+                    'nullable|string|max:255',
+
+                'last_name' =>
+                    'required|string|max:255',
+
+                'extension_name' =>
+                    'nullable|string|max:50',
+
+                'birthdate' =>
+                    'required|date|before:today',
+
+                'gender' =>
+                    'required|string|in:male,female,other',
+
+                'email' => [
+
+                    'required',
+
+                    'email',
+
+                    Rule::unique(
+                        'users',
+                        'email'
+                    )->ignore(
+                        $pastor->getKey(),
+                        $pastor->getKeyName()
+                    ),
+
+                ],
+
+                'password' =>
+                    'nullable|string|min:8',
+
+            ]);
+
+
+        if (
+            empty(
+                $data['password']
+            )
+        ) {
+
+            unset(
+                $data['password']
+            );
+
+        } else {
+
+            $data['password'] =
+                Hash::make(
+                    $data['password']
+                );
+
+        }
+
+
+        $pastor->update(
+            $data
+        );
+
+
+        return response()->json([
+
+            'message' =>
+                'User updated successfully',
+
+            'user' =>
+                $pastor->fresh([
+                    'department',
+                    'church'
+                ]),
+
+        ]);
+    }
+
+
+    // =========================================================
+    // BULK TRANSFER PASTORS
+    // =========================================================
+
+    public function bulk_transfer(
+        Request $request
+    ) {
+
+        $data =
+            $request->validate([
+
+                'transfers' => [
+                    'required',
+                    'array',
+                    'min:1'
+                ],
+
+                'transfers.*.user_id' => [
+                    'required',
+                    'integer',
+                    'distinct',
+                    'exists:users,user_id'
+                ],
+
+                'transfers.*.church_id' => [
+                    'required',
+                    'integer',
+                    'exists:churches,church_id'
+                ],
+
+            ]);
+
+
+        $transfers =
+            $data['transfers'];
+
+
+        /*
+         * Everything inside this transaction must succeed.
+         *
+         * If one pastor fails to transfer,
+         * all previous changes are rolled back.
+         */
+
+        DB::transaction(
+            function () use ($transfers) {
+
+                foreach (
+                    $transfers as $transfer
+                ) {
+
+                    /*
+                     * Only pastors can be transferred
+                     * through this endpoint.
+                     */
+
+                    $pastor =
+                        User::where(
+                            'user_id',
+                            $transfer['user_id']
+                        )
+                        ->where(
+                            'role',
+                            'pastor'
+                        )
+                        ->first();
+
+
+                    if (!$pastor) {
+
+                        throw ValidationException::withMessages([
+
+                            'transfers' =>
+                                "User ID {$transfer['user_id']} is not a pastor."
+
+                        ]);
+
+                    }
+
+
+                    /*
+                     * Don't allow a pastor to be transferred
+                     * to the district they already belong to.
+                     */
+
+                    if (
+                        (int) $pastor->church_id ===
+                        (int) $transfer['church_id']
+                    ) {
+
+                        throw ValidationException::withMessages([
+
+                            'transfers' =>
+                                "{$pastor->first_name} {$pastor->last_name} "
+                                . "is already assigned to this district."
+
+                        ]);
+
+                    }
+
+
+                    /*
+                     * Update only the district.
+                     *
+                     * Department, name, email, password,
+                     * etc. remain untouched.
+                     */
+
+                    $pastor->update([
+
+                        'church_id' =>
+                            $transfer['church_id']
+
+                    ]);
+
+                }
+
+            }
+        );
+
+
+        return response()->json([
+
+            'message' =>
+                count($transfers)
+                . ' pastor(s) transferred successfully.',
+
+            'transferred_count' =>
+                count($transfers)
+
+        ]);
+
+    }
+
 }
