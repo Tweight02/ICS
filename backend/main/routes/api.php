@@ -13,14 +13,6 @@ use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
-| SYSTEM & TESTING
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/test-speed', fn () => 'OK');
-
-/*
-|--------------------------------------------------------------------------
 | AUTHENTICATED USER
 |--------------------------------------------------------------------------
 */
@@ -86,12 +78,9 @@ Route::post('/comments', [ReportController::class, 'addComment']);
 */
 
 Route::apiResource('baptisms', BaptismController::class);
-<<<<<<< HEAD
 Route::apiResource('deaths', DeathController::class);
-=======
 Route::get('/churches', [BaptismController::class, 'allChurches']);
 Route::apiResource('deaths',DeathController::class);
 
 
 Route::get('/pastors', [UserController::class, 'view_pastors']);
->>>>>>> b7e288d6c4919d624c4be0d0241e15b2105a4fbb
