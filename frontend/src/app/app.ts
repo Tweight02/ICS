@@ -92,6 +92,13 @@ export class App {
 
   }
 
+    get isRepresentativeArea(): boolean {
+
+    return this.router.url
+      .startsWith('/representative');
+
+  }
+
 
   /*
   |--------------------------------------------------------------------------
