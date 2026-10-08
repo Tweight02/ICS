@@ -44,3 +44,6 @@ Route::post('/assistant/users', [UserController::class, 'create_user']);
 Route::apiResource('baptisms', BaptismController::class);
 Route::get('/churches', [BaptismController::class, 'allChurches']);
 Route::apiResource('deaths',DeathController::class);
+
+
+Route::get('/pastors', [UserController::class, 'view_pastors']);
