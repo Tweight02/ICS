@@ -61,9 +61,14 @@ export const routes: Routes = [
 
   {
     path: 'representative',
-    loadChildren: () =>
-      import('./features/representative/representative.routes')
-        .then(m => m.RepresentativeRoute)
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./features/representative/representative.routes')
+            .then(m => m.RepresentativeRoute)
+      }
+    ]
   },
 
 

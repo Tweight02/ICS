@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+
 class ReportController extends Controller
 {
     /* =========================================================
@@ -13,11 +14,192 @@ class ReportController extends Controller
 
     public function getDepartments($churchId)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Check church
+        |--------------------------------------------------------------------------
+        */
+
+        $church = DB::table('churches')
+            ->where(
+                'church_id',
+                $churchId
+            )
+            ->first();
+
+
+        if (!$church) {
+
+            return response()->json([
+                'message' => 'Church not found.'
+            ], 404);
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get departments
+        |--------------------------------------------------------------------------
+        */
+
         $departments = DB::table('departments')
             ->orderBy('department_name')
             ->get();
 
-        return response()->json($departments);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Build department result
+        |--------------------------------------------------------------------------
+        */
+
+        $result = $departments->map(
+            function ($department) use ($churchId) {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Get quarter records belonging to this
+                | church + department
+                |--------------------------------------------------------------------------
+                */
+
+                $quarters = DB::table('quarters')
+                    ->join(
+                        'programs',
+                        'quarters.program_id',
+                        '=',
+                        'programs.program_id'
+                    )
+                    ->where(
+                        'quarters.church_id',
+                        $churchId
+                    )
+                    ->where(
+                        'programs.department_id',
+                        $department->department_id
+                    )
+                    ->select(
+                        'quarters.quarter',
+                        'quarters.year',
+                        'quarters.mission_approve'
+                    )
+                    ->get();
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Return department
+                |--------------------------------------------------------------------------
+                */
+
+                return [
+
+                    'department_id' =>
+                        (int) $department->department_id,
+
+                    'department_name' =>
+                        $department->department_name,
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Q1
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'q1_approved' =>
+                        $quarters->contains(
+                            function ($quarter) {
+
+                                return
+                                    $quarter->quarter === 'Q1'
+                                    &&
+                                    !empty(
+                                        $quarter->mission_approve
+                                    );
+
+                            }
+                        ),
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Q2
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'q2_approved' =>
+                        $quarters->contains(
+                            function ($quarter) {
+
+                                return
+                                    $quarter->quarter === 'Q2'
+                                    &&
+                                    !empty(
+                                        $quarter->mission_approve
+                                    );
+
+                            }
+                        ),
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Q3
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'q3_approved' =>
+                        $quarters->contains(
+                            function ($quarter) {
+
+                                return
+                                    $quarter->quarter === 'Q3'
+                                    &&
+                                    !empty(
+                                        $quarter->mission_approve
+                                    );
+
+                            }
+                        ),
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Q4
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'q4_approved' =>
+                        $quarters->contains(
+                            function ($quarter) {
+
+                                return
+                                    $quarter->quarter === 'Q4'
+                                    &&
+                                    !empty(
+                                        $quarter->mission_approve
+                                    );
+
+                            }
+                        ),
+
+                ];
+
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Return JSON
+        |--------------------------------------------------------------------------
+        */
+
+        return response()->json(
+            $result->values()
+        );
     }
 
 
@@ -34,13 +216,20 @@ class ReportController extends Controller
         */
 
         $department = DB::table('departments')
-            ->where('department_id', $departmentId)
+            ->where(
+                'department_id',
+                $departmentId
+            )
             ->first();
 
+
         if (!$department) {
+
             return response()->json([
-                'message' => 'Department not found.'
+                'message' =>
+                    'Department not found.'
             ], 404);
+
         }
 
 
@@ -51,13 +240,23 @@ class ReportController extends Controller
         */
 
         $programs = DB::table('programs')
-            ->where('department_id', $departmentId)
+            ->where(
+                'department_id',
+                $departmentId
+            )
             ->whereNull('parent_id')
             ->orderBy('program_id')
             ->get();
 
         $reportPrograms = [];
 
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Loop programs
+        |--------------------------------------------------------------------------
+        */
 
         foreach ($programs as $program) {
 
@@ -99,12 +298,22 @@ class ReportController extends Controller
             */
 
             $sections = DB::table('programs')
-                ->where('parent_id', $program->program_id)
+                ->where(
+                    'parent_id',
+                    $program->program_id
+                )
                 ->orderBy('program_id')
                 ->get();
 
             $sectionData = [];
 
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Loop sections
+            |--------------------------------------------------------------------------
+            */
 
             foreach ($sections as $section) {
 
@@ -115,9 +324,13 @@ class ReportController extends Controller
                 */
 
                 $particulars = DB::table('particulars')
-                    ->where('program_id', $section->program_id)
+                    ->where(
+                        'program_id',
+                        $section->program_id
+                    )
                     ->orderBy('particular_id')
                     ->get();
+
 
                 $particularData = [];
 
@@ -165,6 +378,13 @@ class ReportController extends Controller
                     )->values();
 
 
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Particular
+                    |--------------------------------------------------------------------------
+                    */
+
                     $particularData[] = [
                         'particular_id' => (int) $particular->particular_id,
 
@@ -172,6 +392,7 @@ class ReportController extends Controller
 
                         'quarters' => $particularQuarters,
                     ];
+
                 }
 
 
@@ -188,6 +409,7 @@ class ReportController extends Controller
 
                     'particulars' => $particularData,
                 ];
+
             }
 
 
