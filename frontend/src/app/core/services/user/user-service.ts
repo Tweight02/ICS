@@ -11,13 +11,13 @@ import { Paginated, Pastor, PastorFilters } from '../../models/pastor.model';
 export class UserService {
     private http = inject(HttpClient);
     private apiUrl = 'http://localhost:8000/api';
-    
+
     createUser(data: any) {
         return this.http.post(
             `${this.apiUrl}/assistant/users`,
             data,
             {
-            withCredentials: true
+                withCredentials: true
             }
         );
     }
@@ -29,8 +29,8 @@ export class UserService {
         }>(`${this.apiUrl}/assistant/districts`);
     }
 
-    getDepartments(){
-        return this.http.get<{message: string, data: Department[]}>(`${this.apiUrl}/assistant/departments`, 
+    getDepartments() {
+        return this.http.get<{ message: string, data: Department[] }>(`${this.apiUrl}/assistant/departments`,
             // {
             // withCredentials: true,
             // }
@@ -49,6 +49,25 @@ export class UserService {
         return this.http.get<Paginated<Pastor>>(
             `${this.apiUrl}/pastors`,
             { params, withCredentials: true }
+        );
+    }
+
+    getPastor(id: number | string) {
+        return this.http.get<{ data: Pastor }>(
+            `${this.apiUrl}/pastors/${id}`,
+            {
+                withCredentials: true
+            }
+        );
+    }
+
+    updatePastor(id: number | string, data: any) {
+        return this.http.put<{ message: string; user: Pastor }>(
+            `${this.apiUrl}/pastors/${id}`,
+            data,
+            {
+                withCredentials: true
+            }
         );
     }
 }
