@@ -1,0 +1,515 @@
+<div class="report-page">
+
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
+
+  <div class="report-header">
+
+    <div class="header-information">
+
+      <button
+        type="button"
+        class="back-link"
+        (click)="backToPrograms()"
+      >
+        ← Back
+      </button>
+
+      <span class="section-label">
+        REPORT MANAGEMENT
+      </span>
+
+      <h1>
+        {{ report?.department?.department_name || 'Report' }}
+      </h1>
+
+      <p>
+        Enter the report values for the selected quarter.
+      </p>
+
+    </div>
+
+
+    <button
+      type="button"
+      class="save-button"
+      [disabled]="
+        saving ||
+        loading ||
+        !getSelectedQuarter() ||
+        isQuarterApproved(selectedQuarterId)
+      "
+      (click)="saveReport()"
+    >
+
+      <span *ngIf="!saving">
+        Save Report
+      </span>
+
+      <span *ngIf="saving">
+        Saving...
+      </span>
+
+    </button>
+
+  </div>
+
+
+  <!-- =====================================================
+       SUCCESS MESSAGE
+  ====================================================== -->
+
+  <div
+    class="alert success-alert"
+    *ngIf="successMessage"
+  >
+
+    <span>✓</span>
+
+    <span>
+      {{ successMessage }}
+    </span>
+
+  </div>
+
+
+  <!-- =====================================================
+       ERROR MESSAGE
+  ====================================================== -->
+
+  <div
+    class="alert error-alert"
+    *ngIf="errorMessage"
+  >
+
+    <span>!</span>
+
+    <span>
+      {{ errorMessage }}
+    </span>
+
+  </div>
+
+
+  <!-- =====================================================
+       LOADING
+  ====================================================== -->
+
+  <div
+    class="loading-container"
+    *ngIf="loading"
+  >
+
+    <div class="spinner"></div>
+
+    <p>
+      Loading report...
+    </p>
+
+  </div>
+
+
+  <!-- =====================================================
+       REPORT CONTENT
+  ====================================================== -->
+
+  <ng-container *ngIf="!loading">
+
+    <!-- ===================================================
+         QUARTER NAVIGATION
+    ==================================================== -->
+
+    <div class="quarter-navigation">
+
+      <!-- PREVIOUS -->
+
+      <button
+        type="button"
+        class="quarter-btn"
+        [disabled]="
+          selectedQuarterIndex <= 0
+        "
+        (click)="goToPreviousQuarter()"
+      >
+
+        ← Previous
+
+      </button>
+
+
+      <!-- CURRENT QUARTER -->
+
+      <div class="quarter-display">
+
+        <span class="quarter-label">
+          REPORT QUARTER
+        </span>
+
+
+        <ng-container
+          *ngIf="
+            getSelectedQuarter() as quarter;
+            else noQuarter
+          "
+        >
+
+          <h2>
+            {{ quarter.quarter }}
+            {{ quarter.year }}
+          </h2>
+
+
+          <span
+            class="quarter-status"
+            [class.approved]="
+              isQuarterApproved(
+                quarter.quarter_id
+              )
+            "
+          >
+
+            {{
+              isQuarterApproved(
+                quarter.quarter_id
+              )
+                ? 'Approved'
+                : 'For Entry'
+            }}
+
+          </span>
+
+        </ng-container>
+
+
+        <ng-template #noQuarter>
+
+          <h2>
+            Quarter unavailable
+          </h2>
+
+          <span class="quarter-status unavailable">
+            No quarter data
+          </span>
+
+        </ng-template>
+
+      </div>
+
+
+      <!-- NEXT -->
+
+      <button
+        type="button"
+        class="quarter-btn"
+        [disabled]="
+          !canGoToNextQuarter()
+        "
+        (click)="goToNextQuarter()"
+      >
+
+        Next →
+
+      </button>
+
+    </div>
+
+
+    <!-- ===================================================
+         APPROVED NOTICE
+    ==================================================== -->
+
+    <div
+      class="approved-notice"
+      *ngIf="
+        getSelectedQuarter() as quarter;
+        "
+    >
+
+      <ng-container
+        *ngIf="
+          isQuarterApproved(
+            quarter.quarter_id
+          )
+        "
+      >
+
+        <div class="approved-icon">
+          ✓
+        </div>
+
+        <div>
+
+          <strong>
+            Quarter Approved
+          </strong>
+
+          <p>
+            This quarter has already been approved
+            and is read-only.
+          </p>
+
+        </div>
+
+      </ng-container>
+
+    </div>
+
+
+    <!-- ===================================================
+         NO REPORT DATA
+    ==================================================== -->
+
+    <div
+      class="empty-state"
+      *ngIf="
+        report &&
+        (!report.programs ||
+        report.programs.length === 0)
+      "
+    >
+
+      <div class="empty-icon">
+        📄
+      </div>
+
+      <h3>
+        No report particulars found
+      </h3>
+
+      <p>
+        There are currently no report particulars
+        available for this department.
+      </p>
+
+    </div>
+
+
+    <!-- ===================================================
+         REPORT PROGRAMS
+    ==================================================== -->
+
+    <div
+      class="program-list"
+      *ngIf="
+        report &&
+        report.programs &&
+        report.programs.length > 0 &&
+        getSelectedQuarter() as selectedQuarter
+      "
+    >
+
+      <div
+        class="program-card"
+        *ngFor="
+          let program of report.programs;
+          trackBy: trackProgram
+        "
+      >
+
+        <!-- PROGRAM TITLE -->
+
+        <div class="program-header">
+
+          <div>
+
+            <span class="program-label">
+              PROGRAM
+            </span>
+
+            <h2>
+              {{ program.program_name }}
+            </h2>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+             PROGRAM SECTIONS
+        ================================================== -->
+
+        <div
+          class="section-card"
+          *ngFor="
+            let section of program.sections;
+            trackBy: trackSection
+          "
+        >
+
+          <div class="section-header">
+
+            <h3>
+              {{ section.program_name }}
+            </h3>
+
+          </div>
+
+
+          <!-- =================================================
+               PARTICULAR TABLE
+          ================================================== -->
+
+          <div class="table-wrapper">
+
+            <table class="report-table">
+
+              <thead>
+
+                <tr>
+
+                  <th class="particular-column">
+                    PARTICULAR
+                  </th>
+
+                  <th class="value-column">
+                    {{ selectedQuarter.quarter }}
+                    {{ selectedQuarter.year }}
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody>
+
+                <tr
+                  *ngFor="
+                    let particular of section.particulars;
+                    trackBy: trackParticular
+                  "
+                >
+
+                  <td class="particular-name">
+
+                    {{ particular.particular_name }}
+
+                  </td>
+
+
+                  <td class="value-cell">
+
+                    <input
+                      type="number"
+                      min="0"
+                      class="report-input"
+
+                      [disabled]="
+                        isQuarterApproved(
+                          selectedQuarter.quarter_id
+                        )
+                      "
+
+                      [value]="
+                        getQuarterValue(
+                          particular,
+                          selectedQuarter
+                        ) ?? ''
+                      "
+
+                      (input)="
+                        setQuarterValue(
+                          particular,
+                          selectedQuarter,
+                          $any($event.target).value
+                        )
+                      "
+                    />
+
+                  </td>
+
+                </tr>
+
+
+                <!-- NO PARTICULARS -->
+
+                <tr
+                  *ngIf="
+                    !section.particulars ||
+                    section.particulars.length === 0
+                  "
+                >
+
+                  <td
+                    colspan="2"
+                    class="no-particulars"
+                  >
+
+                    No particulars available.
+
+                  </td>
+
+                </tr>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- ===================================================
+         BOTTOM ACTIONS
+    ==================================================== -->
+
+    <div class="bottom-actions">
+
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="backToPrograms()"
+      >
+
+        Back
+
+      </button>
+
+
+      <button
+        type="button"
+        class="save-button bottom-save"
+        [disabled]="
+          saving ||
+          !getSelectedQuarter() ||
+          isQuarterApproved(selectedQuarterId)
+        "
+        (click)="saveReport()"
+      >
+
+        <span *ngIf="!saving">
+          Save Report
+        </span>
+
+        <span *ngIf="saving">
+          Saving...
+        </span>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="next-button"
+        [disabled]="
+          !canGoToNextQuarter()
+        "
+        (click)="goToNextQuarter()"
+      >
+
+        Next Quarter →
+
+      </button>
+
+    </div>
+
+  </ng-container>
+
+</div>

@@ -8,9 +8,7 @@ export const routes: Routes = [
 
   {
     path: '',
-    loadComponent: () =>
-      import('./features/representative/home/home')
-        .then(m => m.Home),
+    redirectTo: 'representative/reports',
     pathMatch: 'full'
   },
 
@@ -52,12 +50,24 @@ export const routes: Routes = [
 
 
   /* ==============================
+     REPRESENTATIVE
+  ============================== */
+
+  {
+    path: 'representative',
+    loadChildren: () =>
+      import('./features/representative/representative.routes')
+        .then(m => m.RepresentativeRoute)
+  },
+
+
+  /* ==============================
      UNKNOWN ROUTE
   ============================== */
 
   {
     path: '**',
-    redirectTo: 'pastor/reports'
+    redirectTo: 'representative/reports'
   }
 
 ];
