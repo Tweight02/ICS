@@ -30,12 +30,12 @@ export const PASTOR_ROUTES: Routes = [
         .then(m => m.ReportPrograms)
   },
 
-  {
-    path: 'events',
-    loadComponent: () =>
-      import('./events/events')
-        .then(m => m.Events)
-  },
+{
+  path: 'events',
+  loadComponent: () =>
+    import('./events/events')
+      .then(m => m.Events)
+},
 
 {
   path: 'baptism',
