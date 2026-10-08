@@ -78,21 +78,4 @@ export class App {
       .startsWith('/representative');
 
   }
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | SHOW SIDEBAR
-  |--------------------------------------------------------------------------
-  |
-  | There is no login yet, so always show the sidebar.
-  |
-  */
-
-  get showSidebar(): boolean {
-
-    return true;
-
-  }
-
 }
