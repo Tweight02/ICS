@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { BapaddrecComponent } from './personalreport/bapaddrec/bapaddrec';
+import { DeathaddrecComponent } from './personalreport/deathaddrec/deathaddrec';
 
 export const PASTOR_ROUTES: Routes = [
   {
@@ -28,26 +30,30 @@ export const PASTOR_ROUTES: Routes = [
         .then(m => m.ReportPrograms)
   },
 
-  {
-    path: 'events',
-    loadComponent: () =>
-      import('./events/events')
-        .then(m => m.Events)
-  },
+{
+  path: 'events',
+  loadComponent: () =>
+    import('./events/events')
+      .then(m => m.Events)
+},
 
-  {
-    path: 'baptism',
-    loadComponent: () =>
-      import('./personalreport/baptism/baptism.component')
-        .then(m => m.BaptismComponent)
-  },
+{
+  path: 'baptism',
+  loadComponent: () =>
+    import('./personalreport/deathbap/deathbap')
+      .then(m => m.DeathbapComponent)
+},
 
-  {
-    path: 'death',
-    loadComponent: () =>
-      import('./personalreport/death/death.component')
-        .then(m => m.DeathComponent)
-  },
+{
+  path: 'bapaddrec',
+  component: BapaddrecComponent
+},
+
+{
+  path: 'deathaddrec',
+  component: DeathaddrecComponent
+},
+
 
   {
     path: 'church-role',

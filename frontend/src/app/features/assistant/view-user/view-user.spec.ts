@@ -1,18 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ViewUser } from './view-user';
 
-import { DeathComponent } from './death.component';
-
-describe('DeathComponent', () => {
-  let component: DeathComponent;
-  let fixture: ComponentFixture<DeathComponent>;
+describe('ViewUser', () => {
+  let component: ViewUser;
+  let fixture: ComponentFixture<ViewUser>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DeathComponent]
-    })
-    .compileComponents();
+      imports: [ViewUser],
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(DeathComponent);
+    fixture = TestBed.createComponent(ViewUser);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

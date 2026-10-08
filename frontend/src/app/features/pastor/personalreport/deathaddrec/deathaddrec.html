@@ -1,0 +1,299 @@
+<div class="form-page">
+
+  <div class="form-card">
+
+    <!-- Header -->
+    <div class="form-header">
+
+      <div>
+        <div class="record-label">DEATH RECORD</div>
+
+        <h1>Add Death Record</h1>
+
+        <p>
+          Eastern Nueva Vizcaya · District Pastor Records · 2026
+        </p>
+      </div>
+
+      <button
+        type="button"
+        routerLink="/pastor/deathbap"
+        class="back-button">
+        ← Back to Records
+      </button>
+
+    </div>
+
+
+    <!-- Form -->
+    <form
+      #deathForm="ngForm"
+      (ngSubmit)="saveDeath()">
+
+      <div class="form-body">
+
+        <div class="form-grid">
+
+          <!-- Baptized Member -->
+          <div class="form-group">
+            <label for="baptism_id">
+              Baptized Member
+            </label>
+
+            <select
+              id="baptism_id"
+              class="form-control"
+              name="baptism_id"
+              [(ngModel)]="death.baptism_id"
+              (ngModelChange)="selectBaptism($event)"
+              required>
+
+              <option
+                [ngValue]="null"
+                disabled>
+
+                {{
+                  baptisms.length === 0
+                    ? 'Loading baptized members...'
+                    : 'Select baptized member'
+                }}
+
+              </option>
+
+              <option
+                *ngFor="let baptism of baptisms"
+                [ngValue]="baptism.baptism_id">
+
+                {{ getFullName(baptism) }}
+
+              </option>
+
+            </select>
+
+            <small
+              *ngIf="loadingBaptisms"
+              class="form-help">
+
+              Loading baptized members...
+
+            </small>
+
+            <small
+              *ngIf="
+                !loadingBaptisms &&
+                baptisms.length === 0
+              "
+              class="form-help">
+
+              No baptism records found.
+
+            </small>
+
+          </div>
+
+
+          <!-- First Name -->
+          <div class="form-group">
+            <label for="first_name">
+              First Name
+            </label>
+
+            <input
+              id="first_name"
+              type="text"
+              name="first_name"
+              class="form-control"
+              [value]="selectedBaptism?.first_name || ''"
+              placeholder="First name"
+              readonly>
+          </div>
+
+
+          <!-- Middle Name -->
+          <div class="form-group">
+            <label for="middle_name">
+              Middle Name
+            </label>
+
+            <input
+              id="middle_name"
+              type="text"
+              name="middle_name"
+              class="form-control"
+              [value]="selectedBaptism?.middle_name || ''"
+              placeholder="Middle name"
+              readonly>
+          </div>
+
+
+          <!-- Last Name -->
+          <div class="form-group">
+            <label for="last_name">
+              Last Name
+            </label>
+
+            <input
+              id="last_name"
+              type="text"
+              name="last_name"
+              class="form-control"
+              [value]="selectedBaptism?.last_name || ''"
+              placeholder="Last name"
+              readonly>
+          </div>
+
+
+          <!-- Extension Name -->
+          <div class="form-group">
+            <label for="extension_name">
+              Extension Name
+            </label>
+
+            <input
+              id="extension_name"
+              type="text"
+              name="extension_name"
+              class="form-control"
+              [value]="selectedBaptism?.extension_name || ''"
+              placeholder="Jr., Sr., III, IV, etc."
+              readonly>
+          </div>
+
+
+          <!-- Church -->
+          <div class="form-group">
+            <label for="church">
+              Church
+            </label>
+
+            <input
+              id="church"
+              type="text"
+              name="church"
+              class="form-control"
+              [value]="getChurchName(selectedBaptism?.church_id)"
+              placeholder="Church"
+              readonly>
+          </div>
+
+
+          <!-- Birthdate -->
+          <div class="form-group">
+            <label for="birthdate">
+              Birthdate
+            </label>
+
+            <input
+              id="birthdate"
+              type="date"
+              name="birthdate"
+              class="form-control"
+              [value]="selectedBaptism?.birthdate || ''"
+              readonly>
+          </div>
+
+
+          <!-- Date of Death -->
+          <div class="form-group">
+            <label for="date_of_death">
+              Date of Death
+            </label>
+
+            <input
+              id="date_of_death"
+              type="date"
+              name="date_of_death"
+              class="form-control"
+              [(ngModel)]="death.date_of_death"
+              required>
+          </div>
+
+
+          <!-- Age -->
+          <div class="form-group">
+            <label for="age">
+              Age
+            </label>
+
+            <input
+              id="age"
+              type="number"
+              name="age"
+              class="form-control"
+              [value]="
+                selectedBaptism
+                  ? calculateAge(selectedBaptism.birthdate)
+                  : ''
+              "
+              placeholder="Age"
+              min="0"
+              readonly>
+          </div>
+
+
+          <!-- Gender -->
+          <div class="form-group">
+            <label for="gender">
+              Gender
+            </label>
+
+            <input
+              id="gender"
+              type="text"
+              name="gender"
+              class="form-control"
+              [value]="selectedBaptism?.gender || ''"
+              placeholder="Gender"
+              readonly>
+          </div>
+
+
+          <!-- Marital Status -->
+          <div class="form-group">
+            <label for="marital_status">
+              Marital
+            </label>
+
+            <input
+              id="marital_status"
+              type="text"
+              name="marital_status"
+              class="form-control"
+              [value]="selectedBaptism?.marital_status || ''"
+              placeholder="Marital status"
+              readonly>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- Footer -->
+      <div class="form-footer">
+
+        <button
+          type="button"
+          routerLink="/pastor/deathbap"
+          class="cancel-button">
+
+          Cancel
+
+        </button>
+
+        <button
+          type="submit"
+          class="save-button"
+          [disabled]="saving || deathForm.invalid">
+
+          {{ saving ? 'Saving...' : 'Save' }}
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
