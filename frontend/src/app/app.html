@@ -1,6 +1,6 @@
 @if (showSidebar) {
   <app-sidebar
-    [user]="currentUser"
+    [user]="currentUser()!"
     (collapsedChange)="collapsed = $event"
   />
 }

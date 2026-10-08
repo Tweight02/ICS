@@ -1,27 +1,24 @@
-// import { HttpClient } from "@angular/common/http";
-// import { inject, Injectable } from "@angular/core";
-// import { toSignal } from "@angular/core/rxjs-interop";
-// import { Message } from "../../models/message.model";
-
-// @Injectable({
-//     providedIn: 'root'
-// })
-// export class AuthService {
-//     getCurrentUser(): import("../../models/user.model").User | null {
-//       throw new Error('Method not implemented.');
-//     }
-//     private http = inject(HttpClient);
-
-//     getSample() {
-//         return this.http.get<Message>('http://127.0.0.1:8000/api/sample');
-//     }
-// }
-
 import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
+import { Observable, tap } from 'rxjs';
 
 import { Message } from '../../models/message.model';
 import { User } from '../../models/user.model';
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  message: string;
+  token_type: 'Bearer';
+  token: string;
+  user: User;
+}
+
+const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'current_user'; // same key the app already uses
 
 @Injectable({
   providedIn: 'root'
@@ -54,6 +51,48 @@ export class AuthService {
 
 
   /*
+   * Login: request a Sanctum bearer token.
+   * "Remember me" on  -> localStorage (persists)
+   * "Remember me" off -> sessionStorage (cleared when the tab closes)
+   */
+  login(payload: LoginPayload, remember = true): Observable<LoginResponse> {
+
+    return this.http
+      .post<LoginResponse>(`${this.apiUrl}/login`, payload)
+      .pipe(
+        tap((res) => {
+
+          this.clearSession();
+
+          const store = remember ? localStorage : sessionStorage;
+          store.setItem(TOKEN_KEY, res.token);
+
+          this.setCurrentUser(res.user);
+
+        })
+      );
+  }
+
+
+  /*
+   * Bearer token used by the HTTP interceptor
+   */
+  get token(): string | null {
+
+    return localStorage.getItem(TOKEN_KEY)
+      ?? sessionStorage.getItem(TOKEN_KEY);
+
+  }
+
+
+  isLoggedIn(): boolean {
+
+    return !!this.token;
+
+  }
+
+
+  /*
    * Get currently logged-in user
    */
   getCurrentUser(): User | null {
@@ -64,12 +103,12 @@ export class AuthService {
 
 
   /*
-   * Save logged-in user
+   * Save logged-in user (in the same storage as the token)
    */
   setCurrentUser(user: User): void {
 
-    localStorage.setItem(
-      'current_user',
+    this.activeStore().setItem(
+      USER_KEY,
       JSON.stringify(user)
     );
 
@@ -84,7 +123,8 @@ export class AuthService {
   private loadStoredUser(): User | null {
 
     const storedUser =
-      localStorage.getItem('current_user');
+      localStorage.getItem(USER_KEY)
+      ?? sessionStorage.getItem(USER_KEY);
 
     if (!storedUser) {
       return null;
@@ -101,7 +141,7 @@ export class AuthService {
         error
       );
 
-      localStorage.removeItem('current_user');
+      this.clearStorage();
 
       return null;
     }
@@ -109,15 +149,53 @@ export class AuthService {
 
 
   /*
-   * Logout
+   * Logout: revoke the token on the server (best effort),
+   * then clear everything locally right away.
    */
   logout(): void {
 
-    localStorage.removeItem(
-      'current_user'
-    );
+    const token = this.token;
+
+    if (token) {
+      this.http.post(`${this.apiUrl}/logout`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).subscribe({
+        error: () => { /* token may already be expired; ignore */ }
+      });
+    }
+
+    this.clearSession();
+
+  }
+
+
+  /*
+   * Clear token + user (used by logout and the 401 interceptor)
+   */
+  clearSession(): void {
+
+    this.clearStorage();
 
     this.currentUserSignal.set(null);
+
+  }
+
+
+  private clearStorage(): void {
+
+    for (const store of [localStorage, sessionStorage]) {
+      store.removeItem(TOKEN_KEY);
+      store.removeItem(USER_KEY);
+    }
+
+  }
+
+
+  private activeStore(): Storage {
+
+    return sessionStorage.getItem(TOKEN_KEY)
+      ? sessionStorage
+      : localStorage;
 
   }
 

@@ -11,11 +11,10 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SampleController;
 use App\Http\Controllers\UserController;
 
-/*
-|--------------------------------------------------------------------------
-| AUTHENTICATED USER
-|--------------------------------------------------------------------------
-*/
+Route::get('/test-speed', function () {
+    return 'OK';
+});
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/user', fn (Request $request) => $request->user())->middleware('auth:sanctum');
 
