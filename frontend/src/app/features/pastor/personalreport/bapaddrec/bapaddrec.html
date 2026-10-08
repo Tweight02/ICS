@@ -1,0 +1,142 @@
+<div class="form-page">
+
+  <div class="form-card">
+
+    <!-- Header -->
+    <div class="form-header">
+
+      <div>
+        <div class="record-label">BAPTISM RECORD</div>
+
+        <h1>Add Baptism Record</h1>
+
+        <p>
+          Eastern Nueva Vizcaya · District Pastor Records · 2026
+        </p>
+      </div>
+
+      <button type="button"  routerLink="/pastor/deathbap" class="back-button">
+        ← Back to Records
+      </button>
+
+    </div>
+
+    <!-- Form -->
+    <form>
+
+      <div class="form-body">
+
+        <div class="form-grid">
+
+          <!-- Name -->
+          <div class="form-group">
+            <label>Name</label>
+
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Full name">
+          </div>
+
+          <!-- Church -->
+          <div class="form-group">
+            <label>Church</label>
+
+            <select class="form-control">
+              <option selected disabled>Select church</option>
+
+              <option>Kingkingan Company</option>
+              <option>Canamasi Company</option>
+              <option>Cordon</option>
+              <option>Macalong</option>
+              <option>Kongkong Company</option>
+              <option>Paqui</option>
+              <option>Moya Company</option>
+              <option>Maglan</option>
+              <option>Palia</option>
+              <option>Poblacion</option>
+              <option>Kinokgiran Company</option>
+            </select>
+          </div>
+
+          <!-- Birthdate -->
+          <div class="form-group">
+            <label>Birthdate</label>
+
+            <input
+              type="date"
+              class="form-control">
+          </div>
+
+          <!-- Date of Baptism -->
+          <div class="form-group">
+            <label>Date of Baptism</label>
+
+            <input
+              type="date"
+              class="form-control">
+          </div>
+
+          <!-- Age -->
+          <div class="form-group">
+            <label>Age</label>
+
+            <input
+              type="number"
+              class="form-control"
+              placeholder="Age"
+              min="0">
+          </div>
+
+          <!-- Gender -->
+          <div class="form-group">
+            <label>Gender</label>
+
+            <select class="form-control">
+              <option selected disabled>Select gender</option>
+
+              <option>Female</option>
+              <option>Male</option>
+            </select>
+          </div>
+
+          <!-- Marital -->
+          <div class="form-group">
+            <label>Marital</label>
+
+            <select class="form-control">
+              <option selected disabled>Select marital status</option>
+
+              <option>Single</option>
+              <option>Married</option>
+              <option>Widowed</option>
+            </select>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="form-footer">
+
+     <button
+  type="button"
+  routerLink="/pastor/deathbap"
+  class="cancel-button">
+  Cancel
+</button>
+
+        <button
+          type="submit"
+          class="save-button">
+          Save
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>

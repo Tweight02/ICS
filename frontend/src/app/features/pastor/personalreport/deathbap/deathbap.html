@@ -47,13 +47,25 @@
             <div class="section-label">SECRETARIAT</div>
 
             <div class="section-description">
-              {{ selectedRecord === 'baptism' ? 'Baptism records' : 'Death records' }}
-            </div>
+      {{ selectedRecord === 'baptism' ? 'Baptism records' : 'Death records' }}
+    </div>
           </div>
 
-          <button class="add-record-btn">
-            + Add Record
-          </button>
+   <!-- Baptism Add Record -->
+  <a
+    *ngIf="selectedRecord === 'baptism'"
+    routerLink="/pastor/bapaddrec"
+    class="add-record-btn">
+    + Add Record
+  </a>
+
+  <!-- Death Add Record -->
+  <a
+    *ngIf="selectedRecord === 'death'"
+    routerLink="/pastor/deathaddrec"
+    class="add-record-btn">
+    + Add Record
+  </a>
         </div>
 
         <div class="table-responsive">
