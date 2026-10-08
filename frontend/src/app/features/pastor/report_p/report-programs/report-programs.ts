@@ -5,8 +5,13 @@ import {
   inject
 } from '@angular/core';
 
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import {
+  CommonModule
+} from '@angular/common';
+
+import {
+  FormsModule
+} from '@angular/forms';
 
 import {
   ActivatedRoute,
@@ -14,14 +19,16 @@ import {
 } from '@angular/router';
 
 import {
-  ReportService,
+  ReportService
+} from '../../../../core/services/report/report';
+
+import {
   Department,
   DepartmentReport,
   Particular,
   ReportQuarter,
   ReportComment
-} from '../../../../core/services/report/report';
-
+} from '../../../../core/models/report.model';
 
 @Component({
   selector: 'app-report-programs',

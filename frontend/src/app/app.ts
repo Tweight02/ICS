@@ -15,44 +15,13 @@ import {
 import { User } from './core/models/user.model';
 
 
-/*
-|--------------------------------------------------------------------------
-| TEMPORARY CURRENT USER
-|--------------------------------------------------------------------------
-|
-| There is no login system yet.
-|
-| This matches your database:
-|
-| user_id      = 1
-| department_id = 1
-| church_id     = 1
-| first_name   = Juan
-| middle_name  = Santos
-| last_name    = Dela Cruz
-| role         = District Pastor
-|
-| Angular uses:
-|
-| role = 'pastor'
-|
-| because UserRole only accepts:
-|
-| pastor
-| representative
-| assistant
-| director
-| events
-|
-*/
-
 const CURRENT_USER: User = {
 
   user_id: 1,
 
   department_id: 1,
 
-  church_id: 1,
+  church_id: 214,
 
   first_name: 'Juan',
 
@@ -66,9 +35,9 @@ const CURRENT_USER: User = {
 
   gender: 'Male',
 
-  email: 'district.pastor@example.com',
+  email: 'district.representative@example.com',
 
-  role: 'pastor'
+  role: 'representative'
 
 };
 
