@@ -84,3 +84,5 @@ Route::apiResource('deaths',DeathController::class);
 
 
 Route::get('/pastors', [UserController::class, 'view_pastors']);
+Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
+Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
