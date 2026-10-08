@@ -35,20 +35,12 @@ export const PASTOR_ROUTES: Routes = [
         .then(m => m.Events)
   },
 
-  {
-    path: 'baptism',
-    loadComponent: () =>
-      import('./personalreport/baptism/baptism.component')
-        .then(m => m.BaptismComponent)
-  },
-
-  {
-    path: 'death',
-    loadComponent: () =>
-      import('./personalreport/death/death.component')
-        .then(m => m.DeathComponent)
-  },
-
+{
+  path: 'baptism',
+  loadComponent: () =>
+    import('./personalreport/deathbap/deathbap')
+      .then(m => m.DeathbapComponent)
+},
   {
     path: 'church-role',
     loadComponent: () =>
