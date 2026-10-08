@@ -1,181 +1,975 @@
 <div class="mx-auto text-stone-900 antialiased">
-    <div class="overflow-hidden rounded-3xl bg-white shadow-xl shadow-green-900/5 ring-1 ring-stone-900/5">
-        <!-- Header -->
+
+    <div
+        class="overflow-hidden rounded-3xl bg-white shadow-xl shadow-green-900/5 ring-1 ring-stone-900/5">
+
+        <!-- =====================================================
+             HEADER
+        ====================================================== -->
+
         <header
             class="relative overflow-hidden bg-gradient-to-br from-green-900 via-green-800 to-emerald-700 px-6 py-6 text-white sm:px-8">
-            <div class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl">
+
+            <div
+                class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl">
             </div>
+
             <div
                 class="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-emerald-400/20 blur-3xl">
             </div>
 
-            <div class="relative flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
+
+            <div
+                class="relative flex flex-wrap items-center justify-between gap-4">
+
+                <div
+                    class="flex items-center gap-4">
+
                     <span
                         class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
-                            <circle cx="9.5" cy="7" r="4" />
-                            <path d="M21 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+
+                        <svg
+                            class="h-6 w-6"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round">
+
+                            <path
+                                d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+
+                            <circle
+                                cx="9.5"
+                                cy="7"
+                                r="4" />
+
+                            <path
+                                d="M21 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+
                         </svg>
+
                     </span>
+
+
                     <div class="py-3">
-                        <h4 class="text-sm font-semibold tracking-tight sm:text-2xl">Manage pastors across your districts</h4>
+
+                        <h4
+                            class="text-sm font-semibold tracking-tight sm:text-2xl">
+
+                            Manage pastors across your districts
+
+                        </h4>
+
+                        <p
+                            class="mt-1 text-xs text-green-100 sm:text-sm">
+
+                            View and reassign pastors between districts.
+
+                        </p>
+
                     </div>
+
                 </div>
 
-                <button type="button" routerLink="/assistant/new-user"
-                    class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-green-900 shadow-lg shadow-green-950/20 transition hover:-translate-y-0.5 hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-green-900">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    Add user
-                </button>
+
+                @if (!bulkMode()) {
+
+                    <button
+                        type="button"
+                        routerLink="/assistant/new-user"
+                        class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-green-900 shadow-lg shadow-green-950/20 transition hover:-translate-y-0.5 hover:bg-green-50">
+
+                        <svg
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5">
+
+                            <path
+                                d="M12 5v14M5 12h14" />
+
+                        </svg>
+
+                        Add user
+
+                    </button>
+
+                }
+
             </div>
+
         </header>
 
-        <!-- Toolbar -->
+
+        <!-- =====================================================
+             TOOLBAR
+        ====================================================== -->
+
         <div
             class="flex flex-col gap-3 border-b border-stone-200/70 bg-white px-6 py-4 sm:flex-row sm:items-center sm:px-8">
-            <div class="relative flex-1 sm:max-w-sm">
-                <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="11" cy="11" r="7" />
-                    <path d="m20 20-3.5-3.5" />
+
+            <!-- SEARCH -->
+
+            <div
+                class="relative flex-1 sm:max-w-sm">
+
+                <svg
+                    class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2">
+
+                    <circle
+                        cx="11"
+                        cy="11"
+                        r="7" />
+
+                    <path
+                        d="m20 20-3.5-3.5" />
+
                 </svg>
-                <label for="search" class="sr-only">Search users</label>
-                <input id="search" type="search" placeholder="Search by name or email"
+
+
+                <input
+                    type="search"
+                    placeholder="Search by name or email"
                     (input)="onSearch($any($event.target).value)"
                     class="block w-full rounded-xl border-0 bg-stone-50 py-2.5 pl-10 pr-3 text-sm text-stone-900 ring-1 ring-inset ring-stone-200 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-600" />
+
             </div>
 
-            <div class="relative sm:w-56">
-                <label for="filter-district" class="sr-only">District</label>
-                <select id="filter-district" (change)="onDistrictChange($any($event.target).value)"
+
+            <!-- DISTRICT FILTER -->
+
+            <div
+                class="relative sm:w-56">
+
+                <select
+                    (change)="onDistrictChange($any($event.target).value)"
                     class="block w-full appearance-none rounded-xl border-0 bg-stone-50 py-2.5 pl-3.5 pr-10 text-sm text-stone-900 ring-1 ring-inset ring-stone-200 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-600">
-                    <option value="">All districts</option>
-                    @for (district of districts(); track district.church_id) {
-                        <option [value]="district.church_id">{{ district.name }}</option>
+
+                    <option value="">
+                        All districts
+                    </option>
+
+                    @for (
+                        district of districts();
+                        track district.church_id
+                    ) {
+
+                        <option
+                            [value]="district.church_id">
+
+                            {{ district.name }}
+
+                        </option>
+
                     }
+
                 </select>
-                <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6" />
-                </svg>
+
             </div>
+
+
+            <!-- BULK TRANSFER -->
+
+            @if (!bulkMode()) {
+
+                <button
+                    type="button"
+                    (click)="enterBulkMode()"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-green-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800">
+
+                    <svg
+                        class="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2">
+
+                        <path d="M8 6h13" />
+                        <path d="M8 12h13" />
+                        <path d="M8 18h13" />
+
+                        <path d="M3 6h.01" />
+                        <path d="M3 12h.01" />
+                        <path d="M3 18h.01" />
+
+                    </svg>
+
+                    Bulk Transfer
+
+                </button>
+
+            }
+
         </div>
 
-        <!-- Table -->
+
+        <!-- =====================================================
+             BULK TRANSFER PANEL
+        ====================================================== -->
+
+        @if (bulkMode()) {
+
+            <div
+                class="border-b border-green-100 bg-green-50/60 px-6 py-5 sm:px-8">
+
+                <div
+                    class="flex items-center justify-between">
+
+                    <div>
+
+                        <p
+                            class="text-sm font-semibold text-green-950">
+
+                            {{ selectedCount() }}
+                            pastor{{ selectedCount() === 1 ? '' : 's' }}
+                            selected
+
+                        </p>
+
+                        <p
+                            class="mt-1 text-xs text-green-800">
+
+                            Select pastors below and choose their new
+                            district assignment.
+
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        (click)="cancelBulkMode()"
+                        class="rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-white hover:text-stone-900">
+
+                        Cancel
+
+                    </button>
+
+                </div>
+
+
+                @if (selectedCount() > 0) {
+
+                    <!-- TRANSFER MODE -->
+
+                    <div class="mt-5">
+
+                        <label
+                            class="text-xs font-semibold uppercase tracking-wide text-stone-600">
+
+                            Transfer method
+
+                        </label>
+
+
+                        <div
+                            class="mt-2 flex flex-wrap gap-2">
+
+                            <button
+                                type="button"
+                                (click)="setTransferMode('same')"
+                                [class]="transferMode() === 'same'
+                                    ? 'bg-green-900 text-white'
+                                    : 'bg-white text-stone-700 ring-1 ring-stone-200'"
+                                class="rounded-xl px-4 py-2 text-sm font-medium transition">
+
+                                Move all to one district
+
+                            </button>
+
+
+                            <button
+                                type="button"
+                                (click)="setTransferMode('individual')"
+                                [class]="transferMode() === 'individual'
+                                    ? 'bg-green-900 text-white'
+                                    : 'bg-white text-stone-700 ring-1 ring-stone-200'"
+                                class="rounded-xl px-4 py-2 text-sm font-medium transition">
+
+                                Assign individually
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         SAME DISTRICT
+                    ================================================== -->
+
+                    @if (transferMode() === 'same') {
+
+                        <div
+                            class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+
+                            <div
+                                class="flex-1 sm:max-w-sm">
+
+                                <label
+                                    class="block text-xs font-medium text-stone-700">
+
+                                    New district
+
+                                </label>
+
+
+                                <select
+                                    (change)="selectBulkDestination($any($event.target).value)"
+                                    class="mt-1 block w-full rounded-xl border-stone-300 bg-white px-3 py-2.5 text-sm focus:border-green-700 focus:ring-green-700">
+
+                                    <option value="">
+                                        Select district
+                                    </option>
+
+                                    @for (
+                                        district of districts();
+                                        track district.church_id
+                                    ) {
+
+                                        <option
+                                            [value]="district.church_id">
+
+                                            {{ district.name }}
+
+                                        </option>
+
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                (click)="reviewTransfers()"
+                                [disabled]="savingTransfer()"
+                                class="rounded-xl bg-green-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50">
+
+                                Review Transfer
+
+                            </button>
+
+                        </div>
+
+                    }
+
+
+                    <!-- =================================================
+                         INDIVIDUAL DISTRICTS
+                    ================================================== -->
+
+                    @if (transferMode() === 'individual') {
+
+                        <div
+                            class="mt-5 overflow-hidden rounded-xl bg-white ring-1 ring-stone-200">
+
+                            <div class="overflow-x-auto">
+
+                                <table
+                                    class="min-w-full text-sm">
+
+                                    <thead
+                                        class="bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
+
+                                        <tr>
+
+                                            <th
+                                                class="px-4 py-3 text-left">
+
+                                                Pastor
+
+                                            </th>
+
+                                            <th
+                                                class="px-4 py-3 text-left">
+
+                                                Current district
+
+                                            </th>
+
+                                            <th
+                                                class="px-4 py-3 text-left">
+
+                                                New district
+
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+
+                                    <tbody
+                                        class="divide-y divide-stone-100">
+
+                                        @for (
+                                            pastor of pastors();
+                                            track pastor.user_id
+                                        ) {
+
+                                            @if (
+                                                isSelected(
+                                                    pastor.user_id
+                                                )
+                                            ) {
+
+                                                <tr>
+
+                                                    <td
+                                                        class="px-4 py-3 font-medium text-stone-900">
+
+                                                        {{ fullName(pastor) }}
+
+                                                    </td>
+
+
+                                                    <td
+                                                        class="px-4 py-3 text-stone-500">
+
+                                                        {{
+                                                            pastor.church?.name
+                                                            ?? 'Unassigned'
+                                                        }}
+
+                                                    </td>
+
+
+                                                    <td
+                                                        class="px-4 py-3">
+
+                                                        <select
+                                                            (change)="updateIndividualDestination(
+                                                                pastor.user_id,
+                                                                $any($event.target).value
+                                                            )"
+                                                            class="block w-full min-w-48 rounded-lg border-stone-300 bg-white px-3 py-2 text-sm focus:border-green-700 focus:ring-green-700">
+
+                                                            <option value="">
+                                                                Select district
+                                                            </option>
+
+                                                            @for (
+                                                                district of districts();
+                                                                track district.church_id
+                                                            ) {
+
+                                                                <option
+                                                                    [value]="district.church_id"
+                                                                    [selected]="
+                                                                        getIndividualDestination(
+                                                                            pastor.user_id
+                                                                        ) === district.church_id
+                                                                    ">
+
+                                                                    {{ district.name }}
+
+                                                                </option>
+
+                                                            }
+
+                                                        </select>
+
+                                                    </td>
+
+                                                </tr>
+
+                                            }
+
+                                        }
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+
+                            <div
+                                class="flex justify-end border-t border-stone-100 bg-stone-50 px-4 py-3">
+
+                                <button
+                                    type="button"
+                                    (click)="reviewTransfers()"
+                                    [disabled]="savingTransfer()"
+                                    class="rounded-xl bg-green-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-50">
+
+                                    Review Transfers
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    }
+
+                }
+
+            </div>
+
+        }
+
+
+        <!-- =====================================================
+             MAIN TABLE
+        ====================================================== -->
+
         <div class="overflow-x-auto">
+
             <table class="min-w-full text-sm">
+
                 <thead>
-                    <tr class="bg-stone-50/80 text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
-                        <th scope="col" class="whitespace-nowrap px-6 py-3 sm:pl-8">Name</th>
-                        <th scope="col" class="hidden whitespace-nowrap px-4 py-3 md:table-cell">Email</th>
-                        <th scope="col" class="hidden whitespace-nowrap px-4 py-3 sm:table-cell">Gender</th>
-                        <th scope="col" class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">Birthdate</th>
-                        <th scope="col" class="whitespace-nowrap px-4 py-3">District</th>
-                        <th scope="col" class="px-6 py-3 sm:pr-8"><span class="sr-only">Actions</span></th>
+
+                    <tr
+                        class="bg-stone-50/80 text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
+
+                        @if (bulkMode()) {
+
+                            <th
+                                class="w-12 px-4 py-3">
+
+                                <input
+                                    type="checkbox"
+                                    [checked]="allVisibleSelected()"
+                                    (change)="toggleAllVisible()"
+                                    class="h-4 w-4 rounded border-stone-300 text-green-700 focus:ring-green-600" />
+
+                            </th>
+
+                        }
+
+
+                        <th
+                            class="whitespace-nowrap px-6 py-3 sm:pl-8">
+
+                            Name
+
+                        </th>
+
+
+                        <th
+                            class="hidden whitespace-nowrap px-4 py-3 md:table-cell">
+
+                            Email
+
+                        </th>
+
+
+                        <th
+                            class="hidden whitespace-nowrap px-4 py-3 sm:table-cell">
+
+                            Gender
+
+                        </th>
+
+
+                        <th
+                            class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">
+
+                            Birthdate
+
+                        </th>
+
+
+                        <th
+                            class="whitespace-nowrap px-4 py-3">
+
+                            District
+
+                        </th>
+
+
+                        <th
+                            class="px-6 py-3 sm:pr-8">
+
+                            <span class="sr-only">
+                                Actions
+                            </span>
+
+                        </th>
+
                     </tr>
+
                 </thead>
-                <tbody class="divide-y divide-stone-100">
+
+
+                <tbody
+                    class="divide-y divide-stone-100">
+
+
+                    <!-- LOADING -->
+
                     @if (loading()) {
+
                         <tr>
-                            <td colspan="6" class="px-6 py-10 text-center text-stone-500">Loading pastors…</td>
+
+                            <td
+                                [attr.colspan]="bulkMode() ? 7 : 6"
+                                class="px-6 py-10 text-center text-stone-500">
+
+                                Loading pastors…
+
+                            </td>
+
                         </tr>
-                    } @else if (error()) {
+
+                    }
+
+
+                    <!-- ERROR -->
+
+                    @else if (error()) {
+
                         <tr>
-                            <td colspan="6" class="px-6 py-10 text-center text-red-600">{{ error() }}</td>
+
+                            <td
+                                [attr.colspan]="bulkMode() ? 7 : 6"
+                                class="px-6 py-10 text-center text-red-600">
+
+                                {{ error() }}
+
+                            </td>
+
                         </tr>
-                    } @else {
-                        @for (pastor of pastors(); track pastor.user_id) {
-                            <tr class="group transition hover:bg-green-50/60">
-                                <td class="whitespace-nowrap px-6 py-3.5 sm:pl-8">
-                                    <div class="flex items-center gap-3">
+
+                    }
+
+
+                    <!-- DATA -->
+
+                    @else {
+
+                        @for (
+                            pastor of pastors();
+                            track pastor.user_id
+                        ) {
+
+                            <tr
+                                class="group transition hover:bg-green-50/60">
+
+
+                                <!-- CHECKBOX -->
+
+                                @if (bulkMode()) {
+
+                                    <td
+                                        class="px-4 py-3.5">
+
+                                        <input
+                                            type="checkbox"
+                                            [checked]="isSelected(pastor.user_id)"
+                                            (change)="togglePastor(pastor.user_id)"
+                                            class="h-4 w-4 rounded border-stone-300 text-green-700 focus:ring-green-600" />
+
+                                    </td>
+
+                                }
+
+
+                                <!-- NAME -->
+
+                                <td
+                                    class="whitespace-nowrap px-6 py-3.5 sm:pl-8">
+
+                                    <div
+                                        class="flex items-center gap-3">
+
                                         <span
-                                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-700 text-xs font-semibold text-white shadow-sm ring-2 ring-white">{{ initials(pastor) }}</span>
-                                        <div class="min-w-0">
-                                            <p class="font-medium text-stone-900">{{ fullName(pastor) }}</p>
-                                            <p class="text-xs text-stone-500 md:hidden">{{ pastor.email }}</p>
+                                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-700 text-xs font-semibold text-white shadow-sm ring-2 ring-white">
+
+                                            {{
+                                                initials(pastor)
+                                            }}
+
+                                        </span>
+
+
+                                        <div
+                                            class="min-w-0">
+
+                                            <p
+                                                class="font-medium text-stone-900">
+
+                                                {{
+                                                    fullName(pastor)
+                                                }}
+
+                                            </p>
+
+
+                                            <p
+                                                class="text-xs text-stone-500 md:hidden">
+
+                                                {{
+                                                    pastor.email
+                                                }}
+
+                                            </p>
+
                                         </div>
+
                                     </div>
+
                                 </td>
-                                <td class="hidden whitespace-nowrap px-4 py-3.5 text-stone-600 md:table-cell">
-                                    {{ pastor.email }}</td>
-                                <td class="hidden whitespace-nowrap px-4 py-3.5 sm:table-cell">
+
+
+                                <!-- EMAIL -->
+
+                                <td
+                                    class="hidden whitespace-nowrap px-4 py-3.5 text-stone-600 md:table-cell">
+
+                                    {{ pastor.email }}
+
+                                </td>
+
+
+                                <!-- GENDER -->
+
+                                <td
+                                    class="hidden whitespace-nowrap px-4 py-3.5 sm:table-cell">
+
                                     <span
                                         class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset"
-                                        [class]="genderBadge(pastor)">{{ pastor.gender | titlecase }}</span>
+                                        [class]="genderBadge(pastor)">
+
+                                        {{
+                                            pastor.gender
+                                            | titlecase
+                                        }}
+
+                                    </span>
+
                                 </td>
-                                <td class="hidden whitespace-nowrap px-4 py-3.5 text-stone-600 lg:table-cell">
-                                    {{ pastor.birthdate | date: 'MMM dd, y' }}</td>
-                                <td class="whitespace-nowrap px-4 py-3.5">
+
+
+                                <!-- BIRTHDATE -->
+
+                                <td
+                                    class="hidden whitespace-nowrap px-4 py-3.5 text-stone-600 lg:table-cell">
+
+                                    {{
+                                        pastor.birthdate
+                                        | date:'MMM dd, y'
+                                    }}
+
+                                </td>
+
+
+                                <!-- DISTRICT -->
+
+                                <td
+                                    class="whitespace-nowrap px-4 py-3.5">
+
                                     @if (pastor.church) {
+
                                         <span
-                                            class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-800 ring-1 ring-inset ring-green-600/20"><span
-                                                class="h-1.5 w-1.5 rounded-full bg-green-500"></span>{{ pastor.church.name }}</span>
-                                    } @else {
-                                        <span class="text-stone-400">—</span>
+                                            class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-800 ring-1 ring-inset ring-green-600/20">
+
+                                            <span
+                                                class="h-1.5 w-1.5 rounded-full bg-green-500">
+                                            </span>
+
+                                            {{
+                                                pastor.church.name
+                                            }}
+
+                                        </span>
+
                                     }
+                                    @else {
+
+                                        <span
+                                            class="text-stone-400">
+
+                                            —
+
+                                        </span>
+
+                                    }
+
                                 </td>
-                                <td class="whitespace-nowrap px-6 py-3.5 text-right sm:pr-8">
-                                    <div
-                                        class="inline-flex items-center gap-1 sm:opacity-60 sm:transition sm:group-hover:opacity-100">
-                                        <button type="button" [attr.aria-label]="'View ' + fullName(pastor)" [routerLink]="['../edit-user', pastor.user_id]"
-                                            class="rounded-lg p-2 text-stone-500 transition hover:bg-green-100 hover:text-green-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600">
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
-                                                <circle cx="12" cy="12" r="3" />
-                                            </svg>
-                                        </button>
-                                        <button type="button" [attr.aria-label]="'Delete ' + fullName(pastor)"
-                                            class="rounded-lg p-2 text-stone-500 transition hover:bg-red-100 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600">
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
-                                            </svg>
-                                        </button>
-                                    </div>
+
+
+                                <!-- ACTIONS -->
+
+                                <td
+                                    class="whitespace-nowrap px-6 py-3.5 text-right sm:pr-8">
+
+                                    @if (!bulkMode()) {
+
+                                        <div
+                                            class="inline-flex items-center gap-1">
+
+                                            <button
+                                                type="button"
+                                                [routerLink]="[
+                                                    '../edit-user',
+                                                    pastor.user_id
+                                                ]"
+                                                class="rounded-lg p-2 text-stone-500 transition hover:bg-green-100 hover:text-green-800">
+
+                                                <svg
+                                                    class="h-4 w-4"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2">
+
+                                                    <path
+                                                        d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+
+                                                    <circle
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="3" />
+
+                                                </svg>
+
+                                            </button>
+
+                                        </div>
+
+                                    }
+
                                 </td>
+
                             </tr>
+
                         }
+
                     }
+
                 </tbody>
+
             </table>
 
-            <!-- Empty state -->
-            @if (!loading() && !error() && pastors().length === 0) {
-                <div class="px-6 py-16 text-center">
+
+            <!-- EMPTY STATE -->
+
+            @if (
+                !loading() &&
+                !error() &&
+                pastors().length === 0
+            ) {
+
+                <div
+                    class="px-6 py-16 text-center">
+
                     <span
                         class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-50 text-green-700">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="7" />
-                            <path d="m20 20-3.5-3.5" />
+
+                        <svg
+                            class="h-6 w-6"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2">
+
+                            <circle
+                                cx="11"
+                                cy="11"
+                                r="7" />
+
+                            <path
+                                d="m20 20-3.5-3.5" />
+
                         </svg>
+
                     </span>
-                    <p class="mt-3 text-sm font-medium text-stone-900">No pastors found</p>
-                    <p class="mt-1 text-sm text-stone-500">Try a different search or district.</p>
+
+
+                    <p
+                        class="mt-3 text-sm font-medium text-stone-900">
+
+                        No pastors found
+
+                    </p>
+
+
+                    <p
+                        class="mt-1 text-sm text-stone-500">
+
+                        Try a different search or district.
+
+                    </p>
+
                 </div>
+
             }
+
         </div>
 
-        <!-- Pagination -->
+
+        <!-- =====================================================
+             PAGINATION
+        ====================================================== -->
+
         <footer
             class="flex items-center justify-between border-t border-stone-200/70 bg-stone-50/60 px-6 py-4 text-sm text-stone-600 sm:px-8">
-            <p>Showing <span class="font-semibold text-stone-900">{{ from() }}–{{ to() }}</span> of <span
-                    class="font-semibold text-stone-900">{{ total() }}</span> pastors</p>
+
+            <p>
+
+                Showing
+
+                <span
+                    class="font-semibold text-stone-900">
+
+                    {{ from() }}–{{ to() }}
+
+                </span>
+
+                of
+
+                <span
+                    class="font-semibold text-stone-900">
+
+                    {{ total() }}
+
+                </span>
+
+                pastors
+
+            </p>
+
+
             <div class="flex gap-2">
-                <button type="button" (click)="prevPage()" [disabled]="page() === 1 || loading()"
-                    class="rounded-xl bg-white px-3.5 py-2 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400 disabled:hover:bg-white">Previous</button>
-                <button type="button" (click)="nextPage()" [disabled]="page() === lastPage() || loading()"
-                    class="rounded-xl bg-white px-3.5 py-2 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400 disabled:hover:bg-white">Next</button>
+
+                <button
+                    type="button"
+                    (click)="prevPage()"
+                    [disabled]="page() === 1 || loading()"
+                    class="rounded-xl bg-white px-3.5 py-2 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400">
+
+                    Previous
+
+                </button>
+
+
+                <button
+                    type="button"
+                    (click)="nextPage()"
+                    [disabled]="page() === lastPage() || loading()"
+                    class="rounded-xl bg-white px-3.5 py-2 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-200 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400">
+
+                    Next
+
+                </button>
+
             </div>
+
         </footer>
+
     </div>
+
 </div>
