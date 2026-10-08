@@ -4,17 +4,8 @@
 
     <!-- Header: initials preview updates as you type -->
     <header class="flex items-center gap-4 bg-green-900 px-6 py-6 text-white sm:px-8">
-      <div aria-hidden="true"
-        class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl font-semibold uppercase tracking-wide text-green-900">
-        {{ ((form.value.first_name?.[0] ?? '') + (form.value.last_name?.[0] ?? '')) || '+' }}
-      </div>
       <div class="min-w-0">
-        <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Add a new user</h1>
-        <p class="mt-1 truncate text-sm text-green-100">
-          {{ form.value.first_name || form.value.last_name
-            ? (form.value.first_name ?? '') + ' ' + (form.value.last_name ?? '')
-            : 'Fill in the details below to create an account.' }}
-        </p>
+        <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Create a new user</h1>
       </div>
     </header>
 
@@ -60,7 +51,7 @@
 
           <!-- Gender as a segmented control -->
           <fieldset class="sm:col-span-3">
-            <legend class="block text-sm font-medium text-stone-700">Gender</legend>
+            <label for="birthdate" class="block text-sm font-medium text-stone-700">Gender</label>
             <div class="mt-1.5 grid grid-cols-2 gap-2">
               <label class="cursor-pointer">
                 <input type="radio" formControlName="gender" value="male" class="peer sr-only" />
