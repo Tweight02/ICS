@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\BaptismController;
+use App\Http\Controllers\DeathController;
 
 Route::get('/test-speed', function () {
     return 'OK';
@@ -42,3 +43,4 @@ Route::post('/assistant/users', [UserController::class, 'create_user']);
 
 Route::apiResource('baptisms', BaptismController::class);
 Route::get('/churches', [BaptismController::class, 'allChurches']);
+Route::apiResource('deaths',DeathController::class);
