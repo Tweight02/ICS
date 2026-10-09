@@ -25,34 +25,34 @@ class UserController extends Controller
         $data = $request->validate([
 
             'department_id' =>
-                'required|exists:departments,department_id',
+            'required|exists:departments,department_id',
 
             'church_id' =>
-                'required|exists:churches,church_id',
+            'required|exists:churches,church_id',
 
             'first_name' =>
-                'required|string|max:255',
+            'required|string|max:255',
 
             'middle_name' =>
-                'nullable|string|max:255',
+            'nullable|string|max:255',
 
             'last_name' =>
-                'required|string|max:255',
+            'required|string|max:255',
 
             'extension_name' =>
-                'nullable|string|max:50',
+            'nullable|string|max:50',
 
             'birthdate' =>
-                'required|date|before:today',
+            'required|date|before:today',
 
             'gender' =>
-                'required|string|in:male,female,other',
+            'required|string|in:male,female,other',
 
             'email' =>
-                'required|email|unique:users,email',
+            'required|email|unique:users,email',
 
             'password' =>
-                'required|string|min:8',
+            'required|string|min:8',
 
         ]);
 
@@ -72,10 +72,10 @@ class UserController extends Controller
         return response()->json([
 
             'message' =>
-                'User created successfully',
+            'User created successfully',
 
             'user' =>
-                $user,
+            $user,
 
         ], 201);
     }
@@ -90,31 +90,31 @@ class UserController extends Controller
         $pastors =
             User::query()
 
-                ->where(
-                    'role',
-                    'pastor'
-                )
+            ->where(
+                'role',
+                'pastor'
+            )
 
-                ->with([
+            ->with([
 
-                    'department:department_id,department_name',
+                'department:department_id,department_name',
 
-                    'church:church_id,name',
+                'church:church_id,name',
 
-                ])
+            ])
 
-                ->when(
-                    $request->search,
-                    function ($query, $search) {
+            ->when(
+                $request->search,
+                function ($query, $search) {
 
-                        $query->where(
-                            function ($q) use ($search) {
+                    $query->where(
+                        function ($q) use ($search) {
 
-                                $q->where(
-                                    'first_name',
-                                    'like',
-                                    "%{$search}%"
-                                )
+                            $q->where(
+                                'first_name',
+                                'like',
+                                "%{$search}%"
+                            )
 
                                 ->orWhere(
                                     'last_name',
@@ -127,45 +127,43 @@ class UserController extends Controller
                                     'like',
                                     "%{$search}%"
                                 );
+                        }
+                    );
+                }
+            )
 
-                            }
-                        );
-
-                    }
+            ->when(
+                $request->department_id,
+                fn($q, $id) =>
+                $q->where(
+                    'department_id',
+                    $id
                 )
+            )
 
-                ->when(
-                    $request->department_id,
-                    fn($q, $id) =>
-                        $q->where(
-                            'department_id',
-                            $id
-                        )
+            ->when(
+                $request->church_id,
+                fn($q, $id) =>
+                $q->where(
+                    'church_id',
+                    $id
                 )
+            )
 
-                ->when(
-                    $request->church_id,
-                    fn($q, $id) =>
-                        $q->where(
-                            'church_id',
-                            $id
-                        )
+            ->orderBy(
+                'last_name'
+            )
+
+            ->orderBy(
+                'first_name'
+            )
+
+            ->paginate(
+                $request->integer(
+                    'per_page',
+                    15
                 )
-
-                ->orderBy(
-                    'last_name'
-                )
-
-                ->orderBy(
-                    'first_name'
-                )
-
-                ->paginate(
-                    $request->integer(
-                        'per_page',
-                        15
-                    )
-                );
+            );
 
 
         return response()->json(
@@ -202,7 +200,7 @@ class UserController extends Controller
         return response()->json([
 
             'data' =>
-                $pastor
+            $pastor
 
         ]);
     }
@@ -229,28 +227,28 @@ class UserController extends Controller
             $request->validate([
 
                 'department_id' =>
-                    'required|exists:departments,department_id',
+                'required|exists:departments,department_id',
 
                 'church_id' =>
-                    'required|exists:churches,church_id',
+                'required|exists:churches,church_id',
 
                 'first_name' =>
-                    'required|string|max:255',
+                'required|string|max:255',
 
                 'middle_name' =>
-                    'nullable|string|max:255',
+                'nullable|string|max:255',
 
                 'last_name' =>
-                    'required|string|max:255',
+                'required|string|max:255',
 
                 'extension_name' =>
-                    'nullable|string|max:50',
+                'nullable|string|max:50',
 
                 'birthdate' =>
-                    'required|date|before:today',
+                'required|date|before:today',
 
                 'gender' =>
-                    'required|string|in:male,female,other',
+                'required|string|in:male,female,other',
 
                 'email' => [
 
@@ -269,28 +267,24 @@ class UserController extends Controller
                 ],
 
                 'password' =>
-                    'nullable|string|min:8',
+                'nullable|string|min:8',
 
             ]);
 
 
         if (
-            empty(
-                $data['password']
-            )
+            empty($data['password'])
         ) {
 
             unset(
                 $data['password']
             );
-
         } else {
 
             $data['password'] =
                 Hash::make(
                     $data['password']
                 );
-
         }
 
 
@@ -302,13 +296,13 @@ class UserController extends Controller
         return response()->json([
 
             'message' =>
-                'User updated successfully',
+            'User updated successfully',
 
             'user' =>
-                $pastor->fresh([
-                    'department',
-                    'church'
-                ]),
+            $pastor->fresh([
+                'department',
+                'church'
+            ]),
 
         ]);
     }
@@ -318,134 +312,203 @@ class UserController extends Controller
     // BULK TRANSFER PASTORS
     // =========================================================
 
-    public function bulk_transfer(
-        Request $request
-    ) {
+    public function bulk_transfer(Request $request)
+    {
+        $data = $request->validate([
+            'transfers' => [
+                'required',
+                'array',
+                'min:1',
+            ],
 
-        $data =
-            $request->validate([
+            'transfers.*.user_id' => [
+                'required',
+                'integer',
+                'distinct',
+                'exists:users,user_id',
+            ],
 
-                'transfers' => [
-                    'required',
-                    'array',
-                    'min:1'
-                ],
-
-                'transfers.*.user_id' => [
-                    'required',
-                    'integer',
-                    'distinct',
-                    'exists:users,user_id'
-                ],
-
-                'transfers.*.church_id' => [
-                    'required',
-                    'integer',
-                    'exists:churches,church_id'
-                ],
-
-            ]);
-
-
-        $transfers =
-            $data['transfers'];
-
-
-        /*
-         * Everything inside this transaction must succeed.
-         *
-         * If one pastor fails to transfer,
-         * all previous changes are rolled back.
-         */
-
-        DB::transaction(
-            function () use ($transfers) {
-
-                foreach (
-                    $transfers as $transfer
-                ) {
-
-                    /*
-                     * Only pastors can be transferred
-                     * through this endpoint.
-                     */
-
-                    $pastor =
-                        User::where(
-                            'user_id',
-                            $transfer['user_id']
-                        )
-                        ->where(
-                            'role',
-                            'pastor'
-                        )
-                        ->first();
-
-
-                    if (!$pastor) {
-
-                        throw ValidationException::withMessages([
-
-                            'transfers' =>
-                                "User ID {$transfer['user_id']} is not a pastor."
-
-                        ]);
-
-                    }
-
-
-                    /*
-                     * Don't allow a pastor to be transferred
-                     * to the district they already belong to.
-                     */
-
-                    if (
-                        (int) $pastor->church_id ===
-                        (int) $transfer['church_id']
-                    ) {
-
-                        throw ValidationException::withMessages([
-
-                            'transfers' =>
-                                "{$pastor->first_name} {$pastor->last_name} "
-                                . "is already assigned to this district."
-
-                        ]);
-
-                    }
-
-
-                    /*
-                     * Update only the district.
-                     *
-                     * Department, name, email, password,
-                     * etc. remain untouched.
-                     */
-
-                    $pastor->update([
-
-                        'church_id' =>
-                            $transfer['church_id']
-
-                    ]);
-
-                }
-
-            }
-        );
-
-
-        return response()->json([
-
-            'message' =>
-                count($transfers)
-                . ' pastor(s) transferred successfully.',
-
-            'transferred_count' =>
-                count($transfers)
-
+            'transfers.*.church_id' => [
+                'required',
+                'integer',
+                'exists:churches,church_id',
+            ],
         ]);
 
-    }
+        $transfers = $data['transfers'];
 
+        /*
+    |--------------------------------------------------------------------------
+    | Make sure every destination district is unique
+    |--------------------------------------------------------------------------
+    */
+
+        $destinationIds = array_column(
+            $transfers,
+            'church_id'
+        );
+
+        if (
+            count($destinationIds) !==
+            count(array_unique($destinationIds))
+        ) {
+            throw ValidationException::withMessages([
+                'transfers' =>
+                'Each pastor must be assigned to a different destination district.',
+            ]);
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Get all pastors being transferred
+    |--------------------------------------------------------------------------
+    */
+
+        $userIds = array_column(
+            $transfers,
+            'user_id'
+        );
+
+        $pastors = User::whereIn(
+            'user_id',
+            $userIds
+        )
+            ->where('role', 'pastor')
+            ->get()
+            ->keyBy('user_id');
+
+        /*
+    |--------------------------------------------------------------------------
+    | Make sure every selected user is actually a pastor
+    |--------------------------------------------------------------------------
+    */
+
+        if ($pastors->count() !== count($userIds)) {
+
+            $invalidIds = array_diff(
+                $userIds,
+                $pastors->keys()->all()
+            );
+
+            throw ValidationException::withMessages([
+                'transfers' =>
+                'One or more selected users are not pastors.',
+            ]);
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Build lookup of who is moving
+    |--------------------------------------------------------------------------
+    */
+
+        $movingUserIds = array_flip(
+            $userIds
+        );
+
+        DB::transaction(function () use (
+            $transfers,
+            $pastors,
+            $movingUserIds
+        ) {
+
+            foreach ($transfers as $transfer) {
+
+                $pastor = $pastors->get(
+                    $transfer['user_id']
+                );
+
+                $destinationId =
+                    (int) $transfer['church_id'];
+
+                /*
+            |--------------------------------------------------------------------------
+            | Cannot transfer to the same district
+            |--------------------------------------------------------------------------
+            */
+
+                if (
+                    (int) $pastor->church_id ===
+                    $destinationId
+                ) {
+
+                    throw ValidationException::withMessages([
+                        'transfers' =>
+                        "{$pastor->first_name} {$pastor->last_name} is already assigned to this district.",
+                    ]);
+                }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Check whether destination is occupied
+            |--------------------------------------------------------------------------
+            */
+
+                $currentOccupant = User::where(
+                    'role',
+                    'pastor'
+                )
+                    ->where(
+                        'church_id',
+                        $destinationId
+                    )
+                    ->whereNotIn(
+                        'user_id',
+                        array_keys($movingUserIds)
+                    )
+                    ->first();
+
+                /*
+            |--------------------------------------------------------------------------
+            | Destination belongs to another pastor who is NOT moving
+            |--------------------------------------------------------------------------
+            */
+
+                if ($currentOccupant) {
+
+                    throw ValidationException::withMessages([
+                        'transfers' =>
+                        "The destination district is already assigned to another pastor.",
+                    ]);
+                }
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Perform transfers
+        |--------------------------------------------------------------------------
+        |
+        | Because a destination occupied by a pastor in the transfer batch
+        | is allowed, swaps such as:
+        |
+        | Pastor A: District 1 -> District 2
+        | Pastor B: District 2 -> District 1
+        |
+        | are valid.
+        |
+        */
+
+            foreach ($transfers as $transfer) {
+
+                $pastor =
+                    $pastors->get(
+                        $transfer['user_id']
+                    );
+
+                $pastor->update([
+                    'church_id' =>
+                    $transfer['church_id'],
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' =>
+            count($transfers) .
+                ' pastor(s) transferred successfully.',
+
+            'transferred_count' =>
+            count($transfers),
+        ]);
+    }
 }
