@@ -62,12 +62,6 @@ export const PASTOR_ROUTES: Routes = [
         .then(m => m.ChurchRole)
   },
 
-  {
-    path: 'stewardship',
-    loadComponent: () =>
-      import('../representative/stewardship/stewardship')
-        .then(m => m.Stewardship)
-  },
 
   {
     path: '**',
