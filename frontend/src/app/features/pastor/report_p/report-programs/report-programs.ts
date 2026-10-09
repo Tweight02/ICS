@@ -23,6 +23,10 @@ import {
 } from '../../../../core/services/report/report';
 
 import {
+  AuthService
+} from '../../../../core/services/auth/auth-service';
+
+import {
   Department,
   DepartmentReport,
   Particular,
@@ -57,6 +61,9 @@ export class ReportPrograms implements OnInit {
 
   readonly cdr =
     inject(ChangeDetectorRef);
+
+  private readonly auth =
+    inject(AuthService);
 
 
   // =====================================================
@@ -119,7 +126,7 @@ export class ReportPrograms implements OnInit {
   newComment = '';
 
   // Temporary current user
-  currentUserId = 1;
+  currentUserId = 0;
 
 
   // =====================================================
@@ -146,45 +153,40 @@ export class ReportPrograms implements OnInit {
   // INIT
   // =====================================================
 
-  ngOnInit(): void {
 
-    this.route.queryParamMap.subscribe(
-      params => {
+ngOnInit(): void {
+  const user = this.auth.getCurrentUser();
 
-        this.districtId =
-          Number(
-            params.get('district_id')
-          ) || 0;
-
-        this.districtName =
-          params.get('district_name') || '';
-
-        this.churchId =
-          Number(
-            params.get('church_id')
-          ) || 0;
-
-        this.churchName =
-          params.get('church_name') || '';
-
-
-        if (!this.churchId) {
-
-          this.errorMessage =
-            'Church ID was not provided.';
-
-          this.cdr.detectChanges();
-
-          return;
-        }
-
-
-        this.loadDepartments();
-
-      }
-    );
-
+  if (!user) {
+    this.errorMessage =
+      'Unable to identify the logged-in user. Please sign in again.';
+    this.cdr.detectChanges();
+    return;
   }
+
+  this.currentUserId = Number(user.user_id);
+
+  if (!Number.isFinite(this.currentUserId) || this.currentUserId <= 0) {
+    this.errorMessage = 'Invalid logged-in user ID.';
+    this.cdr.detectChanges();
+    return;
+  }
+
+  this.route.queryParamMap.subscribe(params => {
+    this.districtId = Number(params.get('district_id')) || 0;
+    this.districtName = params.get('district_name') || '';
+    this.churchId = Number(params.get('church_id')) || 0;
+    this.churchName = params.get('church_name') || '';
+
+    if (!this.churchId) {
+      this.errorMessage = 'Church ID was not provided.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.loadDepartments();
+  });
+}
 
 
   // =====================================================
