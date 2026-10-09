@@ -31,9 +31,9 @@ class NelmSetup extends Command
 
             $this->info("[OK] Connected to database: {$database}");
 
-            if ($database !== 'test_ics') {
+            if ($database !== 'ICS') {
                 $this->error(
-                    'Setup stopped. Expected database test_ics; no changes were made.'
+                    'Setup stopped. Expected database ICS; no changes were made.'
                 );
 
                 return self::FAILURE;
