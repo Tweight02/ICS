@@ -85,4 +85,10 @@ Route::apiResource('deaths',DeathController::class);
 Route::get('/pastors', [UserController::class, 'view_pastors']);
 Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
 Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
-Route::post('/pastors/bulk-transfer', [UserController::class, 'bulk_transfer']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', function (Request $request) {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Logged out']);
+    });
+});
