@@ -18,6 +18,7 @@ class User extends Authenticatable
     protected $primaryKey="user_id";
     public $timestamps = false;
 
+
     protected $fillable = [
         'department_id',
         'church_id',
