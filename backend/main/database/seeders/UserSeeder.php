@@ -23,6 +23,18 @@ class UserSeeder extends Seeder
                 'role'           => 'representative',
                 'email'          => 'district.representative@example.com',
             ],
+              [
+                'department_id'  => 16, // Ministerial & Evangelism
+                'church_id'      => 1,
+                'first_name'     => 'James',
+                'middle_name'    => 'Harmes',
+                'last_name'      => 'Dela Cruz',
+                'extension_name' => null,
+                'birthdate'      => '1980-05-15',
+                'gender'         => 'Male',
+                'role'           => 'pastor',
+                'email'          => 'James.pastor@gmail.com',
+            ],
             [
                 'department_id'  => 19, // Communication
                 'church_id'      => 1,
