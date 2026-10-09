@@ -4,10 +4,8 @@
 
     <span *ngIf="v === null" class="text-sm text-emerald-900/70">–</span>
 
-    <span
-      *ngIf="v === 100"
-      class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-white shadow"
-    >✓</span>
+    <span *ngIf="v === 100"
+      class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-white shadow">✓</span>
 
     <div *ngIf="v !== null && v !== 100" class="flex items-center gap-2">
       <span class="text-sm text-emerald-950">{{ v }}%</span>
@@ -24,24 +22,13 @@
 
   <!-- Header -->
   <div class="mb-6">
-    <button
-      type="button"
-      class="mb-3 rounded-lg border border-emerald-900/20 bg-white/70 px-3 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50"
-      (click)="backToReports()"
-    >
-      ← Back
-    </button>
-
     <p class="text-xs font-semibold tracking-widest text-emerald-700">REPORT MANAGEMENT</p>
     <h1 class="text-2xl font-bold text-emerald-950">{{ churchName }}</h1>
     <p class="text-sm text-emerald-900/70">{{ districtName }}</p>
   </div>
 
   <!-- Error -->
-  <div
-    *ngIf="errorMessage"
-    class="mb-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-800"
-  >
+  <div *ngIf="errorMessage" class="mb-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-800">
     {{ errorMessage }}
   </div>
 
@@ -52,54 +39,51 @@
   </div>
 
   <!-- Table -->
-  <div
-    *ngIf="!loading && !errorMessage && representativeDepartments.length > 0"
-    class="overflow-hidden rounded-xl border border-white/70 bg-white/40 shadow-sm backdrop-blur-md"
-  >
+  <div *ngIf="!loading && !errorMessage && representativeDepartments.length > 0"
+    class="h-fit self-start overflow-hidden rounded-xl border border-white/40 bg-white/10 shadow-sm backdrop-blur-[2px]">
     <table class="w-full border-collapse">
 
       <thead>
-        <tr class="bg-black/5 text-sm font-bold text-emerald-950">
-          <th class="w-[35%] px-6 py-5 text-left">Department</th>
-          <th class="px-6 py-5 text-center">Q1</th>
-          <th class="px-6 py-5 text-center">Q2</th>
-          <th class="px-6 py-5 text-center">Q3</th>
-          <th class="px-6 py-5 text-center">Q4</th>
+        <tr class="h-12 bg-white/10 text-sm font-bold text-emerald-950">
+          <th class="w-[35%] px-6 py-0 text-left align-middle">Department</th>
+          <th class="px-6 py-0 text-center align-middle">Q1</th>
+          <th class="px-6 py-0 text-center align-middle">Q2</th>
+          <th class="px-6 py-0 text-center align-middle">Q3</th>
+          <th class="px-6 py-0 text-center align-middle">Q4</th>
         </tr>
       </thead>
 
       <tbody>
-        <tr
-          *ngFor="let department of representativeDepartments; let i = index; trackBy: trackDepartment"
-          class="cursor-pointer border-t border-white/60 odd:bg-white/60 even:bg-black/5 transition hover:bg-emerald-100/60"
-          (click)="openDepartment(department)"
-        >
-          <td class="px-6 py-6 text-sm font-semibold text-emerald-900">
-            {{ department.department_name }}
+        <tr *ngFor="let department of representativeDepartments; let i = index; trackBy: trackDepartment"
+          class="cursor-pointer border-t border-white/30 odd:bg-white/50 even:bg-white/10 transition hover:bg-emerald-100/40"
+          (click)="openDepartment(department)">
+          <!-- Icon + name -->
+          <td class="px-6 py-6">
+            <div class="flex items-center gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/40 shadow-sm">
+                <i class="bi text-lg text-emerald-700" [ngClass]="getDepartmentIcon(department.department_name)"></i>
+              </span>
+
+              <span class="text-sm font-semibold text-emerald-900">
+                {{ department.department_name }}
+              </span>
+            </div>
           </td>
 
           <td class="px-6 py-6">
-            <ng-container
-              *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q1 }"
-            ></ng-container>
+            <ng-container *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q1 }"></ng-container>
           </td>
 
           <td class="px-6 py-6">
-            <ng-container
-              *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q2 }"
-            ></ng-container>
+            <ng-container *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q2 }"></ng-container>
           </td>
 
           <td class="px-6 py-6">
-            <ng-container
-              *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q3 }"
-            ></ng-container>
+            <ng-container *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q3 }"></ng-container>
           </td>
 
           <td class="px-6 py-6">
-            <ng-container
-              *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q4 }"
-            ></ng-container>
+            <ng-container *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q4 }"></ng-container>
           </td>
         </tr>
       </tbody>
@@ -108,11 +92,10 @@
   </div>
 
   <!-- Empty state -->
-  <div
-    *ngIf="!loading && !errorMessage && representativeDepartments.length === 0"
-    class="py-12 text-center"
-  >
-    <div class="mb-2 text-4xl">📋</div>
+  <div *ngIf="!loading && !errorMessage && representativeDepartments.length === 0" class="py-12 text-center">
+    <div class="mb-2 text-4xl">
+      <i class="bi bi-clipboard-x text-emerald-700"></i>
+    </div>
     <h3 class="text-lg font-semibold text-emerald-950">No Reports Available</h3>
     <p class="text-sm text-emerald-900/70">
       There are currently no reports assigned to the church representative.

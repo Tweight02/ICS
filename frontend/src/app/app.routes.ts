@@ -72,15 +72,6 @@ export const routes: Routes = [
   },
 
 
-  /* ==============================
-     UNKNOWN ROUTE
-  ============================== */
-
-  {
-    path: '**',
-    redirectTo: 'pastor/reports'
-  },
-
   {
     path: '',
     redirectTo:'login',
