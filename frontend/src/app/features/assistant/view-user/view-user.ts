@@ -1,43 +1,13 @@
-import {
-  DatePipe,
-  TitleCasePipe
-} from '@angular/common';
-
-import {
-  Component,
-  DestroyRef,
-  inject,
-  OnInit,
-  signal
-} from '@angular/core';
-
-import {
-  takeUntilDestroyed
-} from '@angular/core/rxjs-interop';
-
-import {
-  debounceTime,
-  distinctUntilChanged,
-  Subject
-} from 'rxjs';
-
+import { DatePipe, TitleCasePipe } from '@angular/common';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import Swal from 'sweetalert2';
 
-import {
-  UserService
-} from '../../../core/services/user/user-service';
-
-import {
-  Pastor
-} from '../../../core/models/pastor.model';
-
-import {
-  Church
-} from '../../../core/models/church.model';
-
-import {
-  RouterLink
-} from '@angular/router';
+import { UserService } from '../../../core/services/user/user-service';
+import { Pastor } from '../../../core/models/pastor.model';
+import { Church } from '../../../core/models/church.model';
 
 @Component({
   imports: [
@@ -45,97 +15,55 @@ import {
     TitleCasePipe,
     RouterLink
   ],
-
   selector: 'app-view-user',
-
   styleUrl: './view-user.css',
-
   templateUrl: './view-user.html',
 })
 export class ViewUser implements OnInit {
 
   private userService = inject(UserService);
-
   private destroyRef = inject(DestroyRef);
 
   private search$ = new Subject<string>();
 
-  // =========================================================
-  // EXISTING DATA
-  // =========================================================
-
   pastors = signal<Pastor[]>([]);
-
   districts = signal<Church[]>([]);
 
   loading = signal(false);
+  savingTransfer = signal(false);
 
   error = signal<string | null>(null);
 
   search = signal('');
-
   churchId = signal('');
 
   page = signal(1);
-
   lastPage = signal(1);
-
   total = signal(0);
-
   from = signal(0);
-
   to = signal(0);
 
   readonly perPage = 15;
 
-
-  // =========================================================
-  // BULK TRANSFER
-  // =========================================================
-
+  // Bulk transfer
   bulkMode = signal(false);
 
   selectedPastorIds = signal<number[]>([]);
 
-  transferMode = signal<'same' | 'individual'>('same');
-
-  bulkDestination = signal<number | null>(null);
-
-  individualDestinations = signal<Record<number, number | null>>({});
-
-  savingTransfer = signal(false);
-
-
-  // =========================================================
-  // INITIALIZATION
-  // =========================================================
+  individualDestinations = signal<
+    Record<number, number | null>
+  >({});
 
   ngOnInit() {
 
-    this.userService
-      .getDistricts()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-
-        next: (res) => {
-
-          this.districts.set(
-            res.data
-          );
-
-        },
-
-        error: (error) => {
-
-          console.error(
-            'Failed to load districts:',
-            error
-          );
-
-        }
-
-      });
-
+    this.userService.getDistricts().subscribe({
+      next: (res) => {
+        this.districts.set(res.data);
+      },
+      error: () => {
+        this.error.set('Failed to load districts.');
+      }
+    });
 
     this.search$
       .pipe(
@@ -146,125 +74,67 @@ export class ViewUser implements OnInit {
       .subscribe((value) => {
 
         this.search.set(value);
-
         this.page.set(1);
 
         this.loadPastors();
-
       });
 
-
     this.loadPastors();
-
   }
-
-
-  // =========================================================
-  // LOAD PASTORS
-  // =========================================================
 
   loadPastors() {
 
     this.loading.set(true);
-
     this.error.set(null);
 
     this.userService
       .getPastors({
-
         search: this.search(),
-
         church_id: this.churchId(),
-
         page: this.page(),
-
-        per_page: this.perPage
-
+        per_page: this.perPage,
       })
-      .pipe(
-        takeUntilDestroyed(this.destroyRef)
-      )
       .subscribe({
 
         next: (res) => {
 
-          this.pastors.set(
-            res.data
-          );
+          this.pastors.set(res.data);
 
-          this.page.set(
-            res.current_page
-          );
+          this.page.set(res.current_page);
+          this.lastPage.set(res.last_page);
+          this.total.set(res.total);
 
-          this.lastPage.set(
-            res.last_page
-          );
-
-          this.total.set(
-            res.total
-          );
-
-          this.from.set(
-            res.from ?? 0
-          );
-
-          this.to.set(
-            res.to ?? 0
-          );
+          this.from.set(res.from ?? 0);
+          this.to.set(res.to ?? 0);
 
           this.loading.set(false);
-
         },
 
-        error: (error) => {
-
-          console.error(
-            'Failed to load pastors:',
-            error
-          );
+        error: () => {
 
           this.error.set(
-            'Failed to load users. Please try again.'
+            'Failed to load pastors. Please try again.'
           );
 
           this.loading.set(false);
-
-        },
+        }
 
       });
-
   }
-
-
-  // =========================================================
-  // SEARCH / FILTER
-  // =========================================================
 
   onSearch(value: string) {
 
-    this.search$.next(
-      value.trim()
-    );
-
+    this.search$.next(value.trim());
   }
-
 
   onDistrictChange(value: string) {
 
-    this.churchId.set(
-      value
-    );
+    this.churchId.set(value);
 
     this.page.set(1);
 
     this.loadPastors();
-
   }
-
-
-  // =========================================================
-  // PAGINATION
-  // =========================================================
 
   prevPage() {
 
@@ -275,33 +145,20 @@ export class ViewUser implements OnInit {
       );
 
       this.loadPastors();
-
     }
-
   }
-
 
   nextPage() {
 
-    if (
-      this.page() <
-      this.lastPage()
-    ) {
+    if (this.page() < this.lastPage()) {
 
       this.page.update(
         p => p + 1
       );
 
       this.loadPastors();
-
     }
-
   }
-
-
-  // =========================================================
-  // DISPLAY HELPERS
-  // =========================================================
 
   fullName(p: Pastor) {
 
@@ -313,9 +170,7 @@ export class ViewUser implements OnInit {
     ]
       .filter(Boolean)
       .join(' ');
-
   }
-
 
   initials(p: Pastor) {
 
@@ -323,21 +178,17 @@ export class ViewUser implements OnInit {
       (p.first_name?.[0] ?? '') +
       (p.last_name?.[0] ?? '')
     ).toUpperCase();
-
   }
-
 
   genderBadge(p: Pastor) {
 
     return p.gender === 'female'
       ? 'bg-rose-50 text-rose-700 ring-rose-600/15'
       : 'bg-sky-50 text-sky-700 ring-sky-600/15';
-
   }
 
-
   // =========================================================
-  // ENTER / EXIT BULK MODE
+  // BULK TRANSFER
   // =========================================================
 
   enterBulkMode() {
@@ -346,14 +197,8 @@ export class ViewUser implements OnInit {
 
     this.selectedPastorIds.set([]);
 
-    this.transferMode.set('same');
-
-    this.bulkDestination.set(null);
-
     this.individualDestinations.set({});
-
   }
-
 
   cancelBulkMode() {
 
@@ -361,34 +206,22 @@ export class ViewUser implements OnInit {
 
     this.selectedPastorIds.set([]);
 
-    this.bulkDestination.set(null);
-
     this.individualDestinations.set({});
-
   }
-
-
-  // =========================================================
-  // PASTOR SELECTION
-  // =========================================================
 
   isSelected(userId: number): boolean {
 
     return this.selectedPastorIds()
       .includes(userId);
-
   }
 
+  togglePastor(userId: number) {
 
-  togglePastor(
-    userId: number
-  ) {
+    const selected = [
+      ...this.selectedPastorIds()
+    ];
 
-    const selected =
-      [...this.selectedPastorIds()];
-
-    const index =
-      selected.indexOf(userId);
+    const index = selected.indexOf(userId);
 
     if (index === -1) {
 
@@ -396,147 +229,63 @@ export class ViewUser implements OnInit {
 
     } else {
 
-      selected.splice(
-        index,
-        1
-      );
-
+      selected.splice(index, 1);
     }
 
-    this.selectedPastorIds.set(
-      selected
-    );
-
+    this.selectedPastorIds.set(selected);
   }
-
 
   allVisibleSelected(): boolean {
 
-    const visible =
-      this.pastors();
+    const visible = this.pastors();
 
     if (!visible.length) {
-
       return false;
-
     }
 
     return visible.every(
       pastor =>
-        this.isSelected(
-          pastor.user_id
-        )
+        this.isSelected(pastor.user_id)
     );
-
   }
-
 
   toggleAllVisible() {
 
-    const selected =
-      [...this.selectedPastorIds()];
+    const selected = [
+      ...this.selectedPastorIds()
+    ];
 
     if (this.allVisibleSelected()) {
 
-      this.pastors().forEach(
-        pastor => {
+      this.pastors().forEach(pastor => {
 
-          const index =
-            selected.indexOf(
-              pastor.user_id
-            );
+        const index =
+          selected.indexOf(pastor.user_id);
 
-          if (index !== -1) {
+        if (index !== -1) {
 
-            selected.splice(
-              index,
-              1
-            );
-
-          }
-
+          selected.splice(index, 1);
         }
-      );
+      });
 
     } else {
 
-      this.pastors().forEach(
-        pastor => {
+      this.pastors().forEach(pastor => {
 
-          if (
-            !selected.includes(
-              pastor.user_id
-            )
-          ) {
+        if (!selected.includes(pastor.user_id)) {
 
-            selected.push(
-              pastor.user_id
-            );
-
-          }
-
+          selected.push(pastor.user_id);
         }
-      );
-
+      });
     }
 
-    this.selectedPastorIds.set(
-      selected
-    );
-
+    this.selectedPastorIds.set(selected);
   }
-
 
   selectedCount(): number {
 
     return this.selectedPastorIds().length;
-
   }
-
-
-  // =========================================================
-  // TRANSFER MODE
-  // =========================================================
-
-  setTransferMode(
-    mode: 'same' | 'individual'
-  ) {
-
-    this.transferMode.set(
-      mode
-    );
-
-    this.bulkDestination.set(
-      null
-    );
-
-    this.individualDestinations.set(
-      {}
-    );
-
-  }
-
-
-  // =========================================================
-  // SAME DISTRICT DESTINATION
-  // =========================================================
-
-  selectBulkDestination(
-    value: string
-  ) {
-
-    this.bulkDestination.set(
-      value
-        ? Number(value)
-        : null
-    );
-
-  }
-
-
-  // =========================================================
-  // INDIVIDUAL DESTINATIONS
-  // =========================================================
 
   updateIndividualDestination(
     userId: number,
@@ -548,561 +297,272 @@ export class ViewUser implements OnInit {
     };
 
     destinations[userId] =
-      value
-        ? Number(value)
-        : null;
+      value ? Number(value) : null;
 
     this.individualDestinations.set(
       destinations
     );
-
   }
-
 
   getIndividualDestination(
     userId: number
   ): number | null {
 
-    return (
-      this.individualDestinations()[userId]
-      ?? null
-    );
-
+    return this.individualDestinations()
+      [userId] ?? null;
   }
-
 
   // =========================================================
   // VALIDATION
   // =========================================================
 
-  validateTransfer(): boolean {
+  validateTransfer(): string | null {
 
-    if (
-      this.selectedCount() === 0
-    ) {
+    const selected =
+      this.selectedPastorIds();
 
-      Swal.fire({
+    if (selected.length === 0) {
 
-        icon: 'warning',
-
-        title: 'No pastors selected',
-
-        text:
-          'Please select at least one pastor.',
-
-        confirmButtonColor:
-          '#0F4A30'
-
-      });
-
-      return false;
-
+      return 'Please select at least one pastor.';
     }
 
+    const destinations =
+      selected.map(userId =>
+        this.getIndividualDestination(userId)
+      );
 
-    // -------------------------------------------------------
-    // SAME DISTRICT
-    // -------------------------------------------------------
-
+    // Every pastor must have a destination
     if (
-      this.transferMode() === 'same'
+      destinations.some(
+        destination => destination === null
+      )
     ) {
 
-      if (
-        !this.bulkDestination()
-      ) {
+      return 'Please assign a destination district to every selected pastor.';
+    }
 
-        Swal.fire({
+    const destinationIds =
+      destinations as number[];
 
-          icon: 'warning',
+    // A destination can only be used once
+    const uniqueDestinations =
+      new Set(destinationIds);
 
-          title: 'Select a district',
+    if (
+      uniqueDestinations.size !==
+      destinationIds.length
+    ) {
 
-          text:
-            'Please select the district where the selected pastors will be transferred.',
+      return 'Each pastor must have a different destination district.';
+    }
 
-          confirmButtonColor:
-            '#0F4A30'
+    // Pastor cannot transfer to same district
+    for (const userId of selected) {
 
-        });
-
-        return false;
-
-      }
-
+      const pastor =
+        this.pastors().find(
+          p => p.user_id === userId
+        );
 
       const destination =
-        this.bulkDestination();
+        this.getIndividualDestination(userId);
 
-
-      const alreadyThere =
-        this.pastors()
-          .filter(p =>
-            this.selectedPastorIds()
-              .includes(
-                p.user_id
-              )
-          )
-          .some(
-            p =>
-              p.church_id ===
-              destination
-          );
-
-
-      if (alreadyThere) {
-
-        Swal.fire({
-
-          icon: 'warning',
-
-          title: 'Invalid transfer',
-
-          text:
-            'One or more selected pastors are already assigned to the selected district.',
-
-          confirmButtonColor:
-            '#0F4A30'
-
-        });
-
-        return false;
-
+      if (!pastor || destination === null) {
+        continue;
       }
 
+      if (
+        Number(destination) ===
+        Number(pastor.church_id)
+      ) {
+
+        return `${this.fullName(pastor)} is already assigned to this district.`;
+      }
     }
 
-
-    // -------------------------------------------------------
-    // INDIVIDUAL DISTRICTS
-    // -------------------------------------------------------
-
-    if (
-      this.transferMode() === 'individual'
-    ) {
-
-      const incomplete =
-        this.selectedPastorIds()
-          .some(
-            userId =>
-              !this.getIndividualDestination(
-                userId
-              )
-          );
-
-
-      if (incomplete) {
-
-        Swal.fire({
-
-          icon: 'warning',
-
-          title: 'Incomplete assignment',
-
-          text:
-            'Please select a new district for every selected pastor.',
-
-          confirmButtonColor:
-            '#0F4A30'
-
-        });
-
-        return false;
-
-      }
-
-
-      const unchanged =
-        this.pastors()
-          .filter(p =>
-            this.selectedPastorIds()
-              .includes(
-                p.user_id
-              )
-          )
-          .some(
-            pastor =>
-              pastor.church_id ===
-              this.getIndividualDestination(
-                pastor.user_id
-              )
-          );
-
-
-      if (unchanged) {
-
-        Swal.fire({
-
-          icon: 'warning',
-
-          title: 'Invalid transfer',
-
-          text:
-            'A pastor cannot be transferred to their current district.',
-
-          confirmButtonColor:
-            '#0F4A30'
-
-        });
-
-        return false;
-
-      }
-
-    }
-
-
-    return true;
-
+    return null;
   }
-
-
-  // =========================================================
-  // BUILD TRANSFER LIST
-  // =========================================================
 
   buildTransfers() {
 
-    if (
-      this.transferMode() === 'same'
-    ) {
-
-      const destination =
-        this.bulkDestination();
-
-      return this.pastors()
-        .filter(p =>
-          this.selectedPastorIds()
-            .includes(
-              p.user_id
-            )
-        )
-        .map(p => ({
-
-          user_id:
-            p.user_id,
-
-          pastorName:
-            this.fullName(p),
-
-          fromDistrict:
-            p.church?.name ??
-            'Unassigned',
-
-          toDistrict:
-            this.districts()
-              .find(
-                d =>
-                  d.church_id ===
-                  destination
-              )?.name ??
-            'Unknown',
-
-          church_id:
-            destination as number
-
-        }));
-
-    }
-
-
-    return this.pastors()
-      .filter(p =>
-        this.selectedPastorIds()
-          .includes(
-            p.user_id
-          )
-      )
-      .map(p => {
-
-        const destination =
+    return this.selectedPastorIds().map(
+      userId => ({
+        user_id: userId,
+        church_id:
           this.getIndividualDestination(
-            p.user_id
-          );
-
-        return {
-
-          user_id:
-            p.user_id,
-
-          pastorName:
-            this.fullName(p),
-
-          fromDistrict:
-            p.church?.name ??
-            'Unassigned',
-
-          toDistrict:
-            this.districts()
-              .find(
-                d =>
-                  d.church_id ===
-                  destination
-              )?.name ??
-            'Unknown',
-
-          church_id:
-            destination as number
-
-        };
-
-      });
-
+            userId
+          )!
+      })
+    );
   }
 
-
   // =========================================================
-  // REVIEW + CONFIRM
+  // REVIEW
   // =========================================================
 
-  reviewTransfers() {
+  async reviewTransfers() {
 
-    if (
-      !this.validateTransfer()
-    ) {
+    const validation =
+      this.validateTransfer();
+
+    if (validation) {
+
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Invalid transfer',
+        text: validation,
+        confirmButtonColor: '#0F4A30'
+      });
 
       return;
-
     }
-
 
     const transfers =
       this.buildTransfers();
 
+    const rows = transfers
+      .map(transfer => {
 
-    const rows =
-      transfers
-        .map(
-          transfer => `
-            <tr>
-              <td style="
-                padding:8px;
-                text-align:left;
-                font-weight:500;
-              ">
-                ${transfer.pastorName}
-              </td>
+        const pastor =
+          this.pastors().find(
+            p =>
+              p.user_id ===
+              transfer.user_id
+          );
 
-              <td style="
-                padding:8px;
-              ">
-                ${transfer.fromDistrict}
-              </td>
+        const destination =
+          this.districts().find(
+            d =>
+              Number(d.church_id) ===
+              Number(transfer.church_id)
+          );
 
-              <td style="
-                padding:8px;
-                color:#64748b;
-              ">
-                →
-              </td>
+        if (!pastor) {
+          return '';
+        }
 
-              <td style="
-                padding:8px;
-                font-weight:600;
-                color:#0F4A30;
-              ">
-                ${transfer.toDistrict}
-              </td>
-            </tr>
-          `
-        )
-        .join('');
+        return `
+          <div class="flex items-center justify-between gap-4 border-b border-slate-100 py-3 text-left">
+            <div>
+              <div class="font-medium text-slate-900">
+                ${this.fullName(pastor)}
+              </div>
 
+              <div class="text-xs text-slate-500">
+                ${pastor.church?.name ?? 'Current district'}
+              </div>
+            </div>
 
-    Swal.fire({
+            <div class="text-right">
+              <div class="text-xs text-slate-400">
+                Transfer to
+              </div>
 
-      icon: 'question',
+              <div class="font-medium text-[#0F4A30]">
+                ${destination?.name ?? 'Unknown district'}
+              </div>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
 
-      title:
-        `Review ${transfers.length} Transfer${
-          transfers.length === 1
-            ? ''
-            : 's'
-        }`,
+    const result =
+      await Swal.fire({
 
-      html: `
-        <div style="
-          max-height:350px;
-          overflow:auto;
-        ">
+        title: 'Review Transfers',
 
-          <table style="
-            width:100%;
-            border-collapse:collapse;
-            font-size:13px;
-          ">
+        html: `
+          <div class="max-h-80 overflow-y-auto">
+            ${rows}
+          </div>
+        `,
 
-            <thead>
+        showCancelButton: true,
 
-              <tr>
+        confirmButtonText:
+          'Confirm Transfers',
 
-                <th style="
-                  text-align:left;
-                  padding:8px;
-                ">
-                  Pastor
-                </th>
+        cancelButtonText:
+          'Cancel',
 
-                <th style="padding:8px;">
-                  From
-                </th>
+        confirmButtonColor:
+          '#0F4A30',
 
-                <th></th>
+        cancelButtonColor:
+          '#64748b',
 
-                <th style="padding:8px;">
-                  To
-                </th>
+        width: 650
+      });
 
-              </tr>
+    if (result.isConfirmed) {
 
-            </thead>
-
-            <tbody>
-
-              ${rows}
-
-            </tbody>
-
-          </table>
-
-        </div>
-      `,
-
-      showCancelButton: true,
-
-      confirmButtonText:
-        'Confirm Transfers',
-
-      cancelButtonText:
-        'Go Back',
-
-      confirmButtonColor:
-        '#0F4A30'
-
-    }).then(result => {
-
-      if (
-        result.isConfirmed
-      ) {
-
-        this.executeTransfers();
-
-      }
-
-    });
-
+      this.executeTransfers();
+    }
   }
 
-
   // =========================================================
-  // EXECUTE TRANSFER
+  // EXECUTE
   // =========================================================
 
   executeTransfers() {
 
-    if (
-      this.savingTransfer()
-    ) {
+    const validation =
+      this.validateTransfer();
+
+    if (validation) {
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid transfer',
+        text: validation,
+        confirmButtonColor: '#0F4A30'
+      });
 
       return;
-
     }
 
-
     const transfers =
-      this.buildTransfers()
-        .map(
-          transfer => ({
+      this.buildTransfers();
 
-            user_id:
-              transfer.user_id,
-
-            church_id:
-              transfer.church_id
-
-          })
-        );
-
-
-    this.savingTransfer.set(
-      true
-    );
-
+    this.savingTransfer.set(true);
 
     this.userService
-      .bulkTransfer(
-        transfers
-      )
-      .pipe(
-        takeUntilDestroyed(
-          this.destroyRef
-        )
-      )
+      .bulkTransfer(transfers)
       .subscribe({
 
-        next: (response) => {
+        next: async (res) => {
 
-          this.savingTransfer.set(
-            false
-          );
+          this.savingTransfer.set(false);
 
-
-          Swal.fire({
-
+          await Swal.fire({
             icon: 'success',
-
-            title:
-              'Transfers completed',
-
-            text:
-              response.message,
-
-            confirmButtonColor:
-              '#0F4A30'
-
+            title: 'Transfer Complete',
+            text: res.message,
+            confirmButtonColor: '#0F4A30'
           });
-
 
           this.cancelBulkMode();
 
           this.loadPastors();
-
         },
 
+        error: async (err) => {
 
-        error: (error) => {
+          this.savingTransfer.set(false);
 
-          console.error(
-            'Bulk transfer failed:',
-            error
-          );
+          const message =
+            err?.error?.message ??
+            err?.error?.errors?.transfers?.[0] ??
+            'The pastor transfers could not be completed.';
 
-
-          this.savingTransfer.set(
-            false
-          );
-
-
-          Swal.fire({
-
+          await Swal.fire({
             icon: 'error',
-
-            title:
-              'Transfer failed',
-
-            text:
-              error?.error?.message ??
-              'The transfers could not be completed.',
-
-            confirmButtonColor:
-              '#0F4A30'
-
+            title: 'Transfer Failed',
+            text: message,
+            confirmButtonColor: '#0F4A30'
           });
-
         }
-
       });
-
   }
-
 }

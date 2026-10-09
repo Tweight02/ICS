@@ -124,19 +124,13 @@ export class UserService {
             church_id: number;
         }[]
     ) {
-
         return this.http.post<{
             message: string;
             transferred_count: number;
         }>(
             `${this.apiUrl}/pastors/bulk-transfer`,
-            {
-                transfers
-            },
-            {
-                withCredentials: true
-            }
+            { transfers },
+            { withCredentials: true }
         );
     }
-
 }
