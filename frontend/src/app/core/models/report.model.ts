@@ -90,18 +90,22 @@ export interface DepartmentReport {
    COMMENT
 ========================================================= */
 
+
 export interface ReportComment {
   comment_id: number;
   quarter_id: number;
+  church_id?: number | null;
+  department_id?: number | null;
   commented_by: number;
   details: string;
+  status?: string | null;
   date_commented: string;
 
-  first_name: string;
-  middle_name?: string | null;
-  last_name: string;
+  commenter_name?: string | null;
+  commenter_role?: string | null;
 
-  role?: string | null;
+  quarter?: string | null;
+  year?: number | string | null;
 }
 
 

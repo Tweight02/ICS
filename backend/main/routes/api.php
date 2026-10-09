@@ -59,6 +59,9 @@ Route::prefix('churches/{churchId}')->group(function () {
     Route::get('/departments', [ReportController::class, 'getDepartments']);
     Route::get('/departments/{departmentId}/report', [ReportController::class, 'departmentReport']);
     Route::post('/departments/{departmentId}/report/save', [ReportController::class, 'saveDepartmentReport']);
+
+    // NEW: pastor/assistant comments of this church + department (report page)
+    Route::get('/departments/{departmentId}/comments', [ReportController::class, 'departmentComments']);
 });
 
 /*
@@ -78,8 +81,6 @@ Route::post('/comments', [ReportController::class, 'addComment']);
 
 Route::apiResource('baptisms', BaptismController::class);
 Route::apiResource('deaths', DeathController::class);
-Route::get('/churches', [BaptismController::class, 'allChurches']);
-Route::apiResource('deaths',DeathController::class);
 
 
 Route::get('/pastors', [UserController::class, 'view_pastors']);
