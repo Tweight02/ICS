@@ -8,40 +8,45 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        DB::table('users')->insert([
+        $users = [
             [
-                'department_id'  => 1, // Change to an existing department ID
-                'church_id'      => 1, // Change to an existing church ID
+                'department_id'  => 16, // Ministerial & Evangelism
+                'church_id'      => 1,
                 'first_name'     => 'Juan',
                 'middle_name'    => 'Santos',
                 'last_name'      => 'Dela Cruz',
                 'extension_name' => null,
                 'birthdate'      => '1980-05-15',
                 'gender'         => 'Male',
-                'role'           => 'District Pastor',
-                'email'          => 'district.pastor@example.com',
-                'password'       => Hash::make('password123'),
-                'remember_token' => null,
+                'role'           => 'representative',
+                'email'          => 'district.representative@example.com',
             ],
             [
-                'department_id'  => 1, // Change to an existing department ID
-                'church_id'      => 1, // Change to an existing church ID
+                'department_id'  => 19, // Communication
+                'church_id'      => 1,
                 'first_name'     => 'Maria',
                 'middle_name'    => 'Reyes',
                 'last_name'      => 'Santos',
                 'extension_name' => 'Jr.',
                 'birthdate'      => '1985-08-22',
                 'gender'         => 'Female',
-                'role'           => 'Administration and Director',
+                'role'           => 'director',
                 'email'          => 'admin.director@example.com',
-                'password'       => Hash::make('password123'),
-                'remember_token' => null,
             ],
-        ]);
+        ];
+
+        foreach ($users as $user) {
+            DB::table('users')->updateOrInsert(
+                ['email' => $user['email']],
+                array_merge($user, [
+                    'password' => Hash::make('password123'),
+                    'remember_token' => null,
+                ])
+            );
+        }
+
+        $this->command?->info(count($users) . ' test users processed.');
     }
 }

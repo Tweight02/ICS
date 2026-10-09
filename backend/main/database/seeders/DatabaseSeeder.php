@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             ProgramSeeder::class,
             ParticularSeeder::class,
+            ReportSeeder::class,
+            UserSeeder::class,
         ]);
     }
 }
