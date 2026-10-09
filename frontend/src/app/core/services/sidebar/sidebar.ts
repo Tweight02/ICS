@@ -31,11 +31,6 @@ export class SidebarService {
             icon: 'bi-droplet'
           },
           {
-            label: 'Stewardship',
-            route: '/pastor/stewardship',
-            icon: 'bi-cash-coin'
-          },
-          {
             label: 'Events',
             route: '/pastor/events',
             icon: 'bi-calendar-event'
@@ -59,7 +54,12 @@ export class SidebarService {
             label: 'Events',
             route: '/representative/events',
             icon: 'bi-calendar-event'
-          }
+          },
+          {
+            label: 'Stewardship',
+            route: '/representative/stewardship',
+            icon: 'bi-cash-coin'
+          },
         ];
 
       // ADMINISTRATIVE ASSISTANT

@@ -22,5 +22,11 @@ export const RepresentativeRoute: Routes = [
     loadComponent: () =>
       import('./report_c/report-particulars/report-particulars')
         .then(m => m.ReportParticulars)
+  },
+    {
+    path: 'stewardship',
+    loadComponent: () =>
+      import('../representative/stewardship/stewardship')
+        .then(m => m.Stewardship)
   }
 ];
