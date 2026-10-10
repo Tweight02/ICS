@@ -11,7 +11,6 @@ import { Church } from '../../../core/models/church.model';
 
 @Component({
   imports: [
-    DatePipe,
     TitleCasePipe,
     RouterLink
   ],
