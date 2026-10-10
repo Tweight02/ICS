@@ -45,8 +45,13 @@ Route::get('/districts/{district}/churches', [ChurchController::class, 'churches
 
 Route::prefix('assistant')->group(function () {
     Route::get('/districts', [ChurchController::class, 'districts']);
+    Route::get('/districts/{churchId}/pastor', [UserController::class, 'districtPastor'])
+        ->whereNumber('churchId');
     Route::get('/departments', [DepartmentController::class, 'getDepartment']);
     Route::post('/users', [UserController::class, 'create_user']);
+    Route::get('/pastors', [UserController::class, 'view_pastors']);
+    Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
+    Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
 });
 
 /*
@@ -81,9 +86,7 @@ Route::apiResource('baptisms', BaptismController::class);
 Route::apiResource('deaths', DeathController::class);
 
 
-Route::get('/pastors', [UserController::class, 'view_pastors']);
-Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
-Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
+
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', function (Request $request) {
