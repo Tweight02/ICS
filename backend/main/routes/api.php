@@ -88,34 +88,13 @@ Route::apiResource('baptisms', BaptismController::class);
 Route::apiResource('deaths', DeathController::class);
 Route::get('/churches', [BaptismController::class, 'allChurches']);
 
-Route::middleware([
-    'auth:sanctum'
-])->group(function () {
-
-    Route::get(
-        '/representatives',
-        [RepresentativeController::class, 'index']
-    );
-
-    Route::post(
-        '/representatives',
-        [RepresentativeController::class, 'store']
-    );
-
-    Route::get(
-        '/representatives/{id}',
-        [RepresentativeController::class, 'show']
-    );
-
-    Route::put(
-        '/representatives/{id}',
-        [RepresentativeController::class, 'update']
-    );
-
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/pastor/representatives/churches', [RepresentativeController::class, 'available_churches']);
+    Route::get('/pastor/representatives', [RepresentativeController::class, 'index']);
+    Route::get('/pastor/representatives/{id}', [RepresentativeController::class, 'show']);
+    Route::post('/pastor/representatives', [RepresentativeController::class, 'store']);
+    Route::put('/pastor/representatives/{id}', [RepresentativeController::class, 'update']);
 });
-
-
-
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', function (Request $request) {
