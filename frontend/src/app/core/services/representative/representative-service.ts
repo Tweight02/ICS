@@ -12,9 +12,17 @@ export interface PaginatedRepresentatives {
 // representative.service.ts
 @Injectable({ providedIn: 'root' })
 export class RepresentativeService {
+
     private http = inject(HttpClient);
     private apiUrl = 'http://localhost:8000/api/pastor';
     private opts = { withCredentials: true };
+
+    deleteRepresentative(user_id: number) {
+        return this.http.delete<{ message: string }>(
+            `${this.apiUrl}/representatives/${user_id}`,
+            this.opts
+        );
+    }
 
     getRepresentatives(filters: RepresentativeFilters = {}) {
         let params = new HttpParams();
@@ -54,6 +62,13 @@ export class RepresentativeService {
 
     update(id: number, data: any) {
         return this.http.put(`${this.apiUrl}/representatives/${id}`, data, this.opts);
+    }
+
+    getById(id: number) {
+        return this.http.get<{ data: Representative }>(
+            `${this.apiUrl}/representatives/${id}`,
+            this.opts
+        );
     }
 }
 

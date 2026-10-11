@@ -191,26 +191,12 @@ Route::middleware('auth:sanctum')->group(function () {
     /*
     | Representatives
     */
-
-    Route::get('/representatives', [
-        RepresentativeController::class,
-        'index',
-    ]);
-
-    Route::post('/representatives', [
-        RepresentativeController::class,
-        'store',
-    ]);
-
-    Route::get('/representatives/{id}', [
-        RepresentativeController::class,
-        'show',
-    ]);
-
-    Route::put('/representatives/{id}', [
-        RepresentativeController::class,
-        'update',
-    ]);
+    Route::get('/pastor/representatives/churches', [RepresentativeController::class, 'available_churches']); // must be first
+    Route::get('/pastor/representatives', [RepresentativeController::class, 'index']);
+    Route::get('/pastor/representatives/{id}', [RepresentativeController::class, 'show']);
+    Route::post('/pastor/representatives', [RepresentativeController::class, 'store']);
+    Route::put('/pastor/representatives/{id}', [RepresentativeController::class, 'update']);
+    Route::delete('/pastor/representatives/{id}', [RepresentativeController::class, 'destroy']);
 
     /*
     | Pastor: assigned district
