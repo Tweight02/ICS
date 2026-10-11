@@ -9,6 +9,10 @@ import {
     Pastor,
     PastorFilters
 } from '../../models/pastor.model';
+import {
+    Representative,
+    RepresentativeFilters
+} from '../../models/representative.model';
 
 @Injectable({
     providedIn: 'root'
@@ -17,12 +21,12 @@ export class UserService {
 
     private http = inject(HttpClient);
 
-    private apiUrl = 'http://localhost:8000/api/assistant';
+    private apiUrl = 'http://localhost:8000/api';
 
     createUser(data: any) {
 
         return this.http.post(
-            `${this.apiUrl}/users`,
+            `${this.apiUrl}/assistant/users`,
             data,
             {
                 withCredentials: true
@@ -36,7 +40,7 @@ export class UserService {
             success: boolean;
             data: Church[];
         }>(
-            `${this.apiUrl}/districts`,
+            `${this.apiUrl}/assistant/districts`,
             {
                 withCredentials: true
             }
@@ -49,7 +53,7 @@ export class UserService {
             message: string;
             data: Department[];
         }>(
-            `${this.apiUrl}/departments`,
+            `${this.apiUrl}/assistant/departments`,
             {
                 withCredentials: true
             }
@@ -78,7 +82,7 @@ export class UserService {
         });
 
         return this.http.get<Paginated<Pastor>>(
-            `${this.apiUrl}/pastors`,
+            `${this.apiUrl}/assistant/pastors`,
             {
                 params,
                 withCredentials: true
@@ -91,7 +95,7 @@ export class UserService {
         return this.http.get<{
             data: Pastor;
         }>(
-            `${this.apiUrl}/pastors/${id}`,
+            `${this.apiUrl}/assistant/pastors/${id}`,
             {
                 withCredentials: true
             }
@@ -107,7 +111,7 @@ export class UserService {
             message: string;
             user: Pastor;
         }>(
-            `${this.apiUrl}/pastors/${id}`,
+            `${this.apiUrl}/assistant/pastors/${id}`,
             data,
             {
                 withCredentials: true
@@ -128,9 +132,87 @@ export class UserService {
             message: string;
             transferred_count: number;
         }>(
-            `${this.apiUrl}/pastors/bulk-transfer`,
+            `${this.apiUrl}/assistant/pastors/bulk-transfer`,
             { transfers },
             { withCredentials: true }
         );
     }
+
+    // Church Representatives
+    getRepresentatives(
+        filters: RepresentativeFilters = {}
+    ) {
+
+        let params = new HttpParams();
+
+        Object.entries(filters).forEach(([key, value]) => {
+
+            if (
+                value !== undefined &&
+                value !== null &&
+                value !== ''
+            ) {
+                params = params.set(
+                    key,
+                    String(value)
+                );
+            }
+
+        });
+
+        return this.http.get<Paginated<Representative>>(
+            `${this.apiUrl}/representatives`,
+            {
+                params,
+                withCredentials: true
+            }
+        );
+    }
+
+getRepresentative(
+    id: number | string
+) {
+
+    return this.http.get<{
+        data: Representative;
+    }>(
+        `${this.apiUrl}/representatives/${id}`,
+        {
+            withCredentials: true
+        }
+    );
+}
+
+createRepresentative(
+    data: any
+) {
+
+    return this.http.post<{
+        message: string;
+        user: Representative;
+    }>(
+        `${this.apiUrl}/representatives`,
+        data,
+        {
+            withCredentials: true
+        }
+    );
+}
+
+updateRepresentative(
+    id: number | string,
+    data: any
+) {
+
+    return this.http.put<{
+        message: string;
+        user: Representative;
+    }>(
+        `${this.apiUrl}/representatives/${id}`,
+        data,
+        {
+            withCredentials: true
+        }
+    );
+}
 }

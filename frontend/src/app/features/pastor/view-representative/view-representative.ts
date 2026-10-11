@@ -1,132 +1,96 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Component, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 
-import { RepresentativeService, ChurchWithRep } from '../../../core/services/representative/representative-service';
-import { UserService } from '../../../core/services/user/user-service'; // adjust path
-import { Department } from '../../../core/models/department.model';
+import { UserService } from '../../../core/services/user/user-service';
+import {
+    Representative,
+    RepresentativeFilters
+} from '../../../core/models/representative.model';
 
 @Component({
-  selector: 'app-view-representative',
-  imports: [ReactiveFormsModule],
-  styleUrl: './view-representative.css',
-  templateUrl: './view-representative.html',
+    selector: 'app-view-representative',
+    standalone: true,
+    imports: [CommonModule, FormsModule],
+    templateUrl: './view-representative.html',
+    styleUrl: './view-representative.css'
 })
 export class ViewRepresentative implements OnInit {
-  private svc = inject(RepresentativeService);
-  private userSvc = inject(UserService);
-  private fb = inject(FormBuilder);
+    private userService = inject(UserService);
 
-  churches = signal<ChurchWithRep[]>([]);
-  departments = signal<Department[]>([]);
-  search = signal('');
+    representatives: Representative[] = [];
+    loading = false;
+    error = '';
+    search = '';
 
-  // dialog state
-  dialogOpen = signal(false);
-  editingId = signal<number | null>(null);
-  churchName = signal('');
-  saving = signal(false);
-  errors = signal<string[]>([]);
+    currentPage = 1;
+    lastPage = 1;
+    total = 0;
 
-  form = this.fb.nonNullable.group({
-    church_id: [0, Validators.required],
-    department_id: [0, Validators.required],
-    first_name: ['', Validators.required],
-    middle_name: [''],
-    last_name: ['', Validators.required],
-    extension_name: [''],
-    birthdate: ['', Validators.required],
-    gender: ['male', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    password: [''],
-  });
-
-  ngOnInit() {
-    this.load();
-    this.userSvc.getDepartments().subscribe(r => this.departments.set(r.data));
-  }
-
-  load() {
-    this.svc.getChurches(this.search()).subscribe(r => this.churches.set(r.data));
-  }
-
-  onSearch(value: string) {
-    this.search.set(value);
-    this.load();
-  }
-
-  // Vacant church -> blank form
-  add(church: ChurchWithRep) {
-    this.editingId.set(null);
-    this.churchName.set(church.name);
-    this.errors.set([]);
-    this.form.reset({
-      church_id: church.church_id,
-      department_id: 0,
-      first_name: '', middle_name: '', last_name: '', extension_name: '',
-      birthdate: '', gender: 'male', email: '', password: '',
-    });
-    this.form.controls.password.setValidators([Validators.required, Validators.minLength(8)]);
-    this.form.controls.password.updateValueAndValidity();
-    this.dialogOpen.set(true);
-  }
-
-  // Filled church -> prefilled form
-  edit(church: ChurchWithRep) {
-    const r: any = church.representative;
-    this.editingId.set(r.user_id);
-    this.churchName.set(church.name);
-    this.errors.set([]);
-    this.form.reset({
-      church_id: church.church_id,
-      department_id: r.department_id,
-      first_name: r.first_name,
-      middle_name: r.middle_name ?? '',
-      last_name: r.last_name,
-      extension_name: r.extension_name ?? '',
-      birthdate: (r.birthdate ?? '').slice(0, 10),
-      gender: r.gender,
-      email: r.email,
-      password: '',
-    });
-    // password optional when editing
-    this.form.controls.password.setValidators([Validators.minLength(8)]);
-    this.form.controls.password.updateValueAndValidity();
-    this.dialogOpen.set(true);
-  }
-
-  close() {
-    this.dialogOpen.set(false);
-  }
-
-  save() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
+    ngOnInit(): void {
+        this.loadRepresentatives();
     }
 
-    this.saving.set(true);
-    this.errors.set([]);
+    loadRepresentatives(): void {
+        this.loading = true;
+        this.error = '';
 
-    const payload = this.form.getRawValue();
-    const id = this.editingId();
+        const filters: RepresentativeFilters = {
+            search: this.search,
+            page: this.currentPage,
+            per_page: 15
+        };
 
-    const request = id
-      ? this.svc.update(id, payload)
-      : this.svc.create(payload);
+        this.userService.getRepresentatives(filters)
+            .pipe(
+                finalize(() => {
+                    this.loading = false;
+                })
+            )
+            .subscribe({
+                next: (response) => {
+                    console.log('Representatives API response:', response);
 
-    request.subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.dialogOpen.set(false);
-        this.load();
-      },
-      error: (err) => {
-        this.saving.set(false);
-        const e = err.error?.errors;
-        this.errors.set(
-          e ? Object.values<string[]>(e).flat() : [err.error?.message ?? 'Something went wrong.']
-        );
-      },
-    });
-  }
+                    // Laravel paginator response
+                    this.representatives = response.data ?? [];
+                    this.currentPage = response.current_page ?? 1;
+                    this.lastPage = response.last_page ?? 1;
+                    this.total = response.total ?? this.representatives.length;
+                },
+                error: (err) => {
+                    console.error('Failed to load representatives:', err);
+
+                    this.error =
+                        err?.error?.message ??
+                        'Unable to load representatives. Please try again.';
+                }
+            });
+    }
+
+    searchRepresentatives(): void {
+        this.currentPage = 1;
+        this.loadRepresentatives();
+    }
+
+    clearSearch(): void {
+        this.search = '';
+        this.currentPage = 1;
+        this.loadRepresentatives();
+    }
+
+    previousPage(): void {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.loadRepresentatives();
+        }
+    }
+
+    nextPage(): void {
+        if (this.currentPage < this.lastPage) {
+            this.currentPage++;
+            this.loadRepresentatives();
+        }
+    }
 }
