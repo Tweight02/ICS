@@ -1,116 +1,125 @@
-/* ================================
-   MAIN CONTENT
-================================ */
 
-.content {
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+/* Main application layout */
+.app-main {
   position: relative;
   min-height: 100vh;
-  margin-left: 240px;
+  margin-left: 0;
+  overflow-x: clip;
 
-  overflow: hidden;
-
-  transition: margin-left 0.25s ease;
-
-  /* Main mountain background */
-  background-image: url('/assets/mountain.png');
-  background-size: cover;
+  background-color: #f5fcfa;
+  background-image: url('/assets/images/mountain-bg.png');
   background-position: center;
   background-repeat: no-repeat;
-
+  background-size: cover;
   background-attachment: fixed;
+
+  color: #064e3b;
+  font-family: Arial, sans-serif;
+
+  transition: margin-left 200ms ease;
 }
 
-/* Collapsed sidebar */
-.content.collapsed {
-  margin-left: 64px;
+/* Sidebar is expanded */
+.app-main.sidebar-expanded {
+  margin-left: 15rem;
+  background-image: url('/assets/mountain.png');
 }
 
-/* ================================
-   BACKGROUND OVERLAY
-================================ */
+/* Sidebar is collapsed */
+.app-main.sidebar-collapsed {
+  margin-left: 4rem;
+  background-image: url('/assets/mountain.png');
+}
 
-.content::before {
-  content: "";
+/* No sidebar */
+.app-main.no-sidebar {
+  margin-left: 0;
+  background-image: url('/assets/images/mountain-bg.png');
+}
+
+/* Background overlay */
+.app-background-overlay {
   position: fixed;
-
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 240px;
-
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.88),
-      rgba(245, 252, 250, 0.72),
-      rgba(255, 255, 255, 0.82)
-    );
-
-  pointer-events: none;
+  inset: 0 0 0 0;
   z-index: 0;
+  pointer-events: none;
 
-  transition: left 0.25s ease;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(245, 252, 250, 0.75),
+    rgba(255, 255, 255, 0.85)
+  );
+
+  transition: left 200ms ease;
 }
 
-/* Overlay when sidebar is collapsed */
-.content.collapsed::before {
-  left: 64px;
+/* Overlay starts after the sidebar */
+.app-main.sidebar-expanded .app-background-overlay {
+  left: 15rem;
 }
 
-/* ================================
-   CONTENT LAYER
-================================ */
+.app-main.sidebar-collapsed .app-background-overlay {
+  left: 4rem;
+}
 
-.content-inner {
+/* Content above the overlay */
+.app-content {
   position: relative;
   z-index: 1;
-
   min-height: 100vh;
-  padding: 24px;
+  padding: 1.5rem;
   box-sizing: border-box;
 }
 
-/* ================================
-   NO SIDEBAR / LOGIN
-================================ */
+/* Tablet and small desktop */
+@media (max-width: 768px) {
+  .app-main.sidebar-expanded {
+    margin-left: 4rem;
+  }
 
-.content.no-sidebar {
-  margin-left: 0;
+  .app-main.sidebar-expanded .app-background-overlay {
+    left: 4rem;
+  }
 
-  background-image: url('/assets/images/mountain-bg.png');
-  background-size: cover;
-  background-position: center;
+  .app-content {
+    padding: 1rem;
+  }
 }
 
-.content.no-sidebar::before {
-  left: 0;
-}
-
-/* ================================
-   MOBILE
-================================ */
-
+/* Mobile */
 @media (max-width: 600px) {
-
-  .content,
-  .content.collapsed {
-    margin-left: 64px;
+  .app-main.sidebar-expanded,
+  .app-main.sidebar-collapsed {
+    margin-left: 4rem;
   }
 
-  .content::before,
-  .content.collapsed::before {
-    left: 64px;
+  .app-main.sidebar-expanded .app-background-overlay,
+  .app-main.sidebar-collapsed .app-background-overlay {
+    left: 4rem;
   }
 
-  .content.no-sidebar {
-    margin-left: 0;
+  .app-content {
+    padding: 0.75rem;
   }
+}
 
-  .content.no-sidebar::before {
-    left: 0;
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .app-main,
+  .app-background-overlay {
+    transition: none;
   }
+}
 
-  .content-inner {
-    padding: 16px;
+/* Allow normal scrolling on devices where fixed backgrounds are awkward */
+@media (max-width: 768px) {
+  .app-main {
+    background-attachment: scroll;
   }
 }

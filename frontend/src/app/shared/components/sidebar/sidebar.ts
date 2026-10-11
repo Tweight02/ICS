@@ -14,6 +14,7 @@ import {
   SidebarService
 } from '../../../core/services/sidebar/sidebar';
 
+import { AuthService } from '../../../core/services/auth/auth-service'; // adjust path
 import { User, UserRole } from '../../../core/models/user.model';
 
 @Component({
@@ -32,13 +33,16 @@ export class SidebarComponent implements OnChanges {
   roleName = 'User';
   collapsed = false;
 
-  constructor(private readonly sidebarService: SidebarService) {}
+  constructor(
+    private readonly sidebarService: SidebarService,
+    private readonly authService: AuthService
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['user'] && this.user) {
       const role = this.user.role as UserRole;
       this.menuItems = this.sidebarService.getMenu(role);
-      this.roleName  = this.sidebarService.getRoleName(role);
+      this.roleName = this.sidebarService.getRoleName(role);
     }
   }
 
@@ -71,7 +75,6 @@ export class SidebarComponent implements OnChanges {
   }
 
   logout(): void {
-    console.log('Logout');
-    // Call your AuthService logout here
+    this.authService.logout();
   }
 }

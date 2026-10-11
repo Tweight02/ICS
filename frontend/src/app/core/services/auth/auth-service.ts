@@ -5,6 +5,7 @@ import { Observable, tap } from 'rxjs';
 import { Message } from '../../models/message.model';
 import { User } from '../../models/user.model';
 
+
 export interface LoginPayload {
   email: string;
   password: string;
@@ -163,6 +164,7 @@ export class AuthService {
         error: () => { /* token may already be expired; ignore */ }
       });
     }
+    
 
     this.clearSession();
 

@@ -46,8 +46,13 @@ Route::get('/districts/{district}/churches', [ChurchController::class, 'churches
 
 Route::prefix('assistant')->group(function () {
     Route::get('/districts', [ChurchController::class, 'districts']);
+    Route::get('/districts/{churchId}/pastor', [UserController::class, 'districtPastor'])
+        ->whereNumber('churchId');
     Route::get('/departments', [DepartmentController::class, 'getDepartment']);
     Route::post('/users', [UserController::class, 'create_user']);
+    Route::get('/pastors', [UserController::class, 'view_pastors']);
+    Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
+    Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
     Route::get('/pastors', [UserController::class, 'view_pastors']);
     Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
     Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
@@ -64,6 +69,7 @@ Route::prefix('churches/{churchId}')->group(function () {
     Route::get('/departments', [ReportController::class, 'getDepartments']);
     Route::get('/departments/{departmentId}/report', [ReportController::class, 'departmentReport']);
     Route::post('/departments/{departmentId}/report/save', [ReportController::class, 'saveDepartmentReport']);
+    Route::get('/departments/{departmentId}/comments', [ReportController::class, 'departmentComments']);
 });
 
 /*
@@ -110,4 +116,14 @@ Route::middleware([
         [RepresentativeController::class, 'update']
     );
 
+});
+
+
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', function (Request $request) {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Logged out']);
+    });
 });

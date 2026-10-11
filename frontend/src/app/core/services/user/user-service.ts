@@ -215,4 +215,18 @@ updateRepresentative(
         }
     );
 }
+        );
+    }
+
+    checkDistrictPastor(churchId: number | string) {
+        return this.http.get<{
+            data: {
+                has_pastor: boolean;
+                pastor_name: string | null;
+            };
+        }>(
+            `${this.apiUrl}/assistant/districts/${churchId}/pastor`,
+            { withCredentials: true }
+        );
+    }
 }

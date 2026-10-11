@@ -1,5 +1,5 @@
 <div class="text-slate-900 antialiased">
-    <div class="mx-auto max-w-7xl px-3 py-4 sm:px-5 lg:px-6 lg:py-6">
+    <div class="">
 
         @if (pastor(); as p) {
         <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
@@ -98,7 +98,7 @@
                             <input id="first_name" formControlName="first_name" type="text" autocomplete="given-name" class="mt-1 block w-full rounded-lg border-0 bg-slate-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500" />
                         </div>
                         <div>
-                            <label for="middle_name" class="block text-sm font-semibold text-slate-700">Middle name <span class="font-normal text-slate-400">(optional)</span></label>
+                            <label for="middle_name" class="block text-sm font-semibold text-slate-700">Middle name</label>
                             <input id="middle_name" formControlName="middle_name" type="text" autocomplete="additional-name" class="mt-1 block w-full rounded-lg border-0 bg-slate-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500" />
                         </div>
                         <div>

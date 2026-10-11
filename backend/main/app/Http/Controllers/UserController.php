@@ -23,7 +23,6 @@ class UserController extends Controller
     public function create_user(Request $request)
     {
         $data = $request->validate([
-
             'department_id' =>
             'required|exists:departments,department_id',
 
@@ -64,9 +63,25 @@ class UserController extends Controller
                 $data['password']
             );
 
+        $user = DB::transaction(function () use ($data) {
+            // Lock the district row so concurrent requests are serialized
+            DB::table('churches')
+                ->where('church_id', $data['church_id'])
+                ->lockForUpdate()
+                ->first();
 
-        $user =
-            User::create($data);
+            $occupied = User::where('role', 'pastor')
+                ->where('church_id', $data['church_id'])
+                ->exists();
+
+            if ($occupied) {
+                throw ValidationException::withMessages([
+                    'church_id' => 'This district already has an assigned pastor.',
+                ]);
+            }
+
+            return User::create($data);
+        });
 
 
         return response()->json([
@@ -250,12 +265,7 @@ class UserController extends Controller
                 'gender' =>
                 'required|string|in:male,female,other',
 
-                'email' => [
-
-                    'required',
-
-                    'email',
-
+                'email' => ['required','email',
                     Rule::unique(
                         'users',
                         'email'
@@ -263,14 +273,24 @@ class UserController extends Controller
                         $pastor->getKey(),
                         $pastor->getKeyName()
                     ),
-
                 ],
-
                 'password' =>
                 'nullable|string|min:8',
 
             ]);
 
+            if ((int) $data['church_id'] !== (int) $pastor->church_id) {
+                $occupied = User::where('role', 'pastor')
+                    ->where('church_id', $data['church_id'])
+                    ->where('user_id', '!=', $pastor->user_id)
+                    ->exists();
+
+                if ($occupied) {
+                    throw ValidationException::withMessages([
+                        'church_id' => 'This district already has an assigned pastor.',
+                    ]);
+                }
+            }
 
         if (
             empty($data['password'])
@@ -338,10 +358,10 @@ class UserController extends Controller
         $transfers = $data['transfers'];
 
         /*
-    |--------------------------------------------------------------------------
-    | Make sure every destination district is unique
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Make sure every destination district is unique
+        |--------------------------------------------------------------------------
+        */
 
         $destinationIds = array_column(
             $transfers,
@@ -359,10 +379,10 @@ class UserController extends Controller
         }
 
         /*
-    |--------------------------------------------------------------------------
-    | Get all pastors being transferred
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Get all pastors being transferred
+        |--------------------------------------------------------------------------
+        */
 
         $userIds = array_column(
             $transfers,
@@ -378,10 +398,10 @@ class UserController extends Controller
             ->keyBy('user_id');
 
         /*
-    |--------------------------------------------------------------------------
-    | Make sure every selected user is actually a pastor
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Make sure every selected user is actually a pastor
+        |--------------------------------------------------------------------------
+        */
 
         if ($pastors->count() !== count($userIds)) {
 
@@ -397,10 +417,10 @@ class UserController extends Controller
         }
 
         /*
-    |--------------------------------------------------------------------------
-    | Build lookup of who is moving
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | Build lookup of who is moving
+        |--------------------------------------------------------------------------
+        */
 
         $movingUserIds = array_flip(
             $userIds
@@ -511,4 +531,20 @@ class UserController extends Controller
             count($transfers),
         ]);
     }
+
+public function districtPastor(int $churchId)
+{
+    $pastor = User::where('role', 'pastor')
+        ->where('church_id', $churchId)
+        ->first();
+
+    return response()->json([
+        'data' => [
+            'has_pastor'  => (bool) $pastor,
+            'pastor_name' => $pastor
+                ? trim("{$pastor->first_name} {$pastor->last_name}")
+                : null,
+        ],
+    ]);
+}
 }
