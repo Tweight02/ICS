@@ -4,7 +4,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
-import { UserService } from '../../../core/services/user/user-service';
+import { RepresentativeService } from '../../../core/services/representative/representative-service'; // adjust to your real path
 import {
     Representative,
     RepresentativeFilters
@@ -13,12 +13,12 @@ import {
 @Component({
     selector: 'app-view-representative',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterLink],
     templateUrl: './view-representative.html',
     styleUrl: './view-representative.css'
 })
 export class ViewRepresentative implements OnInit {
-    private userService = inject(UserService);
+    private rep = inject(RepresentativeService);
 
     representatives: Representative[] = [];
     loading = false;
@@ -43,7 +43,7 @@ export class ViewRepresentative implements OnInit {
             per_page: 15
         };
 
-        this.userService.getRepresentatives(filters)
+        this.rep.getRepresentatives(filters)
             .pipe(
                 finalize(() => {
                     this.loading = false;
@@ -51,9 +51,6 @@ export class ViewRepresentative implements OnInit {
             )
             .subscribe({
                 next: (response) => {
-                    console.log('Representatives API response:', response);
-
-                    // Laravel paginator response
                     this.representatives = response.data ?? [];
                     this.currentPage = response.current_page ?? 1;
                     this.lastPage = response.last_page ?? 1;
