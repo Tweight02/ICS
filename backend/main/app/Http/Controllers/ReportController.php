@@ -544,4 +544,258 @@ class ReportController extends Controller
             'data' => $comment,
         ], 201);
     }
+
+    /* =========================================================
+       GET COMMENTS BY QUARTER
+    ========================================================= */
+
+    public function comments(int $quarterId)
+    {
+        $comments = DB::table('comments as c')
+            ->join('users as u', 'u.user_id', '=', 'c.commented_by')
+            ->leftJoin('quarters as q', 'q.quarter_id', '=', 'c.quarter_id')
+            ->where('c.quarter_id', $quarterId)
+            ->orderByDesc('c.date_commented')
+            ->orderByDesc('c.comment_id')
+            ->get([
+                'c.comment_id',
+                'c.quarter_id',
+                'c.church_id',
+                'c.department_id',
+                'c.commented_by',
+                'c.details',
+                'c.status',
+                'c.date_commented',
+                DB::raw("
+                    CONCAT_WS(' ',
+                        NULLIF(u.first_name, ''),
+                        NULLIF(u.middle_name, ''),
+                        NULLIF(u.last_name, ''),
+                        NULLIF(u.extension_name, '')
+                    ) AS commenter_name
+                "),
+                'u.role as commenter_role',
+                'q.quarter',
+                'q.year',
+            ]);
+
+        return response()->json([
+            'data' => $comments,
+        ]);
+    }
+
+    /* =========================================================
+       PASTOR ENDORSE DEPARTMENT REPORT
+    ========================================================= */
+
+    public function endorseDepartmentReport(
+        Request $request,
+        int $churchId,
+        int $departmentId
+    ) {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'You must log in to endorse a report.',
+            ], 401);
+        }
+
+        if (!$this->isPastorRole($this->normalizeRole($user->role ?? ''))) {
+            return response()->json([
+                'message' => 'Only the district pastor can endorse this report.',
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'year' => ['required'],
+            'quarter' => ['required', 'string'],
+        ]);
+
+        $quarterNumber = $this->getQuarterNumber($data['quarter']);
+
+        if ($quarterNumber === null) {
+            return response()->json([
+                'message' => 'Invalid quarter.',
+            ], 422);
+        }
+
+        $quarterIds = $this->departmentQuarterIds(
+            $churchId,
+            $departmentId,
+            $data['year'],
+            $quarterNumber
+        );
+
+        if ($quarterIds === []) {
+            return response()->json([
+                'message' => 'No report was found for this department and quarter.',
+            ], 404);
+        }
+
+        $quarters = DB::table('quarters')
+            ->whereIn('quarter_id', $quarterIds)
+            ->get();
+
+        if ($quarters->contains(fn ($quarter) => $this->isApproved($quarter->mission_approve))) {
+            return response()->json([
+                'message' => 'This report has already been approved.',
+            ], 422);
+        }
+
+        if ($quarters->every(fn ($quarter) => $this->isApproved($quarter->district_endorse))) {
+            return response()->json([
+                'message' => 'This report has already been endorsed.',
+            ], 422);
+        }
+
+        $today = now()->toDateString();
+
+        DB::table('quarters')
+            ->whereIn('quarter_id', $quarterIds)
+            ->whereNull('date_submitted')
+            ->update([
+                'date_submitted' => $today,
+            ]);
+
+        DB::table('quarters')
+            ->whereIn('quarter_id', $quarterIds)
+            ->update([
+                'district_endorse' => $today,
+            ]);
+
+        return response()->json([
+            'message' => 'Report endorsed. The administrative assistant can now review it.',
+        ]);
+    }
+
+    /* =========================================================
+       ASSISTANT APPROVE DEPARTMENT REPORT
+    ========================================================= */
+
+    public function approveDepartmentReport(
+        Request $request,
+        int $churchId,
+        int $departmentId
+    ) {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'You must log in to approve a report.',
+            ], 401);
+        }
+
+        if (!$this->isAssistantRole($this->normalizeRole($user->role ?? ''))) {
+            return response()->json([
+                'message' => 'Only the administrative assistant can approve this report.',
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'year' => ['required'],
+            'quarter' => ['required', 'string'],
+        ]);
+
+        $quarterNumber = $this->getQuarterNumber($data['quarter']);
+
+        if ($quarterNumber === null) {
+            return response()->json([
+                'message' => 'Invalid quarter.',
+            ], 422);
+        }
+
+        $quarterIds = $this->departmentQuarterIds(
+            $churchId,
+            $departmentId,
+            $data['year'],
+            $quarterNumber
+        );
+
+        if ($quarterIds === []) {
+            return response()->json([
+                'message' => 'No report was found for this department and quarter.',
+            ], 404);
+        }
+
+        $quarters = DB::table('quarters')
+            ->whereIn('quarter_id', $quarterIds)
+            ->get();
+
+        if ($quarters->contains(fn ($quarter) => !$this->isApproved($quarter->district_endorse))) {
+            return response()->json([
+                'message' => 'The district pastor must endorse this report before it can be approved.',
+            ], 422);
+        }
+
+        if ($quarters->every(fn ($quarter) => $this->isApproved($quarter->mission_approve))) {
+            return response()->json([
+                'message' => 'This report has already been approved.',
+            ], 422);
+        }
+
+        DB::table('quarters')
+            ->whereIn('quarter_id', $quarterIds)
+            ->update([
+                'mission_approve' => now()->toDateString(),
+            ]);
+
+        return response()->json([
+            'message' => 'Report approved successfully.',
+        ]);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function departmentQuarterIds(
+        int $churchId,
+        int $departmentId,
+        mixed $year,
+        int $quarterNumber
+    ): array {
+        $programIds = DB::table('programs')
+            ->where('department_id', $departmentId)
+            ->whereNull('parent_id')
+            ->pluck('program_id');
+
+        if ($programIds->isEmpty()) {
+            return [];
+        }
+
+        return DB::table('quarters')
+            ->where('church_id', $churchId)
+            ->whereIn('program_id', $programIds)
+            ->where('year', (string) $year)
+            ->get()
+            ->filter(function ($quarter) use ($quarterNumber) {
+                return $this->getQuarterNumber($quarter->quarter) === $quarterNumber;
+            })
+            ->pluck('quarter_id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    private function normalizeRole(string $role): string
+    {
+        return strtolower(trim(str_replace(
+            ['_', '-'],
+            ' ',
+            $role
+        )));
+    }
+
+    private function isPastorRole(string $role): bool
+    {
+        return in_array($role, ['pastor', 'district pastor'], true);
+    }
+
+    private function isAssistantRole(string $role): bool
+    {
+        return in_array($role, [
+            'assistant',
+            'administrative assistant',
+        ], true);
+    }
 }

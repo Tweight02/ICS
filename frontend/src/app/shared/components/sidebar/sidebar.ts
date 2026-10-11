@@ -7,7 +7,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import {
   SidebarItem,
@@ -35,7 +35,8 @@ export class SidebarComponent implements OnChanges {
 
   constructor(
     private readonly sidebarService: SidebarService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly router: Router
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -76,5 +77,6 @@ export class SidebarComponent implements OnChanges {
 
   logout(): void {
     this.authService.logout();
+    void this.router.navigate(['/login']);
   }
 }

@@ -585,16 +585,14 @@ export class ReportPrograms implements OnInit {
     this.reportService
       .addComment(
         this.currentQuarterId,
-        this.currentUserId,
+        this.churchId,
+        Number(this.selectedDepartment?.department_id),
         details
       )
       .subscribe({
 
-        next: comment => {
-
-          this.comments.unshift(
-            comment
-          );
+        next: response => {
+          this.comments.unshift(response.data);
 
 
           this.newComment = '';

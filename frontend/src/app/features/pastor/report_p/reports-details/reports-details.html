@@ -1,3 +1,20 @@
+<ng-template #monitoringCell let-value>
+  @if (loadingMonitoring) {
+    <span class="dash" aria-label="Loading">…</span>
+  } @else if (value === 100) {
+    <span class="check">✓</span>
+  } @else if (value !== null) {
+    <div class="progress-wrapper">
+      <span class="percentage">{{ value }}%</span>
+      <div class="progress-bar">
+        <div class="progress-value" [style.width.%]="value"></div>
+      </div>
+    </div>
+  } @else {
+    <span class="dash">–</span>
+  }
+</ng-template>
+
 <div class="details-page">
 
   <!-- HEADER -->
@@ -101,6 +118,16 @@
 
           }
 
+          @else if (loadingChurches) {
+
+            <tr>
+              <td colspan="5" class="message-cell">
+                Loading churches...
+              </td>
+            </tr>
+
+          }
+
           <!-- EMPTY -->
           @else if (churches.length === 0) {
 
@@ -120,119 +147,35 @@
 
           <!-- DATA -->
           @else {
-
-            @for (
-              church of churches;
-              track church.church_id
-            ) {
-
+            @for (church of churches; track church.church_id) {
               <tr
                 class="church-row"
                 tabindex="0"
                 (click)="openChurch(church)"
-                (keydown.enter)="openChurch(church)"
-              >
-
-                <!-- CHURCH -->
-                <td class="church-name">
-
-                  <div class="church-link">
-
-                    <span>
-                      {{ church.name }}
-                    </span>
-
-                  </div>
-
-                </td>
-
-
-                <!-- Q1 -->
+                (keydown.enter)="openChurch(church)">
+                <td>{{ church.name }}</td>
                 <td class="quarter-cell">
-
-                  @if (getMonitoring($index).q1) {
-
-                    <span class="check">
-                      ✓
-                    </span>
-
-                  } @else {
-
-                    <span class="dash">
-                      –
-                    </span>
-
-                  }
-
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q1 }">
+                  </ng-container>
                 </td>
-
-
-                <!-- Q2 -->
                 <td class="quarter-cell">
-
-                  @if (getMonitoring($index).q2) {
-
-                    <span class="check">
-                      ✓
-                    </span>
-
-                  } @else {
-
-                    <span class="dash">
-                      –
-                    </span>
-
-                  }
-
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q2 }">
+                  </ng-container>
                 </td>
-
-
-                <!-- Q3 -->
                 <td class="quarter-cell">
-
-                  <div class="progress-wrapper">
-
-                    <span class="percentage">
-                      {{ getMonitoring($index).q3 }}%
-                    </span>
-
-                    <div class="progress-bar">
-
-                      <div
-                        class="progress-value"
-                        [style.width.%]="getMonitoring($index).q3"
-                      ></div>
-
-                    </div>
-
-                  </div>
-
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q3 }">
+                  </ng-container>
                 </td>
-
-
-                <!-- Q4 -->
                 <td class="quarter-cell">
-
-                  @if (getMonitoring($index).q4) {
-
-                    <span class="check">
-                      ✓
-                    </span>
-
-                  } @else {
-
-                    <span class="dash">
-                      –
-                    </span>
-
-                  }
-
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q4 }">
+                  </ng-container>
                 </td>
-
               </tr>
-
             }
-
           }
 
         </tbody>

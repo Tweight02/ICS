@@ -99,7 +99,7 @@ export class ReportsDetails implements OnInit {
   openDepartmentReports(): void {
 
     this.router.navigate(
-      ['/pastor/reports/programs'],
+      [`${this.portalPrefix()}/reports/programs`],
       {
         queryParams: {
           district_id: this.districtId,
@@ -113,7 +113,7 @@ export class ReportsDetails implements OnInit {
   backToDistricts(): void {
 
     this.router.navigate(
-      ['/pastor/reports']
+      [`${this.portalPrefix()}/reports`]
     );
 
   }
@@ -126,17 +126,19 @@ export class ReportsDetails implements OnInit {
     );
 
     this.router.navigate(
-      ['/pastor/reports/programs'],
-      {
-        queryParams: {
-          district_id: this.districtId,
-          district_name: this.districtName,
-          church_id: church.church_id,
-          church_name: church.name
-        }
-      }
+      [
+        `${this.portalPrefix()}/reports/programs`,
+        this.districtId,
+        church.church_id
+      ]
     );
 
+  }
+
+  private portalPrefix(): '/director' | '/assistant' {
+    return this.router.url.startsWith('/assistant')
+      ? '/assistant'
+      : '/director';
   }
 
   getMonitoring(index: number) {

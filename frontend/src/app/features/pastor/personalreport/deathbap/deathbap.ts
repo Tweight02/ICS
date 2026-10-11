@@ -6,7 +6,7 @@ import {
   inject
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs/operators';
 
 interface Baptism {
@@ -61,8 +61,14 @@ export class DeathbapComponent implements OnInit {
 
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   selectedRecord: 'baptism' | 'death' = 'baptism';
+  churchId = 0;
+  districtId = 0;
+  departmentId = 0;
+  isReadOnly = false;
 
   baptisms: Baptism[] = [];
 
@@ -79,6 +85,15 @@ export class DeathbapComponent implements OnInit {
   deathError: string = '';
 
   ngOnInit(): void {
+    this.departmentId = Number(this.route.snapshot.paramMap.get('departmentId')) || 0;
+    this.churchId = Number(this.route.snapshot.paramMap.get('churchId')) || 0;
+    this.districtId = Number(this.route.snapshot.paramMap.get('districtId')) || 0;
+    this.isReadOnly = this.router.url.startsWith('/assistant')
+      || this.router.url.startsWith('/director');
+
+    if (this.departmentId === 23) {
+      this.selectedRecord = 'death';
+    }
 
     this.loadChurches();
 
@@ -86,6 +101,41 @@ export class DeathbapComponent implements OnInit {
 
     this.loadDeaths();
 
+  }
+
+  get displayedBaptisms(): Baptism[] {
+    return this.churchId
+      ? this.baptisms.filter(record => Number(record.church_id) === this.churchId)
+      : this.baptisms;
+  }
+
+  get displayedDeaths(): Death[] {
+    return this.churchId
+      ? this.deaths.filter(
+          record => Number(this.getDeathBaptism(record)?.church_id) === this.churchId
+        )
+      : this.deaths;
+  }
+
+  get reportLocation(): string {
+    const churchName = this.getChurchName(this.churchId);
+    const districtName = this.getChurchName(this.districtId);
+
+    return [churchName, districtName !== 'Unknown Church' ? districtName : '']
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  backToReports(): void {
+    if (!this.isReadOnly) {
+      return;
+    }
+
+    this.router.navigate([
+      `${this.router.url.startsWith('/assistant') ? '/assistant' : '/director'}/reports/programs`,
+      this.districtId,
+      this.churchId
+    ]);
   }
 
 

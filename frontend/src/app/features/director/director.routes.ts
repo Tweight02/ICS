@@ -10,22 +10,50 @@ export const DIRECTOR_ROUTES: Routes = [
   {
     path: 'reports',
     loadComponent: () =>
-      import('./report_d/reports/reports')
+      import('../assistant/report_a/reports/reports')
         .then(m => m.Reports)
   },
 
   {
     path: 'reports/details/:id',
     loadComponent: () =>
-      import('./report_d/reports-details/reports-details')
+      import('../assistant/report_a/reports-details/reports-details')
         .then(m => m.ReportsDetails)
+  },
+
+  {
+    path: 'reports/programs/:districtId/:churchId',
+    loadComponent: () =>
+      import('../pastor/report_p/report-programs/report-programs')
+        .then(m => m.ReportPrograms)
   },
 
   {
     path: 'reports/programs',
     loadComponent: () =>
-      import('./report_d/report-programs/report-programs')
+      import('../pastor/report_p/report-programs/report-programs')
         .then(m => m.ReportPrograms)
+  },
+
+  {
+    path: 'reports/records/:departmentId/:districtId/:churchId',
+    loadComponent: () =>
+      import('../pastor/personalreport/deathbap/deathbap')
+        .then(m => m.DeathbapComponent)
+  },
+
+  {
+    path: 'reports/particulars/:departmentId/:districtId/:churchId',
+    loadComponent: () =>
+      import('../pastor/report_p/report-particulars/report-particulars')
+        .then(m => m.ReportParticulars)
+  },
+
+  {
+    path: 'reports/particulars/:departmentId',
+    loadComponent: () =>
+      import('../pastor/report_p/report-particulars/report-particulars')
+        .then(m => m.ReportParticulars)
   },
 
 //   {

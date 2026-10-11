@@ -79,6 +79,18 @@ export interface DepartmentReport {
   programs: Program[];
 }
 
+export interface ReportMonitoring {
+  q1: number | null;
+  q2: number | null;
+  q3: number | null;
+  q4: number | null;
+}
+
+export interface DistrictReportMonitoring {
+  churchCount: number;
+  monitoring: ReportMonitoring;
+}
+
 /* =========================================================
    COMMENT
 ========================================================= */

@@ -20,11 +20,12 @@ export class SidebarService {
       // DISTRICT PASTOR
       case 'pastor':
         return [
-          {
-            label: 'Reports',
-            route: '/pastor/reports',
-            icon: 'bi-bar-chart'
-          },
+{
+  label: 'Reports',
+  route: '/pastor/reports/details',
+  icon: 'bi-bar-chart'
+},
+
           {
             label: 'Baptism and Death',
             route: '/pastor/baptism',
