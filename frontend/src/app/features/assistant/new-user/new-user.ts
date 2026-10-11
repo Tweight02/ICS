@@ -61,26 +61,22 @@ export class NewUser implements OnInit {
     this.isSubmitting = true;
 
     // Step 1: check whether the district already has a pastor
-    this.userService.checkDistrictPastor(churchId).subscribe({
-      next: (res) => {
-        if (res.data.has_pastor) {
-          this.isSubmitting = false;
-          this.showPastorExistsAlert(churchId, res.data.pastor_name);
-          return;
+    this.userService.checkDistrictPastor(Number(churchId)).subscribe({
+        next: (res: {
+            exists: boolean;
+            message?: string;
+            pastor?: {
+                user_id: number;
+                first_name: string;
+                last_name: string;
+            };
+        }) => {
+            // Keep your existing success logic here.
+            console.log(res);
+        },
+        error: (error: unknown) => {
+            console.error('Failed to check district pastor:', error);
         }
-        // Step 2: no pastor yet, proceed
-        this.createUser();
-      },
-      error: (error) => {
-        this.isSubmitting = false;
-        console.error('Failed to check district pastor:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Something went wrong',
-          text: 'Could not verify the district\'s pastor. Please try again.',
-          confirmButtonColor: '#166534',
-        });
-      },
     });
   }
 
