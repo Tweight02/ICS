@@ -1,0 +1,75 @@
+<input type="search" placeholder="Search church"
+       (input)="onSearch($any($event.target).value)">
+
+<table>
+  <thead>
+    <tr><th>Church</th><th>Representative</th><th>Email</th><th></th></tr>
+  </thead>
+  <tbody>
+    @for (c of churches(); track c.church_id) {
+      <tr>
+        <td>{{ c.name }}</td>
+        @if (c.representative; as r) {
+          <td>{{ r.first_name }} {{ r.last_name }}</td>
+          <td>{{ r.email }}</td>
+          <td><button (click)="edit(c)">Edit</button></td>
+        } @else {
+          <td colspan="2">Vacant</td>
+          <td><button (click)="add(c)">Add representative</button></td>
+        }
+      </tr>
+    }
+  </tbody>
+</table>
+
+@if (dialogOpen()) {
+  <div class="backdrop" (click)="close()">
+    <form class="dialog" [formGroup]="form" (ngSubmit)="save()" (click)="$event.stopPropagation()">
+      <h2>{{ editingId() ? 'Edit' : 'Add' }} representative</h2>
+      <p>Church: <strong>{{ churchName() }}</strong></p>
+
+      @if (errors().length) {
+        <ul class="errors">
+          @for (e of errors(); track e) { <li>{{ e }}</li> }
+        </ul>
+      }
+
+      <label>First name <input formControlName="first_name"></label>
+      <label>Middle name <input formControlName="middle_name"></label>
+      <label>Last name <input formControlName="last_name"></label>
+      <label>Extension (Jr., III) <input formControlName="extension_name"></label>
+      <label>Birthdate <input type="date" formControlName="birthdate"></label>
+
+      <label>Gender
+        <select formControlName="gender">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+
+      <label>Department
+        <select formControlName="department_id">
+          <option [ngValue]="0" disabled>Select department</option>
+          @for (d of departments(); track d.department_id) {
+            <option [ngValue]="d.department_id">{{ d.department_name }}</option>
+          }
+        </select>
+      </label>
+
+      <label>Email <input type="email" formControlName="email"></label>
+
+      <label>Password
+        <input type="password" formControlName="password"
+               [placeholder]="editingId() ? 'Leave blank to keep current' : ''">
+      </label>
+
+      <div class="actions">
+        <button type="button" (click)="close()">Cancel</button>
+        <button type="submit" [disabled]="saving()">
+          {{ saving() ? 'Saving...' : 'Save' }}
+        </button>
+      </div>
+    </form>
+  </div>
+}

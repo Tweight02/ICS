@@ -1,0 +1,527 @@
+<div class="page">
+
+  <header class="top-header">
+
+    <div class="d-flex align-items-center justify-content-between">
+
+      <div class="d-flex align-items-center">
+
+        <div class="brand-circle">
+          DP
+        </div>
+
+        <div class="brand-info">
+          <h1>Eastern Nueva Vizcaya</h1>
+          <p>Baptism Record &amp; Death Record</p>
+        </div>
+
+      </div>
+
+      <div class="records-badge">
+        ✓ Records
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <!-- Record Selector -->
+  <section class="selector-section">
+
+    <div class="d-flex align-items-center">
+
+      <span class="selector-label">
+        SELECT RECORD:
+      </span>
+
+      <button
+        type="button"
+        class="record-btn"
+        [class.active]="selectedRecord === 'baptism'"
+        (click)="selectRecord('baptism')">
+
+        Baptism Record
+
+      </button>
+
+      <button
+        type="button"
+        class="record-btn"
+        [class.active]="selectedRecord === 'death'"
+        (click)="selectRecord('death')">
+
+        Death Record
+
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- Main Content -->
+  <main class="content-section">
+
+    <div class="row g-4">
+
+
+      <!-- Records -->
+      <div class="col-lg-9 records-column">
+
+
+        <!-- Heading -->
+        <div
+          class="records-heading d-flex align-items-end justify-content-between">
+
+          <div>
+
+            <div class="section-label">
+              SECRETARIAT
+            </div>
+
+            <div class="section-description">
+
+              {{
+                selectedRecord === 'baptism'
+                  ? 'Baptism records'
+                  : 'Death records'
+              }}
+
+            </div>
+
+          </div>
+
+
+          <!-- Add Baptism -->
+          <a
+            *ngIf="selectedRecord === 'baptism'"
+            routerLink="/pastor/bapaddrec"
+            class="add-record-btn">
+
+            + Add Record
+
+          </a>
+
+
+          <!-- Add Death -->
+          <a
+            *ngIf="selectedRecord === 'death'"
+            routerLink="/pastor/deathaddrec"
+            class="add-record-btn">
+
+            + Add Record
+
+          </a>
+
+        </div>
+
+
+        <div class="table-responsive">
+
+
+          <!-- ================================================= -->
+          <!-- BAPTISM RECORD -->
+          <!-- ================================================= -->
+
+          <table
+            class="table records-table"
+            *ngIf="selectedRecord === 'baptism'">
+
+            <thead>
+
+              <tr>
+
+                <th>No.</th>
+
+                <th>Name</th>
+
+                <th>Church</th>
+
+                <th>Birthdate</th>
+
+                <th>Date of Baptism</th>
+
+                <th>Age</th>
+
+                <th>Gender</th>
+
+                <th>Marital</th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+
+              <!-- Loading -->
+              <tr
+                *ngIf="loadingBaptisms">
+
+                <td
+                  colspan="8"
+                  class="text-center">
+
+                  Loading baptism records...
+
+                </td>
+
+              </tr>
+
+
+              <!-- Error -->
+              <tr
+                *ngIf="
+                  !loadingBaptisms &&
+                  baptismError
+                ">
+
+                <td
+                  colspan="8"
+                  class="text-center">
+
+                  {{ baptismError }}
+
+                </td>
+
+              </tr>
+
+
+              <!-- No records -->
+              <tr
+                *ngIf="
+                  !loadingBaptisms &&
+                  !baptismError &&
+                  baptisms.length === 0
+                ">
+
+                <td
+                  colspan="8"
+                  class="text-center">
+
+                  No baptism records found.
+
+                </td>
+
+              </tr>
+
+
+              <!-- Baptism Records -->
+              <tr
+                *ngFor="
+                  let baptism of baptisms;
+                  let i = index
+                ">
+
+                <td>
+                  {{ i + 1 }}
+                </td>
+
+                <td class="member-name">
+
+                  {{ getFullName(baptism) }}
+
+                </td>
+
+                <td>
+
+                  {{ getChurchName(baptism.church_id) }}
+
+                </td>
+
+                <td>
+
+                  {{ formatDate(baptism.birthdate) }}
+
+                </td>
+
+                <td>
+
+                  {{ formatDate(baptism.date_of_baptism) }}
+
+                </td>
+
+                <td>
+
+                  {{ calculateAge(baptism.birthdate) }}
+
+                </td>
+
+                <td>
+
+                  {{ baptism.gender }}
+
+                </td>
+
+                <td>
+
+                  {{ baptism.marital_status }}
+
+                </td>
+
+              </tr>
+
+
+            </tbody>
+
+          </table>
+
+
+
+          <!-- ================================================= -->
+          <!-- DEATH RECORD -->
+          <!-- ================================================= -->
+
+          <table
+            class="table records-table"
+            *ngIf="selectedRecord === 'death'">
+
+            <thead>
+
+              <tr>
+
+                <th>No.</th>
+
+                <th>Name</th>
+
+                <th>Church</th>
+
+                <th>Birthdate</th>
+
+                <th>Date of Death</th>
+
+                <th>Age</th>
+
+                <th>Gender</th>
+
+                <th>Marital</th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+
+              <!-- Loading -->
+              <tr
+                *ngIf="loadingDeaths">
+
+                <td
+                  colspan="8"
+                  class="text-center">
+
+                  Loading death records...
+
+                </td>
+
+              </tr>
+
+
+              <!-- Error -->
+              <tr
+                *ngIf="
+                  !loadingDeaths &&
+                  deathError
+                ">
+
+                <td
+                  colspan="8"
+                  class="text-center">
+
+                  {{ deathError }}
+
+                </td>
+
+              </tr>
+
+
+              <!-- No records -->
+              <tr
+                *ngIf="
+                  !loadingDeaths &&
+                  !deathError &&
+                  deaths.length === 0
+                ">
+
+                <td
+                  colspan="8"
+                  class="text-center">
+
+                  No death records found.
+
+                </td>
+
+              </tr>
+
+
+              <!-- Death Records -->
+              <tr
+                *ngFor="
+                  let death of deaths;
+                  let i = index
+                ">
+
+                <td>
+                  {{ i + 1 }}
+                </td>
+
+
+                <!-- Name -->
+                <td class="member-name">
+
+                  {{
+                    getFullName(
+                      getDeathBaptism(death)
+                    )
+                  }}
+
+                </td>
+
+
+                <!-- Church -->
+                <td>
+
+                  {{
+                    getChurchName(
+                      getDeathBaptism(death)?.church_id
+                    )
+                  }}
+
+                </td>
+
+
+                <!-- Birthdate -->
+                <td>
+
+                  {{
+                    formatDate(
+                      getDeathBaptism(death)?.birthdate || ''
+                    )
+                  }}
+
+                </td>
+
+
+                <!-- Date of Death -->
+                <td>
+
+                  {{ formatDate(death.date_of_death) }}
+
+                </td>
+
+
+                <!-- Age -->
+                <td>
+
+                  {{
+                    calculateAgeAtDeath(
+                      getDeathBaptism(death)?.birthdate || '',
+                      death.date_of_death
+                    )
+                  }}
+
+                </td>
+
+
+                <!-- Gender -->
+                <td>
+
+                  {{
+                    getDeathBaptism(death)?.gender || '—'
+                  }}
+
+                </td>
+
+
+                <!-- Marital -->
+                <td>
+
+                  {{
+                    getDeathBaptism(death)?.marital_status || '—'
+                  }}
+
+                </td>
+
+              </tr>
+
+
+            </tbody>
+
+          </table>
+
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ================================================= -->
+      <!-- COMMENTS -->
+      <!-- ================================================= -->
+
+      <div class="col-lg-3 comments-column">
+
+        <h2>
+          Comments
+        </h2>
+
+        <div class="comments-subtitle">
+          Administrative Assistant
+        </div>
+
+
+        <div class="comment-card">
+
+          <div class="comment-top">
+
+            <div>
+
+              <div class="comment-author">
+                Administrative Assistant
+              </div>
+
+              <div class="comment-role">
+                Administrative Assistant · Sample comment
+              </div>
+
+            </div>
+
+
+            <div class="comment-date">
+              Sep 15, 2026, 3:00 PM
+            </div>
+
+          </div>
+
+
+          <p class="comment-text">
+
+            The report has been reviewed by the Administrative Assistant.
+            Please ensure the entries are complete and any supporting notes
+            are included before final submission.
+
+          </p>
+
+        </div>
+
+
+        <div class="comment-line"></div>
+
+      </div>
+
+
+    </div>
+
+  </main>
+
+</div>
+
+
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+  rel="stylesheet">

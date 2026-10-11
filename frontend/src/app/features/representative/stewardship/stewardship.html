@@ -1,0 +1,223 @@
+<!--
+  Note: headings are <div role="heading"> and buttons carry an inline border-radius on purpose.
+  The project also loads Bootstrap's global styles, which are unlayered and would otherwise
+  override Tailwind on h1/h2, p, ul, label and button.
+-->
+<section class="mx-auto max-w-4xl px-4 py-6 text-slate-900">
+  <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <!-- Header -->
+    <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 px-6 py-5 sm:px-8">
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ mission }}</div>
+        <div role="heading" aria-level="1" class="mt-1 text-xl font-semibold text-slate-900">
+          Stewardship Quarterly Report
+        </div>
+      </div>
+      <span class="rounded-full px-3 py-1 text-xs font-semibold" [class]="statusClass">{{ status }}</span>
+    </div>
+
+    <!-- Report details -->
+    <div class="grid grid-cols-2 gap-x-6 gap-y-4 border-b border-slate-200 px-6 py-5 sm:px-8 md:grid-cols-4">
+      <div>
+        <div class="text-xs text-slate-500">Church</div>
+        <div class="mt-1 font-semibold uppercase">{{ church.name }}</div>
+      </div>
+
+      <div>
+        <div class="text-xs text-slate-500">District</div>
+        <div class="mt-1 font-semibold">{{ church.district }}</div>
+      </div>
+
+      <div>
+        <div class="text-xs text-slate-500"><label for="quarter">Quarter</label></div>
+        <select
+          id="quarter"
+          class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200"
+          [(ngModel)]="quarter"
+          (ngModelChange)="onPeriodChange()"
+        >
+          @for (q of quarters; track q) {
+            <option [ngValue]="q">Quarter {{ q }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <div class="text-xs text-slate-500">Year</div>
+        <div class="mt-1 font-semibold">{{ year }}</div>
+        <div class="text-xs text-slate-400">{{ dateSubmitted }}</div>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="border-b border-slate-200 bg-slate-50 px-6 py-2.5 text-sm text-slate-600 sm:px-8">{{ statusNote }}</div>
+
+    <!-- Summary -->
+    <div class="grid grid-cols-1 divide-y divide-slate-200 border-b border-slate-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      @for (p of monthlyFields; track p.particular_id) {
+        <div class="px-6 py-4 sm:px-8">
+          <div class="text-xs text-slate-500">Total {{ p.particulars_name }}</div>
+          <div class="mt-1 text-lg font-semibold">₱{{ monthlyTotal(p.particular_id) | number: '1.2-2' }}</div>
+        </div>
+      }
+      @if (showPercent) {
+        <div class="px-6 py-4 sm:px-8">
+          <div class="text-xs text-slate-500">Members returning tithe</div>
+          <div class="mt-1 text-lg font-semibold">{{ percentReturning | number: '1.1-1' }}%</div>
+        </div>
+      }
+    </div>
+
+    <!-- Stewardship activities -->
+    <div class="border-b border-slate-200 px-6 py-6 sm:px-8">
+      <div role="heading" aria-level="2" class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Stewardship activities
+      </div>
+      <div class="grid grid-cols-1 gap-x-10 md:grid-cols-2">
+        @for (f of fields; track f.particular_id) {
+          <div class="flex items-center justify-between gap-4 border-b border-slate-100 py-2.5">
+            <label [attr.for]="'field-' + f.particular_id" class="text-sm text-slate-700">{{ f.particulars_name }}</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              [id]="'field-' + f.particular_id"
+              class="w-28 shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-right text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+              [(ngModel)]="values[f.particular_id]"
+              [disabled]="isLocked"
+            />
+          </div>
+
+          @if (showPercent && f.particular_id === titheUnitsId) {
+            <div class="flex items-center justify-between gap-4 border-b border-slate-100 py-2.5">
+              <span class="text-sm text-slate-700">% of Members returning Tithe</span>
+              <span class="w-28 shrink-0 px-3 text-right font-semibold">{{ percentReturning | number: '1.1-1' }}%</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Offering and Tithes -->
+    <div class="border-b border-slate-200 px-6 py-6 sm:px-8">
+      <div role="heading" aria-level="2" class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Offering and Tithes
+      </div>
+      <div class="overflow-x-auto">
+        <div class="min-w-[560px]">
+          <div class="grid grid-cols-5 gap-3 pb-2 text-xs text-slate-500">
+            <div></div>
+            @for (label of monthLabels; track label) {
+              <div class="text-right">{{ label }}</div>
+            }
+            <div class="text-right">Total</div>
+          </div>
+
+          @for (p of monthlyFields; track p.particular_id) {
+            <div class="grid grid-cols-5 items-center gap-3 border-t border-slate-100 py-2.5">
+              <div class="text-sm font-medium text-slate-700">{{ p.particulars_name }}</div>
+              @for (label of monthLabels; track label; let i = $index) {
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-right text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                  [(ngModel)]="monthly[p.particular_id][i]"
+                  [disabled]="isLocked"
+                  [attr.aria-label]="p.particulars_name + ' ' + label"
+                />
+              }
+              <div class="text-right font-semibold">₱{{ monthlyTotal(p.particular_id) | number: '1.2-2' }}</div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Comments -->
+    <div class="border-b border-slate-200 px-6 py-6 sm:px-8">
+      <div role="heading" aria-level="2" class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Comments
+      </div>
+
+      @if (comments.length === 0) {
+        <div class="mb-3 text-sm text-slate-500">No comments yet.</div>
+      } @else {
+        <div class="mb-3 flex flex-col gap-3">
+          @for (c of comments; track c.comment_id) {
+            <div class="border-l-2 border-slate-200 pl-3 text-sm">
+              <div>
+                <span class="font-semibold">{{ c.commenter_name }}</span>
+                <span class="ml-2 text-xs text-slate-500">{{ c.date }}</span>
+              </div>
+              <div class="mt-0.5 text-slate-700">{{ c.details }}</div>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="flex gap-2">
+        <input
+          type="text"
+          placeholder="Write a comment"
+          aria-label="Write a comment"
+          class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200"
+          [(ngModel)]="newComment"
+          (keyup.enter)="postComment()"
+        />
+        <button
+          type="button"
+          style="border-radius: 0.5rem"
+          class="border border-slate-300 bg-white px-4 py-1.5 font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!newComment.trim()"
+          (click)="postComment()"
+        >
+          Post
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer: sign-off and actions -->
+    <div class="flex flex-wrap items-center justify-between gap-4 rounded-b-xl bg-slate-50 px-6 py-4 sm:px-8">
+      <div class="text-sm text-slate-600">
+        <div>Prepared by <span class="font-medium text-slate-900">{{ user.name }}</span></div>
+        <div>Date submitted: <span class="font-medium text-slate-900">{{ dateSubmitted || 'Not yet submitted' }}</span></div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        @if (message) {
+          <span class="text-sm" [class]="isError ? 'text-red-700' : 'text-green-700'">{{ message }}</span>
+        }
+
+        @if (status === 'Draft') {
+          <button
+            type="button"
+            style="border-radius: 0.5rem"
+            class="border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-100"
+            (click)="saveDraft()"
+          >
+            Save draft
+          </button>
+          <button
+            type="button"
+            style="border-radius: 0.5rem"
+            class="border border-blue-700 bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800"
+            (click)="submit()"
+          >
+            Submit report
+          </button>
+        } @else if (status === 'Submitted') {
+          <button
+            type="button"
+            style="border-radius: 0.5rem"
+            class="border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-100"
+            (click)="reopen()"
+          >
+            Edit report
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</section>

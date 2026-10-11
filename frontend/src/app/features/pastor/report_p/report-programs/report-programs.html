@@ -1,0 +1,148 @@
+
+<!-- =====================================================
+     REPORT COMMENTS
+===================================================== -->
+
+<div class="comments-card">
+
+  <div class="comments-header">
+    <div>
+      <h3>Report Comments</h3>
+      <p>Q3 2026 · Current Quarter</p>
+    </div>
+  </div>
+
+  <!-- No department selected -->
+  <div
+    class="comments-message"
+    *ngIf="!selectedDepartment"
+  >
+    Select a department to view its comments.
+  </div>
+
+  <ng-container *ngIf="selectedDepartment">
+
+    <!-- No current quarter -->
+    <div
+      class="comments-message"
+      *ngIf="!hasCurrentQuarter()"
+    >
+      No report is available for Q3 2026.
+    </div>
+
+    <!-- Approved report -->
+    <div
+      class="comments-message approved-message"
+      *ngIf="
+        hasCurrentQuarter() &&
+        isCurrentQuarterApproved()
+      "
+    >
+      <strong>Report Approved</strong>
+      <p>
+        The Q3 2026 report has already been approved.
+        No more comments can be added.
+      </p>
+    </div>
+
+    <!-- Error -->
+    <div
+      class="comment-alert error"
+      *ngIf="errorMessage"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <!-- Success -->
+    <div
+      class="comment-alert success"
+      *ngIf="successMessage"
+    >
+      {{ successMessage }}
+    </div>
+
+    <!-- Comment form -->
+    <div
+      class="comment-form"
+      *ngIf="
+        hasCurrentQuarter() &&
+        !isCurrentQuarterApproved()
+      "
+    >
+      <label for="newComment">
+        Commenting as {{ currentUserRole }}
+      </label>
+
+      <textarea
+        id="newComment"
+        name="newComment"
+        [(ngModel)]="newComment"
+        placeholder="Write your comment for this report..."
+        rows="4"
+        maxlength="255"
+        [disabled]="savingComment"
+      ></textarea>
+
+      <div class="comment-form-footer">
+        <small>{{ newComment.length }}/255</small>
+
+        <button
+          type="button"
+          class="btn-publish-comment"
+          (click)="publishComment()"
+          [disabled]="
+            savingComment ||
+            !newComment.trim() ||
+            newComment.length > 255
+          "
+        >
+          {{ savingComment ? 'Saving...' : 'Publish Comment' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Existing comments -->
+    <div class="comments-list">
+
+      <div
+        class="comments-loading"
+        *ngIf="loadingComments"
+      >
+        Loading comments...
+      </div>
+
+      <div
+        class="comments-empty"
+        *ngIf="!loadingComments && comments.length === 0"
+      >
+        No comments yet.
+      </div>
+
+      <div
+        class="comment-item"
+        *ngFor="let comment of comments"
+      >
+        <div class="comment-author">
+          <strong>
+            {{ comment.commenter_name || 'Unknown User' }}
+          </strong>
+
+          <span class="comment-role">
+            {{ comment.commenter_role || 'User' }}
+          </span>
+        </div>
+
+        <div class="comment-date">
+          {{ comment.date_commented | date:'MMM d, y' }}
+        </div>
+
+        <p class="comment-details">
+          {{ comment.details }}
+        </p>
+      </div>
+
+    </div>
+
+  </ng-container>
+
+</div>

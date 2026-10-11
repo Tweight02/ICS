@@ -1,0 +1,119 @@
+<div class="flex items-center justify-center align-content-center p-2 sm:p-3">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate
+    class="flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-900/10">
+
+    <!-- Header -->
+    <header class="shrink-0 bg-green-900 px-4 py-2.5 text-white sm:px-8 sm:py-3">
+      <h1 class="text-lg font-semibold tracking-tight sm:text-xl">Create a new user</h1>
+    </header>
+
+    <!-- Body (scrolls only as a last resort) -->
+    <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-8 sm:py-4">
+      <div class="grid grid-cols-2 gap-x-3 gap-y-2.5 sm:grid-cols-6 sm:gap-y-3">
+
+        <!-- Names -->
+        <div class="col-span-1 sm:col-span-2">
+          <label for="first-name" class="block text-sm font-medium text-stone-700">First name</label>
+          <input id="first-name" formControlName="first_name" type="text" autocomplete="given-name"
+            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+        </div>
+
+        <div class="col-span-1 sm:col-span-2">
+          <label for="middle-name" class="block text-sm font-medium text-stone-700">
+            Middle <span class="font-normal text-stone-400">(opt.)</span>
+          </label>
+          <input id="middle-name" formControlName="middle_name" type="text" autocomplete="additional-name"
+            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+        </div>
+
+        <div class="col-span-1 sm:col-span-2">
+          <label for="last-name" class="block text-sm font-medium text-stone-700">Last name</label>
+          <input id="last-name" formControlName="last_name" type="text" autocomplete="family-name"
+            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+        </div>
+
+        <div class="col-span-1 sm:col-span-2">
+          <label for="extension-name" class="block text-sm font-medium text-stone-700">
+            Suffix <span class="font-normal text-stone-400">(opt.)</span>
+          </label>
+          <input id="extension-name" formControlName="extension_name" type="text" placeholder="Jr., Sr., III"
+            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+        </div>
+
+        <!-- Birthdate + Gender -->
+        <div class="col-span-1 sm:col-span-2">
+          <label for="birthdate" class="block text-sm font-medium text-stone-700">Birthdate</label>
+          <input id="birthdate" formControlName="birthdate" type="date" autocomplete="bday"
+            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+        </div>
+
+        <div class="col-span-1 sm:col-span-2">
+          <label for="gender" class="block text-sm font-medium text-stone-700">Gender</label>
+          <select id="gender" formControlName="gender"
+            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 py-2 pl-3 pr-8 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500">
+            <option value="" disabled>Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+
+        <!-- Department + District -->
+        <div class="col-span-2 sm:col-span-3">
+          <label for="department" class="block text-sm font-medium text-stone-700">Department</label>
+          <input id="department" type="text" [value]="departmentName" readonly
+            title="All pastors are assigned to this department."
+            class="mt-1 block w-full cursor-not-allowed rounded-lg border-0 bg-stone-100 px-3 py-2 text-sm text-stone-600 ring-1 ring-inset ring-stone-300" />
+        </div>
+
+        <div class="col-span-2 sm:col-span-3">
+          <label for="church-id" class="block text-sm font-medium text-stone-700">District</label>
+          <select id="church-id" formControlName="church_id"
+            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 py-2 pl-3 pr-8 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500">
+            <option value="" disabled>Select a district</option>
+            @for (district of districts; track district.church_id) {
+            <option [value]="district.church_id">{{ district.name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Email + Password -->
+        <div class="col-span-2 sm:col-span-3">
+          <label for="email" class="block text-sm font-medium text-stone-700">Email address</label>
+          <input id="email" formControlName="email" type="email" autocomplete="email" placeholder="name@company.com"
+            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+        </div>
+
+        <div class="col-span-2 sm:col-span-3">
+          <label for="password" class="block text-sm font-medium text-stone-700">Password</label>
+          <div class="relative mt-1">
+            <input #pw id="password" formControlName="password" type="password" autocomplete="new-password"
+              placeholder="At least 8 characters"
+              class="block w-full rounded-lg border-0 bg-stone-50 py-2 pl-3 pr-16 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+            <button type="button" (click)="pw.type = pw.type === 'password' ? 'text' : 'password'"
+              class="absolute inset-y-0 right-0 flex items-center rounded-r-lg px-3 text-xs font-medium text-green-800 hover:text-green-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-700">
+              {{ pw.type === 'password' ? 'Show' : 'Hide' }}
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <footer
+      class="flex shrink-0 justify-end gap-2 border-t border-stone-200 bg-stone-50 px-4 py-2.5 sm:px-8 sm:py-3">
+      <button type="button" (click)="form.reset()"
+        class="rounded-lg px-4 py-2 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-500">
+        Cancel
+      </button>
+      <button type="submit"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-green-800 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+        Create user
+      </button>
+    </footer>
+  </form>
+</div>

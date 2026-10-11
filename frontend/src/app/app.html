@@ -1,1 +1,22 @@
-<router-outlet></router-outlet>
+@if (showSidebar) {
+  <app-sidebar
+    [user]="currentUser()!"
+    (collapsedChange)="collapsed = $event"
+  />
+}
+
+<main
+  class="app-main"
+  [class.sidebar-visible]="showSidebar"
+  [class.sidebar-collapsed]="showSidebar && collapsed"
+  [class.sidebar-expanded]="showSidebar && !collapsed"
+  [class.no-sidebar]="!showSidebar"
+>
+  <!-- Background overlay -->
+  <div class="app-background-overlay"></div>
+
+  <!-- Main page content -->
+  <div class="app-content">
+    <router-outlet />
+  </div>
+</main>

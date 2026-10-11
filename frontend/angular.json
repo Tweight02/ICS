@@ -19,6 +19,7 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "polyfills": ["zone.js"],
             "assets": [
               {
                 "glob": "**/*",
@@ -26,6 +27,7 @@
               }
             ],
             "styles": [
+              "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "src/styles.css"
             ]
           },
