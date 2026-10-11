@@ -55,6 +55,10 @@ export const PASTOR_ROUTES: Routes = [
         .then(m => m.ChurchRole)
   },
 
+  {
+    path: 'view-representatives',
+    loadComponent: () => import('./view-representative/view-representative').then(m=>m.ViewRepresentative)
+  },
 
   {
     path: '**',

@@ -39,7 +39,13 @@ export class SidebarService {
             label: 'Church Role',
             route: '/pastor/church-role',
             icon: 'bi-people'
+          },
+          {
+            label: 'Representatives',
+            route: '/pastor/view-representatives',
+            icon: 'bi-people'
           }
+          
         ];
 
       // CHURCH REPRESENTATIVE

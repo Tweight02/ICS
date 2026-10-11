@@ -8,6 +8,7 @@ use App\Http\Controllers\ChurchController;
 use App\Http\Controllers\DeathController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\SampleController;
 use App\Http\Controllers\UserController;
 
@@ -16,7 +17,7 @@ Route::get('/test-speed', function () {
 });
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/user', fn (Request $request) => $request->user())->middleware('auth:sanctum');
+Route::get('/user', fn(Request $request) => $request->user())->middleware('auth:sanctum');
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,7 @@ Route::prefix('assistant')->group(function () {
     Route::get('/pastors', [UserController::class, 'view_pastors']);
     Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
     Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
+    Route::post('/pastors/bulk-transfer', [UserController::class, 'bulk_transfer']);
 });
 
 /*
@@ -84,6 +86,33 @@ Route::post('/comments', [ReportController::class, 'addComment']);
 
 Route::apiResource('baptisms', BaptismController::class);
 Route::apiResource('deaths', DeathController::class);
+Route::get('/churches', [BaptismController::class, 'allChurches']);
+
+Route::middleware([
+    'auth:sanctum'
+])->group(function () {
+
+    Route::get(
+        '/representatives',
+        [RepresentativeController::class, 'index']
+    );
+
+    Route::post(
+        '/representatives',
+        [RepresentativeController::class, 'store']
+    );
+
+    Route::get(
+        '/representatives/{id}',
+        [RepresentativeController::class, 'show']
+    );
+
+    Route::put(
+        '/representatives/{id}',
+        [RepresentativeController::class, 'update']
+    );
+
+});
 
 
 

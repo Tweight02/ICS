@@ -9,6 +9,10 @@ import {
     Pastor,
     PastorFilters
 } from '../../models/pastor.model';
+import {
+    Representative,
+    RepresentativeFilters
+} from '../../models/representative.model';
 
 @Injectable({
     providedIn: 'root'
@@ -131,6 +135,86 @@ export class UserService {
             `${this.apiUrl}/assistant/pastors/bulk-transfer`,
             { transfers },
             { withCredentials: true }
+        );
+    }
+
+    // Church Representatives
+    getRepresentatives(
+        filters: RepresentativeFilters = {}
+    ) {
+
+        let params = new HttpParams();
+
+        Object.entries(filters).forEach(([key, value]) => {
+
+            if (
+                value !== undefined &&
+                value !== null &&
+                value !== ''
+            ) {
+                params = params.set(
+                    key,
+                    String(value)
+                );
+            }
+
+        });
+
+        return this.http.get<Paginated<Representative>>(
+            `${this.apiUrl}/representatives`,
+            {
+                params,
+                withCredentials: true
+            }
+        );
+    }
+
+getRepresentative(
+    id: number | string
+) {
+
+    return this.http.get<{
+        data: Representative;
+    }>(
+        `${this.apiUrl}/representatives/${id}`,
+        {
+            withCredentials: true
+        }
+    );
+}
+
+createRepresentative(
+    data: any
+) {
+
+    return this.http.post<{
+        message: string;
+        user: Representative;
+    }>(
+        `${this.apiUrl}/representatives`,
+        data,
+        {
+            withCredentials: true
+        }
+    );
+}
+
+updateRepresentative(
+    id: number | string,
+    data: any
+) {
+
+    return this.http.put<{
+        message: string;
+        user: Representative;
+    }>(
+        `${this.apiUrl}/representatives/${id}`,
+        data,
+        {
+            withCredentials: true
+        }
+    );
+}
         );
     }
 
