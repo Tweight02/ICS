@@ -13,7 +13,8 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(),
     provideHttpClient(),
     provideZoneChangeDetection({
-      eventCoalescing: true
+      eventCoalescing: true,
+      runCoalescing: true
     }),
     provideHttpClient(withInterceptors([authInterceptor])),
 

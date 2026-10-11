@@ -7,9 +7,12 @@ import {
 
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
+import { ReportMonitoring } from '../../../../core/models/report.model';
+import { ReportService } from '../../../../core/services/report/report';
 
 @Component({
   selector: 'app-reports-details',
@@ -24,77 +27,67 @@ export class ReportsDetails implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private churchService = inject(ChurchService);
+  private reportService = inject(ReportService);
 
   districtId = 0;
   districtName = '';
 
   district: Church | null = null;
   churches: Church[] = [];
+  monitoring: Record<number, ReportMonitoring> = {};
+  loadingChurches = false;
+  loadingMonitoring = false;
 
   errorMessage = '';
 
-  ngOnInit(): void {
+ngOnInit(): void {
+  this.loadChurches();
+}
 
-    const id = this.route.snapshot.paramMap.get('id');
+loadChurches(): void {
+  this.errorMessage = '';
+  this.loadingChurches = true;
+  this.loadingMonitoring = false;
+  this.cdr.detectChanges();
 
-    if (!id) {
-      this.errorMessage = 'District ID was not provided.';
-      return;
+  this.churchService.getMyDistrictChurches().subscribe({
+    next: (response) => {
+      this.loadingChurches = false;
+      console.log('[REPORT DETAILS] API response:', response);
+
+      this.district = response.district;
+      this.districtId = response.district?.church_id ?? 0;
+      this.districtName = response.district?.name ?? '';
+
+      this.churches = Array.isArray(response.data)
+        ? response.data
+        : [];
+
+      this.loadChurchMonitoring();
+
+      console.log('[REPORT DETAILS] District:', this.districtName);
+      console.log('[REPORT DETAILS] Church count:', this.churches.length);
+      console.log('[REPORT DETAILS] Churches:', this.churches);
+
+      this.cdr.detectChanges();
+    },
+    error: (error) => {
+      console.error('[REPORT DETAILS] API error:', error);
+
+      this.churches = [];
+      this.monitoring = {};
+      this.district = null;
+      this.loadingChurches = false;
+      this.loadingMonitoring = false;
+      this.errorMessage =
+        error.status === 401
+          ? 'Your session has expired. Please log in again.'
+          : 'Unable to load your district churches.';
+
+      this.cdr.detectChanges();
     }
-
-    this.districtId = Number(id);
-
-    this.loadChurches();
-  }
-
-  loadChurches(): void {
-
-    this.churchService.getChurches(this.districtId).subscribe({
-
-      next: (response) => {
-
-        this.district = response.district;
-
-        this.districtName =
-          response.district?.name || '';
-
-        this.churches =
-          Array.isArray(response.data)
-            ? response.data
-            : [];
-
-        console.log(
-          '[REPORT DETAILS] District:',
-          this.district
-        );
-
-        console.log(
-          '[REPORT DETAILS] Churches:',
-          this.churches
-        );
-
-        this.cdr.detectChanges();
-      },
-
-      error: (error) => {
-
-        console.error(
-          '[REPORT DETAILS] API error:',
-          error
-        );
-
-        this.district = null;
-        this.churches = [];
-
-        this.errorMessage =
-          'Unable to load district details.';
-
-        this.cdr.detectChanges();
-      }
-
-    });
-
-  }
+  });
+}
 
   openDepartmentReports(): void {
 
@@ -111,38 +104,53 @@ export class ReportsDetails implements OnInit {
   }
 
 
-  openChurch(church: Church): void {
+openChurch(church: Church): void {
+  this.router.navigate([
+    '/pastor/reports/programs',
+    this.districtId,
+    church.church_id
+  ]);
+}
 
-    console.log(
-      '[REPORT DETAILS] Opening church:',
-      church
-    );
+  private loadChurchMonitoring(): void {
+    this.monitoring = {};
 
-    this.router.navigate(
-      ['/pastor/reports/programs'],
-      {
-        queryParams: {
-          district_id: this.districtId,
-          district_name: this.districtName,
-          church_id: church.church_id,
-          church_name: church.name
-        }
+    if (this.churches.length === 0) {
+      this.loadingMonitoring = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.loadingMonitoring = true;
+    this.cdr.detectChanges();
+    forkJoin(
+      this.churches.map(church =>
+        this.reportService.getChurchMonitoring(church.church_id)
+      )
+    ).subscribe({
+      next: summaries => {
+        summaries.forEach((summary, index) => {
+          this.monitoring[this.churches[index].church_id] = summary;
+        });
+        this.loadingMonitoring = false;
+        this.cdr.detectChanges();
+      },
+      error: error => {
+        console.error('Unable to load church report monitoring:', error);
+        this.loadingMonitoring = false;
+        this.errorMessage = 'Unable to load church report monitoring.';
+        this.cdr.detectChanges();
       }
-    );
-
+    });
   }
 
-  getMonitoring(index: number) {
-
-    const monitoring = [
-      { q1: true, q2: true, q3: 50, q4: false },
-      { q1: true, q2: true, q3: 60, q4: false },
-      { q1: true, q2: true, q3: 45, q4: false },
-      { q1: true, q2: true, q3: 55, q4: false },
-      { q1: true, q2: true, q3: 40, q4: false }
-    ];
-
-    return monitoring[index % monitoring.length];
+  getMonitoring(churchId: number): ReportMonitoring {
+    return this.monitoring[churchId] ?? {
+      q1: null,
+      q2: null,
+      q3: null,
+      q4: null
+    };
   }
 
 }

@@ -133,7 +133,11 @@ export class Reports implements OnInit {
   ): void {
 
 
-    this.router.navigate([`pastor/reports/details/${districtid}`]);
+    const prefix = this.router.url.startsWith('/assistant')
+      ? '/assistant'
+      : '/director';
+
+    this.router.navigate([`${prefix}/reports/details`, districtid]);
   }
 
   get districtCount(): number {

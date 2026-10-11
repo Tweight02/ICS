@@ -11,14 +11,24 @@
         </div>
 
         <div class="brand-info">
-          <h1>Eastern Nueva Vizcaya</h1>
-          <p>Baptism Record &amp; Death Record</p>
+          <h1>{{ isReadOnly ? 'Church Records' : 'Eastern Nueva Vizcaya' }}</h1>
+          <p>{{ isReadOnly ? reportLocation : 'Baptism Record &amp; Death Record' }}</p>
         </div>
 
       </div>
 
-      <div class="records-badge">
-        ✓ Records
+      <div class="header-actions">
+        <button
+          *ngIf="isReadOnly"
+          type="button"
+          class="back-button"
+          (click)="backToReports()">
+          ← Back to Reports
+        </button>
+
+        <div class="records-badge">
+          ✓ Records
+        </div>
       </div>
 
     </div>
@@ -67,7 +77,9 @@
 
 
       <!-- Records -->
-      <div class="col-lg-9 records-column">
+      <div
+        class="records-column"
+        [ngClass]="isReadOnly ? 'col-12' : 'col-lg-9'">
 
 
         <!-- Heading -->
@@ -95,7 +107,7 @@
 
           <!-- Add Baptism -->
           <a
-            *ngIf="selectedRecord === 'baptism'"
+            *ngIf="!isReadOnly && selectedRecord === 'baptism'"
             routerLink="/pastor/bapaddrec"
             class="add-record-btn">
 
@@ -106,7 +118,7 @@
 
           <!-- Add Death -->
           <a
-            *ngIf="selectedRecord === 'death'"
+            *ngIf="!isReadOnly && selectedRecord === 'death'"
             routerLink="/pastor/deathaddrec"
             class="add-record-btn">
 
@@ -194,7 +206,7 @@
                 *ngIf="
                   !loadingBaptisms &&
                   !baptismError &&
-                  baptisms.length === 0
+                  displayedBaptisms.length === 0
                 ">
 
                 <td
@@ -211,7 +223,7 @@
               <!-- Baptism Records -->
               <tr
                 *ngFor="
-                  let baptism of baptisms;
+                  let baptism of displayedBaptisms;
                   let i = index
                 ">
 
@@ -344,7 +356,7 @@
                 *ngIf="
                   !loadingDeaths &&
                   !deathError &&
-                  deaths.length === 0
+                  displayedDeaths.length === 0
                 ">
 
                 <td
@@ -361,7 +373,7 @@
               <!-- Death Records -->
               <tr
                 *ngFor="
-                  let death of deaths;
+                  let death of displayedDeaths;
                   let i = index
                 ">
 
@@ -464,7 +476,7 @@
       <!-- COMMENTS -->
       <!-- ================================================= -->
 
-      <div class="col-lg-3 comments-column">
+      <div *ngIf="!isReadOnly" class="col-lg-3 comments-column">
 
         <h2>
           Comments

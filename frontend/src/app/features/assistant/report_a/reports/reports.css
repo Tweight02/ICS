@@ -1,0 +1,815 @@
+/* =========================================================
+   REPORTS COMPONENT
+   TRANSPARENT BACKGROUND
+   GLASS UI
+   ZEBRA STRIPED TABLE
+   ========================================================= */
+
+
+/* =========================================================
+   HOST
+   ========================================================= */
+
+:host {
+  display: block;
+
+  width: 100%;
+  min-height: 100%;
+
+  margin: 0;
+  padding: 0;
+
+  /*
+    The parent .content provides
+    the mountain background.
+  */
+  background: transparent;
+}
+
+
+/* =========================================================
+   MAIN CONTAINER
+   ========================================================= */
+
+.reports-container {
+  width: 100%;
+  min-height: 100vh;
+
+  margin: 0;
+  padding: 0;
+
+  background: transparent;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.reports-header {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 30px;
+
+  margin: 0;
+  padding: 28px 32px 24px;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   TITLE
+   ========================================================= */
+
+.title-section {
+  flex: 1;
+}
+
+
+.title-section h1 {
+  margin: 0;
+
+  font-size: 42px;
+  line-height: 1.1;
+
+  font-weight: 700;
+
+  color: #073f3d;
+
+  letter-spacing: -1px;
+}
+
+
+/* =========================================================
+   STATISTICS
+   ========================================================= */
+
+.statistics {
+  display: flex;
+
+  gap: 16px;
+}
+
+
+/* =========================================================
+   STAT CARD
+   ========================================================= */
+
+.stat-card {
+  min-width: 190px;
+
+  padding: 18px 30px;
+
+  text-align: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.65);
+
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.48);
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  box-shadow:
+    0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+
+/* =========================================================
+   STAT NUMBER
+   ========================================================= */
+
+.stat-number {
+  font-size: 32px;
+
+  line-height: 1;
+
+  font-weight: 700;
+
+  color: #063f3c;
+}
+
+
+/* =========================================================
+   STAT LABEL
+   ========================================================= */
+
+.stat-label {
+  margin-top: 7px;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  color: #164f4c;
+}
+
+
+/* =========================================================
+   ERROR MESSAGE
+   ========================================================= */
+
+.error-message {
+  margin: 0 32px 22px;
+
+  padding: 12px 16px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  border: 1px solid rgba(220, 53, 69, 0.35);
+
+  border-radius: 10px;
+
+  background: rgba(255, 245, 246, 0.72);
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  color: #b02a37;
+}
+
+
+/* =========================================================
+   ERROR TEXT
+   ========================================================= */
+
+.error-text {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  font-size: 14px;
+
+  font-weight: 500;
+}
+
+
+/* =========================================================
+   ERROR ICON
+   ========================================================= */
+
+.error-icon {
+  width: 22px;
+  height: 22px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #dc3545;
+
+  color: white;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   RETRY BUTTON
+   ========================================================= */
+
+.retry-button {
+  padding: 7px 18px;
+
+  border: 1px solid #dc3545;
+
+  border-radius: 7px;
+
+  background: rgba(255, 255, 255, 0.6);
+
+  color: #dc3545;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+
+.retry-button:hover {
+  background: #dc3545;
+
+  color: white;
+}
+
+
+/* =========================================================
+   TABLE WRAPPER
+   ========================================================= */
+
+.reports-table-wrapper {
+  margin: 0 32px;
+
+  overflow: hidden;
+
+  border-radius: 12px;
+
+  border: 1px solid rgba(255, 255, 255, 0.65);
+
+  background: rgba(255, 255, 255, 0.38);
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  box-shadow:
+    0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.reports-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  table-layout: fixed;
+}
+
+
+/* =========================================================
+   TABLE HEADER
+   KEEP THIS EXACTLY AS REQUESTED
+   ========================================================= */
+
+.reports-table thead {
+  background: rgba(209, 209, 209, 0.48);
+}
+
+
+.reports-table th {
+  height: 54px;
+
+  padding: 0 20px;
+
+  text-align: center;
+
+  font-size: 14px;
+
+  font-weight: 700;
+
+  color: #06413f;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+
+.reports-table th.district-column {
+  width: 32%;
+
+  text-align: left;
+}
+
+
+/* =========================================================
+   TABLE BODY
+   ========================================================= */
+
+.reports-table td {
+  height: 66px;
+
+  padding: 0 20px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+
+  color: #124c49;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   ZEBRA STRIPING
+   ONLY TABLE BODY
+   ========================================================= */
+
+.reports-table tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+
+.reports-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.48);
+}
+
+
+/* =========================================================
+   LAST ROW
+   ========================================================= */
+
+.reports-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+
+/* =========================================================
+   DISTRICT ROW
+   ========================================================= */
+
+.district-row {
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease;
+}
+
+
+/* =========================================================
+   ROW HOVER
+   ========================================================= */
+
+.district-row:hover {
+  background: rgba(255, 255, 255, 0.70) !important;
+}
+
+
+/* =========================================================
+   ROW FOCUS
+   ========================================================= */
+
+.district-row:focus {
+  outline: 2px solid rgba(13, 110, 253, 0.45);
+
+  outline-offset: -2px;
+}
+
+
+/* =========================================================
+   DISTRICT NAME
+   ========================================================= */
+
+.district-name {
+  text-align: left;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   QUARTER
+   ========================================================= */
+
+.quarter-cell {
+  text-align: center;
+}
+
+
+/* =========================================================
+   CHECK
+   ========================================================= */
+
+.check {
+  width: 23px;
+  height: 23px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #18b96b;
+
+  color: white;
+
+  font-size: 14px;
+
+  font-weight: 700;
+
+  box-shadow:
+    0 2px 5px rgba(24, 185, 107, 0.25);
+}
+
+
+/* =========================================================
+   Q3
+   ========================================================= */
+
+.q3-cell {
+  text-align: center;
+}
+
+
+.progress-container {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+}
+
+
+/* =========================================================
+   PERCENTAGE
+   ========================================================= */
+
+.percentage {
+  min-width: 36px;
+
+  text-align: right;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  color: #15504d;
+}
+
+
+/* =========================================================
+   PROGRESS
+   ========================================================= */
+
+.progress {
+  width: 120px;
+
+  height: 7px;
+
+  overflow: hidden;
+
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.65);
+}
+
+
+.progress-bar {
+  height: 100%;
+
+  border-radius: 10px;
+
+  background: #ffbd22;
+
+  transition:
+    width 0.3s ease;
+}
+
+
+/* =========================================================
+   EMPTY QUARTER
+   ========================================================= */
+
+.empty-quarter {
+  color: #54706e;
+
+  font-size: 15px;
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.loading-cell {
+  height: 120px;
+
+  text-align: center;
+}
+
+
+.loading-content {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  color: #56716f;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   SPINNER
+   ========================================================= */
+
+.spinner {
+  width: 17px;
+  height: 17px;
+
+  border: 2px solid rgba(0, 80, 75, 0.2);
+
+  border-top-color: #087f76;
+
+  border-radius: 50%;
+
+  animation: spin 0.7s linear infinite;
+}
+
+
+@keyframes spin {
+
+  to {
+    transform: rotate(360deg);
+  }
+
+}
+
+
+/* =========================================================
+   EMPTY
+   ========================================================= */
+
+.empty-cell {
+  height: 120px;
+
+  text-align: center;
+
+  color: #627b79;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   RESPONSIVE - TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .reports-header {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    padding: 22px 20px;
+  }
+
+
+  .statistics {
+    width: 100%;
+  }
+
+
+  .stat-card {
+    flex: 1;
+
+    min-width: 0;
+  }
+
+
+  .reports-table-wrapper {
+    margin: 0 20px;
+  }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE - MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  .reports-header {
+    padding: 18px 14px;
+  }
+
+
+  .title-section h1 {
+    font-size: 30px;
+  }
+
+
+  .statistics {
+    gap: 8px;
+  }
+
+
+  .stat-card {
+    padding: 14px 10px;
+  }
+
+
+  .stat-number {
+    font-size: 25px;
+  }
+
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+
+  .error-message {
+    margin-left: 14px;
+
+    margin-right: 14px;
+
+    align-items: flex-start;
+  }
+
+
+  .reports-table-wrapper {
+    margin-left: 14px;
+
+    margin-right: 14px;
+
+    overflow-x: auto;
+  }
+}
+
+.reports-container {
+  max-width: 1152px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.reports-header {
+  align-items: flex-start;
+  padding: 0 0 20px;
+}
+
+.title-section h1 {
+  color: #052e2b;
+  font-size: clamp(26px, 3vw, 32px);
+  letter-spacing: -0.6px;
+}
+
+.statistics {
+  gap: 12px;
+}
+
+.stat-card {
+  min-width: 150px;
+  padding: 16px 22px;
+  border: 1px solid rgba(6, 95, 70, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 24px rgba(6, 48, 40, 0.06);
+}
+
+.stat-number {
+  color: #047857;
+}
+
+.stat-label {
+  color: #365f56;
+}
+
+.error-message {
+  margin: 0 0 16px;
+  border-radius: 12px;
+}
+
+.reports-table-wrapper {
+  margin: 0;
+  overflow-x: auto;
+  border: 1px solid rgba(6, 95, 70, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 28px rgba(6, 48, 40, 0.06);
+}
+
+.reports-table {
+  min-width: 680px;
+}
+
+.reports-table thead {
+  background: rgba(4, 120, 87, 0.08);
+}
+
+.reports-table th {
+  color: #052e2b;
+  border-bottom-color: rgba(6, 95, 70, 0.1);
+}
+
+.reports-table td {
+  color: #234c43;
+  border-bottom-color: rgba(6, 95, 70, 0.08);
+}
+
+.reports-table tbody tr:nth-child(odd),
+.reports-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.district-row:hover,
+.district-row:focus {
+  background: rgba(4, 120, 87, 0.05) !important;
+}
+
+.district-row:focus-visible {
+  outline: 2px solid rgba(4, 120, 87, 0.35);
+  outline-offset: -2px;
+}
+
+.check {
+  background: #047857;
+  box-shadow: none;
+}
+
+.progress {
+  background: rgba(6, 95, 70, 0.1);
+}
+
+.empty-cell,
+.loading-content {
+  color: #55736a;
+}
+
+@media (max-width: 900px) {
+  .reports-header {
+    padding: 0 0 20px;
+  }
+
+  .reports-table-wrapper {
+    margin: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .reports-container {
+    padding: 20px 14px 36px;
+  }
+
+  .reports-header {
+    padding: 0 0 16px;
+  }
+
+  .error-message {
+    margin: 0 0 14px;
+  }
+
+  .reports-table-wrapper {
+    margin: 0;
+  }
+
+
+  .reports-table {
+    min-width: 650px;
+  }
+
+}
