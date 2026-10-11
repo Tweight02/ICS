@@ -53,9 +53,6 @@ Route::prefix('assistant')->group(function () {
     Route::get('/pastors', [UserController::class, 'view_pastors']);
     Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
     Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
-    Route::get('/pastors', [UserController::class, 'view_pastors']);
-    Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
-    Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
     Route::post('/pastors/bulk-transfer', [UserController::class, 'bulk_transfer']);
 });
 
@@ -90,7 +87,6 @@ Route::post('/comments', [ReportController::class, 'addComment']);
 Route::apiResource('baptisms', BaptismController::class);
 Route::apiResource('deaths', DeathController::class);
 Route::get('/churches', [BaptismController::class, 'allChurches']);
-Route::apiResource('deaths', DeathController::class);
 
 Route::middleware([
     'auth:sanctum'
