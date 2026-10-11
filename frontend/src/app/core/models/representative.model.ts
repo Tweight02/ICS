@@ -6,6 +6,7 @@ export interface RepresentativeDepartment {
 export interface RepresentativeChurch {
     church_id: number;
     name: string;
+    address?: string | null;
     parent_id: number | null;
 }
 

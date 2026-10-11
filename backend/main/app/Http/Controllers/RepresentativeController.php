@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Models\Church;
+use Illuminate\Support\Facades\DB;
 
 class RepresentativeController extends Controller
 {
@@ -19,6 +21,41 @@ class RepresentativeController extends Controller
      * Church representative:
      *   Can see representatives in his own church.
      */
+/**
+ * Churches in the pastor's district that have no representative yet.
+ */
+private function authUser(Request $request): User
+{
+    $user = $request->user();
+
+    if (!$user) {
+        abort(401, 'Unauthenticated.');
+    }
+
+    return $user;
+}
+
+public function available_churches(Request $request)
+{
+    $authUser = $request->user();
+
+    if ($authUser->role !== 'pastor') {
+        abort(403, 'Only pastors can list churches for new representatives.');
+    }
+
+    $churches = Church::where('parent_id', $authUser->church_id)
+        ->whereNotExists(function ($q) {
+            $q->select(DB::raw(1))
+                ->from('users')
+                ->whereColumn('users.church_id', 'churches.church_id')
+                ->where('users.role', 'church_representative');
+        })
+        ->orderBy('name')
+        ->get(['church_id', 'name']);
+
+    return response()->json(['data' => $churches]);
+}
+
 public function index(Request $request)
 {
     $authUser = $request->user();
@@ -198,158 +235,75 @@ public function index(Request $request)
     /**
      * Create a church representative.
      */
-    public function store(Request $request)
-    {
-        $authUser = $request->user();
+public function store(Request $request)
+{
+    $authUser = $request->user();
 
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDATION
-        |--------------------------------------------------------------------------
-        */
+    $data = $request->validate([
+        'church_id'      => 'required|exists:churches,church_id',
+        'first_name'     => 'required|string|max:255',
+        'middle_name'    => 'nullable|string|max:255',
+        'last_name'      => 'required|string|max:255',
+        'extension_name' => 'nullable|string|max:50',
+        'birthdate'      => 'required|date|before:today',
+        'gender'         => 'required|string|in:male,female,other',
+        'email'          => 'required|email|unique:users,email',
+        'password'       => 'required|string|min:8',
+    ]);
 
-        $data = $request->validate([
+    // Access check
+    $church = Church::findOrFail($data['church_id']);
 
-            'church_id' =>
-                'required|exists:churches,church_id',
+    if ($authUser->role === 'pastor') {
+        if ((int) $church->parent_id !== (int) $authUser->church_id) {
+            abort(403, 'You can only assign representatives to churches in your district.');
+        }
+    } elseif ($authUser->role === 'church_representative') {
+        if ((int) $church->church_id !== (int) $authUser->church_id) {
+            abort(403, 'You can only assign a representative to your own church.');
+        }
+    } else {
+        abort(403, 'You are not authorized to create representatives.');
+    }
 
-            'department_id' =>
-                'required|exists:departments,department_id',
-
-            'first_name' =>
-                'required|string|max:255',
-
-            'middle_name' =>
-                'nullable|string|max:255',
-
-            'last_name' =>
-                'required|string|max:255',
-
-            'extension_name' =>
-                'nullable|string|max:50',
-
-            'birthdate' =>
-                'required|date|before:today',
-
-            'gender' =>
-                'required|string|in:male,female,other',
-
-            'email' =>
-                'required|email|unique:users,email',
-
-            'password' =>
-                'required|string|min:8',
+    // Department is inherited from the creator, never from the request
+    if (!$authUser->department_id) {
+        throw ValidationException::withMessages([
+            'department_id' => 'Your account has no department assigned.',
         ]);
+    }
 
+    $data['department_id'] = $authUser->department_id;
+    $data['role']          = 'church_representative';
+    $data['password']      = Hash::make($data['password']);
 
-        /*
-        |--------------------------------------------------------------------------
-        | CHECK CHURCH ACCESS
-        |--------------------------------------------------------------------------
-        */
+    $representative = DB::transaction(function () use ($data) {
+        // Lock the church row so two requests can't both pass the check
+        DB::table('churches')
+            ->where('church_id', $data['church_id'])
+            ->lockForUpdate()
+            ->first();
 
-        $church = \App\Models\Church::findOrFail(
-            $data['church_id']
-        );
-
-        if ($authUser->role === 'pastor') {
-
-            /*
-             * Pastor can only create a representative
-             * inside one of his district's child churches.
-             */
-
-            if (
-                (int) $church->parent_id !==
-                (int) $authUser->church_id
-            ) {
-                abort(
-                    403,
-                    'You can only assign representatives to churches in your district.'
-                );
-            }
-        }
-
-        elseif ($authUser->role === 'church_representative') {
-
-            /*
-             * Representative can only create a representative
-             * for their own church.
-             */
-
-            if (
-                (int) $church->church_id !==
-                (int) $authUser->church_id
-            ) {
-                abort(
-                    403,
-                    'You can only assign a representative to your own church.'
-                );
-            }
-        }
-
-        else {
-
-            abort(
-                403,
-                'You are not authorized to create representatives.'
-            );
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | ONE REPRESENTATIVE PER CHURCH
-        |--------------------------------------------------------------------------
-        */
-
-        $existing = User::where(
-            'role',
-            'church_representative'
-        )
-            ->where(
-                'church_id',
-                $data['church_id']
-            )
+        $occupied = User::where('role', 'church_representative')
+            ->where('church_id', $data['church_id'])
             ->exists();
 
-        if ($existing) {
-
+        if ($occupied) {
             throw ValidationException::withMessages([
-                'church_id' =>
-                    'This church already has a representative.'
+                'church_id' => 'This church already has a representative.',
             ]);
         }
 
+        return User::create($data);
+    });
 
-        /*
-        |--------------------------------------------------------------------------
-        | CREATE USER
-        |--------------------------------------------------------------------------
-        */
+    $representative->load(['department', 'church']);
 
-        $data['role'] = 'church_representative';
-
-        $data['password'] = Hash::make(
-            $data['password']
-        );
-
-        $representative = User::create($data);
-
-        $representative->load([
-            'department',
-            'church'
-        ]);
-
-        return response()->json([
-            'message' =>
-                'Church representative created successfully.',
-
-            'user' =>
-                $representative,
-
-        ], 201);
-    }
+    return response()->json([
+        'message' => 'Church representative created successfully.',
+        'user'    => $representative,
+    ], 201);
+}
 
 
     /**
