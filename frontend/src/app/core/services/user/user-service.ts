@@ -17,12 +17,12 @@ export class UserService {
 
     private http = inject(HttpClient);
 
-    private apiUrl = 'http://localhost:8000/api';
+    private apiUrl = 'http://localhost:8000/api/assistant';
 
     createUser(data: any) {
 
         return this.http.post(
-            `${this.apiUrl}/assistant/users`,
+            `${this.apiUrl}/users`,
             data,
             {
                 withCredentials: true
@@ -36,7 +36,7 @@ export class UserService {
             success: boolean;
             data: Church[];
         }>(
-            `${this.apiUrl}/assistant/districts`,
+            `${this.apiUrl}/districts`,
             {
                 withCredentials: true
             }
@@ -49,7 +49,7 @@ export class UserService {
             message: string;
             data: Department[];
         }>(
-            `${this.apiUrl}/assistant/departments`,
+            `${this.apiUrl}/departments`,
             {
                 withCredentials: true
             }
