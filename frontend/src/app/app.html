@@ -6,13 +6,17 @@
 }
 
 <main
-  class="content"
+  class="app-main"
+  [class.sidebar-visible]="showSidebar"
+  [class.sidebar-collapsed]="showSidebar && collapsed"
+  [class.sidebar-expanded]="showSidebar && !collapsed"
   [class.no-sidebar]="!showSidebar"
-  [class.collapsed]="collapsed"
 >
-  <div class="content-bg"></div>
+  <!-- Background overlay -->
+  <div class="app-background-overlay"></div>
 
-  <div class="content-inner">
+  <!-- Main page content -->
+  <div class="app-content">
     <router-outlet />
   </div>
 </main>

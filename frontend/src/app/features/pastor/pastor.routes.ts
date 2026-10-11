@@ -10,13 +10,6 @@ export const PASTOR_ROUTES: Routes = [
   },
 
   {
-    path: 'reports',
-    loadComponent: () =>
-      import('./report_p/reports/reports')
-        .then(m => m.Reports)
-  },
-
-  {
     path: 'reports/details/:id',
     loadComponent: () =>
       import('./report_p/reports-details/reports-details')

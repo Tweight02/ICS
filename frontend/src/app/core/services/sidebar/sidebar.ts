@@ -80,6 +80,11 @@ export class SidebarService {
             label: 'Events',
             route: '/assistant/events',
             icon: 'bi-calendar-event'
+          },
+          {
+            label: 'Pastors',
+            route: '/assistant/view-user',
+            icon: 'bi-person'
           }
         ];
 

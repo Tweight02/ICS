@@ -46,6 +46,8 @@ Route::get('/districts/{district}/churches', [ChurchController::class, 'churches
 
 Route::prefix('assistant')->group(function () {
     Route::get('/districts', [ChurchController::class, 'districts']);
+    Route::get('/districts/{churchId}/pastor', [UserController::class, 'districtPastor'])
+        ->whereNumber('churchId');
     Route::get('/departments', [DepartmentController::class, 'getDepartment']);
     Route::post('/users', [UserController::class, 'create_user']);
     Route::get('/pastors', [UserController::class, 'view_pastors']);
@@ -64,6 +66,7 @@ Route::prefix('churches/{churchId}')->group(function () {
     Route::get('/departments', [ReportController::class, 'getDepartments']);
     Route::get('/departments/{departmentId}/report', [ReportController::class, 'departmentReport']);
     Route::post('/departments/{departmentId}/report/save', [ReportController::class, 'saveDepartmentReport']);
+    Route::get('/departments/{departmentId}/comments', [ReportController::class, 'departmentComments']);
 });
 
 /*

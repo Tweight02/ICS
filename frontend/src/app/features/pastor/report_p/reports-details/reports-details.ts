@@ -110,13 +110,6 @@ export class ReportsDetails implements OnInit {
 
   }
 
-  backToDistricts(): void {
-
-    this.router.navigate(
-      ['/pastor/reports']
-    );
-
-  }
 
   openChurch(church: Church): void {
 

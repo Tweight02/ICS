@@ -78,7 +78,7 @@ export class UserService {
         });
 
         return this.http.get<Paginated<Pastor>>(
-            `${this.apiUrl}/pastors`,
+            `${this.apiUrl}/assistant/pastors`,
             {
                 params,
                 withCredentials: true
@@ -91,7 +91,7 @@ export class UserService {
         return this.http.get<{
             data: Pastor;
         }>(
-            `${this.apiUrl}/pastors/${id}`,
+            `${this.apiUrl}/assistant/pastors/${id}`,
             {
                 withCredentials: true
             }
@@ -107,7 +107,7 @@ export class UserService {
             message: string;
             user: Pastor;
         }>(
-            `${this.apiUrl}/pastors/${id}`,
+            `${this.apiUrl}/assistant/pastors/${id}`,
             data,
             {
                 withCredentials: true
@@ -128,8 +128,20 @@ export class UserService {
             message: string;
             transferred_count: number;
         }>(
-            `${this.apiUrl}/pastors/bulk-transfer`,
+            `${this.apiUrl}/assistant/pastors/bulk-transfer`,
             { transfers },
+            { withCredentials: true }
+        );
+    }
+
+    checkDistrictPastor(churchId: number | string) {
+        return this.http.get<{
+            data: {
+                has_pastor: boolean;
+                pastor_name: string | null;
+            };
+        }>(
+            `${this.apiUrl}/assistant/districts/${churchId}/pastor`,
             { withCredentials: true }
         );
     }

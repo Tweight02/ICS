@@ -1,1017 +1,723 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   OnInit,
+  OnDestroy,
   ChangeDetectorRef,
   inject
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ReportService } from '../../../../core/services/report/report';
+import { AuthService } from '../../../../core/services/auth/auth-service';
 
-import {
-  CommonModule
-} from '@angular/common';
+interface QuarterRecord {
+  quarter_id: number;
+  quarter?: string;
+  year?: number | string;
+  value: number | string | null;
+  mission_approve: string | null;
+}
 
-import {
-  FormsModule
-} from '@angular/forms';
+interface Quarter {
+  quarter_id: number;
+  quarter: string;
+  year: number;
+}
 
-import {
-  ActivatedRoute,
-  Router
-} from '@angular/router';
+interface Particular {
+  particular_id: number;
+  particular_name: string;
+  quarters: QuarterRecord[];
+}
 
-import {
-  ReportService
-} from '../../../../core/services/report/report';
+interface Section {
+  program_id?: number;
+  program_name?: string;
+  section_name?: string;
+  particulars: Particular[];
+}
 
-import {
-  DepartmentReport,
-  Program,
-  ProgramSection,
-  Particular,
-  ReportQuarter,
-  SaveReportItem
-} from '../../../../core/models/report.model';
+interface Program {
+  program_id: number;
+  program_name: string;
+  sections: Section[];
+}
 
+interface Report {
+  department?: { department_name?: string };
+  programs: Program[];
+}
+
+interface SaveReportItem {
+  particular_id: number;
+  quarter_id: number;
+  value: number | null;
+}
+
+interface ReportComment {
+  comment_id: number;
+  quarter_id: number;
+  commented_by: number;
+  details: string;
+  date_commented: string;
+  status?: string | null; // 'commented'
+  // Joined by the API (users + quarters tables)
+  commenter_name?: string;
+  commenter_role?: string;
+  quarter?: string;
+  year?: number | string;
+}
+
+interface QuarterRef {
+  quarter_id: number;
+  quarter?: string;
+  year?: number | string;
+}
+
+type AutoSaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
 @Component({
   selector: 'app-report-particulars',
-
   standalone: true,
-
-  imports: [
-    CommonModule,
-    FormsModule
-  ],
-
-  templateUrl: './report-particulars.html',
-
-  styleUrls: [
-    './report-particulars.css'
-  ]
+  imports: [CommonModule, FormsModule],
+  templateUrl: './report-particulars.html'
 })
-export class ReportParticulars
-  implements OnInit {
+export class ReportParticulars implements OnInit, OnDestroy {
 
+  // Add these lines here
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly reportService = inject(ReportService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly auth = inject(AuthService);
 
-  /* =========================================================
-     SERVICES
-  ========================================================= */
-
-  private readonly route =
-    inject(ActivatedRoute);
-
-  private readonly router =
-    inject(Router);
-
-  private readonly reportService =
-    inject(ReportService);
-
-  private readonly cdr =
-    inject(ChangeDetectorRef);
-
-
-  /* =========================================================
-     CURRENT USER
-  ========================================================= */
-
-  private readonly CURRENT_USER = {
-
-    user_id: 1,
-
-    department_id: 1,
-
-    church_id: 214,
-
-    first_name: 'Juan',
-
-    middle_name: 'Santos',
-
-    last_name: 'Dela Cruz',
-
-    extension_name: null,
-
-    birthdate: '1980-05-15',
-
-    gender: 'Male',
-
-    email:
-      'district.representative@example.com',
-
-    role: 'representative'
-  };
-
-
-  /* =========================================================
-     BASIC INFORMATION
-  ========================================================= */
-
-  churchId =
-    this.CURRENT_USER.church_id;
+  churchId = 0;
 
   departmentId = 0;
+  report: Report | null = null;
+
+  availableQuarters: Quarter[] = [];
+  availableYears: number[] = [];
+
+  selectedYear: number | null = null;
+  selectedQuarterId: number | null = null;
+  selectedProgramId: number | null = null;
+
+  isAnnualView = false;
+  loading = false;
+  saving = false;
+  errorMessage = '';
+  successMessage = '';
+
+  // ---- Comments (from District Pastor & Assistant, read-only) ----
+  comments: ReportComment[] = [];
+  commentsLoading = false;
+  commentsError = '';
+
+  // ---- Auto-save state ----
+  autoSaveStatus: AutoSaveStatus = 'idle';
+  private readonly autoSaveDelayMs = 800;
+  private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private autoSaving = false;
+  private autoSaveQueue: SaveReportItem[] | null = null;
+  private destroyed = false;
 
 
-  /* =========================================================
-     REPORT DATA
-  ========================================================= */
+ngOnInit(): void {
+  const user = this.auth.getCurrentUser();
 
-  report:
-    DepartmentReport | null = null;
+  if (!user?.church_id) {
+    this.errorMessage =
+      'Your account does not have a church assigned. Please contact the administrator.';
+    return;
+  }
 
+  this.churchId = Number(user.church_id);
 
-  /* =========================================================
-     QUARTERS
-  ========================================================= */
+  this.route.paramMap.subscribe(params => {
+    const id = Number(params.get('departmentId'));
 
-  availableQuarters:
-    ReportQuarter[] = [];
-
-  selectedQuarterId:
-    number | null = null;
-
-  selectedQuarterIndex =
-    0;
-
-
-  /* =========================================================
-     UI STATES
-  ========================================================= */
-
-  loading =
-    false;
-
-  saving =
-    false;
-
-  errorMessage =
-    '';
-
-  successMessage =
-    '';
-
-
-  /* =========================================================
-     INIT
-  ========================================================= */
-
-  ngOnInit(): void {
-
-    const id =
-      Number(
-        this.route.snapshot.paramMap.get(
-          'departmentId'
-        )
-      );
-
-    if (!id || Number.isNaN(id)) {
-
-      this.errorMessage =
-        'Invalid department.';
-
+    if (!Number.isFinite(id) || id <= 0) {
+      this.errorMessage = 'Department ID was not provided.';
       return;
     }
 
-    this.departmentId =
-      id;
-
+    this.departmentId = id;
     this.loadReport();
+  });
+}
+
+  ngOnDestroy(): void {
+    // Save anything still waiting before leaving the page.
+    this.flushAutoSave();
+    this.destroyed = true;
   }
 
-
-  /* =========================================================
-     LOAD REPORT
-  ========================================================= */
-
   loadReport(): void {
-
-    this.loading =
-      true;
-
-    this.errorMessage =
-      '';
-
-    this.successMessage =
-      '';
+    this.loading = true;
+    this.errorMessage = '';
 
     this.reportService
-      .getDepartmentReport(
-        this.churchId,
-        this.departmentId
-      )
+      .getDepartmentReport(this.churchId, this.departmentId)
       .subscribe({
-
-        next: (response) => {
-
-          console.log(
-            'DEPARTMENT REPORT:',
-            response
-          );
-
-          this.report =
-            response;
-
-          this.initializeQuarters();
-
-          this.loading =
-            false;
-
+        next: (response: any) => {
+          this.report = (response?.data ?? response) as Report;
+          this.initializeSelections();
+          this.loading = false;
           this.cdr.detectChanges();
+          this.loadComments();
         },
-
-        error: (error) => {
-
-          console.error(
-            'LOAD REPORT ERROR:',
-            error
-          );
-
-          this.report =
-            null;
-
-          this.availableQuarters =
-            [];
-
-          this.selectedQuarterId =
-            null;
-
-          this.loading =
-            false;
-
+        error: (error: any) => {
+          console.error(error);
           this.errorMessage =
-            error?.error?.message ??
-            'Unable to load report.';
-
+            error?.error?.message || 'Unable to load report.';
+          this.loading = false;
           this.cdr.detectChanges();
         }
-
       });
   }
 
+  private initializeSelections(): void {
+    const programs = this.report?.programs ?? [];
 
-  /* =========================================================
-     INITIALIZE QUARTERS
-  ========================================================= */
-
-  private initializeQuarters(): void {
-
-    if (!this.report) {
-
-      this.availableQuarters =
-        [];
-
-      this.selectedQuarterId =
-        null;
-
-      this.selectedQuarterIndex =
-        0;
-
-      return;
+    if (!programs.some(p => p.program_id === this.selectedProgramId)) {
+      this.selectedProgramId = programs[0]?.program_id ?? null;
     }
 
+    const unique = new Map<string, Quarter>();
 
-    const quarterMap =
-      new Map<number, ReportQuarter>();
+    for (const program of programs) {
+      for (const section of program.sections ?? []) {
+        for (const particular of section.particulars ?? []) {
+          for (const record of particular.quarters ?? []) {
+            const year = Number(record.year);
+            const number = this.quarterNumber(record.quarter ?? '');
 
-
-    for (
-      const program
-      of this.report.programs ?? []
-    ) {
-
-      for (
-        const section
-        of program.sections ?? []
-      ) {
-
-        for (
-          const particular
-          of section.particulars ?? []
-        ) {
-
-          for (
-            const quarter
-            of particular.quarters ?? []
-          ) {
-
-            if (
-              !quarter ||
-              !quarter.quarter_id
-            ) {
+            if (!record.quarter_id || !year || number < 1 || number > 4) {
               continue;
             }
 
+            const key = `${year}-Q${number}`;
 
-            if (
-              !quarterMap.has(
-                quarter.quarter_id
-              )
-            ) {
-
-              quarterMap.set(
-                quarter.quarter_id,
-                quarter
-              );
+            if (!unique.has(key)) {
+              unique.set(key, {
+                quarter_id: record.quarter_id,
+                quarter: `Q${number}`,
+                year
+              });
             }
           }
         }
       }
     }
 
+    this.availableQuarters = [...unique.values()].sort(
+      (a, b) =>
+        a.year - b.year ||
+        this.quarterNumber(a.quarter) - this.quarterNumber(b.quarter)
+    );
 
-    this.availableQuarters =
-      Array.from(
-        quarterMap.values()
-      );
+    this.availableYears = [
+      ...new Set(this.availableQuarters.map(q => q.year))
+    ].sort((a, b) => b - a);
 
+    if (
+      this.selectedYear === null ||
+      !this.availableYears.includes(this.selectedYear)
+    ) {
+      this.selectedYear = this.availableYears[0] ?? null;
+    }
 
-    /* =====================================================
-       SORT BY YEAR THEN QUARTER
-    ===================================================== */
+    if (
+      !this.getQuartersForYear().some(
+        q => q.quarter_id === this.selectedQuarterId
+      )
+    ) {
+      this.selectedQuarterId =
+        this.getQuartersForYear()[0]?.quarter_id ?? null;
+    }
+  }
 
-    this.availableQuarters.sort(
-      (
-        a: ReportQuarter,
-        b: ReportQuarter
-      ) => {
+  private quarterNumber(name: string): number {
+    const match = String(name)
+      .toUpperCase()
+      .match(/(?:Q|QUARTER\s*)?([1-4])/);
 
-        const yearA =
-          Number(a.year);
+    return match ? Number(match[1]) : 0;
+  }
 
-        const yearB =
-          Number(b.year);
+  getQuartersForYear(): Quarter[] {
+    return this.availableQuarters.filter(
+      q => q.year === this.selectedYear
+    );
+  }
 
+  getVisibleQuarters(): Quarter[] {
+    if (this.isAnnualView) {
+      return this.getQuartersForYear();
+    }
 
-        if (
-          yearA !== yearB
-        ) {
+    const quarter = this.getSelectedQuarter();
+    return quarter ? [quarter] : [];
+  }
 
-          return yearA - yearB;
-        }
+  getSelectedQuarter(): Quarter | null {
+    return this.getQuartersForYear().find(
+      q => q.quarter_id === this.selectedQuarterId
+    ) ?? null;
+  }
 
+  selectYear(year: number): void {
+    if (this.saving) return;
 
-        return (
-          this.getQuarterNumber(
-            a.quarter
-          ) -
-          this.getQuarterNumber(
-            b.quarter
-          )
+    this.flushAutoSave();
+
+    this.selectedYear = Number(year);
+    this.isAnnualView = false;
+    this.selectedQuarterId =
+      this.getQuartersForYear()[0]?.quarter_id ?? null;
+
+    this.clearMessages();
+  }
+
+  selectQuarter(quarter: Quarter): void {
+    if (this.saving) return;
+
+    this.flushAutoSave();
+
+    this.isAnnualView = false;
+    this.selectedQuarterId = quarter.quarter_id;
+    this.clearMessages();
+  }
+
+  selectAnnual(): void {
+    if (this.saving) return;
+
+    this.flushAutoSave();
+
+    this.isAnnualView = true;
+    this.clearMessages();
+  }
+
+  selectProgram(programId: number): void {
+    if (this.saving) return;
+
+    this.flushAutoSave();
+
+    this.selectedProgramId = programId;
+    this.clearMessages();
+  }
+
+  getSelectedProgram(): Program | null {
+    return this.report?.programs?.find(
+      p => p.program_id === this.selectedProgramId
+    ) ?? null;
+  }
+
+  getParticularQuarterRecord(
+    particular: Particular,
+    quarter: Quarter
+  ): QuarterRecord | null {
+    return particular.quarters?.find(
+      record => record.quarter_id === quarter.quarter_id
+    ) ?? null;
+  }
+
+  isRecordApproved(record: QuarterRecord | null): boolean {
+    if (!record) return false;
+
+    return ['1', 'true', 'approved'].includes(
+      String(record.mission_approve ?? '').toLowerCase()
+    );
+  }
+
+  isQuarterApproved(quarterId: number): boolean {
+    const program = this.getSelectedProgram();
+    if (!program) return false;
+
+    return program.sections.some(section =>
+      section.particulars.some(particular => {
+        const record = particular.quarters.find(
+          q => q.quarter_id === quarterId
         );
-      }
-    );
 
-
-    /* =====================================================
-       ALWAYS START AT Q1
-    ===================================================== */
-
-    this.selectedQuarterIndex =
-      0;
-
-
-    if (
-      this.availableQuarters.length > 0
-    ) {
-
-      this.selectedQuarterId =
-        this.availableQuarters[0]
-          .quarter_id;
-
-    } else {
-
-      this.selectedQuarterId =
-        null;
-    }
-
-
-    console.log(
-      'AVAILABLE QUARTERS:',
-      this.availableQuarters
-    );
-
-    console.log(
-      'SELECTED QUARTER:',
-      this.selectedQuarterId
+        return this.isRecordApproved(record ?? null);
+      })
     );
   }
 
-
-  /* =========================================================
-     GET QUARTER NUMBER
-  ========================================================= */
-
-  private getQuarterNumber(
-    quarter: string
-  ): number {
-
-    const value =
-      String(
-        quarter
-      ).toUpperCase();
-
-
-    if (
-      value.includes('1')
-    ) {
-      return 1;
-    }
-
-    if (
-      value.includes('2')
-    ) {
-      return 2;
-    }
-
-    if (
-      value.includes('3')
-    ) {
-      return 3;
-    }
-
-    if (
-      value.includes('4')
-    ) {
-      return 4;
-    }
-
-
-    return 99;
+  getQuarterValue(
+    particular: Particular,
+    quarter: Quarter
+  ): number | string | null {
+    return this.getParticularQuarterRecord(particular, quarter)?.value ?? null;
   }
 
+  getAnnualTotal(particular: Particular): number {
+    return this.getQuartersForYear().reduce((total, quarter) => {
+      const value = this.getQuarterValue(particular, quarter);
+      const numeric = Number(value);
 
-  /* =========================================================
-     GET SELECTED QUARTER
-  ========================================================= */
-
-  getSelectedQuarter():
-    ReportQuarter | null {
-
-    if (
-      this.selectedQuarterId === null
-    ) {
-
-      return null;
-    }
-
-
-    if (
-      this.availableQuarters.length === 0
-    ) {
-
-      return null;
-    }
-
-
-    return (
-      this.availableQuarters.find(
-        (
-          quarter: ReportQuarter
-        ) =>
-          quarter.quarter_id ===
-          this.selectedQuarterId
-      ) ?? null
-    );
+      return value !== null &&
+        value !== '' &&
+        Number.isFinite(numeric)
+        ? total + numeric
+        : total;
+    }, 0);
   }
 
-
-  /* =========================================================
-     CHECK APPROVAL
-  ========================================================= */
-
-  isQuarterApproved(
-    quarterId: number | null
-  ): boolean {
-
+  setQuarterValue(
+    particular: Particular,
+    quarter: Quarter,
+    value: number | string | null
+  ): void {
     if (
-      !this.report ||
-      quarterId === null
+      this.saving ||
+      this.isAnnualView ||
+      this.isQuarterApproved(quarter.quarter_id)
     ) {
-
-      return false;
-    }
-
-
-    for (
-      const program
-      of this.report.programs ?? []
-    ) {
-
-      for (
-        const section
-        of program.sections ?? []
-      ) {
-
-        for (
-          const particular
-          of section.particulars ?? []
-        ) {
-
-          const quarter =
-            (
-              particular.quarters ?? []
-            ).find(
-              (
-                q: ReportQuarter
-              ) =>
-                q &&
-                q.quarter_id ===
-                quarterId
-            );
-
-
-          if (quarter) {
-
-            return (
-              quarter.mission_approve !==
-                null &&
-              quarter.mission_approve !==
-                ''
-            );
-          }
-        }
-      }
-    }
-
-
-    return false;
-  }
-
-
-  /* =========================================================
-     CAN GO TO NEXT QUARTER
-  ========================================================= */
-
-  canGoToNextQuarter(): boolean {
-
-    if (
-      this.availableQuarters.length === 0
-    ) {
-
-      return false;
-    }
-
-
-    if (
-      this.selectedQuarterIndex >=
-      this.availableQuarters.length - 1
-    ) {
-
-      return false;
-    }
-
-
-    const currentQuarter =
-      this.getSelectedQuarter();
-
-
-    if (!currentQuarter) {
-
-      return false;
-    }
-
-
-    return this.isQuarterApproved(
-      currentQuarter.quarter_id
-    );
-  }
-
-
-  /* =========================================================
-     GO TO NEXT QUARTER
-  ========================================================= */
-
-  goToNextQuarter(): void {
-
-    if (
-      !this.canGoToNextQuarter()
-    ) {
-
-      this.errorMessage =
-        'The current quarter must be approved before proceeding to the next quarter.';
-
-      this.successMessage =
-        '';
-
       return;
     }
 
+    let record = particular.quarters.find(
+      q => q.quarter_id === quarter.quarter_id
+    );
+
+    if (!record) {
+      record = {
+        quarter_id: quarter.quarter_id,
+        quarter: quarter.quarter,
+        year: quarter.year,
+        value: null,
+        mission_approve: null
+      };
+
+      particular.quarters.push(record);
+    }
+
+    if (value === '' || value === null) {
+      record.value = null;
+      this.clearMessages();
+      this.scheduleAutoSave();
+      return;
+    }
+
+    const numeric = Number(value);
+
+    if (!Number.isFinite(numeric) || numeric < 0) {
+      this.errorMessage = 'Enter a valid non-negative number.';
+      return;
+    }
+
+    record.value = numeric;
+    this.clearMessages();
+    this.scheduleAutoSave();
+  }
+
+  // ------------------------------------------------------------------
+  // Comments (display only) + status
+  // ------------------------------------------------------------------
+
+  loadComments(): void {
+    this.commentsLoading = true;
+    this.commentsError = '';
+
+    this.reportService
+      .getDepartmentComments(this.churchId, this.departmentId)
+      .subscribe({
+        next: (response: any) => {
+          const list = response?.data ?? response;
+          this.comments = Array.isArray(list) ? list : [];
+          this.commentsLoading = false;
+          this.refreshView();
+        },
+        error: (error: any) => {
+          console.error(error);
+          this.commentsError =
+            error?.error?.message || 'Unable to load comments.';
+          this.commentsLoading = false;
+          this.refreshView();
+        }
+      });
+  }
+
+  /** Comments for the quarter on screen (or all four quarters in Annual view). */
+  getVisibleComments(): ReportComment[] {
+    const quarters = this.getVisibleQuarters();
+
+    return this.comments
+      .filter(comment =>
+        quarters.some(quarter => this.matchesQuarter(comment, quarter))
+      )
+      .sort(
+        (a, b) =>
+          String(b.date_commented).localeCompare(String(a.date_commented)) ||
+          b.comment_id - a.comment_id
+      );
+  }
+
+  /** Status comes from comments.status: "commented" once the pastor or assistant commented. */
+  getCommentStatus(): 'commented' | 'none' {
+    const commented = this.getVisibleComments().some(
+      comment =>
+        String(comment.status ?? 'commented').toLowerCase() === 'commented'
+    );
+
+    return commented ? 'commented' : 'none';
+  }
+
+  getCommentQuarterLabel(comment: ReportComment): string {
+    if (comment.quarter) {
+      return `${comment.quarter}${comment.year ? ' ' + comment.year : ''}`;
+    }
+
+    const match = this.availableQuarters.find(
+      q => q.quarter_id === comment.quarter_id
+    );
+
+    return match ? `${match.quarter} ${match.year}` : '';
+  }
+
+  getInitials(name?: string): string {
+    const parts = String(name ?? '').trim().split(/\s+/).filter(Boolean);
+
+    if (!parts.length) return 'P';
+
+    return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : ''))
+      .toUpperCase();
+  }
+
+  private matchesQuarter(item: QuarterRef, quarter: Quarter): boolean {
+    if (item.quarter_id === quarter.quarter_id) return true;
+
+    // Fallback when the same quarter has a different quarter_id per program.
+    return (
+      !!item.quarter &&
+      !!item.year &&
+      this.quarterNumber(item.quarter) === this.quarterNumber(quarter.quarter) &&
+      Number(item.year) === quarter.year
+    );
+  }
+
+  trackComment(_index: number, comment: ReportComment): number {
+    return comment.comment_id;
+  }
+
+  // ------------------------------------------------------------------
+  // Auto-save
+  // ------------------------------------------------------------------
+
+  /** Wait until the user stops typing, then save. */
+  private scheduleAutoSave(): void {
+    if (this.autoSaveTimer) {
+      clearTimeout(this.autoSaveTimer);
+    }
+
+    this.autoSaveStatus = 'pending';
+
+    this.autoSaveTimer = setTimeout(() => {
+      this.autoSaveTimer = null;
+      this.autoSave();
+    }, this.autoSaveDelayMs);
+  }
+
+  /** Save right away if a save is waiting (used before switching views). */
+  private flushAutoSave(): void {
+    if (!this.autoSaveTimer) return;
+
+    clearTimeout(this.autoSaveTimer);
+    this.autoSaveTimer = null;
+    this.autoSave();
+  }
+
+  private autoSave(): void {
+    const program = this.getSelectedProgram();
+    const quarter = this.getSelectedQuarter();
 
     if (
-      this.selectedQuarterIndex <
-      this.availableQuarters.length - 1
+      this.isAnnualView ||
+      !program ||
+      !quarter ||
+      this.isQuarterApproved(quarter.quarter_id)
     ) {
+      this.autoSaveStatus = 'idle';
+      return;
+    }
 
-      this.selectedQuarterIndex++;
+    const items = this.buildItems(program, quarter);
 
+    if (!items) {
+      this.autoSaveStatus = 'error';
+      this.refreshView();
+      return;
+    }
 
-      this.selectedQuarterId =
-        this.availableQuarters[
-          this.selectedQuarterIndex
-        ].quarter_id;
+    this.sendAutoSave(items);
+  }
 
+  private sendAutoSave(items: SaveReportItem[]): void {
+    // A save is already running: keep only the latest data and send it after.
+    if (this.autoSaving) {
+      this.autoSaveQueue = items;
+      return;
+    }
 
-      this.errorMessage =
-        '';
+    this.autoSaving = true;
+    this.autoSaveStatus = 'saving';
+    this.refreshView();
 
-      this.successMessage =
-        '';
-
-
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
+    this.reportService
+      .saveDepartmentReport(this.churchId, this.departmentId, items)
+      .subscribe({
+        next: () => this.finishAutoSave(true),
+        error: (error: any) => this.finishAutoSave(false, error)
       });
+  }
 
+  private finishAutoSave(success: boolean, error?: any): void {
+    this.autoSaving = false;
 
+    if (success) {
+      this.autoSaveStatus = this.autoSaveTimer ? 'pending' : 'saved';
+    } else {
+      this.autoSaveStatus = 'error';
+      this.errorMessage =
+        error?.error?.message || 'Auto-save failed. Please try again.';
+    }
+
+    const queued = this.autoSaveQueue;
+
+    if (queued) {
+      this.autoSaveQueue = null;
+      this.sendAutoSave(queued);
+      return;
+    }
+
+    this.refreshView();
+  }
+
+  private refreshView(): void {
+    if (!this.destroyed) {
       this.cdr.detectChanges();
     }
   }
 
-
-  /* =========================================================
-     GO TO PREVIOUS QUARTER
-  ========================================================= */
-
-  goToPreviousQuarter(): void {
-
-    if (
-      this.selectedQuarterIndex <= 0
-    ) {
-
-      return;
-    }
-
-
-    this.selectedQuarterIndex--;
-
-
-    this.selectedQuarterId =
-      this.availableQuarters[
-        this.selectedQuarterIndex
-      ].quarter_id;
-
-
-    this.errorMessage =
-      '';
-
-    this.successMessage =
-      '';
-
-
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-
-
-    this.cdr.detectChanges();
-  }
-
-
-  /* =========================================================
-     GET PARTICULAR VALUE
-  ========================================================= */
-
-  getQuarterValue(
-    particular: Particular,
-    quarter: ReportQuarter
-  ): number | null {
-
-    if (
-      !particular ||
-      !quarter
-    ) {
-
-      return null;
-    }
-
-
-    const found =
-      (
-        particular.quarters ?? []
-      ).find(
-        (
-          q: ReportQuarter
-        ) =>
-          q &&
-          q.quarter_id ===
-          quarter.quarter_id
-      );
-
-
-    return found?.value ?? null;
-  }
-
-
-  /* =========================================================
-     SET PARTICULAR VALUE
-  ========================================================= */
-
-  setQuarterValue(
-    particular: Particular,
-    quarter: ReportQuarter,
-    value: string | number | null
-  ): void {
-
-    if (
-      !particular ||
-      !quarter
-    ) {
-
-      return;
-    }
-
-
-    /* APPROVED = READ ONLY */
-
-    if (
-      this.isQuarterApproved(
-        quarter.quarter_id
-      )
-    ) {
-
-      return;
-    }
-
-
-    const found =
-      (
-        particular.quarters ?? []
-      ).find(
-        (
-          q: ReportQuarter
-        ) =>
-          q &&
-          q.quarter_id ===
-          quarter.quarter_id
-      );
-
-
-    if (!found) {
-
-      return;
-    }
-
-
-    if (
-      value === null ||
-      value === '' ||
-      value === undefined
-    ) {
-
-      found.value =
-        null;
-
-      return;
-    }
-
-
-    const numericValue =
-      Number(value);
-
-
-    found.value =
-      Number.isNaN(
-        numericValue
-      )
-        ? null
-        : numericValue;
-  }
-
-
-  /* =========================================================
-     SAVE REPORT
-  ========================================================= */
-
-  saveReport(): void {
-
-    if (
-      !this.report
-    ) {
-
-      return;
-    }
-
-
-    if (
-      this.saving
-    ) {
-
-      return;
-    }
-
-
-    if (
-      this.selectedQuarterId === null
-    ) {
-
-      this.errorMessage =
-        'No quarter is selected.';
-
-      return;
-    }
-
-
-    /* =====================================================
-       APPROVED QUARTER CANNOT BE SAVED
-    ===================================================== */
-
-    if (
-      this.isQuarterApproved(
-        this.selectedQuarterId
-      )
-    ) {
-
-      this.errorMessage =
-        'This quarter has already been approved and cannot be modified.';
-
-      this.successMessage =
-        '';
-
-      return;
-    }
-
-
-    const items:
-      SaveReportItem[] =
-      [];
-
-
-    /* =====================================================
-       SAVE ONLY THE SELECTED QUARTER
-    ===================================================== */
-
-    for (
-      const program
-      of this.report.programs ?? []
-    ) {
-
-      for (
-        const section
-        of program.sections ?? []
-      ) {
-
-        for (
-          const particular
-          of section.particulars ?? []
-        ) {
-
-          const quarter =
-            (
-              particular.quarters ?? []
-            ).find(
-              (
-                q: ReportQuarter
-              ) =>
-                q &&
-                q.quarter_id ===
-                this.selectedQuarterId
-            );
-
-
-          if (!quarter) {
-            continue;
+  // ------------------------------------------------------------------
+  // Submit
+  // ------------------------------------------------------------------
+
+  /** Builds the payload for one quarter. Returns null if a value is invalid. */
+  private buildItems(
+    program: Program,
+    quarter: Quarter
+  ): SaveReportItem[] | null {
+    const items: SaveReportItem[] = [];
+
+    for (const section of program.sections) {
+      for (const particular of section.particulars) {
+        const record = particular.quarters.find(
+          q => q.quarter_id === quarter.quarter_id
+        );
+
+        let value: number | null = null;
+
+        if (record?.value !== '' && record?.value != null) {
+          const numeric = Number(record.value);
+
+          if (!Number.isFinite(numeric) || numeric < 0) {
+            this.errorMessage =
+              `Invalid value for ${particular.particular_name}.`;
+            return null;
           }
 
-
-          items.push({
-
-            particular_id:
-              particular.particular_id,
-
-            quarter_id:
-              quarter.quarter_id,
-
-            value:
-              quarter.value
-          });
+          value = numeric;
         }
+
+        items.push({
+          particular_id: particular.particular_id,
+          quarter_id: quarter.quarter_id,
+          value
+        });
       }
     }
 
+    return items;
+  }
 
-    if (
-      items.length === 0
-    ) {
-
-      this.errorMessage =
-        'There are no report items to save.';
-
+  saveReport(): void {
+    if (this.isAnnualView) {
+      this.errorMessage = 'Annual view is read-only.';
       return;
     }
 
+    const program = this.getSelectedProgram();
+    const quarter = this.getSelectedQuarter();
 
-    this.saving =
-      true;
+    if (!program || !quarter) {
+      this.errorMessage = 'Select a program and quarter.';
+      return;
+    }
 
-    this.errorMessage =
-      '';
+    if (this.isQuarterApproved(quarter.quarter_id)) {
+      this.errorMessage = 'This quarter has already been approved.';
+      return;
+    }
 
-    this.successMessage =
-      '';
+    // Submit covers anything still waiting for auto-save.
+    if (this.autoSaveTimer) {
+      clearTimeout(this.autoSaveTimer);
+      this.autoSaveTimer = null;
+    }
 
+    const items = this.buildItems(program, quarter);
+    if (!items) return;
+
+    this.saving = true;
+    this.clearMessages();
 
     this.reportService
-      .saveDepartmentReport(
-        this.churchId,
-        this.departmentId,
-        items
-      )
+      .saveDepartmentReport(this.churchId, this.departmentId, items)
       .subscribe({
-
-        next: (
-          response
-        ) => {
-
-          this.saving =
-            false;
-
+        next: (response: any) => {
           this.successMessage =
-            response?.message ??
-            'Report saved successfully.';
-
-          this.errorMessage =
-            '';
-
-
-          /* REFRESH REPORT */
-
+            response?.message || 'Report submitted successfully.';
+          this.saving = false;
+          this.autoSaveStatus = 'saved';
           this.loadReport();
         },
-
-        error: (
-          error
-        ) => {
-
-          console.error(
-            'SAVE REPORT ERROR:',
-            error
-          );
-
-          this.saving =
-            false;
-
-          this.successMessage =
-            '';
-
+        error: (error: any) => {
           this.errorMessage =
-            error?.error?.message ??
-            'Unable to save report.';
-
+            error?.error?.message || 'Failed to submit report.';
+          this.saving = false;
           this.cdr.detectChanges();
         }
-
       });
   }
 
-
-  /* =========================================================
-     BACK
-  ========================================================= */
-
-  backToPrograms(): void {
-
-    this.router.navigate([
-      '/representative/reports/programs'
-    ]);
+  private clearMessages(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
   }
 
+  backToPrograms(): void {
+    this.flushAutoSave();
+    this.router.navigate(['/representative/reports/programs']);
+  }
 
-  /* =========================================================
-     TRACK FUNCTIONS
-  ========================================================= */
+  trackQuarter(_index: number, quarter: Quarter): number {
+    return quarter.quarter_id;
+  }
 
-  trackProgram(
-    index: number,
-    program: Program
-  ): number {
-
+  trackProgram(_index: number, program: Program): number {
     return program.program_id;
   }
 
-
-  trackSection(
-    index: number,
-    section: ProgramSection
-  ): number {
-
-    return section.program_id;
+  trackSection(index: number, section: Section): number {
+    return section.program_id ?? index;
   }
 
-
-  trackParticular(
-    index: number,
-    particular: Particular
-  ): number {
-
+  trackParticular(_index: number, particular: Particular): number {
     return particular.particular_id;
-  }
-
-
-  trackQuarter(
-    index: number,
-    quarter: ReportQuarter
-  ): number {
-
-    return quarter.quarter_id;
   }
 }
