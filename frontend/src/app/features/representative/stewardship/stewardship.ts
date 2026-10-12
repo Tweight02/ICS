@@ -12,13 +12,6 @@ interface Particular {
   particulars_name: string;
 }
 
-interface QuarterComment {
-  comment_id: number;
-  commenter_name: string;
-  details: string;
-  date: string;
-}
-
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -37,8 +30,7 @@ export class Stewardship {
   readonly mission = 'Northeast Luzon Mission';
   readonly programName = 'Stewardship Quarterly Report';
 
-  // Sample: replace with the logged-in church representative and their church.
-  readonly user = { name: 'Church Representative' };
+  // Sample: replace with the logged-in church representative's church.
   readonly church = { name: 'LOGAC', district: 'Sample District' };
 
   readonly quarters = [1, 2, 3, 4];
@@ -59,14 +51,8 @@ export class Stewardship {
   values: Record<number, number | null> = {}; // particular_id -> value
   monthly: Record<number, (number | null)[]> = {}; // particular_id -> value for each month of the quarter
 
-  // Comments left by the pastor / district / mission on this report
-  comments: QuarterComment[] = [];
-  newComment = '';
-
   message = '';
   isError = false;
-
-  private seq = 100;
 
   constructor() {
     this.setParticulars(
@@ -161,7 +147,6 @@ export class Stewardship {
   onPeriodChange(): void {
     this.values = {};
     this.monthly = this.blankMonthly();
-    this.comments = [];
     this.status = 'Draft';
     this.dateSubmitted = '';
     this.message = '';
@@ -191,18 +176,6 @@ export class Stewardship {
     this.status = 'Draft';
     this.dateSubmitted = '';
     this.setMessage('Reopened for editing.', false);
-  }
-
-  postComment(): void {
-    const text = this.newComment.trim();
-    if (!text) return;
-    this.comments.push({
-      comment_id: ++this.seq,
-      commenter_name: this.user.name,
-      details: text,
-      date: new Date().toLocaleDateString('en-CA'),
-    });
-    this.newComment = '';
   }
 
   // ---- Helpers ----
