@@ -534,16 +534,21 @@ class UserController extends Controller
 
 public function districtPastor(int $churchId)
 {
-    $pastor = User::where('role', 'pastor')
-        ->where('church_id', $churchId)
+    $pastor = User::where('church_id', $churchId)
+        ->where('department_id', 16)
         ->first();
 
+    if (! $pastor) {
+        return response()->json(['exists' => false]);
+    }
+
     return response()->json([
-        'data' => [
-            'has_pastor'  => (bool) $pastor,
-            'pastor_name' => $pastor
-                ? trim("{$pastor->first_name} {$pastor->last_name}")
-                : null,
+        'exists' => true,
+        'message' => 'This district already has a pastor.',
+        'pastor' => [
+            'user_id' => $pastor->user_id,
+            'first_name' => $pastor->first_name,
+            'last_name' => $pastor->last_name,
         ],
     ]);
 }
