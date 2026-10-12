@@ -45,7 +45,6 @@
       <div>
         <div class="text-xs text-slate-500">Year</div>
         <div class="mt-1 font-semibold">{{ year }}</div>
-        <div class="text-xs text-slate-400">{{ dateSubmitted }}</div>
       </div>
     </div>
 
@@ -135,56 +134,8 @@
       </div>
     </div>
 
-    <!-- Comments -->
-    <div class="border-b border-slate-200 px-6 py-6 sm:px-8">
-      <div role="heading" aria-level="2" class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-        Comments
-      </div>
-
-      @if (comments.length === 0) {
-        <div class="mb-3 text-sm text-slate-500">No comments yet.</div>
-      } @else {
-        <div class="mb-3 flex flex-col gap-3">
-          @for (c of comments; track c.comment_id) {
-            <div class="border-l-2 border-slate-200 pl-3 text-sm">
-              <div>
-                <span class="font-semibold">{{ c.commenter_name }}</span>
-                <span class="ml-2 text-xs text-slate-500">{{ c.date }}</span>
-              </div>
-              <div class="mt-0.5 text-slate-700">{{ c.details }}</div>
-            </div>
-          }
-        </div>
-      }
-
-      <div class="flex gap-2">
-        <input
-          type="text"
-          placeholder="Write a comment"
-          aria-label="Write a comment"
-          class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200"
-          [(ngModel)]="newComment"
-          (keyup.enter)="postComment()"
-        />
-        <button
-          type="button"
-          style="border-radius: 0.5rem"
-          class="border border-slate-300 bg-white px-4 py-1.5 font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          [disabled]="!newComment.trim()"
-          (click)="postComment()"
-        >
-          Post
-        </button>
-      </div>
-    </div>
-
     <!-- Footer: sign-off and actions -->
-    <div class="flex flex-wrap items-center justify-between gap-4 rounded-b-xl bg-slate-50 px-6 py-4 sm:px-8">
-      <div class="text-sm text-slate-600">
-        <div>Prepared by <span class="font-medium text-slate-900">{{ user.name }}</span></div>
-        <div>Date submitted: <span class="font-medium text-slate-900">{{ dateSubmitted || 'Not yet submitted' }}</span></div>
-      </div>
-
+    <div class="flex flex-wrap items-center justify-end gap-4 rounded-b-xl bg-slate-50 px-6 py-4 sm:px-8">
       <div class="flex flex-wrap items-center gap-3">
         @if (message) {
           <span class="text-sm" [class]="isError ? 'text-red-700' : 'text-green-700'">{{ message }}</span>
