@@ -7,13 +7,21 @@
         </div>
         <a
             routerLink="/pastor/new-representative"
-            class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-[#0F4A30] px-3 text-xs font-medium text-white shadow-sm transition hover:bg-[#0c3d27] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-1"
+            class="inline-flex !no-underline h-8 shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#0F4A30] px-3 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#0B3A25] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-2 active:bg-[#082E1D]"
         >
-            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z" />
+            <svg
+                class="h-3.5 w-3.5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+            >
+                <path
+                    d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"
+                />
             </svg>
             New Representative
         </a>
+
     </div>
 
     <!-- Card: search + table -->
@@ -36,22 +44,10 @@
                 />
             </div>
 
-            <button
-                type="button"
-                (click)="searchRepresentatives()"
-                class="h-8 rounded-md bg-[#0F4A30] px-3 text-xs font-medium text-white transition hover:bg-[#0c3d27] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-1"
-            >
-                Search
-            </button>
+            <button app-button type="button" (click)="searchRepresentatives()">Search</button>
 
             @if (search()) {
-                <button
-                    type="button"
-                    (click)="clearSearch()"
-                    class="h-8 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-                >
-                    Clear
-                </button>
+                <button app-button variant="secondary" type="button" (click)="clearSearch()">Clear</button>
             }
         </div>
 
@@ -64,33 +60,28 @@
                         <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Church</th>
                         <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Birthdate</th>
                         <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Email</th>
-                        <th class="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-500">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody class="divide-y divide-slate-100">
                     @if (loading()) {
                         <tr>
-                            <td colspan="5" class="px-3 py-8 text-center text-xs text-slate-500">
+                            <td colspan="4" class="px-3 py-8 text-center text-xs text-slate-500">
                                 Loading representatives...
                             </td>
                         </tr>
                     } @else if (error()) {
                         <tr>
-                            <td colspan="5" class="bg-red-50 px-3 py-6 text-center text-xs text-red-700">
+                            <td colspan="4" class="bg-red-50 px-3 py-6 text-center text-xs text-red-700">
                                 {{ error() }}
-                                <button
-                                    type="button"
-                                    (click)="loadRepresentatives()"
-                                    class="ml-2 font-semibold underline hover:text-red-800"
-                                >
+                                <button app-button variant="link" size="sm" type="button" (click)="loadRepresentatives()">
                                     Retry
                                 </button>
                             </td>
                         </tr>
                     } @else if (representatives().length === 0) {
                         <tr>
-                            <td colspan="5" class="px-3 py-8 text-center">
+                            <td colspan="4" class="px-3 py-8 text-center">
                                 <p class="text-xs font-medium text-slate-700">No representatives found</p>
                                 <p class="mt-0.5 text-xs text-slate-400">
                                     No church representatives are currently assigned to the churches in your district.
@@ -99,7 +90,12 @@
                         </tr>
                     } @else {
                         @for (representative of representatives(); track representative.user_id) {
-                            <tr class="transition-colors hover:bg-slate-50">
+                            <tr
+                                [routerLink]="['/pastor/view-representatives', representative.user_id, 'edit']"
+                                tabindex="0"
+                                (keydown.enter)="$any($event.currentTarget).click()"
+                                class="cursor-pointer transition-colors hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F4A30]"
+                            >
                                 <td class="px-3 py-2 text-xs font-medium text-slate-900">
                                     {{ representative.first_name }}
                                     @if (representative.middle_name) { {{ representative.middle_name }} }
@@ -114,29 +110,6 @@
                                 </td>
                                 <td class="px-3 py-2 text-xs text-slate-600">
                                     {{ representative.email }}
-                                </td>
-                                <td class="whitespace-nowrap px-3 py-2 text-right">
-                                    <div class="inline-flex items-center gap-1">
-                                        <a
-                                            [routerLink]="['/pastor/view-representatives', representative.user_id, 'edit']"
-                                            class="inline-flex h-7 items-center gap-1 rounded-md border border-slate-300 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-1"
-                                        >
-                                            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                <path d="M13.59 2.59a2 2 0 112.83 2.83l-9.3 9.3-3.54.7.7-3.54 9.31-9.29z" />
-                                            </svg>
-                                            Edit
-                                        </a>
-                                        <button
-                                            type="button"
-                                            (click)="deleteRepresentative(representative)"
-                                            class="inline-flex h-7 items-center gap-1 rounded-md border border-red-200 bg-white px-2 text-xs font-medium text-red-600 transition hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1"
-                                        >
-                                            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                <path fill-rule="evenodd" d="M8 2a1 1 0 00-.9.55L6.38 4H4a1 1 0 100 2h.1l.7 9.1A2 2 0 006.8 17h6.4a2 2 0 002-1.9l.7-9.1h.1a1 1 0 100-2h-2.38l-.72-1.45A1 1 0 0012 2H8zm0 6a1 1 0 011 1v5a1 1 0 11-2 0V9a1 1 0 011-1zm4 1a1 1 0 10-2 0v5a1 1 0 102 0V9z" clip-rule="evenodd" />
-                                            </svg>
-                                            Delete
-                                        </button>
-                                    </div>
                                 </td>
                             </tr>
                         }
