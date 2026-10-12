@@ -6,21 +6,10 @@
     <div class="form-header">
 
       <div>
-        <div class="record-label">BAPTISM RECORD</div>
+
 
         <h1>Add Baptism Record</h1>
-
-        <p>
-          Eastern Nueva Vizcaya · District Pastor Records · 2026
-        </p>
       </div>
-
-      <button
-        type="button"
-        routerLink="/pastor/deathbap"
-        class="back-button">
-        ← Back to Records
-      </button>
 
     </div>
 
@@ -173,24 +162,6 @@
               class="form-control"
               [(ngModel)]="baptism.date_of_baptism"
               required>
-          </div>
-
-
-          <!-- Age -->
-          <div class="form-group">
-            <label for="age">
-              Age
-            </label>
-
-            <input
-              id="age"
-              type="number"
-              name="age"
-              class="form-control"
-              [(ngModel)]="age"
-              placeholder="Age"
-              min="0"
-              readonly>
           </div>
 
 

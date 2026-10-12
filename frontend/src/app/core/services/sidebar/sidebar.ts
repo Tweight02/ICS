@@ -27,7 +27,7 @@ export class SidebarService {
 },
 
           {
-            label: 'Baptism and Death',
+            label: 'Personal Report',
             route: '/pastor/baptism',
             icon: 'bi-droplet'
           },
