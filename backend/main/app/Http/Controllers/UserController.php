@@ -552,4 +552,18 @@ public function districtPastor(int $churchId)
         ],
     ]);
 }
+
+
+public function delete_pastor($id)
+{
+    $pastor = User::where('role', 'pastor')
+        ->findOrFail($id);
+
+    $pastor->delete();
+
+    return response()->json([
+        'message' => 'Pastor deleted successfully.',
+    ]);
+}
+
 }

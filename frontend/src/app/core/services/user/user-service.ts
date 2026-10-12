@@ -216,6 +216,19 @@ updateRepresentative(
     );
 }
 
+
+deletePastor(id: number | string) {
+  return this.http.delete<{
+    message: string;
+  }>(
+    `${this.apiUrl}/assistant/pastors/${id}`,
+    {
+      withCredentials: true,
+    }
+  );
+}
+
+
 checkDistrictPastor(churchId: number) {
     return this.http.get<{
         exists: boolean;

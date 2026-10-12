@@ -1,16 +1,19 @@
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { UserService } from '../../../core/services/user/user-service'; // adjust the path
+
+import { UserService } from '../../../core/services/user/user-service';
 import { Pastor } from '../../../core/models/pastor.model';
 import { Church } from '../../../core/models/church.model';
 import { Department } from '../../../core/models/department.model';
+import Swal from 'sweetalert2';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, RouterLink],
   selector: 'app-edit-user',
   styleUrl: './edit-user.css',
   templateUrl: './edit-user.html',
@@ -21,7 +24,7 @@ export class EditUser implements OnInit {
   private router = inject(Router);
   private userService = inject(UserService);
 
-  readonly backUrl = '/assistant/view-user'; // full path to your list page; adjust to match your route prefix
+  readonly backUrl = '/assistant/view-user';
   private id = this.route.snapshot.paramMap.get('id')!;
 
   pastor = signal<Pastor | null>(null);
@@ -31,6 +34,8 @@ export class EditUser implements OnInit {
   loading = signal(true);
   loadError = signal<string | null>(null);
   saving = signal(false);
+  deleting = signal(false);
+  editing = signal(false);
   submitErrors = signal<string[]>([]);
 
   form = this.fb.nonNullable.group({
@@ -43,10 +48,13 @@ export class EditUser implements OnInit {
     department_id: ['', Validators.required],
     church_id: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', Validators.minLength(8)], // optional: blank keeps the current password
+    password: ['', Validators.minLength(8)],
   });
 
-  ngOnInit() {
+  ngOnInit(): void {
+    // The form is read-only until Edit is selected.
+    this.form.disable();
+
     forkJoin({
       departments: this.userService.getDepartments(),
       districts: this.userService.getDistricts(),
@@ -64,7 +72,7 @@ export class EditUser implements OnInit {
           middle_name: p.middle_name ?? '',
           last_name: p.last_name,
           extension_name: p.extension_name ?? '',
-          birthdate: p.birthdate?.slice(0, 10) ?? '', // <input type="date"> needs yyyy-MM-dd
+          birthdate: p.birthdate?.slice(0, 10) ?? '',
           gender: p.gender,
           department_id: String(p.department_id),
           church_id: String(p.church_id),
@@ -72,6 +80,7 @@ export class EditUser implements OnInit {
           password: '',
         });
 
+        this.form.disable();
         this.loading.set(false);
       },
       error: () => {
@@ -81,15 +90,69 @@ export class EditUser implements OnInit {
     });
   }
 
-  onSubmit() {
+  // Call after loading and patching the original pastor data.
+  private setReadOnly(): void {
+    this.form.disable({ emitEvent: false });
+    this.editing.set(false);
+  }
+
+  enableEdit(): void {
+    this.submitErrors.set([]);
+    this.form.enable({ emitEvent: false });
+
+    // Password should start empty when editing begins.
+    this.form.get('password')?.reset('', { emitEvent: false });
+
+    this.editing.set(true);
+  }
+
+  cancelEdit(): void {
+    const p = this.pastor();
+
+    if (!p) return;
+
+    this.form.reset(
+      {
+        first_name: p.first_name ?? '',
+        middle_name: p.middle_name ?? '',
+        last_name: p.last_name ?? '',
+        extension_name: p.extension_name ?? '',
+        birthdate: p.birthdate
+          ? String(p.birthdate).slice(0, 10)
+          : '',
+        gender: p.gender ?? '',
+        department_id: p.department_id != null
+          ? String(p.department_id)
+          : '',
+        church_id: p.church_id != null
+          ? String(p.church_id)
+          : '',
+        email: p.email ?? '',
+        password: '',
+      },
+      { emitEvent: false }
+    );
+
+    this.form.disable({ emitEvent: false });
+    this.editing.set(false);
+    this.submitErrors.set([]);
+  }
+
+
+  onSubmit(): void {
+    if (!this.editing() || this.saving()) return;
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    const payload: Record<string, unknown> = { ...this.form.getRawValue() };
+    const payload: Record<string, unknown> = {
+      ...this.form.getRawValue(),
+    };
+
     if (!payload['password']) {
-      delete payload['password']; // don't send a blank password
+      delete payload['password'];
     }
 
     this.saving.set(true);
@@ -102,26 +165,106 @@ export class EditUser implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
-        const errors = err.error?.errors as Record<string, string[]> | undefined;
+
+        const errors = err.error?.errors as
+          | Record<string, string[]>
+          | undefined;
+
         this.submitErrors.set(
-          errors ? Object.values(errors).flat() : [err.error?.message ?? 'Something went wrong.'],
+          errors
+            ? Object.values(errors).flat()
+            : [err.error?.message ?? 'Something went wrong.'],
         );
       },
     });
   }
 
-  initials(p: Pastor) {
-    return ((p.first_name?.[0] ?? '') + (p.last_name?.[0] ?? '')).toUpperCase();
+
+async onDelete(): Promise<void> {
+  if (this.deleting()) return;
+
+  const p = this.pastor();
+  if (!p) return;
+
+  const result = await Swal.fire({
+    title: 'Delete Pastor?',
+    text: `Are you sure you want to delete ${p.first_name} ${p.last_name}? This action cannot be undone.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete',
+    cancelButtonText: 'Cancel',
+    reverseButtons: true,
+    focusCancel: true,
+    confirmButtonColor: '#be123c',
+    cancelButtonColor: '#64748b',
+    customClass: {
+      popup: 'rounded-xl',
+      confirmButton: 'rounded-lg px-4 py-2',
+      cancelButton: 'rounded-lg px-4 py-2',
+    },
+  });
+
+  // Stop if the user cancels or closes the dialog.
+  if (!result.isConfirmed) return;
+
+  this.deleting.set(true);
+  this.submitErrors.set([]);
+
+  this.userService.deletePastor(this.id).subscribe({
+    next: async () => {
+      this.deleting.set(false);
+
+      await Swal.fire({
+        title: 'Pastor Deleted',
+        text: `${p.first_name} ${p.last_name} was deleted successfully.`,
+        icon: 'success',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#065f46',
+      });
+
+      await this.router.navigateByUrl(this.backUrl);
+    },
+    error: async (err: HttpErrorResponse) => {
+      this.deleting.set(false);
+
+      const message =
+        err.error?.message ??
+        'Could not delete this pastor. Please try again.';
+
+      this.submitErrors.set([message]);
+
+      await Swal.fire({
+        title: 'Deletion Failed',
+        text: message,
+        icon: 'error',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#065f46',
+      });
+    },
+  });
+}
+
+
+  initials(p: Pastor): string {
+    return (
+      (p.first_name?.[0] ?? '') + (p.last_name?.[0] ?? '')
+    ).toUpperCase();
   }
 
-  age(birthdate: string) {
+  age(birthdate: string): number {
     const born = new Date(birthdate);
     const today = new Date();
+
     let years = today.getFullYear() - born.getFullYear();
-    const m = today.getMonth() - born.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < born.getDate())) {
+    const monthDifference = today.getMonth() - born.getMonth();
+
+    if (
+      monthDifference < 0 ||
+      (monthDifference === 0 && today.getDate() < born.getDate())
+    ) {
       years--;
     }
+
     return years;
   }
 }

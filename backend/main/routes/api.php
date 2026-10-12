@@ -120,6 +120,12 @@ Route::prefix('assistant')->group(function () {
         'update_pastor',
     ]);
 
+    Route::delete(
+        '/assistant/pastors/{id}',
+        [UserController::class, 'delete_pastor']
+    );
+
+
     Route::post('/pastors/bulk-transfer', [
         UserController::class,
         'bulk_transfer',

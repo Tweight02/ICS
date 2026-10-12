@@ -8,9 +8,10 @@ import {
 import Swal from 'sweetalert2';
 import { UserService } from '../../../core/services/user/user-service';
 import { Church } from '../../../core/models/church.model';
+import { RouterLink } from '@angular/router';
 
 @Component({
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   selector: 'app-new-user',
   styleUrl: './new-user.css',
   templateUrl: './new-user.html',
@@ -37,7 +38,7 @@ export class NewUser implements OnInit {
 
   form = new FormGroup({
     first_name: new FormControl('', Validators.required),
-    middle_name: new FormControl(''),
+    middle_name: new FormControl('', Validators.required),
     last_name: new FormControl('', Validators.required),
     extension_name: new FormControl(''),
     birthdate: new FormControl('', Validators.required),
