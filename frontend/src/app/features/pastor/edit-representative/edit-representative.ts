@@ -25,6 +25,8 @@ export class EditRepresentative implements OnInit {
     churchName = signal('');
     loading = signal(true);
     saving = signal(false);
+    deleting = signal(false);
+    editing = signal(false);
     loadFailed = signal(false);
     error = signal('');
     fieldErrors = signal<Record<string, string>>({});
@@ -41,6 +43,9 @@ export class EditRepresentative implements OnInit {
         email: ['', [Validators.required, Validators.email]],
         password: ['', Validators.minLength(8)]
     });
+
+    /** Snapshot of the loaded values, used to restore the form on Cancel */
+    private original: ReturnType<EditRepresentative['form']['getRawValue']> | null = null;
 
     ngOnInit(): void {
         this.id = Number(this.route.snapshot.paramMap.get('id'));
@@ -70,6 +75,11 @@ export class EditRepresentative implements OnInit {
                         email: r.email,
                         password: ''
                     });
+
+                    // Start in view-only mode
+                    this.original = this.form.getRawValue();
+                    this.form.disable();
+                    this.editing.set(false);
                 },
                 error: (err) => {
                     console.error('Failed to load representative:', err);
@@ -79,6 +89,23 @@ export class EditRepresentative implements OnInit {
                     );
                 }
             });
+    }
+
+    startEdit(): void {
+        this.error.set('');
+        this.fieldErrors.set({});
+        this.form.enable();
+        this.editing.set(true);
+    }
+
+    cancelEdit(): void {
+        if (this.original) {
+            this.form.reset(this.original);
+        }
+        this.form.disable();
+        this.error.set('');
+        this.fieldErrors.set({});
+        this.editing.set(false);
     }
 
     async save(): Promise<void> {
@@ -156,6 +183,52 @@ export class EditRepresentative implements OnInit {
                             err?.error?.message ?? 'Unable to save changes. Please try again.'
                         );
                     }
+                }
+            });
+    }
+
+    async deleteRepresentative(): Promise<void> {
+        const { first_name, last_name } = this.form.getRawValue();
+
+        const result = await Swal.fire({
+            title: 'Delete representative?',
+            text: `${first_name} ${last_name} will be permanently removed. This can't be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            reverseButtons: true
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        this.deleting.set(true);
+        this.error.set('');
+
+        this.rep.deleteRepresentative(this.id)
+            .pipe(finalize(() => this.deleting.set(false)))
+            .subscribe({
+                next: () => {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Representative deleted',
+                        showConfirmButton: false,
+                        timer: 2500,
+                        timerProgressBar: true
+                    });
+                    this.router.navigate(['/pastor/view-representatives']);
+                },
+                error: (err) => {
+                    console.error('Failed to delete representative:', err);
+                    this.error.set(
+                        err?.error?.message ?? 'Unable to delete this representative. Please try again.'
+                    );
                 }
             });
     }

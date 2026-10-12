@@ -1,181 +1,271 @@
-<div class="mx-auto max-w-3xl px-4 py-4">
-    <!-- Header -->
-    <div class="mb-3 flex items-center justify-between gap-3">
-        <div>
-            <h1 class="text-base font-semibold text-slate-900">Edit Representative</h1>
-            <p class="text-xs text-slate-500">Update the details of this church representative.</p>
-        </div>
-        <a
-            routerLink="/pastor/view-representatives"
-            class="inline-flex h-8 shrink-0 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-        >
-            Back to list
-        </a>
-    </div>
+<div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
+    <!-- Back link -->
+    <a
+        routerLink="/pastor/view-representatives"
+        class="mb-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-slate-500 transition hover:text-[#0F4A30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40"
+    >
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M12.7 4.3a1 1 0 010 1.4L8.4 10l4.3 4.3a1 1 0 01-1.4 1.4l-5-5a1 1 0 010-1.4l5-5a1 1 0 011.4 0z" clip-rule="evenodd" />
+        </svg>
+        All representatives
+    </a>
 
-    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         @if (loading()) {
-            <p class="px-3 py-8 text-center text-xs text-slate-500">Loading representative...</p>
+            <!-- Loading skeleton -->
+            <div class="animate-pulse p-6" role="status" aria-label="Loading representative">
+                <div class="flex items-center gap-4">
+                    <div class="h-14 w-14 rounded-full bg-slate-200"></div>
+                    <div class="space-y-2">
+                        <div class="h-4 w-40 rounded bg-slate-200"></div>
+                        <div class="h-3 w-56 rounded bg-slate-100"></div>
+                    </div>
+                </div>
+                <div class="mt-8 grid gap-5 sm:grid-cols-2">
+                    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+                        <div class="space-y-2">
+                            <div class="h-3 w-20 rounded bg-slate-100"></div>
+                            <div class="h-10 rounded-lg bg-slate-100"></div>
+                        </div>
+                    }
+                </div>
+            </div>
         } @else if (loadFailed()) {
-            <div class="bg-red-50 px-3 py-6 text-center text-xs text-red-700">
-                {{ error() }}
-                <button type="button" (click)="loadRepresentative()" class="ml-2 font-semibold underline hover:text-red-800">
-                    Retry
+            <!-- Error state -->
+            <div class="flex flex-col items-center px-6 py-14 text-center" role="alert">
+                <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-600">
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <p class="text-sm font-medium text-slate-900">Couldn't load this representative</p>
+                <p class="mt-1 max-w-sm text-sm text-slate-500">{{ error() }}</p>
+                <button
+                    type="button"
+                    (click)="loadRepresentative()"
+                    class="mt-4 inline-flex h-9 items-center rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2"
+                >
+                    Try again
                 </button>
             </div>
         } @else {
             <form [formGroup]="form" (ngSubmit)="save()" novalidate>
-                @if (error()) {
-                    <div class="border-b border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                        {{ error() }}
-                    </div>
-                }
-
-                <div class="grid gap-3 p-4 sm:grid-cols-2">
-                    <!-- Church (read-only) -->
-                    <div class="sm:col-span-2">
-                        <label class="mb-1 block text-xs font-medium text-slate-700">Church</label>
-                        <div class="flex h-8 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-xs text-slate-600">
-                            {{ churchName() }}
+                <!-- Profile header -->
+                <div class="flex flex-col gap-4 border-b border-slate-200 bg-gradient-to-b from-[#0F4A30]/[0.04] to-transparent p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                    <div class="flex min-w-0 items-center gap-4">
+                        <div
+                            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#0F4A30] text-lg font-semibold uppercase text-white ring-4 ring-white"
+                            aria-hidden="true"
+                        >
+                            {{ form.get('first_name')?.value?.charAt(0) }}{{ form.get('last_name')?.value?.charAt(0) }}
+                        </div>
+                        <div class="min-w-0">
+                            <h1 class="truncate text-lg font-semibold text-slate-900">
+                                {{ editing() ? 'Edit representative' : 'Representative details' }}
+                            </h1>
+                            <p class="truncate text-sm text-slate-500">
+                                {{ editing() ? 'Update the details of this church representative.' : 'Details of this church representative.' }}
+                            </p>
                         </div>
                     </div>
 
-                    <!-- First name -->
-                    <div>
-                        <label for="first_name" class="mb-1 block text-xs font-medium text-slate-700">First name</label>
-                        <input
-                            id="first_name" type="text" formControlName="first_name"
-                            class="h-8 w-full rounded-md border bg-white px-3 text-xs text-slate-800 outline-none transition focus:ring-1"
-                            [class]="invalid('first_name')
-                                ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
-                                : 'border-slate-300 focus:border-[#0F4A30] focus:ring-[#0F4A30]'"
-                        />
-                        @if (invalid('first_name')) {
-                            <p class="mt-1 text-[11px] text-red-600">{{ serverError('first_name') || 'First name is required.' }}</p>
-                        }
-                    </div>
+                    @if (!editing()) {
+                        <div class="flex shrink-0 items-center gap-2">
+                            <button
+                                type="button"
+                                (click)="startEdit()"
+                                class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M13.6 3.4a2 2 0 112.8 2.8l-9 9-3.7.9.9-3.7 9-9z" />
+                                </svg>
+                                Edit
+                            </button>
+                            <button
+                                type="button"
+                                (click)="deleteRepresentative()"
+                                [disabled]="deleting()"
+                                class="inline-flex h-9 items-center rounded-lg border border-red-200 bg-white px-4 text-sm font-medium text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {{ deleting() ? 'Deleting...' : 'Delete' }}
+                            </button>
+                        </div>
+                    }
+                </div>
 
-                    <!-- Middle name -->
-                    <div>
-                        <label for="middle_name" class="mb-1 block text-xs font-medium text-slate-700">
-                            Middle name <span class="font-normal text-slate-400">(optional)</span>
-                        </label>
-                        <input
-                            id="middle_name" type="text" formControlName="middle_name"
-                            class="h-8 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition focus:border-[#0F4A30] focus:ring-1 focus:ring-[#0F4A30]"
-                        />
+                @if (error()) {
+                    <div class="flex items-start gap-2 border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700 sm:px-6" role="alert">
+                        <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                        </svg>
+                        <span>{{ error() }}</span>
                     </div>
+                }
 
-                    <!-- Last name -->
-                    <div>
-                        <label for="last_name" class="mb-1 block text-xs font-medium text-slate-700">Last name</label>
-                        <input
-                            id="last_name" type="text" formControlName="last_name"
-                            class="h-8 w-full rounded-md border bg-white px-3 text-xs text-slate-800 outline-none transition focus:ring-1"
-                            [class]="invalid('last_name')
-                                ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
-                                : 'border-slate-300 focus:border-[#0F4A30] focus:ring-[#0F4A30]'"
-                        />
-                        @if (invalid('last_name')) {
-                            <p class="mt-1 text-[11px] text-red-600">{{ serverError('last_name') || 'Last name is required.' }}</p>
-                        }
-                    </div>
+                <div class="space-y-8 p-5 sm:p-6">
+                    <!-- Church -->
+                    <section>
+                        <h2 class="text-sm font-semibold text-slate-900">Church</h2>
+                        <div class="mt-3 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+                            <svg class="h-4 w-4 shrink-0 text-[#0F4A30]" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path d="M10 2a1 1 0 011 1v1h1a1 1 0 110 2h-1v1.4l4.6 3.1a1 1 0 01.4.8V17a1 1 0 01-1 1H4a1 1 0 01-1-1v-5.7a1 1 0 01.4-.8L9 7.4V6H8a1 1 0 010-2h1V3a1 1 0 011-1z" />
+                            </svg>
+                            <span class="truncate text-sm font-medium text-slate-700">{{ churchName() }}</span>
+                            <span class="ml-auto shrink-0 text-xs text-slate-400">Can't be changed</span>
+                        </div>
+                    </section>
 
-                    <!-- Extension -->
-                    <div>
-                        <label for="extension_name" class="mb-1 block text-xs font-medium text-slate-700">
-                            Extension <span class="font-normal text-slate-400">(Jr., Sr., III)</span>
-                        </label>
-                        <input
-                            id="extension_name" type="text" formControlName="extension_name"
-                            class="h-8 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition focus:border-[#0F4A30] focus:ring-1 focus:ring-[#0F4A30]"
-                        />
-                    </div>
+                    <!-- Personal information -->
+                    <section>
+                        <h2 class="text-sm font-semibold text-slate-900">Personal information</h2>
+                        <div class="mt-3 grid gap-x-4 gap-y-5 sm:grid-cols-6">
+                            <!-- First name -->
+                            <div class="sm:col-span-3">
+                                <label for="first_name" class="mb-1.5 block text-sm font-medium text-slate-700">First name</label>
+                                <input
+                                    id="first_name" type="text" formControlName="first_name"
+                                    [attr.aria-invalid]="invalid('first_name')"
+                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
+                                />
+                                @if (invalid('first_name')) {
+                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('first_name') || 'Enter a first name.' }}</p>
+                                }
+                            </div>
 
-                    <!-- Birthdate -->
-                    <div>
-                        <label for="birthdate" class="mb-1 block text-xs font-medium text-slate-700">Birthdate</label>
-                        <input
-                            id="birthdate" type="date" formControlName="birthdate"
-                            class="h-8 w-full rounded-md border bg-white px-3 text-xs text-slate-800 outline-none transition focus:ring-1"
-                            [class]="invalid('birthdate')
-                                ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
-                                : 'border-slate-300 focus:border-[#0F4A30] focus:ring-[#0F4A30]'"
-                        />
-                        @if (invalid('birthdate')) {
-                            <p class="mt-1 text-[11px] text-red-600">{{ serverError('birthdate') || 'Birthdate is required.' }}</p>
-                        }
-                    </div>
+                            <!-- Middle name -->
+                            <div class="sm:col-span-3">
+                                <label for="middle_name" class="mb-1.5 flex items-baseline gap-1.5 text-sm font-medium text-slate-700">
+                                    Middle name
+                                    @if (editing()) { <span class="text-xs font-normal text-slate-400">Optional</span> }
+                                </label>
+                                <input
+                                    id="middle_name" type="text" formControlName="middle_name"
+                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
+                                />
+                            </div>
 
-                    <!-- Gender -->
-                    <div>
-                        <label for="gender" class="mb-1 block text-xs font-medium text-slate-700">Gender</label>
-                        <select
-                            id="gender" formControlName="gender"
-                            class="h-8 w-full rounded-md border bg-white px-2 text-xs text-slate-800 outline-none transition focus:ring-1"
-                            [class]="invalid('gender')
-                                ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
-                                : 'border-slate-300 focus:border-[#0F4A30] focus:ring-[#0F4A30]'"
+                            <!-- Last name -->
+                            <div class="sm:col-span-4">
+                                <label for="last_name" class="mb-1.5 block text-sm font-medium text-slate-700">Last name</label>
+                                <input
+                                    id="last_name" type="text" formControlName="last_name"
+                                    [attr.aria-invalid]="invalid('last_name')"
+                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
+                                />
+                                @if (invalid('last_name')) {
+                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('last_name') || 'Enter a last name.' }}</p>
+                                }
+                            </div>
+
+                            <!-- Extension -->
+                            <div class="sm:col-span-2">
+                                <label for="extension_name" class="mb-1.5 flex items-baseline gap-1.5 text-sm font-medium text-slate-700">
+                                    Suffix
+                                    @if (editing()) { <span class="text-xs font-normal text-slate-400">Jr., Sr., III</span> }
+                                </label>
+                                <input
+                                    id="extension_name" type="text" formControlName="extension_name"
+                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
+                                />
+                            </div>
+
+                            <!-- Birthdate -->
+                            <div class="sm:col-span-3">
+                                <label for="birthdate" class="mb-1.5 block text-sm font-medium text-slate-700">Birthdate</label>
+                                <input
+                                    id="birthdate" type="date" formControlName="birthdate"
+                                    [attr.aria-invalid]="invalid('birthdate')"
+                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
+                                />
+                                @if (invalid('birthdate')) {
+                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('birthdate') || 'Enter a birthdate.' }}</p>
+                                }
+                            </div>
+
+                            <!-- Gender -->
+                            <div class="sm:col-span-3">
+                                <label for="gender" class="mb-1.5 block text-sm font-medium text-slate-700">Gender</label>
+                                <select
+                                    id="gender" formControlName="gender"
+                                    [attr.aria-invalid]="invalid('gender')"
+                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:appearance-none disabled:border-transparent disabled:bg-slate-50 disabled:px-3 disabled:text-slate-700"
+                                >
+                                    <option value="" disabled>Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                @if (invalid('gender')) {
+                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('gender') || 'Select a gender.' }}</p>
+                                }
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Account -->
+                    <section>
+                        <h2 class="text-sm font-semibold text-slate-900">Account</h2>
+                        <div class="mt-3 grid gap-x-4 gap-y-5 sm:grid-cols-2">
+                            <!-- Email -->
+                            <div [class.sm:col-span-2]="!editing()">
+                                <label for="email" class="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                                <input
+                                    id="email" type="email" formControlName="email"
+                                    [attr.aria-invalid]="invalid('email')"
+                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
+                                />
+                                @if (invalid('email')) {
+                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('email') || 'Enter a valid email address.' }}</p>
+                                }
+                            </div>
+
+                            <!-- Password (edit mode only) -->
+                            @if (editing()) {
+                                <div>
+                                    <label for="password" class="mb-1.5 block text-sm font-medium text-slate-700">New password</label>
+                                    <input
+                                        id="password" type="password" formControlName="password" autocomplete="new-password"
+                                        placeholder="Leave blank to keep current"
+                                        [attr.aria-invalid]="invalid('password')"
+                                        class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
+                                    />
+                                    @if (invalid('password')) {
+                                        <p class="mt-1.5 text-xs text-red-600">{{ serverError('password') || 'Use at least 8 characters.' }}</p>
+                                    } @else {
+                                        <p class="mt-1.5 text-xs text-slate-400">At least 8 characters.</p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Footer (edit mode only) -->
+                @if (editing()) {
+                    <div class="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/80 px-5 py-3 sm:px-6">
+                        <button
+                            type="button"
+                            (click)="cancelEdit()"
+                            [disabled]="saving()"
+                            class="inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            <option value="" disabled>Select gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
-                        </select>
-                        @if (invalid('gender')) {
-                            <p class="mt-1 text-[11px] text-red-600">{{ serverError('gender') || 'Gender is required.' }}</p>
-                        }
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            [disabled]="saving()"
+                            class="inline-flex h-9 items-center gap-2 rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            @if (saving()) {
+                                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".3" stroke-width="3" />
+                                    <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                                </svg>
+                            }
+                            {{ saving() ? 'Saving...' : 'Save changes' }}
+                        </button>
                     </div>
-
-                    <!-- Email -->
-                    <div>
-                        <label for="email" class="mb-1 block text-xs font-medium text-slate-700">Email</label>
-                        <input
-                            id="email" type="email" formControlName="email"
-                            class="h-8 w-full rounded-md border bg-white px-3 text-xs text-slate-800 outline-none transition focus:ring-1"
-                            [class]="invalid('email')
-                                ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
-                                : 'border-slate-300 focus:border-[#0F4A30] focus:ring-[#0F4A30]'"
-                        />
-                        @if (invalid('email')) {
-                            <p class="mt-1 text-[11px] text-red-600">{{ serverError('email') || 'Enter a valid email address.' }}</p>
-                        }
-                    </div>
-
-                    <!-- Password -->
-                    <div>
-                        <label for="password" class="mb-1 block text-xs font-medium text-slate-700">
-                            New password <span class="font-normal text-slate-400">(leave blank to keep current)</span>
-                        </label>
-                        <input
-                            id="password" type="password" formControlName="password" autocomplete="new-password"
-                            class="h-8 w-full rounded-md border bg-white px-3 text-xs text-slate-800 outline-none transition focus:ring-1"
-                            [class]="invalid('password')
-                                ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
-                                : 'border-slate-300 focus:border-[#0F4A30] focus:ring-[#0F4A30]'"
-                        />
-                        @if (invalid('password')) {
-                            <p class="mt-1 text-[11px] text-red-600">{{ serverError('password') || 'Password must be at least 8 characters.' }}</p>
-                        }
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-2">
-                    <a
-                        routerLink="/pastor/view-representatives"
-                        class="inline-flex h-8 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-                    >
-                        Cancel
-                    </a>
-                    <button
-                        type="submit"
-                        [disabled]="saving()"
-                        class="inline-flex h-8 items-center rounded-md bg-[#0F4A30] px-3 text-xs font-medium text-white transition hover:bg-[#0c3d27] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        {{ saving() ? 'Saving...' : 'Save changes' }}
-                    </button>
-                </div>
+                }
             </form>
         }
     </div>
