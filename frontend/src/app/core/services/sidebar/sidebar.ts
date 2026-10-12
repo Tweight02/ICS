@@ -37,11 +37,6 @@ export class SidebarService {
             icon: 'bi-calendar-event'
           },
           {
-            label: 'Church Role',
-            route: '/pastor/church-role',
-            icon: 'bi-people'
-          },
-          {
             label: 'Representatives',
             route: '/pastor/view-representatives',
             icon: 'bi-people'
