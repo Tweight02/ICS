@@ -1,6 +1,5 @@
-import { DatePipe, TitleCasePipe } from '@angular/common';
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -10,18 +9,16 @@ import { Pastor } from '../../../core/models/pastor.model';
 import { Church } from '../../../core/models/church.model';
 
 @Component({
-  imports: [
-    TitleCasePipe,
-    RouterLink
-  ],
   selector: 'app-view-user',
-  styleUrl: './view-user.css',
+  standalone: true,
+  imports: [RouterLink],
   templateUrl: './view-user.html',
+  styleUrl: './view-user.css',
 })
 export class ViewUser implements OnInit {
-
   private userService = inject(UserService);
   private destroyRef = inject(DestroyRef);
+  private router = inject(Router);
 
   private search$ = new Subject<string>();
 
@@ -42,26 +39,22 @@ export class ViewUser implements OnInit {
   from = signal(0);
   to = signal(0);
 
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   // Bulk transfer
   bulkMode = signal(false);
-
   selectedPastorIds = signal<number[]>([]);
 
-  individualDestinations = signal<
-    Record<number, number | null>
-  >({});
+  individualDestinations = signal<Record<number, number | null>>({});
 
-  ngOnInit() {
-
+  ngOnInit(): void {
     this.userService.getDistricts().subscribe({
       next: (res) => {
         this.districts.set(res.data);
       },
       error: () => {
         this.error.set('Failed to load districts.');
-      }
+      },
     });
 
     this.search$
@@ -71,18 +64,36 @@ export class ViewUser implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((value) => {
-
         this.search.set(value);
         this.page.set(1);
-
         this.loadPastors();
       });
 
     this.loadPastors();
   }
 
-  loadPastors() {
+  // =========================================================
+  // VIEW PASTOR
+  // =========================================================
 
+  viewPastor(pastor: Pastor): void {
+    if (this.bulkMode()) {
+      return;
+    }
+
+    this.router.navigate(['/assistant/edit-user', pastor.user_id]);
+  }
+
+  onRowSpace(event: KeyboardEvent, pastor: Pastor): void {
+    event.preventDefault();
+    this.viewPastor(pastor);
+  }
+
+  // =========================================================
+  // LOAD PASTORS
+  // =========================================================
+
+  loadPastors(): void {
     this.loading.set(true);
     this.error.set(null);
 
@@ -93,10 +104,9 @@ export class ViewUser implements OnInit {
         page: this.page(),
         per_page: this.perPage,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-
         next: (res) => {
-
           this.pastors.set(res.data);
 
           this.page.set(res.current_page);
@@ -108,126 +118,96 @@ export class ViewUser implements OnInit {
 
           this.loading.set(false);
         },
-
         error: () => {
-
-          this.error.set(
-            'Failed to load pastors. Please try again.'
-          );
-
+          this.error.set('Failed to load pastors. Please try again.');
           this.loading.set(false);
-        }
-
+        },
       });
   }
 
-  onSearch(value: string) {
-
+  onSearch(value: string): void {
     this.search$.next(value.trim());
   }
 
-  onDistrictChange(value: string) {
-
+  onDistrictChange(value: string): void {
     this.churchId.set(value);
-
     this.page.set(1);
-
     this.loadPastors();
   }
 
-  prevPage() {
+  // =========================================================
+  // PAGINATION
+  // =========================================================
 
+  prevPage(): void {
     if (this.page() > 1) {
-
-      this.page.update(
-        p => p - 1
-      );
-
+      this.page.update((p) => p - 1);
       this.loadPastors();
     }
   }
 
-  nextPage() {
-
+  nextPage(): void {
     if (this.page() < this.lastPage()) {
-
-      this.page.update(
-        p => p + 1
-      );
-
+      this.page.update((p) => p + 1);
       this.loadPastors();
     }
   }
 
-  fullName(p: Pastor) {
+  // =========================================================
+  // PASTOR DISPLAY HELPERS
+  // =========================================================
 
+  fullName(p: Pastor): string {
     return [
       p.first_name,
       p.middle_name,
       p.last_name,
-      p.extension_name
+      p.extension_name,
     ]
       .filter(Boolean)
       .join(' ');
   }
 
-  initials(p: Pastor) {
-
+  initials(p: Pastor): string {
     return (
       (p.first_name?.[0] ?? '') +
       (p.last_name?.[0] ?? '')
     ).toUpperCase();
   }
 
-  genderBadge(p: Pastor) {
-
+  genderBadge(p: Pastor): string {
     return p.gender === 'female'
       ? 'bg-rose-50 text-rose-700 ring-rose-600/15'
       : 'bg-sky-50 text-sky-700 ring-sky-600/15';
   }
 
   // =========================================================
-  // BULK TRANSFER
+  // BULK TRANSFER MODE
   // =========================================================
 
-  enterBulkMode() {
-
+  enterBulkMode(): void {
     this.bulkMode.set(true);
-
     this.selectedPastorIds.set([]);
-
     this.individualDestinations.set({});
   }
 
-  cancelBulkMode() {
-
+  cancelBulkMode(): void {
     this.bulkMode.set(false);
-
     this.selectedPastorIds.set([]);
-
     this.individualDestinations.set({});
   }
 
   isSelected(userId: number): boolean {
-
-    return this.selectedPastorIds()
-      .includes(userId);
+    return this.selectedPastorIds().includes(userId);
   }
 
-  togglePastor(userId: number) {
-
-    const selected = [
-      ...this.selectedPastorIds()
-    ];
-
+  togglePastor(userId: number): void {
+    const selected = [...this.selectedPastorIds()];
     const index = selected.indexOf(userId);
 
     if (index === -1) {
-
       selected.push(userId);
-
     } else {
-
       selected.splice(index, 1);
     }
 
@@ -235,44 +215,31 @@ export class ViewUser implements OnInit {
   }
 
   allVisibleSelected(): boolean {
-
     const visible = this.pastors();
 
     if (!visible.length) {
       return false;
     }
 
-    return visible.every(
-      pastor =>
-        this.isSelected(pastor.user_id)
+    return visible.every((pastor) =>
+      this.isSelected(pastor.user_id)
     );
   }
 
-  toggleAllVisible() {
-
-    const selected = [
-      ...this.selectedPastorIds()
-    ];
+  toggleAllVisible(): void {
+    const selected = [...this.selectedPastorIds()];
 
     if (this.allVisibleSelected()) {
-
-      this.pastors().forEach(pastor => {
-
-        const index =
-          selected.indexOf(pastor.user_id);
+      this.pastors().forEach((pastor) => {
+        const index = selected.indexOf(pastor.user_id);
 
         if (index !== -1) {
-
           selected.splice(index, 1);
         }
       });
-
     } else {
-
-      this.pastors().forEach(pastor => {
-
+      this.pastors().forEach((pastor) => {
         if (!selected.includes(pastor.user_id)) {
-
           selected.push(pastor.user_id);
         }
       });
@@ -282,99 +249,64 @@ export class ViewUser implements OnInit {
   }
 
   selectedCount(): number {
-
     return this.selectedPastorIds().length;
   }
 
   updateIndividualDestination(
     userId: number,
     value: string
-  ) {
-
+  ): void {
     const destinations = {
-      ...this.individualDestinations()
+      ...this.individualDestinations(),
     };
 
-    destinations[userId] =
-      value ? Number(value) : null;
+    destinations[userId] = value ? Number(value) : null;
 
-    this.individualDestinations.set(
-      destinations
-    );
+    this.individualDestinations.set(destinations);
   }
 
-  getIndividualDestination(
-    userId: number
-  ): number | null {
-
-    return this.individualDestinations()
-      [userId] ?? null;
+  getIndividualDestination(userId: number): number | null {
+    return this.individualDestinations()[userId] ?? null;
   }
 
   // =========================================================
-  // VALIDATION
+  // TRANSFER VALIDATION
   // =========================================================
 
   validateTransfer(): string | null {
-
-    const selected =
-      this.selectedPastorIds();
+    const selected = this.selectedPastorIds();
 
     if (selected.length === 0) {
-
       return 'Please select at least one pastor.';
     }
 
-    const destinations =
-      selected.map(userId =>
-        this.getIndividualDestination(userId)
-      );
+    const destinations = selected.map((userId) =>
+      this.getIndividualDestination(userId)
+    );
 
-    // Every pastor must have a destination
-    if (
-      destinations.some(
-        destination => destination === null
-      )
-    ) {
-
+    if (destinations.some((destination) => destination === null)) {
       return 'Please assign a destination district to every selected pastor.';
     }
 
-    const destinationIds =
-      destinations as number[];
+    const destinationIds = destinations as number[];
+    const uniqueDestinations = new Set(destinationIds);
 
-    // A destination can only be used once
-    const uniqueDestinations =
-      new Set(destinationIds);
-
-    if (
-      uniqueDestinations.size !==
-      destinationIds.length
-    ) {
-
+    if (uniqueDestinations.size !== destinationIds.length) {
       return 'Each pastor must have a different destination district.';
     }
 
-    // Pastor cannot transfer to same district
     for (const userId of selected) {
+      const pastor = this.pastors().find(
+        (p) => p.user_id === userId
+      );
 
-      const pastor =
-        this.pastors().find(
-          p => p.user_id === userId
-        );
-
-      const destination =
-        this.getIndividualDestination(userId);
+      const destination = this.getIndividualDestination(userId);
 
       if (!pastor || destination === null) {
         continue;
       }
 
-      if (
-        Number(destination) ===
-        Number(pastor.church_id)
-      ) {
-
+      if (Number(destination) === Number(pastor.church_id)) {
         return `${this.fullName(pastor)} is already assigned to this district.`;
       }
     }
@@ -382,59 +314,46 @@ export class ViewUser implements OnInit {
     return null;
   }
 
-  buildTransfers() {
-
-    return this.selectedPastorIds().map(
-      userId => ({
-        user_id: userId,
-        church_id:
-          this.getIndividualDestination(
-            userId
-          )!
-      })
-    );
+  buildTransfers(): { user_id: number; church_id: number }[] {
+    return this.selectedPastorIds().map((userId) => ({
+      user_id: userId,
+      church_id: this.getIndividualDestination(userId)!,
+    }));
   }
 
   // =========================================================
-  // REVIEW
+  // REVIEW TRANSFERS
   // =========================================================
 
-  async reviewTransfers() {
+  async reviewTransfers(): Promise<void> {
+    if (this.savingTransfer()) {
+      return;
+    }
 
-    const validation =
-      this.validateTransfer();
+    const validation = this.validateTransfer();
 
     if (validation) {
-
       await Swal.fire({
         icon: 'warning',
         title: 'Invalid transfer',
         text: validation,
-        confirmButtonColor: '#0F4A30'
+        confirmButtonColor: '#0F4A30',
       });
 
       return;
     }
 
-    const transfers =
-      this.buildTransfers();
+    const transfers = this.buildTransfers();
 
     const rows = transfers
-      .map(transfer => {
+      .map((transfer) => {
+        const pastor = this.pastors().find(
+          (p) => p.user_id === transfer.user_id
+        );
 
-        const pastor =
-          this.pastors().find(
-            p =>
-              p.user_id ===
-              transfer.user_id
-          );
-
-        const destination =
-          this.districts().find(
-            d =>
-              Number(d.church_id) ===
-              Number(transfer.church_id)
-          );
+        const destination = this.districts().find(
+          (d) => Number(d.church_id) === Number(transfer.church_id)
+        );
 
         if (!pastor) {
           return '';
@@ -444,11 +363,10 @@ export class ViewUser implements OnInit {
           <div class="flex items-center justify-between gap-4 border-b border-slate-100 py-3 text-left">
             <div>
               <div class="font-medium text-slate-900">
-                ${this.fullName(pastor)}
+                ${this.escapeHtml(this.fullName(pastor))}
               </div>
-
               <div class="text-xs text-slate-500">
-                ${pastor.church?.name ?? 'Current district'}
+                ${this.escapeHtml(pastor.church?.name ?? 'Current district')}
               </div>
             </div>
 
@@ -456,9 +374,8 @@ export class ViewUser implements OnInit {
               <div class="text-xs text-slate-400">
                 Transfer to
               </div>
-
               <div class="font-medium text-[#0F4A30]">
-                ${destination?.name ?? 'Unknown district'}
+                ${this.escapeHtml(destination?.name ?? 'Unknown district')}
               </div>
             </div>
           </div>
@@ -466,88 +383,81 @@ export class ViewUser implements OnInit {
       })
       .join('');
 
-    const result =
-      await Swal.fire({
-
-        title: 'Review Transfers',
-
-        html: `
-          <div class="max-h-80 overflow-y-auto">
-            ${rows}
-          </div>
-        `,
-
-        showCancelButton: true,
-
-        confirmButtonText:
-          'Confirm Transfers',
-
-        cancelButtonText:
-          'Cancel',
-
-        confirmButtonColor:
-          '#0F4A30',
-
-        cancelButtonColor:
-          '#64748b',
-
-        width: 650
-      });
+    const result = await Swal.fire({
+      title: 'Review Transfers',
+      html: `<div class="max-h-80 overflow-y-auto">${rows}</div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Confirm Transfers',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#0F4A30',
+      cancelButtonColor: '#64748b',
+      width: 650,
+    });
 
     if (result.isConfirmed) {
-
       this.executeTransfers();
     }
   }
 
+  private escapeHtml(value: string): string {
+    return value.replace(/[&<>"']/g, (char) => {
+      const entities: Record<string, string> = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+      };
+
+      return entities[char];
+    });
+  }
+
   // =========================================================
-  // EXECUTE
+  // EXECUTE TRANSFERS
   // =========================================================
 
-  executeTransfers() {
+  executeTransfers(): void {
+    if (this.savingTransfer()) {
+      return;
+    }
 
-    const validation =
-      this.validateTransfer();
+    const validation = this.validateTransfer();
 
     if (validation) {
-
       Swal.fire({
         icon: 'warning',
         title: 'Invalid transfer',
         text: validation,
-        confirmButtonColor: '#0F4A30'
+        confirmButtonColor: '#0F4A30',
       });
 
       return;
     }
 
-    const transfers =
-      this.buildTransfers();
+    const transfers = this.buildTransfers();
 
     this.savingTransfer.set(true);
 
     this.userService
       .bulkTransfer(transfers)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-
         next: async (res) => {
-
           this.savingTransfer.set(false);
 
           await Swal.fire({
             icon: 'success',
             title: 'Transfer Complete',
             text: res.message,
-            confirmButtonColor: '#0F4A30'
+            confirmButtonColor: '#0F4A30',
           });
 
           this.cancelBulkMode();
-
           this.loadPastors();
         },
 
         error: async (err) => {
-
           this.savingTransfer.set(false);
 
           const message =
@@ -559,9 +469,9 @@ export class ViewUser implements OnInit {
             icon: 'error',
             title: 'Transfer Failed',
             text: message,
-            confirmButtonColor: '#0F4A30'
+            confirmButtonColor: '#0F4A30',
           });
-        }
+        },
       });
   }
 }
