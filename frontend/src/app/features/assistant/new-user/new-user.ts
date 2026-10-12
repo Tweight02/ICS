@@ -60,23 +60,29 @@ export class NewUser implements OnInit {
     const churchId = this.form.controls.church_id.value!;
     this.isSubmitting = true;
 
-    // Step 1: check whether the district already has a pastor
     this.userService.checkDistrictPastor(Number(churchId)).subscribe({
-        next: (res: {
-            exists: boolean;
-            message?: string;
-            pastor?: {
-                user_id: number;
-                first_name: string;
-                last_name: string;
-            };
-        }) => {
-            // Keep your existing success logic here.
-            console.log(res);
-        },
-        error: (error: unknown) => {
-            console.error('Failed to check district pastor:', error);
+      next: (res) => {
+        if (res.exists) {
+          this.isSubmitting = false;
+          const name = res.pastor
+            ? `${res.pastor.first_name} ${res.pastor.last_name}`
+            : null;
+          this.showPastorExistsAlert(churchId, name);
+          return;
         }
+
+        this.createUser(); // no pastor yet, so save
+      },
+      error: (error: unknown) => {
+        this.isSubmitting = false;
+        console.error('Failed to check district pastor:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Could not verify district',
+          text: 'Unable to check whether this district already has a pastor. Please try again.',
+          confirmButtonColor: '#166534',
+        });
+      },
     });
   }
 

@@ -226,7 +226,7 @@ checkDistrictPastor(churchId: number) {
             last_name: string;
         };
     }>(
-        `${this.apiUrl}/assistant/check-district-pastor/${churchId}`,
+        `${this.apiUrl}/assistant/districts/${churchId}/pastor`,
         { withCredentials: true }
     );
 }
