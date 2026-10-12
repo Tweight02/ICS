@@ -4,18 +4,7 @@
 
     <div class="d-flex align-items-center justify-content-between">
 
-      <div class="d-flex align-items-center">
-
-        <div class="brand-circle">
-          DP
-        </div>
-
-        <div class="brand-info">
-          <h1>{{ isReadOnly ? 'Church Records' : 'Eastern Nueva Vizcaya' }}</h1>
-          <p>{{ isReadOnly ? reportLocation : 'Baptism Record &amp; Death Record' }}</p>
-        </div>
-
-      </div>
+ 
 
       <div class="header-actions">
         <button
@@ -25,10 +14,6 @@
           (click)="backToReports()">
           ← Back to Reports
         </button>
-
-        <div class="records-badge">
-          ✓ Records
-        </div>
       </div>
 
     </div>
@@ -87,17 +72,12 @@
           class="records-heading d-flex align-items-end justify-content-between">
 
           <div>
-
-            <div class="section-label">
-              SECRETARIAT
-            </div>
-
             <div class="section-description">
 
               {{
                 selectedRecord === 'baptism'
-                  ? 'Baptism records'
-                  : 'Death records'
+                  ? ''
+                  : ''
               }}
 
             </div>
@@ -493,19 +473,16 @@
 
             <div>
 
-              <div class="comment-author">
-                Administrative Assistant
-              </div>
-
+             
               <div class="comment-role">
-                Administrative Assistant · Sample comment
+                Sep 15, 2026, 3:00 PM
               </div>
 
             </div>
 
 
             <div class="comment-date">
-              Sep 15, 2026, 3:00 PM
+             
             </div>
 
           </div>
