@@ -10,17 +10,21 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 import { ReportService } from '../../../../core/services/report/report';
+import { AuthService } from '../../../../core/services/auth/auth-service';
+import { ChurchService } from '../../../../core/services/church/church-service';
 
-import {
-  Department,
-  ChurchesResponse
-} from '../../../../core/models/report.model';
+import { Department } from '../../../../core/models/report.model';
+
+interface QuarterMonitoring {
+  progress: number | null;
+  approved: boolean;
+}
 
 interface Monitoring {
-  q1: number | null;
-  q2: number | null;
-  q3: number | null;
-  q4: number | null;
+  q1: QuarterMonitoring;
+  q2: QuarterMonitoring;
+  q3: QuarterMonitoring;
+  q4: QuarterMonitoring;
 }
 
 @Component({
@@ -33,32 +37,15 @@ interface Monitoring {
 export class ReportPrograms implements OnInit {
 
   private readonly reportService = inject(ReportService);
+  private readonly auth = inject(AuthService);
+  private readonly churchService = inject(ChurchService);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  // Current user
-  private readonly CURRENT_USER = {
-    user_id: 1,
-    department_id: 1,
-    church_id: 214,
-    first_name: 'Juan',
-    middle_name: 'Santos',
-    last_name: 'Dela Cruz',
-    extension_name: null,
-    birthdate: '1980-05-15',
-    gender: 'Male',
-    email: 'district.representative@example.com',
-    role: 'representative'
-  };
-
-  // District
-  readonly districtId = 210;
-  readonly districtName = 'Eastern Nueva Vizcaya';
-
-  // Church
-  churchId = this.CURRENT_USER.church_id;
-  churchName = 'Church';
-  churchAddress = '';
+  districtId = 0;
+  districtName = '';
+  churchId = 0;
+  churchName = '';
 
   // Departments
   departments: Department[] = [];
@@ -74,37 +61,80 @@ export class ReportPrograms implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
-    this.loadChurch();
-    this.loadDepartments();
+    const user = this.auth.getCurrentUser();
+
+    if (!user?.church_id) {
+      this.errorMessage =
+        'Your account does not have a church assigned. Please contact the administrator.';
+      return;
+    }
+
+    this.loadChurchNames(Number(user.church_id));
   }
 
-  // Load church
-  private loadChurch(): void {
-    fetch(`http://127.0.0.1:8000/api/districts/${this.districtId}/churches`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Unable to load churches.');
-        }
-        return response.json();
-      })
-      .then((response: ChurchesResponse) => {
-        const churches = response.data || [];
+  private loadChurchNames(assignedChurchId: number): void {
+    this.loading = true;
 
-        const currentChurch = churches.find(
-          church => Number(church.church_id) === Number(this.churchId)
+    this.churchService.getAllChurches().subscribe({
+      next: response => {
+        const churches = Array.isArray(response.data) ? response.data : [];
+        const assignedChurch = churches.find(
+          item => Number(item.church_id) === assignedChurchId
         );
 
-        if (currentChurch) {
-          this.churchName = currentChurch.name;
-          this.churchAddress = currentChurch.address || '';
+        if (!assignedChurch) {
+          this.loading = false;
+          this.errorMessage = 'Your assigned church could not be found.';
+          this.cdr.detectChanges();
+          return;
         }
 
+        this.districtId = Number(
+          assignedChurch.parent_id ?? assignedChurch.church_id
+        );
+        const district = churches.find(
+          item => Number(item.church_id) === this.districtId && item.parent_id === null
+        );
+
+        if (!district) {
+          this.loading = false;
+          this.errorMessage = 'The district for your assigned church could not be found.';
+          this.cdr.detectChanges();
+          return;
+        }
+
+        this.districtName = district.name;
+
+        let reportChurch = assignedChurch;
+        if (assignedChurch.parent_id === null) {
+          const districtChurches = churches.filter(
+            item => Number(item.parent_id) === this.districtId
+          );
+
+          if (districtChurches.length !== 1) {
+            this.loading = false;
+            this.errorMessage = districtChurches.length === 0
+              ? 'No local church is assigned to this district.'
+              : 'Your account is assigned to a district with multiple churches. Please contact the administrator.';
+            this.cdr.detectChanges();
+            return;
+          }
+
+          reportChurch = districtChurches[0];
+        }
+
+        this.churchId = Number(reportChurch.church_id);
+        this.churchName = reportChurch.name;
+        this.loadDepartments();
+
         this.cdr.detectChanges();
-      })
-      .catch(() => {
-        this.churchName = 'Church Representative';
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Unable to load church and district names.';
         this.cdr.detectChanges();
-      });
+      }
+    });
   }
 
   // The department list includes approval summaries for each quarter.
@@ -166,10 +196,10 @@ export class ReportPrograms implements OnInit {
   ========================================================= */
 
   private readonly emptyMonitoring: Monitoring = {
-    q1: null,
-    q2: null,
-    q3: null,
-    q4: null
+    q1: { progress: null, approved: false },
+    q2: { progress: null, approved: false },
+    q3: { progress: null, approved: false },
+    q4: { progress: null, approved: false }
   };
 
   getMonitoring(index: number): Monitoring {
@@ -180,10 +210,10 @@ export class ReportPrograms implements OnInit {
     }
 
     return {
-      q1: department.q1_approved ? 100 : null,
-      q2: department.q2_approved ? 100 : null,
-      q3: department.q3_approved ? 100 : null,
-      q4: department.q4_approved ? 100 : null
+      q1: { progress: department.q1_data_progress ?? null, approved: !!department.q1_approved },
+      q2: { progress: department.q2_data_progress ?? null, approved: !!department.q2_approved },
+      q3: { progress: department.q3_data_progress ?? null, approved: !!department.q3_approved },
+      q4: { progress: department.q4_data_progress ?? null, approved: !!department.q4_approved }
     };
   }
 

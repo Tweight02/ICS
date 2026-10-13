@@ -17,6 +17,7 @@ interface QuarterRecord {
   quarter?: string;
   year?: number | string;
   value: number | string | null;
+  date_submitted?: string | null;
   mission_approve: string | null;
 }
 
@@ -353,9 +354,7 @@ ngOnInit(): void {
   isRecordApproved(record: QuarterRecord | null): boolean {
     if (!record) return false;
 
-    return ['1', 'true', 'approved'].includes(
-      String(record.mission_approve ?? '').toLowerCase()
-    );
+    return String(record.mission_approve ?? '').trim() !== '';
   }
 
   isQuarterApproved(quarterId: number): boolean {
@@ -699,11 +698,16 @@ ngOnInit(): void {
     const items = this.buildItems(program, quarter);
     if (!items) return;
 
+    const submittedItems = items.map(item => ({
+      ...item,
+      value: item.value ?? 0
+    }));
+
     this.saving = true;
     this.clearMessages();
 
     this.reportService
-      .saveDepartmentReport(this.churchId, this.departmentId, items)
+      .saveDepartmentReport(this.churchId, this.departmentId, submittedItems, true)
       .subscribe({
         next: (response: any) => {
           this.successMessage =

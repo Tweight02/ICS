@@ -170,7 +170,8 @@
           *ngIf="canEndorse"
           type="button"
           (click)="endorseReport()"
-          [disabled]="savingAction || isQuarterEndorsed() || isQuarterApproved()"
+          [disabled]="savingAction || !isQuarterSubmitted() || isQuarterEndorsed() || isQuarterApproved()"
+          [attr.title]="!isQuarterSubmitted() ? 'The representative must submit all report data before endorsement.' : null"
           class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full
                  bg-gradient-to-r from-sky-600 to-sky-800 px-6 py-2.5 text-sm
                  font-semibold text-white shadow-lg shadow-sky-900/20 transition
@@ -294,17 +295,7 @@
                             *ngIf="getParticularQuarterRecord(particular, quarter) as record;
                                    else noAnnualValue">
 
-                            <span
-                              *ngIf="isRecordApproved(record)"
-                              class="inline-flex h-6 w-6 items-center justify-center rounded-full
-                                     bg-emerald-700 text-xs font-bold text-white"
-                              title="Approved">
-                              ✓
-                            </span>
-
-                            <span *ngIf="!isRecordApproved(record)">
-                              {{ record.value ?? '—' }}
-                            </span>
+                            <span>{{ isRecordSubmitted(record) ? (record.value ?? '—') : '—' }}</span>
                           </ng-container>
 
                           <ng-template #noAnnualValue>
@@ -319,17 +310,7 @@
                             <ng-container
                               *ngIf="getParticularQuarterRecord(particular, quarter) as record; else noValue">
 
-                              <span
-                                *ngIf="isRecordApproved(record)"
-                                class="inline-flex h-7 w-7 items-center justify-center rounded-full
-                                       bg-emerald-700 text-sm font-bold text-white"
-                                title="Approved">
-                                ✓
-                              </span>
-
-                              <span *ngIf="!isRecordApproved(record)">
-                                {{ record.value ?? '—' }}
-                              </span>
+                              <span>{{ isRecordSubmitted(record) ? (record.value ?? '—') : '—' }}</span>
                             </ng-container>
 
                             <ng-template #noValue>

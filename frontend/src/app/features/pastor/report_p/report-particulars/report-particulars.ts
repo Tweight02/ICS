@@ -376,6 +376,10 @@ export class ReportParticulars implements OnInit {
     return this.hasFlag(record?.mission_approve);
   }
 
+  isRecordSubmitted(record: QuarterRecord | null): boolean {
+    return this.hasFlag(record?.date_submitted);
+  }
+
   isRecordEndorsed(record: QuarterRecord | null): boolean {
     return this.hasFlag(record?.district_endorse) && !this.isRecordApproved(record);
   }
@@ -399,6 +403,25 @@ export class ReportParticulars implements OnInit {
 
     return records.length > 0 &&
       records.every(record => this.hasFlag(record.district_endorse));
+  }
+
+  isQuarterSubmitted(quarter: Quarter | null = this.getSelectedQuarter()): boolean {
+    if (!quarter) {
+      return false;
+    }
+
+    const programs = this.report?.programs ?? [];
+
+    return programs.length > 0 && programs.every(program => {
+      const records = program.sections.flatMap(section =>
+        section.particulars
+          .map(particular => this.getParticularQuarterRecord(particular, quarter))
+          .filter((record): record is QuarterRecord => record !== null)
+      );
+
+      return records.length > 0 &&
+        records.every(record => this.hasFlag(record.date_submitted));
+    });
   }
 
   private collectQuarterRecords(quarter: Quarter): QuarterRecord[] {
@@ -615,6 +638,11 @@ export class ReportParticulars implements OnInit {
 
     if (this.isAnnualView || !quarter || this.savingAction) {
       this.errorMessage = 'Select a quarter first.';
+      return;
+    }
+
+    if (action === 'endorse' && !this.isQuarterSubmitted(quarter)) {
+      this.errorMessage = 'The representative must submit all report data before endorsement.';
       return;
     }
 

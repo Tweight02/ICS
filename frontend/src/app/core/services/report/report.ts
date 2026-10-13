@@ -36,11 +36,12 @@ export class ReportService {
   saveDepartmentReport(
     churchId: number,
     departmentId: number,
-    items: SaveReportItem[]
+    items: SaveReportItem[],
+    submitted = false
   ): Observable<{ message: string; saved_count?: number }> {
     return this.http.post<{ message: string; saved_count?: number }>(
       `${this.apiUrl}/churches/${churchId}/departments/${departmentId}/report/save`,
-      { items }
+      { items, submitted }
     );
   }
 

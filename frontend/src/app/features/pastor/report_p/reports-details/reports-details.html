@@ -1,11 +1,11 @@
 <ng-template #monitoringCell let-value>
-  @if (value === 100) {
+  @if (value.approved) {
     <span class="check">✓</span>
-  } @else if (value > 0) {
+  } @else if (value.progress > 0) {
     <div class="progress-wrapper">
-      <span class="percentage">{{ value }}%</span>
+      <span class="percentage">{{ value.progress }}%</span>
       <div class="progress-bar">
-        <div class="progress-value" [style.width.%]="value"></div>
+        <div class="progress-value" [style.width.%]="value.progress"></div>
       </div>
     </div>
   } @else {

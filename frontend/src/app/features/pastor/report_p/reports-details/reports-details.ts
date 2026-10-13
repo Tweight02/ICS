@@ -108,12 +108,16 @@ openChurch(church: Church): void {
   ]);
 }
 
-  getMonitoring(churchId: number): { q1: number | null; q2: number | null; q3: number | null; q4: number | null } {
-    return this.churches.find(church => church.church_id === churchId)?.monitoring ?? {
-      q1: null,
-      q2: null,
-      q3: null,
-      q4: null
+  getMonitoring(churchId: number) {
+    const monitoring = this.churches.find(
+      church => church.church_id === churchId
+    )?.monitoring;
+
+    return {
+      q1: { progress: monitoring?.q1_submitted_data_progress ?? null, approved: !!monitoring?.q1_approved },
+      q2: { progress: monitoring?.q2_submitted_data_progress ?? null, approved: !!monitoring?.q2_approved },
+      q3: { progress: monitoring?.q3_submitted_data_progress ?? null, approved: !!monitoring?.q3_approved },
+      q4: { progress: monitoring?.q4_submitted_data_progress ?? null, approved: !!monitoring?.q4_approved }
     };
   }
 

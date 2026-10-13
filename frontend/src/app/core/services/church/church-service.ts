@@ -31,6 +31,11 @@ export interface ChurchesResponse {
   data: Church[];
 }
 
+export interface ChurchDirectoryResponse {
+  success: boolean;
+  data: Church[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -62,6 +67,12 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
 
     return this.http.get<DistrictResponse>(
       `${this.apiUrl}/districts`
+    );
+  }
+
+  getAllChurches(): Observable<ChurchDirectoryResponse> {
+    return this.http.get<ChurchDirectoryResponse>(
+      `${this.apiUrl}/churches`
     );
   }
 
