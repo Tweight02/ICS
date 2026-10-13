@@ -15,6 +15,7 @@ class Baptism extends Model
     protected $fillable = [
         'church_id',
         'baptism_id',
+        'quarter',
         'first_name',
         'middle_name',
         'last_name',
