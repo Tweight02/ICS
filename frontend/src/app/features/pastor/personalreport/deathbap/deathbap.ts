@@ -54,12 +54,25 @@ interface Death {
   styleUrls: ['./deathbap.css']
 })
 export class DeathbapComponent implements OnInit {
+
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
   selectedRecord: 'baptism' | 'death' = 'baptism';
+
+  // Year and quarter selector
+  selectedYear = new Date().getFullYear();
+
+  selectedQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q1';
+
+  quarterOptions: ('Q1' | 'Q2' | 'Q3' | 'Q4')[] = [
+    'Q1',
+    'Q2',
+    'Q3',
+    'Q4'
+  ];
 
   churchId = 0;
   districtId = 0;
@@ -100,6 +113,7 @@ export class DeathbapComponent implements OnInit {
   deathError: string = '';
 
   ngOnInit(): void {
+
     this.departmentId =
       Number(this.route.snapshot.paramMap.get('departmentId')) || 0;
 
@@ -126,17 +140,10 @@ export class DeathbapComponent implements OnInit {
   // BAPTISM DETAILS MODAL
   // =================================================
 
-  /**
-   * Open the modal with the information
-   * of the selected baptism record.
-   */
   openBaptismModal(baptism: Baptism): void {
     this.selectedBaptism = baptism;
   }
 
-  /**
-   * Close the baptism details modal.
-   */
   closeBaptismModal(): void {
     this.selectedBaptism = null;
   }
@@ -145,43 +152,200 @@ export class DeathbapComponent implements OnInit {
   // DEATH DETAILS MODAL
   // =================================================
 
-  /**
-   * Open the modal with all information for the
-   * selected death record and its linked baptism record.
-   */
   openDeathModal(death: Death): void {
     this.selectedDeath = death;
   }
 
-  /**
-   * Close the death details modal.
-   */
   closeDeathModal(): void {
     this.selectedDeath = null;
+  }
+
+  // =================================================
+  // YEAR AND QUARTER FILTERS
+  // =================================================
+
+  /**
+   * Change the selected quarter.
+   */
+  selectQuarter(
+    quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'
+  ): void {
+    this.selectedQuarter = quarter;
+  }
+
+  /**
+   * Change the selected year.
+   */
+  onYearChange(event: Event): void {
+
+    const value = Number(
+      (event.target as HTMLSelectElement).value
+    );
+
+    if (Number.isInteger(value) && value > 0) {
+      this.selectedYear = value;
+    }
+  }
+
+  /**
+   * Get all available years from the records.
+   * The current year is always included.
+   */
+  get availableYears(): number[] {
+
+    const years = new Set<number>();
+
+    years.add(new Date().getFullYear());
+
+    this.baptisms.forEach(record => {
+
+      const year = this.getYearFromDate(
+        record.date_of_baptism
+      );
+
+      if (year !== null) {
+        years.add(year);
+      }
+
+    });
+
+    this.deaths.forEach(record => {
+
+      const year = this.getYearFromDate(
+        record.date_of_death
+      );
+
+      if (year !== null) {
+        years.add(year);
+      }
+
+    });
+
+    return Array.from(years).sort(
+      (a, b) => b - a
+    );
+  }
+
+  /**
+   * Normalize the quarter stored in MariaDB.
+   *
+   * Accepted examples:
+   * Q1
+   * q1
+   * 1
+   * Quarter 1
+   * 1st Quarter
+   */
+  private normalizeQuarter(
+    quarter: string | null | undefined
+  ): string {
+
+    const value = (quarter ?? '')
+      .trim()
+      .toUpperCase();
+
+    const match = value.match(
+      /^(?:Q\s*|QUARTER\s*)?([1-4])(?:ST|ND|RD|TH)?(?:\s*QUARTER)?$/
+    );
+
+    if (match) {
+      return `Q${match[1]}`;
+    }
+
+    return value;
+  }
+
+  /**
+   * Get year directly from the database date.
+   * Handles YYYY-MM-DD and timestamp values.
+   */
+  private getYearFromDate(
+    date: string | null | undefined
+  ): number | null {
+
+    if (!date) {
+      return null;
+    }
+
+    const match = date
+      .trim()
+      .match(/^(\d{4})-\d{2}-\d{2}/);
+
+    if (!match) {
+      return null;
+    }
+
+    const year = Number(match[1]);
+
+    return Number.isInteger(year) ? year : null;
   }
 
   // =================================================
   // DISPLAYED RECORDS
   // =================================================
 
+  /**
+   * Display baptism records matching the selected:
+   * church, quarter and year.
+   */
   get displayedBaptisms(): Baptism[] {
-    return this.churchId
+
+    const records = this.churchId
       ? this.baptisms.filter(
-          record => Number(record.church_id) === this.churchId
+          record =>
+            Number(record.church_id) === this.churchId
         )
       : this.baptisms;
+
+    return records.filter(record => {
+
+      const recordQuarter =
+        this.normalizeQuarter(record.quarter);
+
+      const recordYear =
+        this.getYearFromDate(record.date_of_baptism);
+
+      return (
+        recordQuarter === this.selectedQuarter &&
+        recordYear === this.selectedYear
+      );
+
+    });
   }
 
+  /**
+   * Display death records matching the selected:
+   * church, quarter and year.
+   */
   get displayedDeaths(): Death[] {
-    return this.churchId
+
+    const records = this.churchId
       ? this.deaths.filter(
           record =>
-            Number(this.getDeathBaptism(record)?.church_id) === this.churchId
+            Number(
+              this.getDeathBaptism(record)?.church_id
+            ) === this.churchId
         )
       : this.deaths;
+
+    return records.filter(record => {
+
+      const recordQuarter =
+        this.normalizeQuarter(record.quarter);
+
+      const recordYear =
+        this.getYearFromDate(record.date_of_death);
+
+      return (
+        recordQuarter === this.selectedQuarter &&
+        recordYear === this.selectedYear
+      );
+
+    });
   }
 
   get reportLocation(): string {
+
     const churchName =
       this.getChurchName(this.churchId);
 
@@ -197,6 +361,7 @@ export class DeathbapComponent implements OnInit {
   }
 
   backToReports(): void {
+
     if (!this.isReadOnly) {
       return;
     }
@@ -214,16 +379,12 @@ export class DeathbapComponent implements OnInit {
   selectRecord(
     record: 'baptism' | 'death'
   ): void {
+
     this.selectedRecord = record;
 
-    // Close details modals when switching records.
     this.closeBaptismModal();
     this.closeDeathModal();
 
-    /*
-     * Reload the selected records so newly
-     * added records appear immediately.
-     */
     if (record === 'baptism') {
       this.loadBaptisms();
     } else {
@@ -231,10 +392,12 @@ export class DeathbapComponent implements OnInit {
     }
   }
 
-  /**
-   * Load Baptism records from Laravel.
-   */
+  // =================================================
+  // LOAD BAPTISM RECORDS
+  // =================================================
+
   loadBaptisms(): void {
+
     this.loadingBaptisms = true;
     this.baptismError = '';
 
@@ -249,6 +412,7 @@ export class DeathbapComponent implements OnInit {
       .pipe(
         timeout(10000),
         finalize(() => {
+
           this.loadingBaptisms = false;
 
           console.log(
@@ -256,10 +420,13 @@ export class DeathbapComponent implements OnInit {
           );
 
           this.cdr.detectChanges();
+
         })
       )
       .subscribe({
+
         next: (response) => {
+
           console.log(
             'Baptism API response:',
             response
@@ -269,21 +436,27 @@ export class DeathbapComponent implements OnInit {
             response?.data ?? response;
 
           if (Array.isArray(data)) {
-            this.baptisms =
-              data;
+
+            this.baptisms = data;
 
             console.log(
               'Baptism records loaded:',
               this.baptisms
             );
+
           } else {
+
             this.baptisms = [];
 
             this.baptismError =
               'The server returned an invalid baptism record response.';
+
           }
+
         },
+
         error: (error) => {
+
           console.error(
             'Failed to load baptism records:',
             error
@@ -295,35 +468,43 @@ export class DeathbapComponent implements OnInit {
             error?.name === 'TimeoutError' ||
             error?.message?.includes('timeout')
           ) {
+
             this.baptismError =
               'The Laravel server took too long to respond.';
-          } else if (
-            error?.status === 0
-          ) {
+
+          } else if (error?.status === 0) {
+
             this.baptismError =
               'Cannot connect to Laravel. Make sure php artisan serve is running and CORS is configured.';
-          } else if (
-            error?.status === 404
-          ) {
+
+          } else if (error?.status === 404) {
+
             this.baptismError =
               'The baptism API endpoint was not found.';
-          } else if (
-            error?.error?.message
-          ) {
+
+          } else if (error?.error?.message) {
+
             this.baptismError =
               error.error.message;
+
           } else {
+
             this.baptismError =
               'Failed to load baptism records.';
+
           }
+
         }
+
       });
   }
 
-  /**
-   * Load Death records from Laravel.
-   */
+  // =================================================
+  // LOAD DEATH RECORDS
+  // =================================================
+
   loadDeaths(): void {
+
     this.loadingDeaths = true;
     this.deathError = '';
 
@@ -338,6 +519,7 @@ export class DeathbapComponent implements OnInit {
       .pipe(
         timeout(10000),
         finalize(() => {
+
           this.loadingDeaths = false;
 
           console.log(
@@ -345,10 +527,13 @@ export class DeathbapComponent implements OnInit {
           );
 
           this.cdr.detectChanges();
+
         })
       )
       .subscribe({
+
         next: (response) => {
+
           console.log(
             'Death API response:',
             response
@@ -358,21 +543,27 @@ export class DeathbapComponent implements OnInit {
             response?.data ?? response;
 
           if (Array.isArray(data)) {
-            this.deaths =
-              data;
+
+            this.deaths = data;
 
             console.log(
               'Death records loaded:',
               this.deaths
             );
+
           } else {
+
             this.deaths = [];
 
             this.deathError =
               'The server returned an invalid death record response.';
+
           }
+
         },
+
         error: (error) => {
+
           console.error(
             'Failed to load death records:',
             error
@@ -384,35 +575,43 @@ export class DeathbapComponent implements OnInit {
             error?.name === 'TimeoutError' ||
             error?.message?.includes('timeout')
           ) {
+
             this.deathError =
               'The Laravel server took too long to respond.';
-          } else if (
-            error?.status === 0
-          ) {
+
+          } else if (error?.status === 0) {
+
             this.deathError =
               'Cannot connect to Laravel. Make sure php artisan serve is running and CORS is configured.';
-          } else if (
-            error?.status === 404
-          ) {
+
+          } else if (error?.status === 404) {
+
             this.deathError =
               'The death API endpoint was not found.';
-          } else if (
-            error?.error?.message
-          ) {
+
+          } else if (error?.error?.message) {
+
             this.deathError =
               error.error.message;
+
           } else {
+
             this.deathError =
               'Failed to load death records.';
+
           }
+
         }
+
       });
   }
 
-  /**
-   * Load Churches from Laravel.
-   */
+  // =================================================
+  // LOAD CHURCHES
+  // =================================================
+
   loadChurches(): void {
+
     console.log(
       'Loading churches...'
     );
@@ -422,7 +621,9 @@ export class DeathbapComponent implements OnInit {
         'http://127.0.0.1:8000/api/churches'
       )
       .subscribe({
+
         next: (response) => {
+
           console.log(
             'Church API response:',
             response
@@ -432,28 +633,33 @@ export class DeathbapComponent implements OnInit {
             response?.data ?? response;
 
           if (Array.isArray(data)) {
+
             this.churches =
               data.map(
                 (church: any): Church => ({
+
                   church_id:
-                    Number(
-                      church.church_id
-                    ),
+                    Number(church.church_id),
+
                   name:
                     church.name ?? '',
+
                   address:
                     church.address ?? '',
+
                   parent_id:
                     church.parent_id !== null &&
                     church.parent_id !== undefined
-                      ? Number(
-                          church.parent_id
-                        )
+                      ? Number(church.parent_id)
                       : null
+
                 })
               );
+
           } else {
+
             this.churches = [];
+
           }
 
           console.log(
@@ -462,36 +668,44 @@ export class DeathbapComponent implements OnInit {
           );
 
           this.cdr.detectChanges();
+
         },
+
         error: (error) => {
+
           console.error(
             'Failed to load churches:',
             error
           );
 
           this.churches = [];
+
         }
+
       });
   }
 
-  /**
-   * Get Church name by church ID.
-   */
+  // =================================================
+  // CHURCH AND MEMBER HELPERS
+  // =================================================
+
   getChurchName(
     churchId: number | null | undefined
   ): string {
+
     if (
       churchId === null ||
       churchId === undefined
     ) {
+
       return 'Unknown Church';
+
     }
 
     const church =
       this.churches.find(
         item =>
-          Number(item.church_id) ===
-          Number(churchId)
+          Number(item.church_id) === Number(churchId)
       );
 
     if (church) {
@@ -501,17 +715,14 @@ export class DeathbapComponent implements OnInit {
     return 'Unknown Church';
   }
 
-  /**
-   * Get Baptism record by ID.
-   */
   getBaptismById(
     baptismId: number
   ): Baptism | null {
+
     const baptism =
       this.baptisms.find(
         item =>
-          Number(item.baptism_id) ===
-          Number(baptismId)
+          Number(item.baptism_id) === Number(baptismId)
       );
 
     return baptism ?? null;
@@ -519,14 +730,11 @@ export class DeathbapComponent implements OnInit {
 
   /**
    * Get the baptism associated with a death.
-   *
-   * First checks the nested baptism returned
-   * by Laravel. If it is not there, it searches
-   * the loaded baptism records.
    */
   getDeathBaptism(
     death: Death
   ): Baptism | null {
+
     if (death.baptism) {
       return death.baptism;
     }
@@ -542,6 +750,7 @@ export class DeathbapComponent implements OnInit {
   getFullName(
     baptism: Baptism | null | undefined
   ): string {
+
     if (!baptism) {
       return 'Unknown Member';
     }
@@ -552,61 +761,67 @@ export class DeathbapComponent implements OnInit {
       baptism.first_name &&
       baptism.first_name.trim()
     ) {
+
       parts.push(
         baptism.first_name.trim()
       );
+
     }
 
     if (
       baptism.middle_name &&
       baptism.middle_name.trim()
     ) {
+
       parts.push(
         baptism.middle_name.trim()
       );
+
     }
 
     if (
       baptism.last_name &&
       baptism.last_name.trim()
     ) {
+
       parts.push(
         baptism.last_name.trim()
       );
+
     }
 
     if (
       baptism.extension_name &&
       baptism.extension_name.trim()
     ) {
+
       parts.push(
         baptism.extension_name.trim()
       );
+
     }
 
     return parts.join(' ');
   }
 
-  /**
-   * Format database date.
-   */
+  // =================================================
+  // DATE HELPERS
+  // =================================================
+
   formatDate(
     date: string
   ): string {
+
     if (!date) {
       return '—';
     }
 
-    const parsedDate =
-      new Date(
-        date + 'T00:00:00'
-      );
+    const datePart = date.substring(0, 10);
 
-    if (
-      isNaN(
-        parsedDate.getTime()
-      )
-    ) {
+    const parsedDate =
+      new Date(datePart + 'T00:00:00');
+
+    if (isNaN(parsedDate.getTime())) {
       return date;
     }
 
@@ -626,25 +841,21 @@ export class DeathbapComponent implements OnInit {
   calculateAge(
     birthdate: string
   ): number | string {
+
     if (!birthdate) {
       return '—';
     }
 
     const birthDate =
       new Date(
-        birthdate + 'T00:00:00'
+        birthdate.substring(0, 10) + 'T00:00:00'
       );
 
-    if (
-      isNaN(
-        birthDate.getTime()
-      )
-    ) {
+    if (isNaN(birthDate.getTime())) {
       return '—';
     }
 
-    const today =
-      new Date();
+    const today = new Date();
 
     let age =
       today.getFullYear() -
@@ -658,11 +869,12 @@ export class DeathbapComponent implements OnInit {
       monthDifference < 0 ||
       (
         monthDifference === 0 &&
-        today.getDate() <
-        birthDate.getDate()
+        today.getDate() < birthDate.getDate()
       )
     ) {
+
       age--;
+
     }
 
     return age;
@@ -670,36 +882,41 @@ export class DeathbapComponent implements OnInit {
 
   /**
    * Calculate age at the time of death.
-   *
-   * This is more accurate for Death records
-   * because it calculates the age using the
-   * date of death rather than today's date.
    */
   calculateAgeAtDeath(
     birthdate: string,
     dateOfDeath: string
   ): number | string {
+
     if (
       !birthdate ||
       !dateOfDeath
     ) {
+
       return '—';
+
     }
 
     const birthDate =
       new Date(
-        birthdate + 'T00:00:00'
+        birthdate.substring(0, 10) + 'T00:00:00'
       );
 
     const deathDate =
       new Date(
-        dateOfDeath + 'T00:00:00'
+        dateOfDeath.substring(0, 10) + 'T00:00:00'
       );
 
     if (
       isNaN(birthDate.getTime()) ||
       isNaN(deathDate.getTime())
     ) {
+
+      return '—';
+
+    }
+
+    if (deathDate < birthDate) {
       return '—';
     }
 
@@ -715,11 +932,12 @@ export class DeathbapComponent implements OnInit {
       monthDifference < 0 ||
       (
         monthDifference === 0 &&
-        deathDate.getDate() <
-        birthDate.getDate()
+        deathDate.getDate() < birthDate.getDate()
       )
     ) {
+
       age--;
+
     }
 
     return age;
