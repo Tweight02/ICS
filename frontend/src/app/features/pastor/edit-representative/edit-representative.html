@@ -1,272 +1,273 @@
-<div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
+<div class="text-slate-900 antialiased">
     <!-- Back link -->
     <a
         routerLink="/pastor/view-representatives"
-        class="mb-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-slate-500 transition hover:text-[#0F4A30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40"
+        class="mb-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-slate-500 transition hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
     >
         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M12.7 4.3a1 1 0 010 1.4L8.4 10l4.3 4.3a1 1 0 01-1.4 1.4l-5-5a1 1 0 010-1.4l5-5a1 1 0 011.4 0z" clip-rule="evenodd" />
         </svg>
-        All representatives
+        Back
     </a>
 
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        @if (loading()) {
-            <!-- Loading skeleton -->
-            <div class="animate-pulse p-6" role="status" aria-label="Loading representative">
-                <div class="flex items-center gap-4">
-                    <div class="h-14 w-14 rounded-full bg-slate-200"></div>
-                    <div class="space-y-2">
-                        <div class="h-4 w-40 rounded bg-slate-200"></div>
-                        <div class="h-3 w-56 rounded bg-slate-100"></div>
+    @if (loading()) {
+        <!-- Loading skeleton -->
+        <div class="grid animate-pulse items-start gap-4 xl:grid-cols-[260px_minmax(0,1fr)]" role="status" aria-label="Loading representative">
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div class="h-16 bg-slate-200"></div>
+                <div class="px-4 pb-4">
+                    <div class="-mt-7 h-14 w-14 rounded-2xl border-4 border-white bg-slate-200"></div>
+                    <div class="mt-3 h-4 w-32 rounded bg-slate-200"></div>
+                    <div class="mt-2 h-3 w-44 rounded bg-slate-100"></div>
+                    <div class="my-4 border-t border-slate-100"></div>
+                    <div class="space-y-3">
+                        @for (i of [1, 2, 3]; track i) {
+                            <div class="flex items-start gap-3">
+                                <div class="h-8 w-8 shrink-0 rounded-lg bg-slate-100"></div>
+                                <div class="space-y-1.5">
+                                    <div class="h-2.5 w-16 rounded bg-slate-100"></div>
+                                    <div class="h-3.5 w-28 rounded bg-slate-200"></div>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
-                <div class="mt-8 grid gap-5 sm:grid-cols-2">
-                    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+            </div>
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div class="grid gap-x-4 gap-y-4 px-4 py-4 sm:grid-cols-2 sm:px-5">
+                    <div class="h-4 w-40 rounded bg-slate-200 sm:col-span-2"></div>
+                    @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
                         <div class="space-y-2">
                             <div class="h-3 w-20 rounded bg-slate-100"></div>
-                            <div class="h-10 rounded-lg bg-slate-100"></div>
+                            <div class="h-9 rounded-lg bg-slate-100"></div>
                         </div>
                     }
                 </div>
             </div>
-        } @else if (loadFailed()) {
-            <!-- Error state -->
-            <div class="flex flex-col items-center px-6 py-14 text-center" role="alert">
-                <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-600">
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <p class="text-sm font-medium text-slate-900">Couldn't load this representative</p>
-                <p class="mt-1 max-w-sm text-sm text-slate-500">{{ error() }}</p>
-                <button
-                    type="button"
-                    (click)="loadRepresentative()"
-                    class="mt-4 inline-flex h-9 items-center rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2"
-                >
-                    Try again
-                </button>
+        </div>
+    } @else if (loadFailed()) {
+        <!-- Error state -->
+        <div class="rounded-xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm" role="alert">
+            <div class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-rose-50 text-rose-600">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
             </div>
-        } @else {
-            <form [formGroup]="form" (ngSubmit)="save()" novalidate>
-                <!-- Profile header -->
-                <div class="flex flex-col gap-4 border-b border-slate-200 bg-gradient-to-b from-[#0F4A30]/[0.04] to-transparent p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-                    <div class="flex min-w-0 items-center gap-4">
+            <p class="text-sm font-semibold text-slate-900">Couldn't load this representative</p>
+            <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500">{{ error() }}</p>
+            <button
+                type="button"
+                (click)="loadRepresentative()"
+                class="mt-4 inline-flex items-center justify-center rounded-lg bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+            >
+                Try again
+            </button>
+        </div>
+    } @else {
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+            <div class="grid items-start gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+                <!-- Profile summary -->
+                <aside class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm xl:sticky xl:top-4">
+                    <div class="h-16 bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-700"></div>
+                    <div class="px-4 pb-4">
                         <div
-                            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#0F4A30] text-lg font-semibold uppercase text-white ring-4 ring-white"
-                            aria-hidden="true"
-                        >
-                            {{ form.get('first_name')?.value?.charAt(0) }}{{ form.get('last_name')?.value?.charAt(0) }}
-                        </div>
-                        <div class="min-w-0">
-                            <h1 class="truncate text-lg font-semibold text-slate-900">
-                                {{ editing() ? 'Edit representative' : 'Representative details' }}
-                            </h1>
-                            <p class="truncate text-sm text-slate-500">
-                                {{ editing() ? 'Update the details of this church representative.' : 'Details of this church representative.' }}
-                            </p>
-                        </div>
-                    </div>
+                            class="-mt-7 flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-white bg-emerald-100 text-lg font-bold uppercase tracking-wide text-emerald-900 shadow-sm"
+                            aria-hidden="true">
+                            {{ form.get('first_name')?.value?.charAt(0) }}{{ form.get('last_name')?.value?.charAt(0) }}</div>
+                        <h2 class="mt-2 text-base font-bold tracking-tight text-slate-950">{{ form.get('first_name')?.value }} {{ form.get('last_name')?.value }}</h2>
+                        <p class="text-xs break-words text-slate-500">{{ form.get('email')?.value }}</p>
 
-                    @if (!editing()) {
-                        <div class="flex shrink-0 items-center gap-2">
-                            <button
-                                type="button"
-                                (click)="startEdit()"
-                                class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2"
-                            >
-                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path d="M13.6 3.4a2 2 0 112.8 2.8l-9 9-3.7.9.9-3.7 9-9z" />
-                                </svg>
-                                Edit
-                            </button>
-                            <button
-                                type="button"
-                                (click)="deleteRepresentative()"
-                                [disabled]="deleting()"
-                                class="inline-flex h-9 items-center rounded-lg border border-red-200 bg-white px-4 text-sm font-medium text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                {{ deleting() ? 'Deleting...' : 'Delete' }}
-                            </button>
-                        </div>
-                    }
-                </div>
-
-                @if (error()) {
-                    <div class="flex items-start gap-2 border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700 sm:px-6" role="alert">
-                        <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                        </svg>
-                        <span>{{ error() }}</span>
-                    </div>
-                }
-
-                <div class="space-y-8 p-5 sm:p-6">
-                    <!-- Church -->
-                    <section>
-                        <h2 class="text-sm font-semibold text-slate-900">Church</h2>
-                        <div class="mt-3 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5">
-                            <svg class="h-4 w-4 shrink-0 text-[#0F4A30]" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path d="M10 2a1 1 0 011 1v1h1a1 1 0 110 2h-1v1.4l4.6 3.1a1 1 0 01.4.8V17a1 1 0 01-1 1H4a1 1 0 01-1-1v-5.7a1 1 0 01.4-.8L9 7.4V6H8a1 1 0 010-2h1V3a1 1 0 011-1z" />
-                            </svg>
-                            <span class="truncate text-sm font-medium text-slate-700">{{ churchName() }}</span>
-                            <span class="ml-auto shrink-0 text-xs text-slate-400">Can't be changed</span>
-                        </div>
-                    </section>
-
-                    <!-- Personal information -->
-                    <section>
-                        <h2 class="text-sm font-semibold text-slate-900">Personal information</h2>
-                        <div class="mt-3 grid gap-x-4 gap-y-5 sm:grid-cols-6">
-                            <!-- First name -->
-                            <div class="sm:col-span-3">
-                                <label for="first_name" class="mb-1.5 block text-sm font-medium text-slate-700">First name</label>
-                                <input
-                                    id="first_name" type="text" formControlName="first_name"
-                                    [attr.aria-invalid]="invalid('first_name')"
-                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
-                                />
-                                @if (invalid('first_name')) {
-                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('first_name') || 'Enter a first name.' }}</p>
-                                }
-                            </div>
-
-                            <!-- Middle name -->
-                            <div class="sm:col-span-3">
-                                <label for="middle_name" class="mb-1.5 flex items-baseline gap-1.5 text-sm font-medium text-slate-700">
-                                    Middle name
-                                    @if (editing()) { <span class="text-xs font-normal text-slate-400">Optional</span> }
-                                </label>
-                                <input
-                                    id="middle_name" type="text" formControlName="middle_name"
-                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
-                                />
-                            </div>
-
-                            <!-- Last name -->
-                            <div class="sm:col-span-4">
-                                <label for="last_name" class="mb-1.5 block text-sm font-medium text-slate-700">Last name</label>
-                                <input
-                                    id="last_name" type="text" formControlName="last_name"
-                                    [attr.aria-invalid]="invalid('last_name')"
-                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
-                                />
-                                @if (invalid('last_name')) {
-                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('last_name') || 'Enter a last name.' }}</p>
-                                }
-                            </div>
-
-                            <!-- Extension -->
-                            <div class="sm:col-span-2">
-                                <label for="extension_name" class="mb-1.5 flex items-baseline gap-1.5 text-sm font-medium text-slate-700">
-                                    Suffix
-                                    @if (editing()) { <span class="text-xs font-normal text-slate-400">Jr., Sr., III</span> }
-                                </label>
-                                <input
-                                    id="extension_name" type="text" formControlName="extension_name"
-                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
-                                />
-                            </div>
-
-                            <!-- Birthdate -->
-                            <div class="sm:col-span-3">
-                                <label for="birthdate" class="mb-1.5 block text-sm font-medium text-slate-700">Birthdate</label>
-                                <input
-                                    id="birthdate" type="date" formControlName="birthdate"
-                                    [attr.aria-invalid]="invalid('birthdate')"
-                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
-                                />
-                                @if (invalid('birthdate')) {
-                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('birthdate') || 'Enter a birthdate.' }}</p>
-                                }
-                            </div>
-
-                            <!-- Gender -->
-                            <div class="sm:col-span-3">
-                                <label for="gender" class="mb-1.5 block text-sm font-medium text-slate-700">Gender</label>
-                                <select
-                                    id="gender" formControlName="gender"
-                                    [attr.aria-invalid]="invalid('gender')"
-                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:appearance-none disabled:border-transparent disabled:bg-slate-50 disabled:px-3 disabled:text-slate-700"
-                                >
-                                    <option value="" disabled>Select gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                </select>
-                                @if (invalid('gender')) {
-                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('gender') || 'Select a gender.' }}</p>
-                                }
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Account -->
-                    <section>
-                        <h2 class="text-sm font-semibold text-slate-900">Account</h2>
-                        <div class="mt-3 grid gap-x-4 gap-y-5 sm:grid-cols-2">
-                            <!-- Email -->
-                            <div [class.sm:col-span-2]="!editing()">
-                                <label for="email" class="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-                                <input
-                                    id="email" type="email" formControlName="email"
-                                    [attr.aria-invalid]="invalid('email')"
-                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:cursor-default disabled:border-transparent disabled:bg-slate-50 disabled:text-slate-700"
-                                />
-                                @if (invalid('email')) {
-                                    <p class="mt-1.5 text-xs text-red-600">{{ serverError('email') || 'Enter a valid email address.' }}</p>
-                                }
-                            </div>
-
-                            <!-- Password (edit mode only) -->
-                            @if (editing()) {
-                                <div>
-                                    <label for="password" class="mb-1.5 block text-sm font-medium text-slate-700">New password</label>
-                                    <input
-                                        id="password" type="password" formControlName="password" autocomplete="new-password"
-                                        placeholder="Leave blank to keep current"
-                                        [attr.aria-invalid]="invalid('password')"
-                                        class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
-                                    />
-                                    @if (invalid('password')) {
-                                        <p class="mt-1.5 text-xs text-red-600">{{ serverError('password') || 'Use at least 8 characters.' }}</p>
-                                    } @else {
-                                        <p class="mt-1.5 text-xs text-slate-400">At least 8 characters.</p>
-                                    }
+                        <div class="my-4 border-t border-slate-100"></div>
+                        <div class="space-y-3">
+                            <div class="flex items-start gap-3">
+                                <span
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M7 3v3m10-3v3M4 9h16M5.5 5h13A1.5 1.5 0 0 1 20 6.5v12a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-12A1.5 1.5 0 0 1 5.5 5Z" />
+                                    </svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-medium text-slate-500">Birthdate</p>
+                                    <p class="text-sm font-semibold text-slate-800">{{ form.get('birthdate')?.value ? (form.get('birthdate')?.value | date: 'MMMM d, y') : '—' }}</p>
                                 </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 0v9m-3-3h6" />
+                                    </svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-medium text-slate-500">Gender</p>
+                                    <p class="text-sm font-semibold text-slate-800"><span class="capitalize">{{ form.get('gender')?.value || '—' }}</span></p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M4 20V5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5V20M2 20h20M8 8h2m4 0h2M8 12h2m4 0h2M10 20v-4h4v4" />
+                                    </svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-medium text-slate-500">Church</p>
+                                    <p class="text-sm font-semibold text-slate-800">{{ churchName() || '—' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Single unified form -->
+                <div class="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="grid gap-x-4 gap-y-4 px-4 py-4 sm:grid-cols-2 sm:px-5">
+                        <div class="sm:col-span-2">
+                            <h2 class="text-sm font-bold text-slate-900">
+                                {{ editing() ? 'Edit representative' : 'Representative details' }}
+                            </h2>
+                        </div>
+
+                        @if (error()) {
+                            <div class="sm:col-span-2 flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-800 ring-1 ring-inset ring-rose-200" role="alert">
+                                <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                                </svg>
+                                <span>{{ error() }}</span>
+                            </div>
+                        }
+
+                        <div>
+                            <label for="first_name" class="block text-sm font-semibold text-slate-700">First name @if (editing()) { <span class="text-rose-600">*</span> }</label>
+                            <input id="first_name" formControlName="first_name" type="text" autocomplete="given-name" [attr.aria-invalid]="invalid('first_name')" class="mt-1 block w-full rounded-lg border-0 bg-slate-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 aria-[invalid=true]:ring-red-500 disabled:cursor-default disabled:text-slate-700 disabled:hover:ring-slate-200" />
+                            @if (invalid('first_name')) {
+                                <p class="mt-1 text-xs text-rose-600">{{ serverError('first_name') || 'Enter a first name.' }}</p>
                             }
                         </div>
-                    </section>
-                </div>
-
-                <!-- Footer (edit mode only) -->
-                @if (editing()) {
-                    <div class="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/80 px-5 py-3 sm:px-6">
-                        <button
-                            type="button"
-                            (click)="cancelEdit()"
-                            [disabled]="saving()"
-                            class="inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            [disabled]="saving()"
-                            class="inline-flex h-9 items-center gap-2 rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            @if (saving()) {
-                                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".3" stroke-width="3" />
-                                    <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-                                </svg>
+                        <div>
+                            <label for="middle_name" class="block text-sm font-semibold text-slate-700">Middle name @if (editing()) { <span class="font-normal text-slate-400">(optional)</span> }</label>
+                            <input id="middle_name" formControlName="middle_name" type="text" autocomplete="additional-name" class="mt-1 block w-full rounded-lg border-0 bg-slate-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 disabled:cursor-default disabled:text-slate-700 disabled:hover:ring-slate-200" />
+                        </div>
+                        <div>
+                            <label for="last_name" class="block text-sm font-semibold text-slate-700">Last name @if (editing()) { <span class="text-rose-600">*</span> }</label>
+                            <input id="last_name" formControlName="last_name" type="text" autocomplete="family-name" [attr.aria-invalid]="invalid('last_name')" class="mt-1 block w-full rounded-lg border-0 bg-slate-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 aria-[invalid=true]:ring-red-500 disabled:cursor-default disabled:text-slate-700 disabled:hover:ring-slate-200" />
+                            @if (invalid('last_name')) {
+                                <p class="mt-1 text-xs text-rose-600">{{ serverError('last_name') || 'Enter a last name.' }}</p>
                             }
-                            {{ saving() ? 'Saving...' : 'Save changes' }}
-                        </button>
+                        </div>
+                        <div>
+                            <label for="extension_name" class="block text-sm font-semibold text-slate-700">Suffix @if (editing()) { <span class="font-normal text-slate-400">(optional)</span> }</label>
+                            <input id="extension_name" formControlName="extension_name" type="text" placeholder="Jr., III" class="mt-1 block w-full rounded-lg border-0 bg-slate-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 disabled:cursor-default disabled:text-slate-700 disabled:placeholder:text-transparent disabled:hover:ring-slate-200" />
+                        </div>
+                        <div>
+                            <label for="birthdate" class="block text-sm font-semibold text-slate-700">Birthdate @if (editing()) { <span class="text-rose-600">*</span> }</label>
+                            <input id="birthdate" formControlName="birthdate" type="date" autocomplete="bday" [attr.aria-invalid]="invalid('birthdate')" class="mt-1 block w-full rounded-lg border-0 bg-slate-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 aria-[invalid=true]:ring-red-500 disabled:cursor-default disabled:text-slate-700 disabled:hover:ring-slate-200" />
+                            @if (invalid('birthdate')) {
+                                <p class="mt-1 text-xs text-rose-600">{{ serverError('birthdate') || 'Enter a birthdate.' }}</p>
+                            }
+                        </div>
+                        <fieldset>
+                            <label for="gender" class="block text-sm font-semibold text-slate-700">Gender @if (editing()) { <span class="text-rose-600">*</span> }</label>
+                            <div class="mt-1 grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1" [class.ring-1]="invalid('gender')" [class.ring-red-500]="invalid('gender')">
+                                <label class="flex cursor-pointer items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition has-[:checked]:bg-white has-[:checked]:text-emerald-800 has-[:checked]:shadow-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-600 has-[:disabled]:cursor-default">
+                                    <input type="radio" formControlName="gender" value="male" class="sr-only" />Male
+                                </label>
+                                <label class="flex cursor-pointer items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition has-[:checked]:bg-white has-[:checked]:text-emerald-800 has-[:checked]:shadow-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-600 has-[:disabled]:cursor-default">
+                                    <input type="radio" formControlName="gender" value="female" class="sr-only" />Female
+                                </label>
+                            </div>
+                            @if (invalid('gender')) {
+                                <p class="mt-1 text-xs text-rose-600">{{ serverError('gender') || 'Select a gender.' }}</p>
+                            }
+                        </fieldset>
+
+                        <!-- Church (read-only) -->
+                        <div class="sm:col-span-2">
+                            <span class="block text-sm font-semibold text-slate-700">Church</span>
+                            <div class="mt-1 flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 ring-1 ring-inset ring-slate-200">
+                                <svg class="h-4 w-4 shrink-0 text-emerald-800" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M10 2a1 1 0 011 1v1h1a1 1 0 110 2h-1v1.4l4.6 3.1a1 1 0 01.4.8V17a1 1 0 01-1 1H4a1 1 0 01-1-1v-5.7a1 1 0 01.4-.8L9 7.4V6H8a1 1 0 010-2h1V3a1 1 0 011-1z" />
+                                </svg>
+                                <span class="truncate text-sm text-slate-700">{{ churchName() }}</span>
+                                <span class="ml-auto shrink-0 text-xs text-slate-400">Can't be changed</span>
+                            </div>
+                        </div>
+
+                        <div [class.sm:col-span-2]="!editing()">
+                            <label for="email" class="block text-sm font-semibold text-slate-700">Email address @if (editing()) { <span class="text-rose-600">*</span> }</label>
+                            <input id="email" formControlName="email" type="email" autocomplete="email" [attr.aria-invalid]="invalid('email')" class="mt-1 block w-full rounded-lg border-0 bg-slate-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 aria-[invalid=true]:ring-red-500 disabled:cursor-default disabled:text-slate-700 disabled:hover:ring-slate-200" />
+                            @if (invalid('email')) {
+                                <p class="mt-1 text-xs text-rose-600">{{ serverError('email') || 'Enter a valid email address.' }}</p>
+                            }
+                        </div>
+                        @if (editing()) {
+                            <div>
+                                <label for="password" class="block text-sm font-semibold text-slate-700">New password <span class="font-normal text-slate-400">(optional)</span></label>
+                                <input id="password" formControlName="password" type="password" autocomplete="new-password" placeholder="Leave blank to keep current password" [attr.aria-invalid]="invalid('password')" class="mt-1 block w-full rounded-lg border-0 bg-slate-50 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 aria-[invalid=true]:ring-red-500" />
+                                @if (invalid('password')) {
+                                    <p class="mt-1 text-xs text-rose-600">{{ serverError('password') || 'Use at least 8 characters.' }}</p>
+                                } @else {
+                                    <p class="mt-1 text-xs text-slate-400">At least 8 characters.</p>
+                                }
+                            </div>
+                        }
+
+                        <!-- Footer actions -->
+                        @if (!editing()) {
+                            <div class="sm:col-span-2 mt-1 flex flex-col-reverse gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-end">
+                                <button
+                                    type="button"
+                                    (click)="deleteRepresentative()"
+                                    [disabled]="deleting()"
+                                    class="inline-flex items-center justify-center !rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {{ deleting() ? 'Deleting…' : 'Delete' }}
+                                </button>
+                                <button
+                                    type="button"
+                                    (click)="startEdit()"
+                                    class="inline-flex items-center justify-center gap-2 !rounded-lg bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path d="M13.6 3.4a2 2 0 112.8 2.8l-9 9-3.7.9.9-3.7 9-9z" />
+                                    </svg>
+                                    Edit
+                                </button>
+                            </div>
+                        } @else {
+                            <div class="sm:col-span-2 mt-1 flex flex-col-reverse gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-end">
+                                <button
+                                    type="button"
+                                    (click)="cancelEdit()"
+                                    [disabled]="saving()"
+                                    class="inline-flex items-center justify-center !rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                                >Cancel</button>
+                                <button
+                                    type="submit"
+                                    [disabled]="saving()"
+                                    class="inline-flex items-center justify-center gap-2 !rounded-lg bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    @if (saving()) {
+                                        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".3" stroke-width="3" />
+                                            <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                                        </svg>
+                                    } @else {
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6"/></svg>
+                                    }
+                                    {{ saving() ? 'Saving…' : 'Save changes' }}
+                                </button>
+                            </div>
+                        }
                     </div>
-                }
-            </form>
-        }
-    </div>
+                </div>
+            </div>
+        </form>
+    }
 </div>
