@@ -16,9 +16,7 @@ return new class extends Migration
             $table->foreignId('church_id')
                 ->constrained('churches', 'church_id')
                 ->cascadeOnDelete();
-            $table->foreignId('quarter_id')
-                ->constrained('quarters', 'quarter_id')
-                ->cascadeOnDelete();
+            $table->string('quarter');
             $table->string('first_name');
             $table->string('middle_name');
             $table->string('last_name');

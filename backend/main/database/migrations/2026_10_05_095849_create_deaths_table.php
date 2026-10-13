@@ -16,9 +16,7 @@ return new class extends Migration
             $table->foreignId('baptism_id')
                 ->constrained('baptisms', 'baptism_id')
                 ->cascadeOnDelete();
-            $table->foreignId('quarter_id')
-                ->constrained('quarters', 'quarter_id')
-                ->cascadeOnDelete();
+            $table->string('quarter');
             $table->date('date_of_death');
         });
     }
