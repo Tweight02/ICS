@@ -1,5 +1,4 @@
 <div class="page">
-
   <header class="top-header">
     <div class="d-flex align-items-center justify-content-between">
       <div class="header-actions">
@@ -14,51 +13,47 @@
     </div>
   </header>
 
- 
-
   <!-- Main Content -->
   <main class="content-section">
     <div class="row g-4">
-
       <!-- Records -->
       <div
         class="records-column"
         [ngClass]="isReadOnly ? 'col-12' : 'col-lg-9'">
 
-      <div class="records-toolbar d-flex align-items-center justify-content-between">
-<div class="d-flex align-items-center pb-3">
-  <span class="selector-label">
-    SELECT RECORD:
-  </span>
+        <div class="records-toolbar d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center pb-3">
+            <span class="selector-label">
+              SELECT RECORD:
+            </span>
 
-  <button
-    type="button"
-    class="record-btn"
-    [class.active]="selectedRecord === 'baptism'"
-    (click)="selectRecord('baptism')">
-    Baptism Record
-  </button>
+            <button
+              type="button"
+              class="record-btn"
+              [class.active]="selectedRecord === 'baptism'"
+              (click)="selectRecord('baptism')">
+              Baptism Record
+            </button>
 
-  <button
-    type="button"
-    class="record-btn"
-    [class.active]="selectedRecord === 'death'"
-    (click)="selectRecord('death')">
-    Death Record
-  </button>
-</div>
+            <button
+              type="button"
+              class="record-btn"
+              [class.active]="selectedRecord === 'death'"
+              (click)="selectRecord('death')">
+              Death Record
+            </button>
+          </div>
 
-  <!-- Add Record -->
-  <a
-    *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
-    [routerLink]="selectedRecord === 'baptism'
-      ? '/pastor/bapaddrec'
-      : '/pastor/deathaddrec'"
-    class="add-record-btn">
-    + Add Record
-  </a>
-
-</div>
+          <!-- Add Record -->
+          <a
+            *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
+            [routerLink]="selectedRecord === 'baptism'
+              ? '/pastor/bapaddrec'
+              : '/pastor/deathaddrec'"
+            class="add-record-btn">
+            + Add Record
+          </a>
+        </div>
 
         <div class="table-responsive">
 
@@ -84,7 +79,6 @@
             </thead>
 
             <tbody>
-
               <!-- Loading -->
               <tr *ngIf="loadingBaptisms">
                 <td colspan="8" class="text-center">
@@ -161,9 +155,7 @@
                 <td>
                   {{ baptism.gender || '—' }}
                 </td>
-
               </tr>
-
             </tbody>
           </table>
 
@@ -189,7 +181,6 @@
             </thead>
 
             <tbody>
-
               <!-- Loading -->
               <tr *ngIf="loadingDeaths">
                 <td colspan="8" class="text-center">
@@ -225,7 +216,15 @@
                 *ngFor="
                   let death of displayedDeaths;
                   let i = index
-                ">
+                "
+                class="baptism-record-row"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="'View details for ' + getFullName(getDeathBaptism(death))"
+                title="Click to view complete death information"
+                (click)="openDeathModal(death)"
+                (keydown.enter)="openDeathModal(death)"
+                (keydown.space)="openDeathModal(death); $event.preventDefault()">
 
                 <td>
                   {{ i + 1 }}
@@ -279,12 +278,9 @@
                     getDeathBaptism(death)?.marital_status || '—'
                   }}
                 </td>
-
               </tr>
-
             </tbody>
           </table>
-
         </div>
       </div>
 
@@ -305,7 +301,6 @@
         </div>
 
         <div class="comment-card">
-
           <div class="comment-top">
             <div>
               <div class="comment-role">
@@ -322,16 +317,12 @@
             Please ensure the entries are complete and any supporting notes
             are included before final submission.
           </p>
-
         </div>
 
         <div class="comment-line"></div>
-
       </div>
-
     </div>
   </main>
-
 </div>
 
 <!-- ================================================= -->
@@ -353,26 +344,15 @@
   (click)="$event.stopPropagation()">
 
   <div class="baptism-modal">
-
     <!-- Modal Header -->
     <div class="baptism-modal-header">
-
       <div class="modal-heading-content">
-
-    
-
         <div>
           <h2 id="baptismModalTitle">
             Baptism Record
           </h2>
-
-
         </div>
-
       </div>
-
-  
-
     </div>
 
     <!-- Modal Body -->
@@ -380,31 +360,22 @@
       class="baptism-modal-body"
       *ngIf="selectedBaptism">
 
-     
-
       <!-- Combined Information Section -->
       <div class="details-section">
-
         <div class="details-section-heading">
           <div>
-
-            
-          <h3>
-            {{ getFullName(selectedBaptism) }}
-          </h3>
-
-
+            <h3>
+              {{ getFullName(selectedBaptism) }}
+            </h3>
           </div>
         </div>
 
         <div class="details-grid">
-
           <!-- First Name -->
           <div class="detail-item">
             <span class="detail-label">
               First Name
             </span>
-
             <span class="detail-value">
               {{ selectedBaptism.first_name || '—' }}
             </span>
@@ -415,7 +386,6 @@
             <span class="detail-label">
               Middle Name
             </span>
-
             <span class="detail-value">
               {{ selectedBaptism.middle_name || '—' }}
             </span>
@@ -426,7 +396,6 @@
             <span class="detail-label">
               Last Name
             </span>
-
             <span class="detail-value">
               {{ selectedBaptism.last_name || '—' }}
             </span>
@@ -437,7 +406,6 @@
             <span class="detail-label">
               Extension Name
             </span>
-
             <span class="detail-value">
               {{ selectedBaptism.extension_name || '—' }}
             </span>
@@ -448,7 +416,6 @@
             <span class="detail-label">
               Gender
             </span>
-
             <span class="detail-value">
               {{ selectedBaptism.gender || '—' }}
             </span>
@@ -459,7 +426,6 @@
             <span class="detail-label">
               Marital Status
             </span>
-
             <span class="detail-value">
               {{ selectedBaptism.marital_status || '—' }}
             </span>
@@ -470,7 +436,6 @@
             <span class="detail-label">
               Birthdate
             </span>
-
             <span class="detail-value">
               {{ formatDate(selectedBaptism.birthdate) }}
             </span>
@@ -481,43 +446,36 @@
             <span class="detail-label">
               Current Age
             </span>
-
             <span class="detail-value">
               {{ calculateAge(selectedBaptism.birthdate) }}
               <span class="detail-unit">years old</span>
             </span>
           </div>
 
-        
-<!-- Address and Church -->
-<div class="detail-item">
-  <span class="detail-label">
-    Address
-  </span>
+          <!-- Address and Church -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Address
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.address || '—' }}
+            </span>
+          </div>
 
-  <span class="detail-value">
-    {{ selectedBaptism.address || '—' }}
-  </span>
-</div>
-
-<div class="detail-item">
-  <span class="detail-label">
-    Church
-  </span>
-
-  <span class="detail-value">
-    {{ getChurchName(selectedBaptism.church_id) }}
-  </span>
-</div>
-
-
+          <div class="detail-item">
+            <span class="detail-label">
+              Church
+            </span>
+            <span class="detail-value">
+              {{ getChurchName(selectedBaptism.church_id) }}
+            </span>
+          </div>
 
           <!-- Baptism Date -->
           <div class="detail-item">
             <span class="detail-label">
               Date of Baptism
             </span>
-
             <span class="detail-value">
               {{ formatDate(selectedBaptism.date_of_baptism) }}
             </span>
@@ -528,7 +486,6 @@
             <span class="detail-label">
               Officiating Minister
             </span>
-
             <span class="detail-value">
               {{ selectedBaptism.officiating_minister || '—' }}
             </span>
@@ -539,52 +496,181 @@
             <span class="detail-label">
               Place of Baptism
             </span>
-
             <span class="detail-value">
               {{ selectedBaptism.place_of_baptism || '—' }}
             </span>
           </div>
+
+          
 
           <!-- Reclaimed Member -->
           <div class="detail-item">
             <span class="detail-label">
               Reclaimed Member
             </span>
-
             <span
               class="status-badge"
               [class.status-yes]="selectedBaptism.is_reclaimed"
               [class.status-no]="!selectedBaptism.is_reclaimed">
-
               {{
                 selectedBaptism.is_reclaimed
                   ? 'Yes'
                   : 'No'
               }}
-
             </span>
           </div>
-
         </div>
-
       </div>
-
     </div>
 
     <!-- Modal Footer -->
     <div class="baptism-modal-footer">
-
       <button
         type="button"
         class="modal-done-btn"
         (click)="closeBaptismModal()">
         Close
       </button>
+    </div>
+  </div>
+</div>
 
+<!-- ================================================= -->
+<!-- PROFESSIONAL DEATH DETAILS MODAL -->
+<!-- ================================================= -->
+
+<div
+  *ngIf="selectedDeath"
+  class="baptism-modal-backdrop"
+  (click)="closeDeathModal()">
+</div>
+
+<div
+  *ngIf="selectedDeath"
+  class="baptism-modal-wrapper"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="deathModalTitle"
+  (click)="$event.stopPropagation()">
+
+  <div class="baptism-modal">
+    <!-- Modal Header -->
+    <div class="baptism-modal-header">
+      <div class="modal-heading-content">
+        <div>
+          <h2 id="deathModalTitle">Death Record</h2>
+        </div>
+      </div>
     </div>
 
-  </div>
+    <!-- Modal Body -->
+    <div class="baptism-modal-body" *ngIf="selectedDeath as deathRecord">
+      <div class="details-section">
+        <div class="details-section-heading">
+          <div>
+            <h3>{{ getFullName(getDeathBaptism(deathRecord)) }}</h3>
+          </div>
+        </div>
 
+        <div class="details-grid">
+       
+
+          <div class="detail-item">
+            <span class="detail-label">First Name</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.first_name || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Middle Name</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.middle_name || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Last Name</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.last_name || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Extension Name</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.extension_name || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Gender</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.gender || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Marital Status</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.marital_status || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Birthdate</span>
+            <span class="detail-value">{{ formatDate(getDeathBaptism(deathRecord)?.birthdate || '') }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Age at Death</span>
+            <span class="detail-value">
+              {{ calculateAgeAtDeath(getDeathBaptism(deathRecord)?.birthdate || '', deathRecord.date_of_death) }}
+              <span class="detail-unit">years old</span>
+            </span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Address</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.address || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Church</span>
+            <span class="detail-value">{{ getChurchName(getDeathBaptism(deathRecord)?.church_id) }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Date of Death</span>
+            <span class="detail-value">{{ formatDate(deathRecord.date_of_death) }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Date of Baptism</span>
+            <span class="detail-value">{{ formatDate(getDeathBaptism(deathRecord)?.date_of_baptism || '') }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Officiating Minister</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.officiating_minister || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Place of Baptism</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.place_of_baptism || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Reclaimed Member</span>
+            <span
+              class="status-badge"
+              [class.status-yes]="getDeathBaptism(deathRecord)?.is_reclaimed"
+              [class.status-no]="!getDeathBaptism(deathRecord)?.is_reclaimed">
+              {{ getDeathBaptism(deathRecord)?.is_reclaimed ? 'Yes' : 'No' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="baptism-modal-footer">
+      <button
+        type="button"
+        class="modal-done-btn"
+        (click)="closeDeathModal()">
+        Close
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ================================================= -->
