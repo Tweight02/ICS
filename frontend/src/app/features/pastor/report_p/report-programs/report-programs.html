@@ -2,10 +2,10 @@
 <ng-template #qcell let-v>
   <div class="flex items-center justify-center">
 
-    <span *ngIf="v.progress === null || v.progress === 0" class="text-sm text-emerald-900/40">—</span>
+    <span *ngIf="v.progress === null || v.progress === 0" class="text-sm text-emerald-900/40">-</span>
 
     <span
-      *ngIf="v.approved"
+      *ngIf="v.approved && v.progress !== 0 && v.progress !== null"
       title="Complete"
       class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700
              text-xs font-bold text-white shadow-sm">

@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReportService } from '../../../../core/services/report/report';
 import { AuthService } from '../../../../core/services/auth/auth-service';
+import { ChurchService } from '../../../../core/services/church/church-service';
 
 interface QuarterRecord {
   quarter_id: number;
@@ -93,6 +94,7 @@ export class ReportParticulars implements OnInit, OnDestroy {
   private readonly reportService = inject(ReportService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly auth = inject(AuthService);
+  private readonly churchService = inject(ChurchService);
 
   churchId = 0;
 
@@ -160,8 +162,6 @@ ngOnInit(): void {
     return;
   }
 
-  this.churchId = Number(user.church_id);
-
   this.route.paramMap.subscribe(params => {
     const id = Number(params.get('departmentId'));
 
@@ -171,9 +171,56 @@ ngOnInit(): void {
     }
 
     this.departmentId = id;
-    this.loadReport();
+    this.resolveReportChurch(Number(user.church_id));
   });
 }
+
+  private resolveReportChurch(assignedChurchId: number): void {
+    this.loading = true;
+
+    this.churchService.getAllChurches().subscribe({
+      next: response => {
+        const churches = Array.isArray(response.data) ? response.data : [];
+        const assignedChurch = churches.find(
+          church => Number(church.church_id) === assignedChurchId
+        );
+
+        if (!assignedChurch) {
+          this.loading = false;
+          this.errorMessage = 'Your assigned church could not be found.';
+          this.cdr.detectChanges();
+          return;
+        }
+
+        let reportChurch = assignedChurch;
+
+        if (assignedChurch.parent_id === null) {
+          const districtChurches = churches.filter(
+            church => Number(church.parent_id) === assignedChurchId
+          );
+
+          if (districtChurches.length !== 1) {
+            this.loading = false;
+            this.errorMessage = districtChurches.length === 0
+              ? 'No local church is assigned to this district.'
+              : 'Your account is assigned to a district with multiple churches. Please contact the administrator.';
+            this.cdr.detectChanges();
+            return;
+          }
+
+          reportChurch = districtChurches[0];
+        }
+
+        this.churchId = Number(reportChurch.church_id);
+        this.loadReport();
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Unable to load church information for this report.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   ngOnDestroy(): void {
     // Save anything still waiting before leaving the page.
