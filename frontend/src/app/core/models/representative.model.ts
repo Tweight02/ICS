@@ -24,6 +24,7 @@ export interface Representative {
     role: 'church_representative';
 
     email: string;
+    status?: 'active' | 'inactive';
 
     church_id: number;
     department_id: number;

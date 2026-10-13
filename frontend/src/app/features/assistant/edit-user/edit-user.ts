@@ -34,7 +34,7 @@ export class EditUser implements OnInit {
   loading = signal(true);
   loadError = signal<string | null>(null);
   saving = signal(false);
-  deleting = signal(false);
+  removing = signal(false);
   editing = signal(false);
   submitErrors = signal<string[]>([]);
 
@@ -180,18 +180,18 @@ export class EditUser implements OnInit {
   }
 
 
-async onDelete(): Promise<void> {
-  if (this.deleting()) return;
+async onRemove(): Promise<void> {
+  if (this.removing()) return;
 
   const p = this.pastor();
   if (!p) return;
 
   const result = await Swal.fire({
-    title: 'Delete Pastor?',
-    text: `Are you sure you want to delete ${p.first_name} ${p.last_name}? This action cannot be undone.`,
+    title: 'Remove Pastor?',
+    text: `Remove ${p.first_name} ${p.last_name} from active pastors? Their account and records will be kept, but they will no longer be able to sign in.`,
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonText: 'Yes, delete',
+    confirmButtonText: 'Yes, remove',
     cancelButtonText: 'Cancel',
     reverseButtons: true,
     focusCancel: true,
@@ -207,16 +207,16 @@ async onDelete(): Promise<void> {
   // Stop if the user cancels or closes the dialog.
   if (!result.isConfirmed) return;
 
-  this.deleting.set(true);
+  this.removing.set(true);
   this.submitErrors.set([]);
 
-  this.userService.deletePastor(this.id).subscribe({
+  this.userService.deactivatePastor(this.id).subscribe({
     next: async () => {
-      this.deleting.set(false);
+      this.removing.set(false);
 
       await Swal.fire({
-        title: 'Pastor Deleted',
-        text: `${p.first_name} ${p.last_name} was deleted successfully.`,
+        title: 'Pastor Removed',
+        text: `${p.first_name} ${p.last_name} was removed from active pastors. Their records were kept.`,
         icon: 'success',
         confirmButtonText: 'OK',
         confirmButtonColor: '#065f46',
@@ -225,16 +225,16 @@ async onDelete(): Promise<void> {
       await this.router.navigateByUrl(this.backUrl);
     },
     error: async (err: HttpErrorResponse) => {
-      this.deleting.set(false);
+      this.removing.set(false);
 
       const message =
         err.error?.message ??
-        'Could not delete this pastor. Please try again.';
+        'Could not remove this pastor. Please try again.';
 
       this.submitErrors.set([message]);
 
       await Swal.fire({
-        title: 'Deletion Failed',
+        title: 'Removal Failed',
         text: message,
         icon: 'error',
         confirmButtonText: 'OK',

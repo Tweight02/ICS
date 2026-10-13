@@ -24,15 +24,27 @@ export class NewUser implements OnInit {
 
   districts: Church[] = [];
   isSubmitting = false;
+  isLoadingDistricts = false;
+  districtsError = '';
 
   ngOnInit(): void {
     this.loadDistricts();
   }
 
   loadDistricts(): void {
+    this.isLoadingDistricts = true;
+    this.districtsError = '';
+
     this.userService.getDistricts().subscribe({
-      next: (response) => (this.districts = response.data),
-      error: (error) => console.error('Failed to load districts:', error),
+      next: (response) => {
+        this.districts = response.data ?? [];
+        this.isLoadingDistricts = false;
+      },
+      error: (error) => {
+        console.error('Failed to load districts:', error);
+        this.districtsError = 'Unable to load districts. Check your connection and try again.';
+        this.isLoadingDistricts = false;
+      },
     });
   }
 
@@ -106,7 +118,6 @@ export class NewUser implements OnInit {
           department_id: this.departmentId,
           church_id: '',
           email: '',
-          password: '',
         });
 
         Swal.fire({
