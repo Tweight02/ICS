@@ -12,7 +12,6 @@ import { Router } from '@angular/router';
 import { ReportService } from '../../../../core/services/report/report';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
-
 import { Department } from '../../../../core/models/report.model';
 
 interface QuarterMonitoring {
