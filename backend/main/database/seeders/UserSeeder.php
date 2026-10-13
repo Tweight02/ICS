@@ -22,6 +22,7 @@ class UserSeeder extends Seeder
                 'gender'         => 'Male',
                 'role'           => 'representative',
                 'email'          => 'district.representative@example.com',
+                'status'         => 'active'
             ],
               [
                 'department_id'  => 16, // Ministerial & Evangelism
@@ -34,6 +35,7 @@ class UserSeeder extends Seeder
                 'gender'         => 'Male',
                 'role'           => 'pastor',
                 'email'          => 'James.pastor@gmail.com',
+                'status'         => 'active'
             ],
             [
                 'department_id'  => 19, // Communication
@@ -46,6 +48,7 @@ class UserSeeder extends Seeder
                 'gender'         => 'Female',
                 'role'           => 'director',
                 'email'          => 'admin.director@example.com',
+                'status'         => 'active'
             ],
                         [
                 'department_id'  => 19, // assistant
@@ -58,6 +61,7 @@ class UserSeeder extends Seeder
                 'gender'         => 'Female',
                 'role'           => 'assistant',
                 'email'          => 'assistant.e@example.com',
+                'status'         => 'active'
             ],
         ];
 
