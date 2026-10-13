@@ -53,6 +53,12 @@ class BaptismController extends Controller
                 'exists:churches,church_id'
             ],
 
+            'quarter' => [
+                'required',
+                'string',
+                'max:255'
+            ],
+
             'first_name' => [
                 'required',
                 'string',
@@ -172,6 +178,13 @@ class BaptismController extends Controller
                 'required',
                 'integer',
                 'exists:churches,church_id'
+            ],
+
+            'quarter' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255'
             ],
 
             'first_name' => [

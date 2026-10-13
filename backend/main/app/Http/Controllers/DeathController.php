@@ -38,6 +38,12 @@ class DeathController extends Controller
                     'exists:baptisms,baptism_id'
                 ],
 
+                'quarter' => [
+                    'required',
+                    'string',
+                    'max:255'
+                ],
+
                 'date_of_death' => [
                     'required',
                     'date'
@@ -46,6 +52,7 @@ class DeathController extends Controller
 
             $death = Death::create([
                 'baptism_id' => $validated['baptism_id'],
+                'quarter' => $validated['quarter'],
                 'date_of_death' => $validated['date_of_death'],
             ]);
 
@@ -124,6 +131,13 @@ class DeathController extends Controller
                 'required',
                 'integer',
                 'exists:baptisms,baptism_id'
+            ],
+
+            'quarter' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255'
             ],
 
             'date_of_death' => [
