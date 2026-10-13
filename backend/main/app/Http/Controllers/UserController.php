@@ -2,16 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Models\User;
-
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Facades\Hash;
-
 use Illuminate\Validation\Rule;
-
 use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
@@ -23,40 +18,30 @@ class UserController extends Controller
     public function create_user(Request $request)
     {
         $data = $request->validate([
-            'department_id' =>
-            'required|exists:departments,department_id',
+            'department_id' => 'required|exists:departments,department_id',
 
-            'church_id' =>
-            'required|exists:churches,church_id',
+            'church_id' => 'required|exists:churches,church_id',
 
-            'first_name' =>
-            'required|string|max:255',
+            'first_name' => 'required|string|max:255',
 
-            'middle_name' =>
-            'nullable|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
 
-            'last_name' =>
-            'required|string|max:255',
+            'last_name' => 'required|string|max:255',
 
-            'extension_name' =>
-            'nullable|string|max:50',
+            'extension_name' => 'nullable|string|max:50',
 
-            'birthdate' =>
-            'required|date|before:today',
+            'birthdate' => 'required|date|before:today',
 
-            'gender' =>
-            'required|string|in:male,female,other',
+            'gender' => 'required|string|in:male,female,other',
 
-            'email' =>
-            'required|email|unique:users,email',
+            'email' => 'required|email|unique:users,email',
 
-            'password' =>
-            'required|string|min:8',
+            'password' => 'required|string|min:8',
 
         ]);
 
-
         $data['role'] = 'pastor';
+        $data['status'] = 'active';
 
         $data['password'] =
             Hash::make(
@@ -72,6 +57,7 @@ class UserController extends Controller
 
             $occupied = User::where('role', 'pastor')
                 ->where('church_id', $data['church_id'])
+                ->where('status', 'active')
                 ->exists();
 
             if ($occupied) {
@@ -83,18 +69,14 @@ class UserController extends Controller
             return User::create($data);
         });
 
-
         return response()->json([
 
-            'message' =>
-            'User created successfully',
+            'message' => 'User created successfully',
 
-            'user' =>
-            $user,
+            'user' => $user,
 
         ], 201);
     }
-
 
     // =========================================================
     // VIEW PASTORS
@@ -104,88 +86,77 @@ class UserController extends Controller
     {
         $pastors =
             User::query()
+                ->where(
+                    'role',
+                    'pastor'
+                )
+                ->where('status', 'active')
+                ->with([
 
-            ->where(
-                'role',
-                'pastor'
-            )
+                    'department:department_id,department_name',
 
-            ->with([
+                    'church:church_id,name',
 
-                'department:department_id,department_name',
+                ])
+                ->when(
+                    $request->search,
+                    function ($query, $search) {
 
-                'church:church_id,name',
+                        $query->where(
+                            function ($q) use ($search) {
 
-            ])
-
-            ->when(
-                $request->search,
-                function ($query, $search) {
-
-                    $query->where(
-                        function ($q) use ($search) {
-
-                            $q->where(
-                                'first_name',
-                                'like',
-                                "%{$search}%"
-                            )
-
-                                ->orWhere(
-                                    'last_name',
+                                $q->where(
+                                    'first_name',
                                     'like',
                                     "%{$search}%"
                                 )
 
-                                ->orWhere(
-                                    'email',
-                                    'like',
-                                    "%{$search}%"
-                                );
-                        }
-                    );
-                }
-            )
+                                    ->orWhere(
+                                        'last_name',
+                                        'like',
+                                        "%{$search}%"
+                                    )
 
-            ->when(
-                $request->department_id,
-                fn($q, $id) =>
-                $q->where(
-                    'department_id',
-                    $id
+                                    ->orWhere(
+                                        'email',
+                                        'like',
+                                        "%{$search}%"
+                                    );
+                            }
+                        );
+                    }
                 )
-            )
-
-            ->when(
-                $request->church_id,
-                fn($q, $id) =>
-                $q->where(
-                    'church_id',
-                    $id
+                ->when(
+                    $request->department_id,
+                    fn ($q, $id) => $q->where(
+                        'department_id',
+                        $id
+                    )
                 )
-            )
-
-            ->orderBy(
-                'last_name'
-            )
-
-            ->orderBy(
-                'first_name'
-            )
-
-            ->paginate(
-                $request->integer(
-                    'per_page',
-                    15
+                ->when(
+                    $request->church_id,
+                    fn ($q, $id) => $q->where(
+                        'church_id',
+                        $id
+                    )
                 )
-            );
-
+                ->orderBy(
+                    'last_name'
+                )
+                ->orderBy(
+                    'first_name'
+                )
+                ->paginate(
+                    $request->integer(
+                        'per_page',
+                        15
+                    )
+                );
 
         return response()->json(
             $pastors
         );
     }
-
 
     // =========================================================
     // VIEW SINGLE PASTOR
@@ -198,28 +169,23 @@ class UserController extends Controller
                 'role',
                 'pastor'
             )
+                ->with([
 
-            ->with([
+                    'department:department_id,department_name',
 
-                'department:department_id,department_name',
+                    'church:church_id,name',
 
-                'church:church_id,name',
-
-            ])
-
-            ->findOrFail(
-                $id
-            );
-
+                ])
+                ->findOrFail(
+                    $id
+                );
 
         return response()->json([
 
-            'data' =>
-            $pastor
+            'data' => $pastor,
 
         ]);
     }
-
 
     // =========================================================
     // UPDATE SINGLE PASTOR
@@ -235,37 +201,28 @@ class UserController extends Controller
                 'role',
                 'pastor'
             )
-            ->findOrFail($id);
-
+                ->findOrFail($id);
 
         $data =
             $request->validate([
 
-                'department_id' =>
-                'required|exists:departments,department_id',
+                'department_id' => 'required|exists:departments,department_id',
 
-                'church_id' =>
-                'required|exists:churches,church_id',
+                'church_id' => 'required|exists:churches,church_id',
 
-                'first_name' =>
-                'required|string|max:255',
+                'first_name' => 'required|string|max:255',
 
-                'middle_name' =>
-                'nullable|string|max:255',
+                'middle_name' => 'nullable|string|max:255',
 
-                'last_name' =>
-                'required|string|max:255',
+                'last_name' => 'required|string|max:255',
 
-                'extension_name' =>
-                'nullable|string|max:50',
+                'extension_name' => 'nullable|string|max:50',
 
-                'birthdate' =>
-                'required|date|before:today',
+                'birthdate' => 'required|date|before:today',
 
-                'gender' =>
-                'required|string|in:male,female,other',
+                'gender' => 'required|string|in:male,female,other',
 
-                'email' => ['required','email',
+                'email' => ['required', 'email',
                     Rule::unique(
                         'users',
                         'email'
@@ -274,23 +231,23 @@ class UserController extends Controller
                         $pastor->getKeyName()
                     ),
                 ],
-                'password' =>
-                'nullable|string|min:8',
+                'password' => 'nullable|string|min:8',
 
             ]);
 
-            if ((int) $data['church_id'] !== (int) $pastor->church_id) {
-                $occupied = User::where('role', 'pastor')
-                    ->where('church_id', $data['church_id'])
-                    ->where('user_id', '!=', $pastor->user_id)
-                    ->exists();
+        if ((int) $data['church_id'] !== (int) $pastor->church_id) {
+            $occupied = User::where('role', 'pastor')
+                ->where('church_id', $data['church_id'])
+                ->where('status', 'active')
+                ->where('user_id', '!=', $pastor->user_id)
+                ->exists();
 
-                if ($occupied) {
-                    throw ValidationException::withMessages([
-                        'church_id' => 'This district already has an assigned pastor.',
-                    ]);
-                }
+            if ($occupied) {
+                throw ValidationException::withMessages([
+                    'church_id' => 'This district already has an assigned pastor.',
+                ]);
             }
+        }
 
         if (
             empty($data['password'])
@@ -307,26 +264,21 @@ class UserController extends Controller
                 );
         }
 
-
         $pastor->update(
             $data
         );
 
-
         return response()->json([
 
-            'message' =>
-            'User updated successfully',
+            'message' => 'User updated successfully',
 
-            'user' =>
-            $pastor->fresh([
+            'user' => $pastor->fresh([
                 'department',
-                'church'
+                'church',
             ]),
 
         ]);
     }
-
 
     // =========================================================
     // BULK TRANSFER PASTORS
@@ -373,8 +325,7 @@ class UserController extends Controller
             count(array_unique($destinationIds))
         ) {
             throw ValidationException::withMessages([
-                'transfers' =>
-                'Each pastor must be assigned to a different destination district.',
+                'transfers' => 'Each pastor must be assigned to a different destination district.',
             ]);
         }
 
@@ -394,6 +345,7 @@ class UserController extends Controller
             $userIds
         )
             ->where('role', 'pastor')
+            ->where('status', 'active')
             ->get()
             ->keyBy('user_id');
 
@@ -411,8 +363,7 @@ class UserController extends Controller
             );
 
             throw ValidationException::withMessages([
-                'transfers' =>
-                'One or more selected users are not pastors.',
+                'transfers' => 'One or more selected users are not pastors.',
             ]);
         }
 
@@ -453,8 +404,7 @@ class UserController extends Controller
                 ) {
 
                     throw ValidationException::withMessages([
-                        'transfers' =>
-                        "{$pastor->first_name} {$pastor->last_name} is already assigned to this district.",
+                        'transfers' => "{$pastor->first_name} {$pastor->last_name} is already assigned to this district.",
                     ]);
                 }
 
@@ -468,6 +418,7 @@ class UserController extends Controller
                     'role',
                     'pastor'
                 )
+                    ->where('status', 'active')
                     ->where(
                         'church_id',
                         $destinationId
@@ -487,8 +438,7 @@ class UserController extends Controller
                 if ($currentOccupant) {
 
                     throw ValidationException::withMessages([
-                        'transfers' =>
-                        "The destination district is already assigned to another pastor.",
+                        'transfers' => 'The destination district is already assigned to another pastor.',
                     ]);
                 }
             }
@@ -516,54 +466,54 @@ class UserController extends Controller
                     );
 
                 $pastor->update([
-                    'church_id' =>
-                    $transfer['church_id'],
+                    'church_id' => $transfer['church_id'],
                 ]);
             }
         });
 
         return response()->json([
-            'message' =>
-            count($transfers) .
+            'message' => count($transfers).
                 ' pastor(s) transferred successfully.',
 
-            'transferred_count' =>
-            count($transfers),
+            'transferred_count' => count($transfers),
         ]);
     }
 
-public function districtPastor(int $churchId)
-{
-    $pastor = User::where('church_id', $churchId)
-        ->where('department_id', 16)
-        ->first();
+    public function districtPastor(int $churchId)
+    {
+        $pastor = User::where('church_id', $churchId)
+            ->where('role', 'pastor')
+            ->where('department_id', 16)
+            ->where('status', 'active')
+            ->first();
 
-    if (! $pastor) {
-        return response()->json(['exists' => false]);
+        if (! $pastor) {
+            return response()->json(['exists' => false]);
+        }
+
+        return response()->json([
+            'exists' => true,
+            'message' => 'This district already has a pastor.',
+            'pastor' => [
+                'user_id' => $pastor->user_id,
+                'first_name' => $pastor->first_name,
+                'last_name' => $pastor->last_name,
+            ],
+        ]);
     }
 
-    return response()->json([
-        'exists' => true,
-        'message' => 'This district already has a pastor.',
-        'pastor' => [
-            'user_id' => $pastor->user_id,
-            'first_name' => $pastor->first_name,
-            'last_name' => $pastor->last_name,
-        ],
-    ]);
-}
+    public function deactivate_pastor($id)
+    {
+        $pastor = User::where('role', 'pastor')
+            ->findOrFail($id);
 
+        DB::transaction(function () use ($pastor) {
+            $pastor->update(['status' => 'inactive']);
+            $pastor->tokens()->delete();
+        });
 
-public function delete_pastor($id)
-{
-    $pastor = User::where('role', 'pastor')
-        ->findOrFail($id);
-
-    $pastor->delete();
-
-    return response()->json([
-        'message' => 'Pastor deleted successfully.',
-    ]);
-}
-
+        return response()->json([
+            'message' => 'Pastor deactivated successfully.',
+        ]);
+    }
 }

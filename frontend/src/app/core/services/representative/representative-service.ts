@@ -54,6 +54,13 @@ export class RepresentativeService {
         );
     }
 
+    getTransferChurches() {
+        return this.http.get<{ data: { church_id: number; name: string }[] }>(
+            `${this.apiUrl}/representatives/transfer-churches`,
+            this.opts
+        );
+    }
+
     getById(id: number) {
         return this.http.get<{ data: Representative }>(
             `${this.apiUrl}/representatives/${id}`,
@@ -67,6 +74,22 @@ export class RepresentativeService {
 
     update(id: number, data: any) {
         return this.http.put(`${this.apiUrl}/representatives/${id}`, data, this.opts);
+    }
+
+    transferRepresentatives(transfers: { user_id: number; church_id: number }[]) {
+        return this.http.post<{ message: string; transferred_count: number }>(
+            `${this.apiUrl}/representatives/bulk-transfer`,
+            { transfers },
+            this.opts
+        );
+    }
+
+    activateRepresentative(id: number) {
+        return this.http.post<{ message: string }>(
+            `${this.apiUrl}/representatives/${id}/activate`,
+            {},
+            this.opts
+        );
     }
 
     deleteRepresentative(id: number) {

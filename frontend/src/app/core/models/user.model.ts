@@ -22,6 +22,7 @@ export interface User {
   gender?: string | null;
   email: string;
   role: UserRole;
+  status?: 'active' | 'inactive';
   department_id?: number;
   church_id?: number;
   created_at?: string;

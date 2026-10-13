@@ -1,9 +1,6 @@
 
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BaptismController;
 use App\Http\Controllers\ChurchController;
@@ -13,6 +10,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\SampleController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -90,6 +89,11 @@ Route::prefix('assistant')->group(function () {
         'districts',
     ]);
 
+    Route::get(
+        '/district-options',
+        [ChurchController::class, 'districtOptions']
+    );
+
     Route::get('/districts/{churchId}/pastor', [
         UserController::class,
         'districtPastor',
@@ -121,10 +125,9 @@ Route::prefix('assistant')->group(function () {
     ]);
 
     Route::delete(
-        '/assistant/pastors/{id}',
-        [UserController::class, 'delete_pastor']
+        '/pastors/{id}',
+        [UserController::class, 'deactivate_pastor']
     );
-
 
     Route::post('/pastors/bulk-transfer', [
         UserController::class,
@@ -198,9 +201,12 @@ Route::middleware('auth:sanctum')->group(function () {
     | Representatives
     */
     Route::get('/pastor/representatives/churches', [RepresentativeController::class, 'available_churches']); // must be first
+    Route::get('/pastor/representatives/transfer-churches', [RepresentativeController::class, 'transfer_churches']);
     Route::get('/pastor/representatives', [RepresentativeController::class, 'index']);
     Route::get('/pastor/representatives/{id}', [RepresentativeController::class, 'show']);
     Route::post('/pastor/representatives', [RepresentativeController::class, 'store']);
+    Route::post('/pastor/representatives/bulk-transfer', [RepresentativeController::class, 'bulk_transfer']);
+    Route::post('/pastor/representatives/{id}/activate', [RepresentativeController::class, 'activate'])->whereNumber('id');
     Route::put('/pastor/representatives/{id}', [RepresentativeController::class, 'update']);
     Route::delete('/pastor/representatives/{id}', [RepresentativeController::class, 'destroy']);
 

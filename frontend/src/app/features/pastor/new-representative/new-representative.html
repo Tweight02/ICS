@@ -25,15 +25,6 @@
                 </div>
             </div>
 
-            @if (error()) {
-                <div class="flex items-start gap-2 border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700 sm:px-6" role="alert">
-                    <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                    </svg>
-                    <span>{{ error() }}</span>
-                </div>
-            }
-
             <div class="space-y-3 p-2 sm:p-6">
                 <!-- Church -->
                 <section>
@@ -85,7 +76,7 @@
                         <!-- Middle name -->
                         <div class="sm:col-span-3">
                             <label for="middle_name" class="mb-1.5 flex items-baseline gap-1.5 text-sm font-medium text-slate-700">
-                                Middle name <span class="text-xs font-normal text-slate-400">Optional</span>
+                                Middle name
                             </label>
                             <input
                                 id="middle_name" type="text" formControlName="middle_name"
@@ -141,7 +132,6 @@
                                 <option value="" disabled>Select gender</option>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
-                                <option value="other">Other</option>
                             </select>
                             @if (invalid('gender')) {
                                 <p class="mt-1.5 text-xs text-red-600">{{ serverError('gender') || 'Select a gender.' }}</p>
