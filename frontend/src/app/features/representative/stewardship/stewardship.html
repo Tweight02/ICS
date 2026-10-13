@@ -49,7 +49,9 @@
     </div>
 
     <!-- Status -->
-    <div class="border-b border-slate-200 bg-slate-50 px-6 py-2.5 text-sm text-slate-600 sm:px-8">{{ statusNote }}</div>
+    @if (statusNote) {
+      <div class="border-b border-slate-200 bg-slate-50 px-6 py-2.5 text-sm text-slate-600 sm:px-8">{{ statusNote }}</div>
+    }
 
     <!-- Summary -->
     <div class="grid grid-cols-1 divide-y divide-slate-200 border-b border-slate-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
@@ -83,6 +85,7 @@
               [id]="'field-' + f.particular_id"
               class="w-28 shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-right text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
               [(ngModel)]="values[f.particular_id]"
+              (ngModelChange)="onFieldChange()"
               [disabled]="isLocked"
             />
           </div>
@@ -123,6 +126,7 @@
                   placeholder="0.00"
                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-right text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                   [(ngModel)]="monthly[p.particular_id][i]"
+                  (ngModelChange)="onFieldChange()"
                   [disabled]="isLocked"
                   [attr.aria-label]="p.particulars_name + ' ' + label"
                 />
@@ -135,21 +139,15 @@
     </div>
 
     <!-- Footer: sign-off and actions -->
-    <div class="flex flex-wrap items-center justify-end gap-4 rounded-b-xl bg-slate-50 px-6 py-4 sm:px-8">
+    <div class="flex flex-wrap items-center justify-between gap-4 rounded-b-xl bg-slate-50 px-6 py-4 sm:px-8">
+      <span class="text-sm text-slate-500">{{ saveLabel }}</span>
+
       <div class="flex flex-wrap items-center gap-3">
         @if (message) {
           <span class="text-sm" [class]="isError ? 'text-red-700' : 'text-green-700'">{{ message }}</span>
         }
 
         @if (status === 'Draft') {
-          <button
-            type="button"
-            style="border-radius: 0.5rem"
-            class="border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-100"
-            (click)="saveDraft()"
-          >
-            Save draft
-          </button>
           <button
             type="button"
             style="border-radius: 0.5rem"
