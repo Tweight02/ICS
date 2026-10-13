@@ -13,23 +13,17 @@ import { finalize, timeout } from 'rxjs/operators';
 interface Baptism {
   baptism_id: number;
   church_id: number;
-
   first_name: string;
   middle_name: string | null;
   last_name: string;
   extension_name: string | null;
-
   birthdate: string;
   gender: string;
-
   address: string;
   officiating_minister: string;
   place_of_baptism: string;
-
   date_of_baptism: string;
-
   marital_status: string;
-
   is_reclaimed: boolean;
 }
 
@@ -44,7 +38,6 @@ interface Death {
   death_id: number;
   baptism_id: number;
   date_of_death: string;
-
   baptism?: Baptism | null;
 }
 
@@ -59,7 +52,6 @@ interface Death {
   styleUrls: ['./deathbap.css']
 })
 export class DeathbapComponent implements OnInit {
-
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
@@ -73,13 +65,14 @@ export class DeathbapComponent implements OnInit {
   isReadOnly = false;
 
   baptisms: Baptism[] = [];
-
   deaths: Death[] = [];
-
   churches: Church[] = [];
 
   // Selected baptism record for the details modal
   selectedBaptism: Baptism | null = null;
+
+  // Selected death record for the details modal
+  selectedDeath: Death | null = null;
 
   private readonly loadingBaptismsState = signal(false);
 
@@ -102,11 +95,9 @@ export class DeathbapComponent implements OnInit {
   }
 
   baptismError: string = '';
-
   deathError: string = '';
 
   ngOnInit(): void {
-
     this.departmentId =
       Number(this.route.snapshot.paramMap.get('departmentId')) || 0;
 
@@ -125,11 +116,8 @@ export class DeathbapComponent implements OnInit {
     }
 
     this.loadChurches();
-
     this.loadBaptisms();
-
     this.loadDeaths();
-
   }
 
   // =================================================
@@ -152,32 +140,46 @@ export class DeathbapComponent implements OnInit {
   }
 
   // =================================================
+  // DEATH DETAILS MODAL
+  // =================================================
+
+  /**
+   * Open the modal with all information for the
+   * selected death record and its linked baptism record.
+   */
+  openDeathModal(death: Death): void {
+    this.selectedDeath = death;
+  }
+
+  /**
+   * Close the death details modal.
+   */
+  closeDeathModal(): void {
+    this.selectedDeath = null;
+  }
+
+  // =================================================
   // DISPLAYED RECORDS
   // =================================================
 
   get displayedBaptisms(): Baptism[] {
-
     return this.churchId
       ? this.baptisms.filter(
           record => Number(record.church_id) === this.churchId
         )
       : this.baptisms;
-
   }
 
   get displayedDeaths(): Death[] {
-
     return this.churchId
       ? this.deaths.filter(
           record =>
             Number(this.getDeathBaptism(record)?.church_id) === this.churchId
         )
       : this.deaths;
-
   }
 
   get reportLocation(): string {
-
     const churchName =
       this.getChurchName(this.churchId);
 
@@ -190,11 +192,9 @@ export class DeathbapComponent implements OnInit {
     ]
       .filter(Boolean)
       .join(' · ');
-
   }
 
   backToReports(): void {
-
     if (!this.isReadOnly) {
       return;
     }
@@ -204,7 +204,6 @@ export class DeathbapComponent implements OnInit {
       this.districtId,
       this.churchId
     ]);
-
   }
 
   /**
@@ -213,35 +212,28 @@ export class DeathbapComponent implements OnInit {
   selectRecord(
     record: 'baptism' | 'death'
   ): void {
-
     this.selectedRecord = record;
 
-    // Close the baptism modal when switching records.
+    // Close details modals when switching records.
     this.closeBaptismModal();
+    this.closeDeathModal();
 
     /*
      * Reload the selected records so newly
      * added records appear immediately.
      */
     if (record === 'baptism') {
-
       this.loadBaptisms();
-
     } else {
-
       this.loadDeaths();
-
     }
-
   }
 
   /**
    * Load Baptism records from Laravel.
    */
   loadBaptisms(): void {
-
     this.loadingBaptisms = true;
-
     this.baptismError = '';
 
     console.log(
@@ -253,11 +245,8 @@ export class DeathbapComponent implements OnInit {
         'http://127.0.0.1:8000/api/baptisms'
       )
       .pipe(
-
         timeout(10000),
-
         finalize(() => {
-
           this.loadingBaptisms = false;
 
           console.log(
@@ -265,14 +254,10 @@ export class DeathbapComponent implements OnInit {
           );
 
           this.cdr.detectChanges();
-
         })
-
       )
       .subscribe({
-
         next: (response) => {
-
           console.log(
             'Baptism API response:',
             response
@@ -282,7 +267,6 @@ export class DeathbapComponent implements OnInit {
             response?.data ?? response;
 
           if (Array.isArray(data)) {
-
             this.baptisms =
               data;
 
@@ -290,20 +274,14 @@ export class DeathbapComponent implements OnInit {
               'Baptism records loaded:',
               this.baptisms
             );
-
           } else {
-
             this.baptisms = [];
 
             this.baptismError =
               'The server returned an invalid baptism record response.';
-
           }
-
         },
-
         error: (error) => {
-
           console.error(
             'Failed to load baptism records:',
             error
@@ -315,51 +293,36 @@ export class DeathbapComponent implements OnInit {
             error?.name === 'TimeoutError' ||
             error?.message?.includes('timeout')
           ) {
-
             this.baptismError =
               'The Laravel server took too long to respond.';
-
           } else if (
             error?.status === 0
           ) {
-
             this.baptismError =
               'Cannot connect to Laravel. Make sure php artisan serve is running and CORS is configured.';
-
           } else if (
             error?.status === 404
           ) {
-
             this.baptismError =
               'The baptism API endpoint was not found.';
-
           } else if (
             error?.error?.message
           ) {
-
             this.baptismError =
               error.error.message;
-
           } else {
-
             this.baptismError =
               'Failed to load baptism records.';
-
           }
-
         }
-
       });
-
   }
 
   /**
    * Load Death records from Laravel.
    */
   loadDeaths(): void {
-
     this.loadingDeaths = true;
-
     this.deathError = '';
 
     console.log(
@@ -371,11 +334,8 @@ export class DeathbapComponent implements OnInit {
         'http://127.0.0.1:8000/api/deaths'
       )
       .pipe(
-
         timeout(10000),
-
         finalize(() => {
-
           this.loadingDeaths = false;
 
           console.log(
@@ -383,14 +343,10 @@ export class DeathbapComponent implements OnInit {
           );
 
           this.cdr.detectChanges();
-
         })
-
       )
       .subscribe({
-
         next: (response) => {
-
           console.log(
             'Death API response:',
             response
@@ -400,7 +356,6 @@ export class DeathbapComponent implements OnInit {
             response?.data ?? response;
 
           if (Array.isArray(data)) {
-
             this.deaths =
               data;
 
@@ -408,20 +363,14 @@ export class DeathbapComponent implements OnInit {
               'Death records loaded:',
               this.deaths
             );
-
           } else {
-
             this.deaths = [];
 
             this.deathError =
               'The server returned an invalid death record response.';
-
           }
-
         },
-
         error: (error) => {
-
           console.error(
             'Failed to load death records:',
             error
@@ -433,49 +382,35 @@ export class DeathbapComponent implements OnInit {
             error?.name === 'TimeoutError' ||
             error?.message?.includes('timeout')
           ) {
-
             this.deathError =
               'The Laravel server took too long to respond.';
-
           } else if (
             error?.status === 0
           ) {
-
             this.deathError =
               'Cannot connect to Laravel. Make sure php artisan serve is running and CORS is configured.';
-
           } else if (
             error?.status === 404
           ) {
-
             this.deathError =
               'The death API endpoint was not found.';
-
           } else if (
             error?.error?.message
           ) {
-
             this.deathError =
               error.error.message;
-
           } else {
-
             this.deathError =
               'Failed to load death records.';
-
           }
-
         }
-
       });
-
   }
 
   /**
    * Load Churches from Laravel.
    */
   loadChurches(): void {
-
     console.log(
       'Loading churches...'
     );
@@ -485,9 +420,7 @@ export class DeathbapComponent implements OnInit {
         'http://127.0.0.1:8000/api/churches'
       )
       .subscribe({
-
         next: (response) => {
-
           console.log(
             'Church API response:',
             response
@@ -497,22 +430,17 @@ export class DeathbapComponent implements OnInit {
             response?.data ?? response;
 
           if (Array.isArray(data)) {
-
             this.churches =
               data.map(
                 (church: any): Church => ({
-
                   church_id:
                     Number(
                       church.church_id
                     ),
-
                   name:
                     church.name ?? '',
-
                   address:
                     church.address ?? '',
-
                   parent_id:
                     church.parent_id !== null &&
                     church.parent_id !== undefined
@@ -520,14 +448,10 @@ export class DeathbapComponent implements OnInit {
                           church.parent_id
                         )
                       : null
-
                 })
               );
-
           } else {
-
             this.churches = [];
-
           }
 
           console.log(
@@ -536,22 +460,16 @@ export class DeathbapComponent implements OnInit {
           );
 
           this.cdr.detectChanges();
-
         },
-
         error: (error) => {
-
           console.error(
             'Failed to load churches:',
             error
           );
 
           this.churches = [];
-
         }
-
       });
-
   }
 
   /**
@@ -560,14 +478,11 @@ export class DeathbapComponent implements OnInit {
   getChurchName(
     churchId: number | null | undefined
   ): string {
-
     if (
       churchId === null ||
       churchId === undefined
     ) {
-
       return 'Unknown Church';
-
     }
 
     const church =
@@ -578,13 +493,10 @@ export class DeathbapComponent implements OnInit {
       );
 
     if (church) {
-
       return church.name;
-
     }
 
     return 'Unknown Church';
-
   }
 
   /**
@@ -593,7 +505,6 @@ export class DeathbapComponent implements OnInit {
   getBaptismById(
     baptismId: number
   ): Baptism | null {
-
     const baptism =
       this.baptisms.find(
         item =>
@@ -602,7 +513,6 @@ export class DeathbapComponent implements OnInit {
       );
 
     return baptism ?? null;
-
   }
 
   /**
@@ -615,17 +525,13 @@ export class DeathbapComponent implements OnInit {
   getDeathBaptism(
     death: Death
   ): Baptism | null {
-
     if (death.baptism) {
-
       return death.baptism;
-
     }
 
     return this.getBaptismById(
       death.baptism_id
     );
-
   }
 
   /**
@@ -634,11 +540,8 @@ export class DeathbapComponent implements OnInit {
   getFullName(
     baptism: Baptism | null | undefined
   ): string {
-
     if (!baptism) {
-
       return 'Unknown Member';
-
     }
 
     const parts: string[] = [];
@@ -647,48 +550,39 @@ export class DeathbapComponent implements OnInit {
       baptism.first_name &&
       baptism.first_name.trim()
     ) {
-
       parts.push(
         baptism.first_name.trim()
       );
-
     }
 
     if (
       baptism.middle_name &&
       baptism.middle_name.trim()
     ) {
-
       parts.push(
         baptism.middle_name.trim()
       );
-
     }
 
     if (
       baptism.last_name &&
       baptism.last_name.trim()
     ) {
-
       parts.push(
         baptism.last_name.trim()
       );
-
     }
 
     if (
       baptism.extension_name &&
       baptism.extension_name.trim()
     ) {
-
       parts.push(
         baptism.extension_name.trim()
       );
-
     }
 
     return parts.join(' ');
-
   }
 
   /**
@@ -697,11 +591,8 @@ export class DeathbapComponent implements OnInit {
   formatDate(
     date: string
   ): string {
-
     if (!date) {
-
       return '—';
-
     }
 
     const parsedDate =
@@ -714,9 +605,7 @@ export class DeathbapComponent implements OnInit {
         parsedDate.getTime()
       )
     ) {
-
       return date;
-
     }
 
     return parsedDate.toLocaleDateString(
@@ -727,7 +616,6 @@ export class DeathbapComponent implements OnInit {
         year: 'numeric'
       }
     );
-
   }
 
   /**
@@ -736,11 +624,8 @@ export class DeathbapComponent implements OnInit {
   calculateAge(
     birthdate: string
   ): number | string {
-
     if (!birthdate) {
-
       return '—';
-
     }
 
     const birthDate =
@@ -753,9 +638,7 @@ export class DeathbapComponent implements OnInit {
         birthDate.getTime()
       )
     ) {
-
       return '—';
-
     }
 
     const today =
@@ -777,13 +660,10 @@ export class DeathbapComponent implements OnInit {
         birthDate.getDate()
       )
     ) {
-
       age--;
-
     }
 
     return age;
-
   }
 
   /**
@@ -797,14 +677,11 @@ export class DeathbapComponent implements OnInit {
     birthdate: string,
     dateOfDeath: string
   ): number | string {
-
     if (
       !birthdate ||
       !dateOfDeath
     ) {
-
       return '—';
-
     }
 
     const birthDate =
@@ -821,9 +698,7 @@ export class DeathbapComponent implements OnInit {
       isNaN(birthDate.getTime()) ||
       isNaN(deathDate.getTime())
     ) {
-
       return '—';
-
     }
 
     let age =
@@ -842,13 +717,9 @@ export class DeathbapComponent implements OnInit {
         birthDate.getDate()
       )
     ) {
-
       age--;
-
     }
 
     return age;
-
   }
-
 }

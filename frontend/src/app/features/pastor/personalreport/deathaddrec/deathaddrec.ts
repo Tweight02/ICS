@@ -48,17 +48,21 @@ export class DeathaddrecComponent implements OnInit {
   selectedBaptism: Baptism | null = null;
 
   private readonly loadingBaptismsState = signal(false);
+
   get loadingBaptisms(): boolean {
     return this.loadingBaptismsState();
   }
+
   set loadingBaptisms(value: boolean) {
     this.loadingBaptismsState.set(value);
   }
 
   private readonly savingState = signal(false);
+
   get saving(): boolean {
     return this.savingState();
   }
+
   set saving(value: boolean) {
     this.savingState.set(value);
   }
@@ -68,7 +72,6 @@ export class DeathaddrecComponent implements OnInit {
     date_of_death: ''
   };
 
-
   ngOnInit(): void {
 
     this.loadBaptisms();
@@ -76,7 +79,6 @@ export class DeathaddrecComponent implements OnInit {
     this.loadChurches();
 
   }
-
 
   /**
    * Load baptism records.
@@ -130,7 +132,6 @@ export class DeathaddrecComponent implements OnInit {
       });
 
   }
-
 
   /**
    * Load churches.
@@ -204,7 +205,6 @@ export class DeathaddrecComponent implements OnInit {
 
   }
 
-
   /**
    * Select a baptized member.
    */
@@ -244,7 +244,6 @@ export class DeathaddrecComponent implements OnInit {
     );
 
   }
-
 
   /**
    * Get full name.
@@ -303,7 +302,6 @@ export class DeathaddrecComponent implements OnInit {
 
   }
 
-
   /**
    * Get church name.
    */
@@ -334,9 +332,9 @@ export class DeathaddrecComponent implements OnInit {
 
   }
 
-
   /**
-   * Calculate age.
+   * Calculate current age.
+   * Kept unchanged for other uses.
    */
   calculateAge(
     birthdate: string
@@ -391,6 +389,73 @@ export class DeathaddrecComponent implements OnInit {
 
   }
 
+  /**
+   * Calculate age on the date of death.
+   */
+  calculateAgeAtDeath(
+    birthdate: string,
+    dateOfDeath: string
+  ): number | string {
+
+    if (
+      !birthdate ||
+      !dateOfDeath
+    ) {
+
+      return '';
+
+    }
+
+    const birthDate =
+      new Date(
+        birthdate + 'T00:00:00'
+      );
+
+    const deathDate =
+      new Date(
+        dateOfDeath + 'T00:00:00'
+      );
+
+    if (
+      isNaN(birthDate.getTime()) ||
+      isNaN(deathDate.getTime())
+    ) {
+
+      return '';
+
+    }
+
+    // A death date before birth is invalid.
+    if (deathDate < birthDate) {
+
+      return '';
+
+    }
+
+    let age =
+      deathDate.getFullYear() -
+      birthDate.getFullYear();
+
+    const monthDifference =
+      deathDate.getMonth() -
+      birthDate.getMonth();
+
+    if (
+      monthDifference < 0 ||
+      (
+        monthDifference === 0 &&
+        deathDate.getDate() <
+        birthDate.getDate()
+      )
+    ) {
+
+      age--;
+
+    }
+
+    return age;
+
+  }
 
   /**
    * Save death record.
@@ -410,12 +475,10 @@ export class DeathaddrecComponent implements OnInit {
 
     }
 
-
     const baptismId =
       Number(
         this.death.baptism_id
       );
-
 
     if (
       !Number.isInteger(baptismId) ||
@@ -430,6 +493,22 @@ export class DeathaddrecComponent implements OnInit {
 
     }
 
+    // Validate the date of death against the birthdate.
+    if (
+      this.selectedBaptism &&
+      this.calculateAgeAtDeath(
+        this.selectedBaptism.birthdate,
+        this.death.date_of_death
+      ) === ''
+    ) {
+
+      alert(
+        'The date of death must be on or after the birthdate.'
+      );
+
+      return;
+
+    }
 
     /*
      * Your deaths table contains only:
@@ -450,15 +529,12 @@ export class DeathaddrecComponent implements OnInit {
 
     };
 
-
     console.log(
       'Sending death payload:',
       payload
     );
 
-
     this.saving = true;
-
 
     this.http
       .post<any>(
@@ -495,7 +571,6 @@ export class DeathaddrecComponent implements OnInit {
 
           this.saving = false;
 
-
           if (
             error.status === 422 &&
             error.error?.errors
@@ -516,7 +591,6 @@ export class DeathaddrecComponent implements OnInit {
 
           }
 
-
           if (
             error.error?.error
           ) {
@@ -528,7 +602,6 @@ export class DeathaddrecComponent implements OnInit {
             return;
 
           }
-
 
           if (
             error.error?.message
@@ -542,7 +615,6 @@ export class DeathaddrecComponent implements OnInit {
 
           }
 
-
           if (
             error.status === 0
           ) {
@@ -555,7 +627,6 @@ export class DeathaddrecComponent implements OnInit {
             return;
 
           }
-
 
           alert(
             'Failed to save death record.'
