@@ -1,0 +1,223 @@
+<ng-template #monitoringCell let-value>
+  @if (value.approved) {
+    <span class="check">✓</span>
+  } @else if (value.progress > 0) {
+    <div class="progress-wrapper">
+      <span class="percentage">{{ value.progress }}%</span>
+      <div class="progress-bar">
+        <div class="progress-value" [style.width.%]="value.progress"></div>
+      </div>
+    </div>
+  } @else {
+    <span class="dash">–</span>
+  }
+</ng-template>
+
+<div class="details-page">
+
+  <!-- HEADER -->
+  <section class="details-header">
+
+    <div class="header-left">
+
+      <!-- BACK BUTTON -->
+      <button
+        type="button"
+        class="back-button"
+        (click)="backToDistricts()"
+      >
+        <span>←</span>
+        Back to Districts
+      </button>
+
+      @if (district) {
+
+        <span class="eyebrow">
+          DISTRICT
+        </span>
+
+        <h1>
+          {{ district.name }}
+        </h1>
+
+        @if (district.address) {
+          
+        }
+
+      } @else {
+
+        <span class="eyebrow">
+          DISTRICT REPORTS
+        </span>
+
+        <h1>
+          District Reports
+        </h1>
+
+      }
+
+    </div>
+
+    <!-- CHURCH COUNT -->
+    <div class="church-stat">
+
+      <strong>
+        {{ churches.length }}
+      </strong>
+
+      <span>
+        Churches / Companies
+      </span>
+
+    </div>
+
+  </section>
+
+
+  <!-- MONITORING TABLE -->
+  <section class="monitoring-card">
+
+    <div class="table-wrapper">
+
+      <table class="monitoring-table">
+
+        <thead>
+          <tr>
+
+            <th class="church-column">
+              Church
+            </th>
+
+            <th>
+              Q1
+            </th>
+
+            <th>
+              Q2
+            </th>
+
+            <th>
+              Q3
+            </th>
+
+            <th>
+              Q4
+            </th>
+
+          </tr>
+        </thead>
+
+
+        <tbody>
+
+          <!-- ERROR -->
+          @if (errorMessage) {
+
+            <tr>
+
+              <td
+                colspan="5"
+                class="message-cell error"
+              >
+                {{ errorMessage }}
+              </td>
+
+            </tr>
+
+          }
+
+          @else if (loadingChurches) {
+
+            <tr>
+              <td colspan="5" class="message-cell">
+                Loading churches...
+              </td>
+            </tr>
+
+          }
+
+          <!-- EMPTY -->
+          @else if (churches.length === 0) {
+
+            <tr>
+
+              <td
+                colspan="5"
+                class="message-cell"
+              >
+                No churches or companies
+                found for this district.
+              </td>
+
+            </tr>
+
+          }
+
+          <!-- DATA -->
+          @else {
+
+            @for (
+              church of churches;
+              track church.church_id
+            ) {
+
+              <tr
+                class="church-row"
+                tabindex="0"
+                (click)="openChurch(church)"
+                (keydown.enter)="openChurch(church)"
+              >
+
+                <!-- CHURCH -->
+                <td class="church-name">
+
+                  <div class="church-link">
+
+                    <span>
+                      {{ church.name }}
+                    </span>
+
+                  </div>
+
+                </td>
+
+
+                <td class="quarter-cell">
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q1 }">
+                  </ng-container>
+                </td>
+
+                <td class="quarter-cell">
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q2 }">
+                  </ng-container>
+                </td>
+
+                <td class="quarter-cell">
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q3 }">
+                  </ng-container>
+                </td>
+
+                <td class="quarter-cell">
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q4 }">
+                  </ng-container>
+                </td>
+
+              </tr>
+
+            }
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</div>

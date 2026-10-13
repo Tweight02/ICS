@@ -4,7 +4,8 @@ import {
   OnInit,
   OnDestroy,
   ChangeDetectorRef,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -16,6 +17,7 @@ interface QuarterRecord {
   quarter?: string;
   year?: number | string;
   value: number | string | null;
+  date_submitted?: string | null;
   mission_approve: string | null;
 }
 
@@ -105,18 +107,43 @@ export class ReportParticulars implements OnInit, OnDestroy {
   selectedProgramId: number | null = null;
 
   isAnnualView = false;
-  loading = false;
-  saving = false;
+  private readonly loadingState = signal(false);
+  get loading(): boolean {
+    return this.loadingState();
+  }
+  set loading(value: boolean) {
+    this.loadingState.set(value);
+  }
+
+  private readonly savingState = signal(false);
+  get saving(): boolean {
+    return this.savingState();
+  }
+  set saving(value: boolean) {
+    this.savingState.set(value);
+  }
   errorMessage = '';
   successMessage = '';
 
   // ---- Comments (from District Pastor & Assistant, read-only) ----
   comments: ReportComment[] = [];
-  commentsLoading = false;
+  private readonly commentsLoadingState = signal(false);
+  get commentsLoading(): boolean {
+    return this.commentsLoadingState();
+  }
+  set commentsLoading(value: boolean) {
+    this.commentsLoadingState.set(value);
+  }
   commentsError = '';
 
   // ---- Auto-save state ----
-  autoSaveStatus: AutoSaveStatus = 'idle';
+  private readonly autoSaveStatusState = signal<AutoSaveStatus>('idle');
+  get autoSaveStatus(): AutoSaveStatus {
+    return this.autoSaveStatusState();
+  }
+  set autoSaveStatus(value: AutoSaveStatus) {
+    this.autoSaveStatusState.set(value);
+  }
   private readonly autoSaveDelayMs = 800;
   private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private autoSaving = false;
@@ -327,9 +354,7 @@ ngOnInit(): void {
   isRecordApproved(record: QuarterRecord | null): boolean {
     if (!record) return false;
 
-    return ['1', 'true', 'approved'].includes(
-      String(record.mission_approve ?? '').toLowerCase()
-    );
+    return String(record.mission_approve ?? '').trim() !== '';
   }
 
   isQuarterApproved(quarterId: number): boolean {
@@ -673,11 +698,16 @@ ngOnInit(): void {
     const items = this.buildItems(program, quarter);
     if (!items) return;
 
+    const submittedItems = items.map(item => ({
+      ...item,
+      value: item.value ?? 0
+    }));
+
     this.saving = true;
     this.clearMessages();
 
     this.reportService
-      .saveDepartmentReport(this.churchId, this.departmentId, items)
+      .saveDepartmentReport(this.churchId, this.departmentId, submittedItems, true)
       .subscribe({
         next: (response: any) => {
           this.successMessage =

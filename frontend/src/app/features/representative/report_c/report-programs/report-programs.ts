@@ -2,28 +2,29 @@ import {
   Component,
   OnInit,
   ChangeDetectorRef,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
 
 import { ReportService } from '../../../../core/services/report/report';
+import { AuthService } from '../../../../core/services/auth/auth-service';
+import { ChurchService } from '../../../../core/services/church/church-service';
 
-import {
-  Department,
-  ChurchesResponse,
-  DepartmentReport,
-  ReportQuarter
-} from '../../../../core/models/report.model';
+import { Department } from '../../../../core/models/report.model';
+
+interface QuarterMonitoring {
+  progress: number | null;
+  approved: boolean;
+}
 
 interface Monitoring {
-  q1: number | null;
-  q2: number | null;
-  q3: number | null;
-  q4: number | null;
+  q1: QuarterMonitoring;
+  q2: QuarterMonitoring;
+  q3: QuarterMonitoring;
+  q4: QuarterMonitoring;
 }
 
 @Component({
@@ -36,75 +37,107 @@ interface Monitoring {
 export class ReportPrograms implements OnInit {
 
   private readonly reportService = inject(ReportService);
+  private readonly auth = inject(AuthService);
+  private readonly churchService = inject(ChurchService);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  // Current user
-  private readonly CURRENT_USER = {
-    user_id: 1,
-    department_id: 1,
-    church_id: 214,
-    first_name: 'Juan',
-    middle_name: 'Santos',
-    last_name: 'Dela Cruz',
-    extension_name: null,
-    birthdate: '1980-05-15',
-    gender: 'Male',
-    email: 'district.representative@example.com',
-    role: 'representative'
-  };
-
-  // District
-  readonly districtId = 210;
-  readonly districtName = 'Eastern Nueva Vizcaya';
-
-  // Church
-  churchId = this.CURRENT_USER.church_id;
-  churchName = 'Church';
-  churchAddress = '';
+  districtId = 0;
+  districtName = '';
+  churchId = 0;
+  churchName = '';
 
   // Departments
   departments: Department[] = [];
 
   // UI state
-  loading = false;
+  private readonly loadingState = signal(false);
+  get loading(): boolean {
+    return this.loadingState();
+  }
+  set loading(value: boolean) {
+    this.loadingState.set(value);
+  }
   errorMessage = '';
 
   ngOnInit(): void {
-    this.loadChurch();
-    this.loadDepartments();
+    const user = this.auth.getCurrentUser();
+
+    if (!user?.church_id) {
+      this.errorMessage =
+        'Your account does not have a church assigned. Please contact the administrator.';
+      return;
+    }
+
+    this.loadChurchNames(Number(user.church_id));
   }
 
-  // Load church
-  private loadChurch(): void {
-    fetch(`http://127.0.0.1:8000/api/districts/${this.districtId}/churches`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Unable to load churches.');
-        }
-        return response.json();
-      })
-      .then((response: ChurchesResponse) => {
-        const churches = response.data || [];
+  private loadChurchNames(assignedChurchId: number): void {
+    this.loading = true;
 
-        const currentChurch = churches.find(
-          church => Number(church.church_id) === Number(this.churchId)
+    this.churchService.getAllChurches().subscribe({
+      next: response => {
+        const churches = Array.isArray(response.data) ? response.data : [];
+        const assignedChurch = churches.find(
+          item => Number(item.church_id) === assignedChurchId
         );
 
-        if (currentChurch) {
-          this.churchName = currentChurch.name;
-          this.churchAddress = currentChurch.address || '';
+        if (!assignedChurch) {
+          this.loading = false;
+          this.errorMessage = 'Your assigned church could not be found.';
+          this.cdr.detectChanges();
+          return;
         }
 
+        this.districtId = Number(
+          assignedChurch.parent_id ?? assignedChurch.church_id
+        );
+        const district = churches.find(
+          item => Number(item.church_id) === this.districtId && item.parent_id === null
+        );
+
+        if (!district) {
+          this.loading = false;
+          this.errorMessage = 'The district for your assigned church could not be found.';
+          this.cdr.detectChanges();
+          return;
+        }
+
+        this.districtName = district.name;
+
+        let reportChurch = assignedChurch;
+        if (assignedChurch.parent_id === null) {
+          const districtChurches = churches.filter(
+            item => Number(item.parent_id) === this.districtId
+          );
+
+          if (districtChurches.length !== 1) {
+            this.loading = false;
+            this.errorMessage = districtChurches.length === 0
+              ? 'No local church is assigned to this district.'
+              : 'Your account is assigned to a district with multiple churches. Please contact the administrator.';
+            this.cdr.detectChanges();
+            return;
+          }
+
+          reportChurch = districtChurches[0];
+        }
+
+        this.churchId = Number(reportChurch.church_id);
+        this.churchName = reportChurch.name;
+        this.loadDepartments();
+
         this.cdr.detectChanges();
-      })
-      .catch(() => {
-        this.churchName = 'Church Representative';
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Unable to load church and district names.';
         this.cdr.detectChanges();
-      });
+      }
+    });
   }
 
-  // Load departments, then load the monitoring for each one
+  // The department list includes approval summaries for each quarter.
   private loadDepartments(): void {
     this.loading = true;
     this.errorMessage = '';
@@ -115,7 +148,6 @@ export class ReportPrograms implements OnInit {
         this.loading = false;
         this.cdr.detectChanges();
 
-        this.loadMonitoring();
       },
 
       error: (error) => {
@@ -163,116 +195,26 @@ export class ReportPrograms implements OnInit {
      MONITORING (from the database)
   ========================================================= */
 
-  // department_id -> { q1, q2, q3, q4 }
-  private monitoring: Record<number, Monitoring> = {};
-
   private readonly emptyMonitoring: Monitoring = {
-    q1: null,
-    q2: null,
-    q3: null,
-    q4: null
+    q1: { progress: null, approved: false },
+    q2: { progress: null, approved: false },
+    q3: { progress: null, approved: false },
+    q4: { progress: null, approved: false }
   };
 
-  // Used by the template: getMonitoring(i).q1 ... q4
   getMonitoring(index: number): Monitoring {
     const department = this.representativeDepartments[index];
 
-    return (department && this.monitoring[department.department_id])
-      || this.emptyMonitoring;
-  }
-
-  // Load every department's saved report in one go
-  private loadMonitoring(): void {
-    const departments = this.representativeDepartments;
-
-    if (departments.length === 0) {
-      return;
-    }
-
-    const requests = departments.map(department =>
-      this.reportService
-        .getDepartmentReport(this.churchId, department.department_id)
-        .pipe(
-          map(report => this.buildMonitoring(report)),
-          catchError(() => of(this.emptyMonitoring))
-        )
-    );
-
-    forkJoin(requests).subscribe(results => {
-      departments.forEach((department, i) => {
-        this.monitoring[department.department_id] = results[i];
-      });
-
-      this.cdr.detectChanges();
-    });
-  }
-
-  // Rules per quarter:
-  //   approved by the mission      -> 100  (shows the green check)
-  //   some particulars have values -> % filled, capped at 99 until approved
-  //   nothing entered / no quarter -> null (shows the dash)
-  private buildMonitoring(report: DepartmentReport): Monitoring {
-    // Collect every quarter record of every particular
-    const records: ReportQuarter[] = [];
-
-    for (const program of report.programs ?? []) {
-      for (const section of program.sections ?? []) {
-        for (const particular of section.particulars ?? []) {
-          records.push(...(particular.quarters ?? []));
-        }
-      }
-    }
-
-    if (records.length === 0) {
+    if (!department) {
       return this.emptyMonitoring;
     }
 
-    // Only use the latest year
-    const latestYear = Math.max(...records.map(q => Number(q.year)));
-    const current = records.filter(q => Number(q.year) === latestYear);
-
-    const percentFor = (quarterNumber: number): number | null => {
-      const items = current.filter(
-        q => this.getQuarterNumber(q.quarter) === quarterNumber
-      );
-
-      if (items.length === 0) {
-        return null;
-      }
-
-      if (items.every(q => !!q.mission_approve)) {
-        return 100;
-      }
-
-      const filled = items.filter(
-        q => q.value !== null && q.value !== undefined
-      ).length;
-
-      if (filled === 0) {
-        return null;
-      }
-
-      return Math.min(99, Math.round((filled / items.length) * 100));
-    };
-
     return {
-      q1: percentFor(1),
-      q2: percentFor(2),
-      q3: percentFor(3),
-      q4: percentFor(4)
+      q1: { progress: department.q1_data_progress ?? null, approved: !!department.q1_approved },
+      q2: { progress: department.q2_data_progress ?? null, approved: !!department.q2_approved },
+      q3: { progress: department.q3_data_progress ?? null, approved: !!department.q3_approved },
+      q4: { progress: department.q4_data_progress ?? null, approved: !!department.q4_approved }
     };
-  }
-
-  // "Q1" / "Quarter 1" -> 1
-  private getQuarterNumber(quarter: string): number {
-    const value = String(quarter).toUpperCase();
-
-    if (value.includes('1')) return 1;
-    if (value.includes('2')) return 2;
-    if (value.includes('3')) return 3;
-    if (value.includes('4')) return 4;
-
-    return 99;
   }
 
 

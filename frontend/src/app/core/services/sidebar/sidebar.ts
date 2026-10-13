@@ -20,13 +20,14 @@ export class SidebarService {
       // DISTRICT PASTOR
       case 'pastor':
         return [
+{
+  label: 'Reports',
+  route: '/pastor/reports/details',
+  icon: 'bi-bar-chart'
+},
+
           {
-            label: 'Reports',
-            route: '/pastor/reports',
-            icon: 'bi-bar-chart'
-          },
-          {
-            label: 'Baptism and Death',
+            label: 'Personal Report',
             route: '/pastor/baptism',
             icon: 'bi-droplet'
           },
@@ -34,11 +35,6 @@ export class SidebarService {
             label: 'Events',
             route: '/pastor/events',
             icon: 'bi-calendar-event'
-          },
-          {
-            label: 'Church Role',
-            route: '/pastor/church-role',
-            icon: 'bi-people'
           },
           {
             label: 'Representatives',

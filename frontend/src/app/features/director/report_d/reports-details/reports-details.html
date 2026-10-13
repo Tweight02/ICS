@@ -1,3 +1,18 @@
+<ng-template #monitoringCell let-value>
+  @if (value.approved) {
+    <span class="check">✓</span>
+  } @else if (value.progress > 0) {
+    <div class="progress-wrapper">
+      <span class="percentage">{{ value.progress }}%</span>
+      <div class="progress-bar">
+        <div class="progress-value" [style.width.%]="value.progress"></div>
+      </div>
+    </div>
+  } @else {
+    <span class="dash">–</span>
+  }
+</ng-template>
+
 <div class="details-page">
 
   <!-- HEADER -->
@@ -157,86 +172,25 @@
                 </td>
 
 
-                <!-- Q1 -->
                 <td class="quarter-cell">
-
-                  @if (getMonitoring($index).q1) {
-
-                    <span class="check">
-                      ✓
-                    </span>
-
-                  } @else {
-
-                    <span class="dash">
-                      –
-                    </span>
-
-                  }
-
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q1 }">
+                  </ng-container>
                 </td>
-
-
-                <!-- Q2 -->
                 <td class="quarter-cell">
-
-                  @if (getMonitoring($index).q2) {
-
-                    <span class="check">
-                      ✓
-                    </span>
-
-                  } @else {
-
-                    <span class="dash">
-                      –
-                    </span>
-
-                  }
-
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q2 }">
+                  </ng-container>
                 </td>
-
-
-                <!-- Q3 -->
                 <td class="quarter-cell">
-
-                  <div class="progress-wrapper">
-
-                    <span class="percentage">
-                      {{ getMonitoring($index).q3 }}%
-                    </span>
-
-                    <div class="progress-bar">
-
-                      <div
-                        class="progress-value"
-                        [style.width.%]="getMonitoring($index).q3"
-                      ></div>
-
-                    </div>
-
-                  </div>
-
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q3 }">
+                  </ng-container>
                 </td>
-
-
-                <!-- Q4 -->
                 <td class="quarter-cell">
-
-                  @if (getMonitoring($index).q4) {
-
-                    <span class="check">
-                      ✓
-                    </span>
-
-                  } @else {
-
-                    <span class="dash">
-                      –
-                    </span>
-
-                  }
-
+                  <ng-container
+                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q4 }">
+                  </ng-container>
                 </td>
 
               </tr>

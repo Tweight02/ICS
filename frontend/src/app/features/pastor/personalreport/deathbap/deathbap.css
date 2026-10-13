@@ -51,6 +51,26 @@ body {
   font-weight: 700;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  border: 1px solid #cfdbd7;
+  border-radius: 999px;
+  background: #fff;
+  color: #0e4b3b;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.back-button:hover {
+  background: #f3f7f5;
+}
+
 .selector-section {
   padding: 3px 42px 48px;
 }

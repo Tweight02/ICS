@@ -1,7 +1,13 @@
 export type UserRole =
   | 'pastor'
+  | 'district pastor'
+  | 'district_pastor'
+  | 'district-pastor'
   | 'representative'
   | 'assistant'
+  | 'administrative assistant'
+  | 'administrative_assistant'
+  | 'administrative-assistant'
   | 'director'
   | 'events';
 

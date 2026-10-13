@@ -1,118 +1,149 @@
-<div class="flex items-center justify-center align-content-center p-2 sm:p-3">
+<div class="mx-auto max-w-4xl p-3 text-slate-900 antialiased sm:p-6">
+
+  <!-- Page heading -->
+  <div class="mb-6">
+    <h1 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Create a new pastor</h1>
+  </div>
+
   <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate
-    class="flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-900/10">
+    class="divide-y divide-slate-200 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
 
-    <!-- Header -->
-    <header class="shrink-0 bg-green-900 px-4 py-2.5 text-white sm:px-8 sm:py-3">
-      <h1 class="text-lg font-semibold tracking-tight sm:text-xl">Create a new user</h1>
-    </header>
+    <!-- Section 1: Personal information -->
+    <section class="grid grid-cols-1 gap-x-8 gap-y-6 px-6 py-8 lg:grid-cols-3">
+      <div>
+        <h2 class="text-base font-semibold text-slate-900">Personal information</h2>
+        <p class="mt-1 text-sm text-slate-500">Use the pastor's full legal name as it should appear in records.</p>
+      </div>
 
-    <!-- Body (scrolls only as a last resort) -->
-    <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-8 sm:py-4">
-      <div class="grid grid-cols-2 gap-x-3 gap-y-2.5 sm:grid-cols-6 sm:gap-y-3">
-
-        <!-- Names -->
-        <div class="col-span-1 sm:col-span-2">
-          <label for="first-name" class="block text-sm font-medium text-stone-700">First name</label>
+      <div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-6 lg:col-span-2">
+        <div class="sm:col-span-3">
+          <label for="first-name" class="block text-sm font-medium text-slate-700">First name</label>
           <input id="first-name" formControlName="first_name" type="text" autocomplete="given-name"
-            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+            class="mt-1.5 block w-full rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+          @if (form.controls['first_name'].invalid && form.controls['first_name'].touched) {
+          <p class="mt-1 text-xs text-rose-600">Enter a first name.</p>
+          }
         </div>
 
-        <div class="col-span-1 sm:col-span-2">
-          <label for="middle-name" class="block text-sm font-medium text-stone-700">
-            Middle <span class="font-normal text-stone-400">(opt.)</span>
-          </label>
+        <div class="sm:col-span-3">
+          <label for="middle-name" class="block text-sm font-medium text-slate-700">Middle name</label>
           <input id="middle-name" formControlName="middle_name" type="text" autocomplete="additional-name"
-            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+            class="mt-1.5 block w-full rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+          @if (form.controls['middle_name'].invalid && form.controls['middle_name'].touched) {
+          <p class="mt-1 text-xs text-rose-600">Enter a middle name.</p>
+          }
         </div>
 
-        <div class="col-span-1 sm:col-span-2">
-          <label for="last-name" class="block text-sm font-medium text-stone-700">Last name</label>
+        <div class="sm:col-span-4">
+          <label for="last-name" class="block text-sm font-medium text-slate-700">Last name</label>
           <input id="last-name" formControlName="last_name" type="text" autocomplete="family-name"
-            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+            class="mt-1.5 block w-full rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+          @if (form.controls['last_name'].invalid && form.controls['last_name'].touched) {
+          <p class="mt-1 text-xs text-rose-600">Enter a last name.</p>
+          }
         </div>
 
-        <div class="col-span-1 sm:col-span-2">
-          <label for="extension-name" class="block text-sm font-medium text-stone-700">
-            Suffix <span class="font-normal text-stone-400">(opt.)</span>
+        <div class="sm:col-span-2">
+          <label for="extension-name" class="block text-sm font-medium text-slate-700">
+            Suffix <span class="font-normal text-slate-400">(optional)</span>
           </label>
           <input id="extension-name" formControlName="extension_name" type="text" placeholder="Jr., Sr., III"
-            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+            class="mt-1.5 block w-full rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700" />
         </div>
 
-        <!-- Birthdate + Gender -->
-        <div class="col-span-1 sm:col-span-2">
-          <label for="birthdate" class="block text-sm font-medium text-stone-700">Birthdate</label>
+        <div class="sm:col-span-3">
+          <label for="birthdate" class="block text-sm font-medium text-slate-700">Birthdate</label>
           <input id="birthdate" formControlName="birthdate" type="date" autocomplete="bday"
-            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+            class="mt-1.5 block w-full rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 transition focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+          @if (form.controls['birthdate'].invalid && form.controls['birthdate'].touched) {
+          <p class="mt-1 text-xs text-rose-600">Choose a birthdate.</p>
+          }
         </div>
 
-        <div class="col-span-1 sm:col-span-2">
-          <label for="gender" class="block text-sm font-medium text-stone-700">Gender</label>
+        <div class="sm:col-span-3">
+          <label for="gender" class="block text-sm font-medium text-slate-700">Gender</label>
           <select id="gender" formControlName="gender"
-            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 py-2 pl-3 pr-8 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500">
+            class="mt-1.5 block w-full rounded-md border-0 bg-white py-2 pl-3 pr-8 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 transition focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500">
             <option value="" disabled>Select gender</option>
             <option value="male">Male</option>
             <option value="female">Female</option>
           </select>
+          @if (form.controls['gender'].invalid && form.controls['gender'].touched) {
+          <p class="mt-1 text-xs text-rose-600">Select a gender.</p>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Assignment -->
+    <section class="grid grid-cols-1 gap-x-8 gap-y-6 px-6 py-8 lg:grid-cols-3">
+      <div>
+        <h2 class="text-base font-semibold text-slate-900">Assignment</h2>
+        <p class="mt-1 text-sm text-slate-500">The district this pastor will serve.</p>
+      </div>
+
+      <div class="lg:col-span-2">
+        <label for="church-id" class="block text-sm font-medium text-slate-700">District</label>
+        <select id="church-id" formControlName="church_id"
+          class="mt-1.5 block w-full rounded-md border-0 bg-white py-2 pl-3 pr-8 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 transition focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500 sm:max-w-sm">
+          <option value="" disabled>Select a district</option>
+          @for (district of districts; track district.church_id) {
+          <option [value]="district.church_id">{{ district.name }}</option>
+          }
+        </select>
+        @if (form.controls['church_id'].invalid && form.controls['church_id'].touched) {
+        <p class="mt-1 text-xs text-rose-600">Select a district.</p>
+        }
+      </div>
+    </section>
+
+    <!-- Section 3: Account -->
+    <section class="grid grid-cols-1 gap-x-8 gap-y-6 px-6 py-8 lg:grid-cols-3">
+      <div>
+        <h2 class="text-base font-semibold text-slate-900">Account</h2>
+        <p class="mt-1 text-sm text-slate-500">The pastor will use these details to sign in.</p>
+      </div>
+
+      <div class="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-6 lg:col-span-2">
+        <div class="sm:col-span-6">
+          <label for="email" class="block text-sm font-medium text-slate-700">Email address</label>
+          <input id="email" formControlName="email" type="email" autocomplete="email" placeholder="name@example.com"
+            class="mt-1.5 block w-full rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+          @if (form.controls['email'].invalid && form.controls['email'].touched) {
+          <p class="mt-1 text-xs text-rose-600">Enter a valid email address.</p>
+          }
         </div>
 
-        <!-- Department + District -->
-        <div class="col-span-2 sm:col-span-3">
-          <label for="department" class="block text-sm font-medium text-stone-700">Department</label>
-          <input id="department" type="text" [value]="departmentName" readonly
-            title="All pastors are assigned to this department."
-            class="mt-1 block w-full cursor-not-allowed rounded-lg border-0 bg-stone-100 px-3 py-2 text-sm text-stone-600 ring-1 ring-inset ring-stone-300" />
-        </div>
-
-        <div class="col-span-2 sm:col-span-3">
-          <label for="church-id" class="block text-sm font-medium text-stone-700">District</label>
-          <select id="church-id" formControlName="church_id"
-            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 py-2 pl-3 pr-8 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500">
-            <option value="" disabled>Select a district</option>
-            @for (district of districts; track district.church_id) {
-            <option [value]="district.church_id">{{ district.name }}</option>
-            }
-          </select>
-        </div>
-
-        <!-- Email + Password -->
-        <div class="col-span-2 sm:col-span-3">
-          <label for="email" class="block text-sm font-medium text-stone-700">Email address</label>
-          <input id="email" formControlName="email" type="email" autocomplete="email" placeholder="name@company.com"
-            class="mt-1 block w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
-        </div>
-
-        <div class="col-span-2 sm:col-span-3">
-          <label for="password" class="block text-sm font-medium text-stone-700">Password</label>
-          <div class="relative mt-1">
+        <div class="sm:col-span-6">
+          <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+          <div class="relative mt-1.5">
             <input #pw id="password" formControlName="password" type="password" autocomplete="new-password"
-              placeholder="At least 8 characters"
-              class="block w-full rounded-lg border-0 bg-stone-50 py-2 pl-3 pr-16 text-sm text-stone-900 ring-1 ring-inset ring-stone-300 transition placeholder:text-stone-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-700 [&.ng-invalid.ng-touched]:ring-red-500" />
+              aria-describedby="password-hint"
+              class="block w-full rounded-md border-0 bg-white py-2 pl-3 pr-16 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 [&.ng-invalid.ng-touched]:ring-red-500" />
             <button type="button" (click)="pw.type = pw.type === 'password' ? 'text' : 'password'"
-              class="absolute inset-y-0 right-0 flex items-center rounded-r-lg px-3 text-xs font-medium text-green-800 hover:text-green-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-700">
+              [attr.aria-label]="pw.type === 'password' ? 'Show password' : 'Hide password'"
+              class="absolute inset-y-0 right-0 flex items-center rounded-r-md px-3 text-xs font-medium text-slate-500 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700">
               {{ pw.type === 'password' ? 'Show' : 'Hide' }}
             </button>
           </div>
+          @if (form.controls['password'].invalid && form.controls['password'].touched) {
+          <p class="mt-1 text-xs text-rose-600">Use at least 8 characters.</p>
+          } @else {
+          <p id="password-hint" class="mt-1 text-xs text-slate-500">At least 8 characters.</p>
+          }
         </div>
-
       </div>
-    </div>
+    </section>
 
     <!-- Actions -->
-    <footer
-      class="flex shrink-0 justify-end gap-2 border-t border-stone-200 bg-stone-50 px-4 py-2.5 sm:px-8 sm:py-3">
-      <button type="button" (click)="form.reset()"
-        class="rounded-lg px-4 py-2 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-500">
+    <footer class="flex items-center justify-end gap-3 bg-slate-50 px-6 py-4">
+      <a routerLink="/assistant/view-user"
+        class="rounded-md bg-white !no-underline px-3.5 py-2 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-300 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
         Cancel
-      </button>
+      </a>
       <button type="submit"
-        class="inline-flex items-center justify-center gap-2 rounded-lg bg-green-800 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
-        Create user
+        class="!rounded-md bg-emerald-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+        Create pastor
       </button>
     </footer>
   </form>

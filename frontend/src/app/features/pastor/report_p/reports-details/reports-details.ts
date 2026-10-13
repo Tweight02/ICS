@@ -2,7 +2,8 @@ import {
   ChangeDetectorRef,
   Component,
   OnInit,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -30,71 +31,59 @@ export class ReportsDetails implements OnInit {
 
   district: Church | null = null;
   churches: Church[] = [];
+  private readonly loadingChurchesState = signal(false);
+  get loadingChurches(): boolean {
+    return this.loadingChurchesState();
+  }
+  set loadingChurches(value: boolean) {
+    this.loadingChurchesState.set(value);
+  }
 
   errorMessage = '';
 
-  ngOnInit(): void {
+ngOnInit(): void {
+  this.loadChurches();
+}
 
-    const id = this.route.snapshot.paramMap.get('id');
+loadChurches(): void {
+  this.errorMessage = '';
+  this.loadingChurches = true;
+  this.cdr.detectChanges();
 
-    if (!id) {
-      this.errorMessage = 'District ID was not provided.';
-      return;
+  this.churchService.getMyDistrictChurches().subscribe({
+    next: (response) => {
+      this.loadingChurches = false;
+      console.log('[REPORT DETAILS] API response:', response);
+
+      this.district = response.district;
+      this.districtId = response.district?.church_id ?? 0;
+      this.districtName = response.district?.name ?? '';
+
+      this.churches = Array.isArray(response.data)
+        ? response.data
+        : [];
+
+      console.log('[REPORT DETAILS] District:', this.districtName);
+      console.log('[REPORT DETAILS] Church count:', this.churches.length);
+      console.log('[REPORT DETAILS] Churches:', this.churches);
+
+      this.cdr.detectChanges();
+    },
+    error: (error) => {
+      console.error('[REPORT DETAILS] API error:', error);
+
+      this.churches = [];
+      this.district = null;
+      this.loadingChurches = false;
+      this.errorMessage =
+        error.status === 401
+          ? 'Your session has expired. Please log in again.'
+          : 'Unable to load your district churches.';
+
+      this.cdr.detectChanges();
     }
-
-    this.districtId = Number(id);
-
-    this.loadChurches();
-  }
-
-  loadChurches(): void {
-
-    this.churchService.getChurches(this.districtId).subscribe({
-
-      next: (response) => {
-
-        this.district = response.district;
-
-        this.districtName =
-          response.district?.name || '';
-
-        this.churches =
-          Array.isArray(response.data)
-            ? response.data
-            : [];
-
-        console.log(
-          '[REPORT DETAILS] District:',
-          this.district
-        );
-
-        console.log(
-          '[REPORT DETAILS] Churches:',
-          this.churches
-        );
-
-        this.cdr.detectChanges();
-      },
-
-      error: (error) => {
-
-        console.error(
-          '[REPORT DETAILS] API error:',
-          error
-        );
-
-        this.district = null;
-        this.churches = [];
-
-        this.errorMessage =
-          'Unable to load district details.';
-
-        this.cdr.detectChanges();
-      }
-
-    });
-
-  }
+  });
+}
 
   openDepartmentReports(): void {
 
@@ -111,38 +100,25 @@ export class ReportsDetails implements OnInit {
   }
 
 
-  openChurch(church: Church): void {
+openChurch(church: Church): void {
+  this.router.navigate([
+    '/pastor/reports/programs',
+    this.districtId,
+    church.church_id
+  ]);
+}
 
-    console.log(
-      '[REPORT DETAILS] Opening church:',
-      church
-    );
+  getMonitoring(churchId: number) {
+    const monitoring = this.churches.find(
+      church => church.church_id === churchId
+    )?.monitoring;
 
-    this.router.navigate(
-      ['/pastor/reports/programs'],
-      {
-        queryParams: {
-          district_id: this.districtId,
-          district_name: this.districtName,
-          church_id: church.church_id,
-          church_name: church.name
-        }
-      }
-    );
-
-  }
-
-  getMonitoring(index: number) {
-
-    const monitoring = [
-      { q1: true, q2: true, q3: 50, q4: false },
-      { q1: true, q2: true, q3: 60, q4: false },
-      { q1: true, q2: true, q3: 45, q4: false },
-      { q1: true, q2: true, q3: 55, q4: false },
-      { q1: true, q2: true, q3: 40, q4: false }
-    ];
-
-    return monitoring[index % monitoring.length];
+    return {
+      q1: { progress: monitoring?.q1_submitted_data_progress ?? null, approved: !!monitoring?.q1_approved },
+      q2: { progress: monitoring?.q2_submitted_data_progress ?? null, approved: !!monitoring?.q2_approved },
+      q3: { progress: monitoring?.q3_submitted_data_progress ?? null, approved: !!monitoring?.q3_approved },
+      q4: { progress: monitoring?.q4_submitted_data_progress ?? null, approved: !!monitoring?.q4_approved }
+    };
   }
 
 }

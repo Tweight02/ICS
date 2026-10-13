@@ -657,3 +657,148 @@ h1 {
   }
 
 }
+
+.details-page {
+  max-width: 1152px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.details-header {
+  align-items: center;
+  padding: 0 0 20px;
+}
+
+.eyebrow {
+  color: #047857;
+}
+
+.details-header h1 {
+  color: #052e2b;
+  font-size: clamp(26px, 3vw, 32px);
+  letter-spacing: -0.6px;
+}
+
+.header-left p {
+  color: #55736a;
+}
+
+.church-stat {
+  width: auto;
+  min-width: 170px;
+  min-height: 0;
+  padding: 16px 22px;
+  border: 1px solid rgba(6, 95, 70, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 24px rgba(6, 48, 40, 0.06);
+}
+
+.church-stat strong {
+  color: #047857;
+}
+
+.church-stat span {
+  color: #55736a;
+}
+
+.monitoring-card {
+  margin: 0;
+  border-color: rgba(6, 95, 70, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 28px rgba(6, 48, 40, 0.06);
+}
+
+.monitoring-table {
+  min-width: 680px;
+}
+
+.monitoring-table thead {
+  background: rgba(4, 120, 87, 0.08);
+}
+
+.monitoring-table th {
+  color: #052e2b;
+  border-bottom: 1px solid rgba(6, 95, 70, 0.1);
+}
+
+.monitoring-table td {
+  color: #234c43;
+  border-bottom: 1px solid rgba(6, 95, 70, 0.08);
+}
+
+.monitoring-table tbody tr:nth-child(odd),
+.monitoring-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.church-row:hover,
+.church-row:focus-visible {
+  background: rgba(4, 120, 87, 0.05) !important;
+}
+
+.church-row:focus-visible {
+  box-shadow: inset 4px 0 #047857;
+}
+
+.dash,
+.percentage {
+  color: #55736a;
+}
+
+.progress-bar {
+  background: rgba(6, 95, 70, 0.1);
+}
+
+.check {
+  background: #047857;
+  box-shadow: none;
+}
+
+.loading-content {
+  color: #55736a;
+}
+
+.spinner {
+  border-top-color: #047857;
+}
+
+@media (max-width: 900px) {
+  .details-header {
+    padding: 0 0 20px;
+  }
+
+  .monitoring-card {
+    margin: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .details-page {
+    padding: 20px 14px 36px;
+  }
+
+  .details-header {
+    padding: 0 0 16px;
+  }
+
+  .church-stat {
+    width: auto;
+  }
+
+  .monitoring-card {
+    margin: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .details-header h1 {
+    font-size: 26px;
+  }
+
+  .monitoring-card {
+    margin: 0;
+  }
+}

@@ -42,10 +42,4 @@ class Church extends Model
             'church_id'
         );
     }
-
-    public function representative()
-    {
-        return $this->hasOne(User::class, 'church_id', 'church_id')
-            ->where('role', 'representative');
-    }
 }

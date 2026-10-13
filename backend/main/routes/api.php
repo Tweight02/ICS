@@ -1,7 +1,9 @@
+
 <?php
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BaptismController;
 use App\Http\Controllers\ChurchController;
@@ -12,12 +14,32 @@ use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\SampleController;
 use App\Http\Controllers\UserController;
 
+/*
+|--------------------------------------------------------------------------
+| TEST ROUTES
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/test-speed', function () {
     return 'OK';
 });
-Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/user', fn(Request $request) => $request->user())->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| AUTHENTICATION
+|--------------------------------------------------------------------------
+*/
+
+// Login does not require authentication.
+Route::post('/login', [
+    AuthController::class,
+    'login',
+]);
+
+// Return the authenticated user.
+Route::get('/user', function (Request $request) {
+    return response()->json($request->user());
+})->middleware('auth:sanctum');
 
 /*
 |--------------------------------------------------------------------------
@@ -25,8 +47,15 @@ Route::get('/user', fn(Request $request) => $request->user())->middleware('auth:
 |--------------------------------------------------------------------------
 */
 
-Route::get('/sample', [SampleController::class, 'sample']);
-Route::post('/users', [UserController::class, 'create_user']);
+Route::get('/sample', [
+    SampleController::class,
+    'sample',
+]);
+
+Route::post('/users', [
+    UserController::class,
+    'create_user',
+]);
 
 /*
 |--------------------------------------------------------------------------
@@ -34,9 +63,20 @@ Route::post('/users', [UserController::class, 'create_user']);
 |--------------------------------------------------------------------------
 */
 
-Route::get('/churches', [BaptismController::class, 'allChurches']);
-Route::get('/districts', [ChurchController::class, 'districts']);
-Route::get('/districts/{district}/churches', [ChurchController::class, 'churches']);
+Route::get('/churches', [
+    BaptismController::class,
+    'allChurches',
+]);
+
+Route::get('/districts', [
+    ChurchController::class,
+    'districts',
+]);
+
+Route::get('/districts/{district}/churches', [
+    ChurchController::class,
+    'churches',
+]);
 
 /*
 |--------------------------------------------------------------------------
@@ -45,15 +85,51 @@ Route::get('/districts/{district}/churches', [ChurchController::class, 'churches
 */
 
 Route::prefix('assistant')->group(function () {
-    Route::get('/districts', [ChurchController::class, 'districts']);
-    Route::get('/districts/{churchId}/pastor', [UserController::class, 'districtPastor'])
-        ->whereNumber('churchId');
-    Route::get('/departments', [DepartmentController::class, 'getDepartment']);
-    Route::post('/users', [UserController::class, 'create_user']);
-    Route::get('/pastors', [UserController::class, 'view_pastors']);
-    Route::get('/pastors/{id}', [UserController::class, 'view_pastor']);
-    Route::put('/pastors/{id}', [UserController::class, 'update_pastor']);
-    Route::post('/pastors/bulk-transfer', [UserController::class, 'bulk_transfer']);
+    Route::get('/districts', [
+        ChurchController::class,
+        'districts',
+    ]);
+
+    Route::get('/districts/{churchId}/pastor', [
+        UserController::class,
+        'districtPastor',
+    ])->whereNumber('churchId');
+
+    Route::get('/departments', [
+        DepartmentController::class,
+        'getDepartment',
+    ]);
+
+    Route::post('/users', [
+        UserController::class,
+        'create_user',
+    ]);
+
+    Route::get('/pastors', [
+        UserController::class,
+        'view_pastors',
+    ]);
+
+    Route::get('/pastors/{id}', [
+        UserController::class,
+        'view_pastor',
+    ]);
+
+    Route::put('/pastors/{id}', [
+        UserController::class,
+        'update_pastor',
+    ]);
+
+    Route::delete(
+        '/assistant/pastors/{id}',
+        [UserController::class, 'delete_pastor']
+    );
+
+
+    Route::post('/pastors/bulk-transfer', [
+        UserController::class,
+        'bulk_transfer',
+    ]);
 });
 
 /*
@@ -63,10 +139,25 @@ Route::prefix('assistant')->group(function () {
 */
 
 Route::prefix('churches/{churchId}')->group(function () {
-    Route::get('/departments', [ReportController::class, 'getDepartments']);
-    Route::get('/departments/{departmentId}/report', [ReportController::class, 'departmentReport']);
-    Route::post('/departments/{departmentId}/report/save', [ReportController::class, 'saveDepartmentReport']);
-    Route::get('/departments/{departmentId}/comments', [ReportController::class, 'departmentComments']);
+    Route::get('/departments', [
+        ReportController::class,
+        'getDepartments',
+    ]);
+
+    Route::get('/departments/{departmentId}/report', [
+        ReportController::class,
+        'departmentReport',
+    ]);
+
+    Route::post('/departments/{departmentId}/report/save', [
+        ReportController::class,
+        'saveDepartmentReport',
+    ]);
+
+    Route::get('/departments/{departmentId}/comments', [
+        ReportController::class,
+        'departmentComments',
+    ]);
 });
 
 /*
@@ -75,22 +166,101 @@ Route::prefix('churches/{churchId}')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/quarters/{quarterId}/comments', [ReportController::class, 'comments']);
-Route::post('/comments', [ReportController::class, 'addComment']);
+Route::get('/quarters/{quarterId}/comments', [
+    ReportController::class,
+    'comments',
+]);
+
+Route::post('/comments', [
+    ReportController::class,
+    'addComment',
+])->middleware('auth:sanctum');
 
 /*
 |--------------------------------------------------------------------------
-| RESOURCES
+| RESOURCE ROUTES
 |--------------------------------------------------------------------------
 */
 
 Route::apiResource('baptisms', BaptismController::class);
-Route::apiResource('deaths', DeathController::class);
-Route::get('/churches', [BaptismController::class, 'allChurches']);
+
 Route::apiResource('deaths', DeathController::class);
 
-Route::prefix('pastor')->group(function () {
-    Route::get('/representatives', [RepresentativeController::class, 'index']);
-    Route::post('/representatives', [RepresentativeController::class, 'store']);
-    Route::put('/representatives/{id}', [RepresentativeController::class, 'update']);
+/*
+|--------------------------------------------------------------------------
+| PROTECTED ROUTES
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    /*
+    | Representatives
+    */
+    Route::get('/pastor/representatives/churches', [RepresentativeController::class, 'available_churches']); // must be first
+    Route::get('/pastor/representatives', [RepresentativeController::class, 'index']);
+    Route::get('/pastor/representatives/{id}', [RepresentativeController::class, 'show']);
+    Route::post('/pastor/representatives', [RepresentativeController::class, 'store']);
+    Route::put('/pastor/representatives/{id}', [RepresentativeController::class, 'update']);
+    Route::delete('/pastor/representatives/{id}', [RepresentativeController::class, 'destroy']);
+
+    /*
+    | Pastor: assigned district
+    |
+    | GET /api/pastor/my-district
+    | GET /api/pastor/my-district/churches
+    */
+
+    Route::prefix('pastor')->group(function () {
+        Route::get('/my-district', [
+            ChurchController::class,
+            'myDistrict',
+        ]);
+
+        Route::get('/my-district/churches', [
+            ChurchController::class,
+            'myDistrictChurches',
+        ]);
+    });
+
+    Route::post('/churches/{churchId}/departments/{departmentId}/report/endorse', [
+        ReportController::class,
+        'endorseDepartmentReport',
+    ]);
+
+    Route::post('/churches/{churchId}/departments/{departmentId}/report/approve', [
+        ReportController::class,
+        'approveDepartmentReport',
+    ]);
+
+    /*
+    | Authentication test
+    */
+
+    Route::get('/test-auth', function (Request $request) {
+        $user = $request->user();
+
+        return response()->json([
+            'authenticated' => true,
+            'user_id' => $user->user_id,
+            'role' => $user->role,
+            'church_id' => $user->church_id,
+        ]);
+    });
+
+    /*
+    | Logout
+    */
+
+    Route::post('/logout', function (Request $request) {
+        $token = $request->user()->currentAccessToken();
+
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
+
+        return response()->json([
+            'message' => 'Logged out successfully.',
+        ]);
+    });
 });

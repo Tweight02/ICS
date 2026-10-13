@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 
 import { SidebarComponent } from './shared/components/sidebar/sidebar';
@@ -17,13 +17,16 @@ import { AuthService } from './core/services/auth/auth-service';
 
   styleUrl: './app.css'
 })
-export class App {
-
+export class App implements OnInit{
+  
   private readonly router = inject(Router);
-
+  
   private readonly auth = inject(AuthService);
-
-
+  
+  ngOnInit(): void {
+    console.log(this.currentUser())
+  }
+ 
   /*
   |--------------------------------------------------------------------------
   | CURRENT USER (signal from AuthService, set on login, cleared on logout)

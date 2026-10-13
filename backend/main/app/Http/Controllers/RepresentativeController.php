@@ -2,115 +2,470 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Church;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Models\Church;
+use Illuminate\Support\Facades\DB;
 
 class RepresentativeController extends Controller
 {
-    // Church IDs the logged-in user may manage (null = unrestricted)
-    private function scopedChurchIds(Request $request)
+    /**
+     * Get representatives accessible to the authenticated user.
+     *
+     * Pastor:
+     *   Can see representatives in churches belonging to his district.
+     *
+     * Church representative:
+     *   Can see representatives in his own church.
+     */
+    /**
+     * Churches in the pastor's district that have no representative yet.
+     */
+    public function available_churches(Request $request)
     {
-        $user = $request->user();
+        $authUser = $request->user();
 
-        if ($user->role === 'pastor') {
-            return Church::where('parent_id', $user->church_id)->pluck('church_id');
+        if ($authUser->role !== 'pastor') {
+            abort(403, 'Only pastors can list churches for new representatives.');
         }
 
-        return null;
-    }
-
-    // Every church in scope, with its current representative (null = vacant)
-    public function index(Request $request)
-    {
-        $ids = $this->scopedChurchIds($request);
-
-        $churches = Church::query()
-            ->whereNotNull('parent_id')
-            ->when($ids, fn($q) => $q->whereIn('church_id', $ids))
-            ->when($request->search, fn($q, $s) => $q->where('name', 'like', "%{$s}%"))
-            ->with('representative:user_id,church_id,first_name,middle_name,last_name,extension_name,email,birthdate,gender,department_id')
+        $churches = Church::where('parent_id', $authUser->church_id)
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('users')
+                    ->whereColumn('users.church_id', 'churches.church_id')
+                    ->where('users.role', 'representative');
+            })
             ->orderBy('name')
-            ->get();
+            ->get(['church_id', 'name']);
 
         return response()->json(['data' => $churches]);
     }
 
-    public function store(Request $request)
+    public function index(Request $request)
     {
-        $data = $this->validated($request);
+        $authUser = $request->user();
 
-        $data['role'] = 'representative';
-        $data['password'] = Hash::make($data['password']);
-
-        $rep = User::create($data);
-
-        return response()->json([
-            'message' => 'Representative created successfully',
-            'user'    => $rep->load('church:church_id,name'),
-        ], 201);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $ids = $this->scopedChurchIds($request);
-
-        $rep = User::where('role', 'representative')
-            ->when($ids, fn($q) => $q->whereIn('church_id', $ids))
-            ->findOrFail($id);
-
-        $data = $this->validated($request, $rep);
-
-        if (empty($data['password'])) {
-            unset($data['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
+        if (
+            !in_array(
+                $authUser->role,
+                ['pastor', 'representative']
+            )
+        ) {
+            abort(
+                403,
+                'You are not authorized to view representatives.'
+            );
         }
 
-        $rep->update($data);
+        $query = User::query()
+            ->where(
+                'role',
+                'representative'
+            )
+            ->with([
+                'department:department_id,department_name',
+                'church:church_id,name,parent_id',
+            ]);
+
+        /*
+    |--------------------------------------------------------------------------
+    | PASTOR
+    |--------------------------------------------------------------------------
+    */
+
+        if ($authUser->role === 'pastor') {
+
+            $query->whereHas('church', function ($q) use ($authUser) {
+
+                $q->where(
+                    'parent_id',
+                    $authUser->church_id
+                );
+            });
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | CHURCH REPRESENTATIVE
+    |--------------------------------------------------------------------------
+    */
+
+        if ($authUser->role === 'representative') {
+
+            $query->where(
+                'church_id',
+                $authUser->church_id
+            );
+        }
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('search')) {
+
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+
+                $q->where(
+                    'first_name',
+                    'like',
+                    "%{$search}%"
+                )
+                    ->orWhere(
+                        'last_name',
+                        'like',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'email',
+                        'like',
+                        "%{$search}%"
+                    );
+            });
+        }
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | CHURCH FILTER
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('church_id')) {
+
+            $query->where(
+                'church_id',
+                $request->church_id
+            );
+        }
+
+
+        return response()->json(
+            $query
+                ->orderBy('last_name')
+                ->orderBy('first_name')
+                ->paginate(
+                    $request->integer('per_page', 15)
+                )
+        );
+    }
+
+
+    /**
+     * View one representative.
+     */
+    public function show(Request $request, $id)
+    {
+        $authUser = $request->user();
+
+        $representative = User::query()
+            ->where('role', 'representative')
+            ->with([
+                'department:department_id,department_name',
+                'church:church_id,name,parent_id',
+            ])
+            ->findOrFail($id);
+
+        /*
+        |--------------------------------------------------------------------------
+        | AUTHORIZATION
+        |--------------------------------------------------------------------------
+        */
+
+        if ($authUser->role === 'pastor') {
+
+            $allowed = $representative->church
+                && (int) $representative->church->parent_id
+                === (int) $authUser->church_id;
+
+            if (!$allowed) {
+                abort(403, 'This representative is outside your district.');
+            }
+        } elseif ($authUser->role === 'representative') {
+
+            if (
+                (int) $representative->church_id !==
+                (int) $authUser->church_id
+            ) {
+                abort(
+                    403,
+                    'This representative belongs to another church.'
+                );
+            }
+        } else {
+
+            abort(
+                403,
+                'You are not authorized to view this representative.'
+            );
+        }
 
         return response()->json([
-            'message' => 'Representative updated successfully',
-            'user'    => $rep->fresh('church:church_id,name'),
+            'data' => $representative
         ]);
     }
 
-    private function validated(Request $request, ?User $rep = null): array
+
+    /**
+     * Create a church representative.
+     */
+    public function store(Request $request)
     {
+        $authUser = $request->user();
+
         $data = $request->validate([
-            'department_id'  => 'required|exists:departments,department_id',
-            'church_id'      => [
-                'required',
-                'exists:churches,church_id',
-                // one representative per church
-                Rule::unique('users', 'church_id')
-                    ->where('role', 'representative')
-                    ->ignore($rep?->getKey(), 'user_id'),
-            ],
+            'church_id'      => 'required|exists:churches,church_id',
             'first_name'     => 'required|string|max:255',
             'middle_name'    => 'nullable|string|max:255',
             'last_name'      => 'required|string|max:255',
             'extension_name' => 'nullable|string|max:50',
             'birthdate'      => 'required|date|before:today',
-            'gender'         => 'required|in:male,female,other',
-            'email'          => ['required', 'email',
-                Rule::unique('users', 'email')->ignore($rep?->getKey(), 'user_id')],
-            'password'       => $rep ? 'nullable|string|min:8' : 'required|string|min:8',
+            'gender'         => 'required|string|in:male,female,other',
+            'email'          => 'required|email|unique:users,email',
+            'password'       => 'required|string|min:8',
         ]);
 
-        // Must be a child church (not a district) inside the allowed scope
+        // Access check
         $church = Church::findOrFail($data['church_id']);
-        $ids = $this->scopedChurchIds($request);
 
-        if ($church->parent_id === null || ($ids && !$ids->contains($church->church_id))) {
+        if ($authUser->role === 'pastor') {
+            if ((int) $church->parent_id !== (int) $authUser->church_id) {
+                abort(403, 'You can only assign representatives to churches in your district.');
+            }
+        } elseif ($authUser->role === 'representative') {
+            if ((int) $church->church_id !== (int) $authUser->church_id) {
+                abort(403, 'You can only assign a representative to your own church.');
+            }
+        } else {
+            abort(403, 'You are not authorized to create representatives.');
+        }
+
+        // Department is inherited from the creator, never from the request
+        if (!$authUser->department_id) {
             throw ValidationException::withMessages([
-                'church_id' => 'This church is not in your district.',
+                'department_id' => 'Your account has no department assigned.',
             ]);
         }
 
-        return $data;
+        $data['department_id'] = $authUser->department_id;
+        $data['role']          = 'representative';
+        $data['password']      = Hash::make($data['password']);
+
+        $representative = DB::transaction(function () use ($data) {
+            // Lock the church row so two requests can't both pass the check
+            DB::table('churches')
+                ->where('church_id', $data['church_id'])
+                ->lockForUpdate()
+                ->first();
+
+            $occupied = User::where('role', 'representative')
+                ->where('church_id', $data['church_id'])
+                ->exists();
+
+            if ($occupied) {
+                throw ValidationException::withMessages([
+                    'church_id' => 'This church already has a representative.',
+                ]);
+            }
+
+            return User::create($data);
+        });
+
+        $representative->load(['department', 'church']);
+
+        return response()->json([
+            'message' => 'Church representative created successfully.',
+            'user'    => $representative,
+        ], 201);
+    }
+
+
+    /**
+     * Update representative.
+     */
+    public function update(
+        Request $request,
+        $id
+    ) {
+
+        $authUser = $request->user();
+
+        $representative = User::where(
+            'role',
+            'representative'
+        )->findOrFail($id);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | AUTHORIZATION
+        |--------------------------------------------------------------------------
+        */
+
+        $church = $representative->church;
+
+        if ($authUser->role === 'pastor') {
+
+            if (
+                !$church ||
+                (int) $church->parent_id !==
+                (int) $authUser->church_id
+            ) {
+                abort(
+                    403,
+                    'This representative is outside your district.'
+                );
+            }
+        } elseif ($authUser->role === 'representative') {
+
+            if (
+                (int) $representative->church_id !==
+                (int) $authUser->church_id
+            ) {
+                abort(
+                    403,
+                    'This representative belongs to another church.'
+                );
+            }
+        } else {
+
+            abort(
+                403,
+                'You are not authorized to update representatives.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDATION
+        |--------------------------------------------------------------------------
+        */
+
+        $data = $request->validate([
+
+            'department_id' =>
+            'required|exists:departments,department_id',
+
+            'first_name' =>
+            'required|string|max:255',
+
+            'middle_name' =>
+            'nullable|string|max:255',
+
+            'last_name' =>
+            'required|string|max:255',
+
+            'extension_name' =>
+            'nullable|string|max:50',
+
+            'birthdate' =>
+            'required|date|before:today',
+
+            'gender' =>
+            'required|string|in:male,female,other',
+
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')
+                    ->ignore(
+                        $representative->user_id,
+                        'user_id'
+                    ),
+            ],
+
+            'password' =>
+            'nullable|string|min:8',
+        ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PASSWORD
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            empty($data['password'])
+        ) {
+
+            unset($data['password']);
+        } else {
+
+            $data['password'] = Hash::make(
+                $data['password']
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE
+        |--------------------------------------------------------------------------
+        */
+
+        $representative->update($data);
+
+        $representative->load([
+            'department',
+            'church'
+        ]);
+
+        return response()->json([
+
+            'message' =>
+            'Representative updated successfully.',
+
+            'user' =>
+            $representative,
+
+        ]);
+    }
+
+    /**
+     * Delete representative.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $authUser = $request->user();
+
+        if ($authUser->role !== 'pastor') {
+            abort(403, 'Only pastors can delete representatives.');
+        }
+
+        $representative = User::where('role', 'representative')
+            ->with('church:church_id,parent_id')
+            ->findOrFail($id);
+
+        if (
+            !$representative->church ||
+            (int) $representative->church->parent_id !== (int) $authUser->church_id
+        ) {
+            abort(403, 'This representative is outside your district.');
+        }
+
+        try {
+            $representative->delete();
+        } catch (QueryException $e) {
+            // e.g. foreign keys from reports or other records still point at this user
+            return response()->json([
+                'message' => 'This representative cannot be deleted because other records depend on them.',
+            ], 409);
+        }
+
+        return response()->json([
+            'message' => 'Representative deleted successfully.',
+        ]);
     }
 }

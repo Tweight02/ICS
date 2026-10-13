@@ -15,6 +15,7 @@ class Death extends Model
 
     protected $fillable = [
         'baptism_id',
+        'quarter',
         'date_of_death',
     ];
 

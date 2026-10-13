@@ -99,7 +99,7 @@ export class ReportsDetails implements OnInit {
   openDepartmentReports(): void {
 
     this.router.navigate(
-      ['/pastor/reports/programs'],
+      [`${this.portalPrefix()}/reports/programs`],
       {
         queryParams: {
           district_id: this.districtId,
@@ -113,7 +113,7 @@ export class ReportsDetails implements OnInit {
   backToDistricts(): void {
 
     this.router.navigate(
-      ['/pastor/reports']
+      [`${this.portalPrefix()}/reports`]
     );
 
   }
@@ -126,30 +126,32 @@ export class ReportsDetails implements OnInit {
     );
 
     this.router.navigate(
-      ['/pastor/reports/programs'],
-      {
-        queryParams: {
-          district_id: this.districtId,
-          district_name: this.districtName,
-          church_id: church.church_id,
-          church_name: church.name
-        }
-      }
+      [
+        `${this.portalPrefix()}/reports/programs`,
+        this.districtId,
+        church.church_id
+      ]
     );
 
   }
 
-  getMonitoring(index: number) {
+  private portalPrefix(): '/director' | '/assistant' {
+    return this.router.url.startsWith('/assistant')
+      ? '/assistant'
+      : '/director';
+  }
 
-    const monitoring = [
-      { q1: true, q2: true, q3: 50, q4: false },
-      { q1: true, q2: true, q3: 60, q4: false },
-      { q1: true, q2: true, q3: 45, q4: false },
-      { q1: true, q2: true, q3: 55, q4: false },
-      { q1: true, q2: true, q3: 40, q4: false }
-    ];
+  getMonitoring(churchId: number) {
+    const monitoring = this.churches.find(
+      church => church.church_id === churchId
+    )?.monitoring;
 
-    return monitoring[index % monitoring.length];
+    return {
+      q1: { progress: monitoring?.q1 ?? null, approved: !!monitoring?.q1_approved },
+      q2: { progress: monitoring?.q2 ?? null, approved: !!monitoring?.q2_approved },
+      q3: { progress: monitoring?.q3 ?? null, approved: !!monitoring?.q3_approved },
+      q4: { progress: monitoring?.q4 ?? null, approved: !!monitoring?.q4_approved }
+    };
   }
 
 }

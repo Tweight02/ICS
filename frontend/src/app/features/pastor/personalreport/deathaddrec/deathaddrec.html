@@ -6,24 +6,10 @@
     <div class="form-header">
 
       <div>
-        <div class="record-label">DEATH RECORD</div>
-
-        <h1>Add Death Record</h1>
-
-        <p>
-          Eastern Nueva Vizcaya · District Pastor Records · 2026
-        </p>
+        <div class="record-label">ADD DEATH RECORD</div>
       </div>
 
-      <button
-        type="button"
-        routerLink="/pastor/deathbap"
-        class="back-button">
-        ← Back to Records
-      </button>
-
     </div>
-
 
     <!-- Form -->
     <form
@@ -51,21 +37,17 @@
               <option
                 [ngValue]="null"
                 disabled>
-
                 {{
                   baptisms.length === 0
                     ? 'Loading baptized members...'
                     : 'Select baptized member'
                 }}
-
               </option>
 
               <option
                 *ngFor="let baptism of baptisms"
                 [ngValue]="baptism.baptism_id">
-
                 {{ getFullName(baptism) }}
-
               </option>
 
             </select>
@@ -73,9 +55,7 @@
             <small
               *ngIf="loadingBaptisms"
               class="form-help">
-
               Loading baptized members...
-
             </small>
 
             <small
@@ -84,13 +64,10 @@
                 baptisms.length === 0
               "
               class="form-help">
-
               No baptism records found.
-
             </small>
 
           </div>
-
 
           <!-- First Name -->
           <div class="form-group">
@@ -108,7 +85,6 @@
               readonly>
           </div>
 
-
           <!-- Middle Name -->
           <div class="form-group">
             <label for="middle_name">
@@ -124,7 +100,6 @@
               placeholder="Middle name"
               readonly>
           </div>
-
 
           <!-- Last Name -->
           <div class="form-group">
@@ -142,7 +117,6 @@
               readonly>
           </div>
 
-
           <!-- Extension Name -->
           <div class="form-group">
             <label for="extension_name">
@@ -158,7 +132,6 @@
               placeholder="Jr., Sr., III, IV, etc."
               readonly>
           </div>
-
 
           <!-- Church -->
           <div class="form-group">
@@ -176,7 +149,6 @@
               readonly>
           </div>
 
-
           <!-- Birthdate -->
           <div class="form-group">
             <label for="birthdate">
@@ -192,6 +164,21 @@
               readonly>
           </div>
 
+          <!-- Quarter -->
+          <div class="form-group">
+            <label for="quarter">
+              Quarter
+            </label>
+
+            <input
+              id="quarter"
+              type="text"
+              name="quarter"
+              class="form-control"
+              [(ngModel)]="death.quarter"
+              placeholder="Enter quarter"
+              required>
+          </div>
 
           <!-- Date of Death -->
           <div class="form-group">
@@ -208,11 +195,10 @@
               required>
           </div>
 
-
-          <!-- Age -->
+          <!-- Age at Death -->
           <div class="form-group">
             <label for="age">
-              Age
+              Age at Death
             </label>
 
             <input
@@ -221,15 +207,17 @@
               name="age"
               class="form-control"
               [value]="
-                selectedBaptism
-                  ? calculateAge(selectedBaptism.birthdate)
+                selectedBaptism && death.date_of_death
+                  ? calculateAgeAtDeath(
+                      selectedBaptism.birthdate,
+                      death.date_of_death
+                    )
                   : ''
               "
-              placeholder="Age"
+              placeholder="Age at death"
               min="0"
               readonly>
           </div>
-
 
           <!-- Gender -->
           <div class="form-group">
@@ -246,7 +234,6 @@
               placeholder="Gender"
               readonly>
           </div>
-
 
           <!-- Marital Status -->
           <div class="form-group">
@@ -268,7 +255,6 @@
 
       </div>
 
-
       <!-- Footer -->
       <div class="form-footer">
 
@@ -276,18 +262,14 @@
           type="button"
           routerLink="/pastor/deathbap"
           class="cancel-button">
-
           Cancel
-
         </button>
 
         <button
           type="submit"
           class="save-button"
           [disabled]="saving || deathForm.invalid">
-
           {{ saving ? 'Saving...' : 'Save' }}
-
         </button>
 
       </div>

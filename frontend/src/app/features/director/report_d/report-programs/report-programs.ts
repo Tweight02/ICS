@@ -2,7 +2,8 @@ import {
   Component,
   OnInit,
   ChangeDetectorRef,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -89,13 +90,37 @@ export class ReportPrograms implements OnInit {
   // LOADING
   // =====================================================
 
-  loadingDepartments = false;
+  private readonly loadingDepartmentsState = signal(false);
+  get loadingDepartments(): boolean {
+    return this.loadingDepartmentsState();
+  }
+  set loadingDepartments(value: boolean) {
+    this.loadingDepartmentsState.set(value);
+  }
 
-  loadingReport = false;
+  private readonly loadingReportState = signal(false);
+  get loadingReport(): boolean {
+    return this.loadingReportState();
+  }
+  set loadingReport(value: boolean) {
+    this.loadingReportState.set(value);
+  }
 
-  loadingComments = false;
+  private readonly loadingCommentsState = signal(false);
+  get loadingComments(): boolean {
+    return this.loadingCommentsState();
+  }
+  set loadingComments(value: boolean) {
+    this.loadingCommentsState.set(value);
+  }
 
-  savingComment = false;
+  private readonly savingCommentState = signal(false);
+  get savingComment(): boolean {
+    return this.savingCommentState();
+  }
+  set savingComment(value: boolean) {
+    this.savingCommentState.set(value);
+  }
 
 
   // =====================================================
@@ -585,16 +610,14 @@ export class ReportPrograms implements OnInit {
     this.reportService
       .addComment(
         this.currentQuarterId,
-        this.currentUserId,
+        this.churchId,
+        Number(this.selectedDepartment?.department_id),
         details
       )
       .subscribe({
 
-        next: comment => {
-
-          this.comments.unshift(
-            comment
-          );
+        next: response => {
+          this.comments.unshift(response.data);
 
 
           this.newComment = '';

@@ -12,13 +12,6 @@ interface Particular {
   particulars_name: string;
 }
 
-interface QuarterComment {
-  comment_id: number;
-  commenter_name: string;
-  details: string;
-  date: string;
-}
-
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -37,8 +30,7 @@ export class Stewardship {
   readonly mission = 'Northeast Luzon Mission';
   readonly programName = 'Stewardship Quarterly Report';
 
-  // Sample: replace with the logged-in church representative and their church.
-  readonly user = { name: 'Church Representative' };
+  // Sample: replace with the logged-in church representative's church.
   readonly church = { name: 'LOGAC', district: 'Sample District' };
 
   readonly quarters = [1, 2, 3, 4];
@@ -59,14 +51,9 @@ export class Stewardship {
   values: Record<number, number | null> = {}; // particular_id -> value
   monthly: Record<number, (number | null)[]> = {}; // particular_id -> value for each month of the quarter
 
-  // Comments left by the pastor / district / mission on this report
-  comments: QuarterComment[] = [];
-  newComment = '';
-
   message = '';
   isError = false;
-
-  private seq = 100;
+  saved = false; // true once a change has been saved automatically
 
   constructor() {
     this.setParticulars(
@@ -86,6 +73,7 @@ export class Stewardship {
         'Tithes',
       ].map((particulars_name, i) => ({ particular_id: i + 1, particulars_name })),
     );
+    this.load();
   }
 
   // ---- Getters ----
@@ -131,7 +119,7 @@ export class Stewardship {
       case 'Approved':
         return 'Approved by the mission. This report is final.';
       default:
-        return 'Draft. You can keep editing until you submit.';
+        return '';
     }
   }
 
@@ -148,6 +136,10 @@ export class Stewardship {
     }
   }
 
+  get saveLabel(): string {
+    return this.saved && this.status === 'Draft' ? 'All changes saved' : '';
+  }
+
   // ---- Totals ----
 
   /** Total of one monthly particular (Offering or Tithes) for the quarter. */
@@ -157,22 +149,21 @@ export class Stewardship {
 
   // ---- Actions (change local state only) ----
 
-  /** A different quarter is a different report, so start blank. */
+  /** A different quarter is a different report: show what was saved for it. */
   onPeriodChange(): void {
-    this.values = {};
-    this.monthly = this.blankMonthly();
-    this.comments = [];
-    this.status = 'Draft';
-    this.dateSubmitted = '';
     this.message = '';
+    this.load();
   }
 
-  saveDraft(): void {
-    if (!this.hasData()) {
-      this.setMessage('Nothing to save yet.', true);
-      return;
-    }
-    this.setMessage('Draft saved.', false);
+  /** Called when any box changes: saves it automatically. */
+  onFieldChange(): void {
+    if (this.isLocked) return;
+    this.message = '';
+    // Wait one tick so ngModel has stored the new value before saving.
+    setTimeout(() => {
+      this.persist();
+      this.saved = true;
+    });
   }
 
   submit(): void {
@@ -182,6 +173,7 @@ export class Stewardship {
     }
     this.status = 'Submitted';
     this.dateSubmitted = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, local time
+    this.persist();
     this.setMessage('Report submitted.', false);
   }
 
@@ -190,22 +182,52 @@ export class Stewardship {
     if (this.status !== 'Submitted') return;
     this.status = 'Draft';
     this.dateSubmitted = '';
+    this.persist();
     this.setMessage('Reopened for editing.', false);
   }
 
-  postComment(): void {
-    const text = this.newComment.trim();
-    if (!text) return;
-    this.comments.push({
-      comment_id: ++this.seq,
-      commenter_name: this.user.name,
-      details: text,
-      date: new Date().toLocaleDateString('en-CA'),
-    });
-    this.newComment = '';
+  // ---- Helpers ----
+
+  // Stand-in for the backend: keeps the report in this browser so it survives a refresh.
+  // Replace persist() and load() with API calls later.
+  private get storageKey(): string {
+    return `stewardship:${this.church.name}:q${this.quarter}`;
   }
 
-  // ---- Helpers ----
+  private persist(): void {
+    try {
+      localStorage.setItem(
+        this.storageKey,
+        JSON.stringify({
+          values: this.values,
+          monthly: this.monthly,
+          status: this.status,
+          dateSubmitted: this.dateSubmitted,
+        }),
+      );
+    } catch {
+      // Storage unavailable: nothing to do.
+    }
+  }
+
+  private load(): void {
+    this.values = {};
+    this.monthly = this.blankMonthly();
+    this.status = 'Draft';
+    this.dateSubmitted = '';
+    this.saved = false;
+    try {
+      const raw = localStorage.getItem(this.storageKey);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      this.values = data.values ?? {};
+      this.monthly = { ...this.monthly, ...(data.monthly ?? {}) };
+      this.status = data.status ?? 'Draft';
+      this.dateSubmitted = data.dateSubmitted ?? '';
+    } catch {
+      // Unreadable saved data: start blank.
+    }
+  }
 
   private hasData(): boolean {
     return (

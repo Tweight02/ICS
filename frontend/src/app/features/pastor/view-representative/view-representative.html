@@ -1,75 +1,121 @@
-<input type="search" placeholder="Search church"
-       (input)="onSearch($any($event.target).value)">
+<div class="mx-auto max-w-6xl px-4 py-4">
+    <!-- Header -->
+    <div class="mb-3 flex items-center justify-between gap-3">
+        <div>
+            <h1 class="text-base font-semibold text-slate-900">Church Representatives</h1>
+            <p class="text-xs text-slate-500">Representatives assigned to churches in your district.</p>
+        </div>
+        <a
+            routerLink="/pastor/new-representative"
+            class="inline-flex !no-underline h-8 shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#0F4A30] px-3 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#0B3A25] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-2 active:bg-[#082E1D]"
+        >
+            <svg
+                class="h-3.5 w-3.5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+            >
+                <path
+                    d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"
+                />
+            </svg>
+            New Representative
+        </a>
 
-<table>
-  <thead>
-    <tr><th>Church</th><th>Representative</th><th>Email</th><th></th></tr>
-  </thead>
-  <tbody>
-    @for (c of churches(); track c.church_id) {
-      <tr>
-        <td>{{ c.name }}</td>
-        @if (c.representative; as r) {
-          <td>{{ r.first_name }} {{ r.last_name }}</td>
-          <td>{{ r.email }}</td>
-          <td><button (click)="edit(c)">Edit</button></td>
-        } @else {
-          <td colspan="2">Vacant</td>
-          <td><button (click)="add(c)">Add representative</button></td>
-        }
-      </tr>
-    }
-  </tbody>
-</table>
+    </div>
 
-@if (dialogOpen()) {
-  <div class="backdrop" (click)="close()">
-    <form class="dialog" [formGroup]="form" (ngSubmit)="save()" (click)="$event.stopPropagation()">
-      <h2>{{ editingId() ? 'Edit' : 'Add' }} representative</h2>
-      <p>Church: <strong>{{ churchName() }}</strong></p>
+    <!-- Card: search + table -->
+    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <!-- Search bar -->
+        <div class="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
+            <div class="relative min-w-0 flex-1">
+                <svg
+                    class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                    viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+                >
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.48l4.31 4.3a1 1 0 01-1.4 1.42l-4.31-4.31A6 6 0 012 8z" clip-rule="evenodd" />
+                </svg>
+                <input
+                    type="text"
+                    [(ngModel)]="search"
+                    (keyup.enter)="searchRepresentatives()"
+                    placeholder="Search name or email..."
+                    class="h-8 w-full rounded-md border border-slate-300 bg-white pl-8 pr-3 text-xs text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#0F4A30] focus:ring-1 focus:ring-[#0F4A30]"
+                />
+            </div>
 
-      @if (errors().length) {
-        <ul class="errors">
-          @for (e of errors(); track e) { <li>{{ e }}</li> }
-        </ul>
-      }
+            <button app-button type="button" (click)="searchRepresentatives()">Search</button>
 
-      <label>First name <input formControlName="first_name"></label>
-      <label>Middle name <input formControlName="middle_name"></label>
-      <label>Last name <input formControlName="last_name"></label>
-      <label>Extension (Jr., III) <input formControlName="extension_name"></label>
-      <label>Birthdate <input type="date" formControlName="birthdate"></label>
+            @if (search()) {
+                <button app-button variant="secondary" type="button" (click)="clearSearch()">Clear</button>
+            }
+        </div>
 
-      <label>Gender
-        <select formControlName="gender">
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-      </label>
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="border-b border-slate-200 bg-slate-50">
+                    <tr>
+                        <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Representative</th>
+                        <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Church</th>
+                        <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Birthdate</th>
+                        <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Email</th>
+                    </tr>
+                </thead>
 
-      <label>Department
-        <select formControlName="department_id">
-          <option [ngValue]="0" disabled>Select department</option>
-          @for (d of departments(); track d.department_id) {
-            <option [ngValue]="d.department_id">{{ d.department_name }}</option>
-          }
-        </select>
-      </label>
-
-      <label>Email <input type="email" formControlName="email"></label>
-
-      <label>Password
-        <input type="password" formControlName="password"
-               [placeholder]="editingId() ? 'Leave blank to keep current' : ''">
-      </label>
-
-      <div class="actions">
-        <button type="button" (click)="close()">Cancel</button>
-        <button type="submit" [disabled]="saving()">
-          {{ saving() ? 'Saving...' : 'Save' }}
-        </button>
-      </div>
-    </form>
-  </div>
-}
+                <tbody class="divide-y divide-slate-100">
+                    @if (loading()) {
+                        <tr>
+                            <td colspan="4" class="px-3 py-8 text-center text-xs text-slate-500">
+                                Loading representatives...
+                            </td>
+                        </tr>
+                    } @else if (error()) {
+                        <tr>
+                            <td colspan="4" class="bg-red-50 px-3 py-6 text-center text-xs text-red-700">
+                                {{ error() }}
+                                <button app-button variant="link" size="sm" type="button" (click)="loadRepresentatives()">
+                                    Retry
+                                </button>
+                            </td>
+                        </tr>
+                    } @else if (representatives().length === 0) {
+                        <tr>
+                            <td colspan="4" class="px-3 py-8 text-center">
+                                <p class="text-xs font-medium text-slate-700">No representatives found</p>
+                                <p class="mt-0.5 text-xs text-slate-400">
+                                    No church representatives are currently assigned to the churches in your district.
+                                </p>
+                            </td>
+                        </tr>
+                    } @else {
+                        @for (representative of representatives(); track representative.user_id) {
+                            <tr
+                                [routerLink]="['/pastor/view-representatives', representative.user_id, 'edit']"
+                                tabindex="0"
+                                (keydown.enter)="$any($event.currentTarget).click()"
+                                class="cursor-pointer transition-colors hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F4A30]"
+                            >
+                                <td class="px-3 py-2 text-xs font-medium text-slate-900">
+                                    {{ representative.first_name }}
+                                    @if (representative.middle_name) { {{ representative.middle_name }} }
+                                    {{ representative.last_name }}
+                                    @if (representative.extension_name) { {{ representative.extension_name }} }
+                                </td>
+                                <td class="px-3 py-2 text-xs text-slate-700">
+                                    {{ representative.church?.name ?? '—' }}
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-2 text-xs text-slate-700">
+                                    {{ representative.birthdate ? (representative.birthdate | date: 'MMM d, y') : '—' }}
+                                </td>
+                                <td class="px-3 py-2 text-xs text-slate-600">
+                                    {{ representative.email }}
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

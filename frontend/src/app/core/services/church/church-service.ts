@@ -19,9 +19,20 @@ export interface DistrictResponse {
   data: Church[];
 }
 
+export interface MyDistrictChurchesResponse {
+  success: boolean;
+  district: Church;
+  data: Church[];
+}
+
 export interface ChurchesResponse {
   success: boolean;
   district: Church;
+  data: Church[];
+}
+
+export interface ChurchDirectoryResponse {
+  success: boolean;
   data: Church[];
 }
 
@@ -29,12 +40,21 @@ export interface ChurchesResponse {
   providedIn: 'root'
 })
 export class ChurchService {
-  getDistrictDetails(districtId: number) {
-    throw new Error('Method not implemented.');
-  }
-  getChurchesByDistrict(districtId: number) {
-    throw new Error('Method not implemented.');
-  }
+  getMyDistrict(): Observable<{
+  success: boolean;
+  district: Church;
+}> {
+  return this.http.get<{
+    success: boolean;
+    district: Church;
+  }>(`${this.apiUrl}/pastor/my-district`);
+}
+
+getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
+  return this.http.get<MyDistrictChurchesResponse>(
+    `${this.apiUrl}/pastor/my-district/churches`
+  );
+}
 
   private readonly apiUrl =
     'http://127.0.0.1:8000/api';
@@ -47,6 +67,12 @@ export class ChurchService {
 
     return this.http.get<DistrictResponse>(
       `${this.apiUrl}/districts`
+    );
+  }
+
+  getAllChurches(): Observable<ChurchDirectoryResponse> {
+    return this.http.get<ChurchDirectoryResponse>(
+      `${this.apiUrl}/churches`
     );
   }
 

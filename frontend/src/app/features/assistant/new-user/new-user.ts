@@ -8,9 +8,10 @@ import {
 import Swal from 'sweetalert2';
 import { UserService } from '../../../core/services/user/user-service';
 import { Church } from '../../../core/models/church.model';
+import { RouterLink } from '@angular/router';
 
 @Component({
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   selector: 'app-new-user',
   styleUrl: './new-user.css',
   templateUrl: './new-user.html',
@@ -37,7 +38,7 @@ export class NewUser implements OnInit {
 
   form = new FormGroup({
     first_name: new FormControl('', Validators.required),
-    middle_name: new FormControl(''),
+    middle_name: new FormControl('', Validators.required),
     last_name: new FormControl('', Validators.required),
     extension_name: new FormControl(''),
     birthdate: new FormControl('', Validators.required),
@@ -60,24 +61,26 @@ export class NewUser implements OnInit {
     const churchId = this.form.controls.church_id.value!;
     this.isSubmitting = true;
 
-    // Step 1: check whether the district already has a pastor
-    this.userService.checkDistrictPastor(churchId).subscribe({
+    this.userService.checkDistrictPastor(Number(churchId)).subscribe({
       next: (res) => {
-        if (res.data.has_pastor) {
+        if (res.exists) {
           this.isSubmitting = false;
-          this.showPastorExistsAlert(churchId, res.data.pastor_name);
+          const name = res.pastor
+            ? `${res.pastor.first_name} ${res.pastor.last_name}`
+            : null;
+          this.showPastorExistsAlert(churchId, name);
           return;
         }
-        // Step 2: no pastor yet, proceed
-        this.createUser();
+
+        this.createUser(); // no pastor yet, so save
       },
-      error: (error) => {
+      error: (error: unknown) => {
         this.isSubmitting = false;
         console.error('Failed to check district pastor:', error);
         Swal.fire({
           icon: 'error',
-          title: 'Something went wrong',
-          text: 'Could not verify the district\'s pastor. Please try again.',
+          title: 'Could not verify district',
+          text: 'Unable to check whether this district already has a pastor. Please try again.',
           confirmButtonColor: '#166534',
         });
       },

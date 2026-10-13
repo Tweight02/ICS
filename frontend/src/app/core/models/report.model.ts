@@ -11,6 +11,21 @@ export interface Department {
   q2_approved?: boolean;
   q3_approved?: boolean;
   q4_approved?: boolean;
+
+  q1_submitted?: boolean;
+  q2_submitted?: boolean;
+  q3_submitted?: boolean;
+  q4_submitted?: boolean;
+
+  q1_data_progress?: number | null;
+  q2_data_progress?: number | null;
+  q3_data_progress?: number | null;
+  q4_data_progress?: number | null;
+
+  q1_submitted_data_progress?: number | null;
+  q2_submitted_data_progress?: number | null;
+  q3_submitted_data_progress?: number | null;
+  q4_submitted_data_progress?: number | null;
 }
 
 /* =========================================================
@@ -77,6 +92,18 @@ export interface DepartmentReport {
   church_id: number;
   department: Department;
   programs: Program[];
+}
+
+export interface ReportMonitoring {
+  q1: number | null;
+  q2: number | null;
+  q3: number | null;
+  q4: number | null;
+}
+
+export interface DistrictReportMonitoring {
+  churchCount: number;
+  monitoring: ReportMonitoring;
 }
 
 /* =========================================================

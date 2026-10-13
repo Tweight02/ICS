@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
@@ -23,7 +23,7 @@ interface Church {
   styleUrls: ['./bapaddrec.css']
 })
 export class BapaddrecComponent implements OnInit {
-  
+
   private http = inject(HttpClient);
   private router = inject(Router);
 
@@ -31,10 +31,20 @@ export class BapaddrecComponent implements OnInit {
 
   age: number | null = null;
 
-  saving: boolean = false;
+  private readonly savingState = signal(false);
+
+  get saving(): boolean {
+    return this.savingState();
+  }
+
+  set saving(value: boolean) {
+    this.savingState.set(value);
+  }
 
   baptism = {
     church_id: null as number | null,
+
+    quarter: '',
 
     first_name: '',
 
@@ -48,11 +58,11 @@ export class BapaddrecComponent implements OnInit {
 
     gender: null as string | null,
 
-    address: 'N/A',
+    address: '',
 
-    officiating_minister: 'N/A',
+    officiating_minister: '',
 
-    place_of_baptism: 'N/A',
+    place_of_baptism: '',
 
     date_of_baptism: '',
 
@@ -218,6 +228,7 @@ export class BapaddrecComponent implements OnInit {
       !this.baptism.first_name.trim() ||
       !this.baptism.last_name.trim() ||
       !this.baptism.church_id ||
+      !this.baptism.quarter.trim() ||
       !this.baptism.birthdate ||
       !this.baptism.date_of_baptism ||
       !this.baptism.gender ||
@@ -246,6 +257,9 @@ export class BapaddrecComponent implements OnInit {
 
     this.baptism.extension_name =
       this.baptism.extension_name?.trim() || '';
+
+    this.baptism.quarter =
+      this.baptism.quarter.trim();
 
     this.saving = true;
 

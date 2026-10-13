@@ -1,10 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
 import { Message } from '../../models/message.model';
 import { User } from '../../models/user.model';
-
 
 export interface LoginPayload {
   email: string;
@@ -19,186 +18,171 @@ export interface LoginResponse {
 }
 
 const TOKEN_KEY = 'auth_token';
-const USER_KEY = 'current_user'; // same key the app already uses
+const USER_KEY = 'current_user';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-
-  private readonly apiUrl =
-    'http://127.0.0.1:8000/api';
+  private readonly apiUrl = 'http://127.0.0.1:8000/api';
 
   private readonly currentUserSignal =
     signal<User | null>(this.loadStoredUser());
 
-  readonly currentUser =
-    this.currentUserSignal.asReadonly();
+  readonly currentUser = this.currentUserSignal.asReadonly();
 
+  constructor(private readonly http: HttpClient) {}
 
-  constructor(
-    private readonly http: HttpClient
-  ) {}
-
-
-  /*
-   * Existing sample API
+  /**
+   * Sample API.
    */
-  getSample() {
-    return this.http.get<Message>(
-      `${this.apiUrl}/sample`
-    );
+  getSample(): Observable<Message> {
+    return this.http.get<Message>(`${this.apiUrl}/sample`);
   }
 
-
-  /*
-   * Login: request a Sanctum bearer token.
-   * "Remember me" on  -> localStorage (persists)
-   * "Remember me" off -> sessionStorage (cleared when the tab closes)
+  /**
+   * Log in and save the token and user.
+   *
+   * Remember me enabled:
+   *   localStorage
+   *
+   * Remember me disabled:
+   *   sessionStorage
    */
-  login(payload: LoginPayload, remember = true): Observable<LoginResponse> {
-
+  login(
+    payload: LoginPayload,
+    remember = true
+  ): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${this.apiUrl}/login`, payload)
       .pipe(
         tap((res) => {
-
-          this.clearSession();
+          this.clearStorage();
 
           const store = remember ? localStorage : sessionStorage;
+
           store.setItem(TOKEN_KEY, res.token);
+          store.setItem(USER_KEY, JSON.stringify(res.user));
 
-          this.setCurrentUser(res.user);
-
+          this.currentUserSignal.set(res.user);
         })
       );
   }
 
-
-  /*
-   * Bearer token used by the HTTP interceptor
+  /**
+   * Return the saved bearer token from either storage.
    */
   get token(): string | null {
-
-    return localStorage.getItem(TOKEN_KEY)
-      ?? sessionStorage.getItem(TOKEN_KEY);
-
+    return (
+      localStorage.getItem(TOKEN_KEY) ??
+      sessionStorage.getItem(TOKEN_KEY)
+    );
   }
 
-
+  /**
+   * Check whether a token is stored.
+   * This does not independently validate it with Laravel.
+   */
   isLoggedIn(): boolean {
-
     return !!this.token;
-
   }
 
-
-  /*
-   * Get currently logged-in user
+  /**
+   * Get the current user.
    */
   getCurrentUser(): User | null {
-
     return this.currentUserSignal();
-
   }
 
-
-  /*
-   * Save logged-in user (in the same storage as the token)
+  /**
+   * Update the current user while preserving the active storage.
    */
   setCurrentUser(user: User): void {
-
     this.activeStore().setItem(
       USER_KEY,
       JSON.stringify(user)
     );
 
     this.currentUserSignal.set(user);
-
   }
 
-
-  /*
-   * Load user saved in browser
+  /**
+   * Load the previously saved user.
    */
   private loadStoredUser(): User | null {
-
     const storedUser =
-      localStorage.getItem(USER_KEY)
-      ?? sessionStorage.getItem(USER_KEY);
+      localStorage.getItem(USER_KEY) ??
+      sessionStorage.getItem(USER_KEY);
 
     if (!storedUser) {
       return null;
     }
 
     try {
-
       return JSON.parse(storedUser) as User;
-
     } catch (error) {
-
-      console.error(
-        'Invalid stored user:',
-        error
-      );
-
+      console.error('Invalid stored user:', error);
       this.clearStorage();
-
       return null;
     }
   }
 
-
-  /*
-   * Logout: revoke the token on the server (best effort),
-   * then clear everything locally right away.
+  /**
+   * Log out and attempt to revoke the server token.
    */
   logout(): void {
-
     const token = this.token;
 
     if (token) {
-      this.http.post(`${this.apiUrl}/logout`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).subscribe({
-        error: () => { /* token may already be expired; ignore */ }
+      const headers = new HttpHeaders({
+        Authorization: `Bearer ${token}`
       });
+
+      this.http
+        .post(
+          `${this.apiUrl}/logout`,
+          {},
+          { headers }
+        )
+        .subscribe({
+          error: (error) => {
+            console.warn(
+              'Server logout request failed:',
+              error
+            );
+          }
+        });
     }
-    
 
     this.clearSession();
-
   }
 
-
-  /*
-   * Clear token + user (used by logout and the 401 interceptor)
+  /**
+   * Clear tokens and user information from both storages.
    */
   clearSession(): void {
-
     this.clearStorage();
-
     this.currentUserSignal.set(null);
-
   }
 
-
+  /**
+   * Remove saved authentication data.
+   */
   private clearStorage(): void {
-
     for (const store of [localStorage, sessionStorage]) {
       store.removeItem(TOKEN_KEY);
       store.removeItem(USER_KEY);
     }
-
   }
 
-
+  /**
+   * Return the storage currently holding the token.
+   */
   private activeStore(): Storage {
+    if (sessionStorage.getItem(TOKEN_KEY)) {
+      return sessionStorage;
+    }
 
-    return sessionStorage.getItem(TOKEN_KEY)
-      ? sessionStorage
-      : localStorage;
-
+    return localStorage;
   }
-
 }

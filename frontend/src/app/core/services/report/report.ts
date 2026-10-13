@@ -36,44 +36,69 @@ export class ReportService {
   saveDepartmentReport(
     churchId: number,
     departmentId: number,
-    items: SaveReportItem[]
+    items: SaveReportItem[],
+    submitted = false
   ): Observable<{ message: string; saved_count?: number }> {
     return this.http.post<{ message: string; saved_count?: number }>(
       `${this.apiUrl}/churches/${churchId}/departments/${departmentId}/report/save`,
-      { items }
+      { items, submitted }
+    );
+  }
+
+  endorseDepartmentReport(
+    churchId: number,
+    departmentId: number,
+    year: number | string,
+    quarter: string
+  ): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/churches/${churchId}/departments/${departmentId}/report/endorse`,
+      { year, quarter }
+    );
+  }
+
+  approveDepartmentReport(
+    churchId: number,
+    departmentId: number,
+    year: number | string,
+    quarter: string
+  ): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/churches/${churchId}/departments/${departmentId}/report/approve`,
+      { year, quarter }
     );
   }
 
   getDepartmentComments(
     churchId: number,
     departmentId: number
-  ): Observable<ReportComment[]> {
-    return this.http.get<ReportComment[]>(
+  ): Observable<{ data: ReportComment[] } | ReportComment[]> {
+    return this.http.get<{ data: ReportComment[] } | ReportComment[]>(
       `${this.apiUrl}/churches/${churchId}/departments/${departmentId}/comments`
     );
   }
 
-  
-getComments(quarterId: number) {
-  return this.http.get<any>(
-    `${this.apiUrl}/quarters/${quarterId}/comments`
-  );
-}
+  getComments(quarterId: number) {
+    return this.http.get<{ data: ReportComment[] } | ReportComment[]>(
+      `${this.apiUrl}/quarters/${quarterId}/comments`
+    );
+  }
 
-
-addComment(
-  quarterId: number,
-  commentedBy: number,
-  details: string
-) {
-  return this.http.post<any>(
-    `${this.apiUrl}/comments`,
-    {
-      quarter_id: quarterId,
-      commented_by: commentedBy,
-      details: details.trim()
-    }
-  );
-}
+  addComment(
+    quarterId: number,
+    churchId: number,
+    departmentId: number,
+    details: string
+  ) {
+    return this.http.post<{ message: string; data: ReportComment }>(
+      `${this.apiUrl}/comments`,
+      {
+        quarter_id: quarterId,
+        church_id: churchId,
+        department_id: departmentId,
+        details: details.trim()
+      }
+    );
+  }
 
 }

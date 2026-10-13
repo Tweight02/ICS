@@ -2,27 +2,22 @@
 <ng-template #qcell let-v>
   <div class="flex items-center justify-center">
 
-    <span *ngIf="v === null" class="text-sm text-emerald-900/40">—</span>
+    <span *ngIf="v.progress === null || v.progress === 0" class="text-sm text-emerald-900/40">—</span>
 
     <span
-      *ngIf="v === 100"
+      *ngIf="v.approved"
       title="Complete"
       class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700
              text-xs font-bold text-white shadow-sm">
       ✓
     </span>
 
-    <div *ngIf="v !== null && v !== 100" class="flex items-center gap-2.5">
-      <span class="w-9 text-right text-xs font-semibold tabular-nums text-emerald-950/80">
-        {{ v }}%
-      </span>
-      <div class="h-2 w-28 overflow-hidden rounded-full bg-emerald-900/10">
-        <div
-          class="h-full rounded-full bg-gradient-to-r from-amber-300 to-amber-400 transition-all"
-          [style.width.%]="v">
-        </div>
-      </div>
-    </div>
+    <span
+      *ngIf="!v.approved && v.progress !== null && v.progress > 0"
+      [attr.title]="'Report data entered: ' + v.progress + '%'"
+      class="text-sm font-semibold tabular-nums text-emerald-800">
+      {{ v.progress }}%
+    </span>
 
   </div>
 </ng-template>
@@ -33,11 +28,8 @@
 
     <!-- HEADER -->
     <header class="mb-6">
-      <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
-        Report Management
-      </p>
       <h1 class="text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
-        {{ churchName }}
+        {{ churchName || 'Church Reports' }}
       </h1>
       <p class="mt-0.5 text-sm font-medium text-emerald-900/70">
         {{ districtName }}

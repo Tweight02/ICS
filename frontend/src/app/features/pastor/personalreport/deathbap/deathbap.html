@@ -1,124 +1,61 @@
 <div class="page">
-
   <header class="top-header">
-
     <div class="d-flex align-items-center justify-content-between">
-
-      <div class="d-flex align-items-center">
-
-        <div class="brand-circle">
-          DP
-        </div>
-
-        <div class="brand-info">
-          <h1>Eastern Nueva Vizcaya</h1>
-          <p>Baptism Record &amp; Death Record</p>
-        </div>
-
+      <div class="header-actions">
+        <button
+          *ngIf="isReadOnly"
+          type="button"
+          class="back-button"
+          (click)="backToReports()">
+          ← Back to Reports
+        </button>
       </div>
-
-      <div class="records-badge">
-        ✓ Records
-      </div>
-
     </div>
-
   </header>
-
-
-  <!-- Record Selector -->
-  <section class="selector-section">
-
-    <div class="d-flex align-items-center">
-
-      <span class="selector-label">
-        SELECT RECORD:
-      </span>
-
-      <button
-        type="button"
-        class="record-btn"
-        [class.active]="selectedRecord === 'baptism'"
-        (click)="selectRecord('baptism')">
-
-        Baptism Record
-
-      </button>
-
-      <button
-        type="button"
-        class="record-btn"
-        [class.active]="selectedRecord === 'death'"
-        (click)="selectRecord('death')">
-
-        Death Record
-
-      </button>
-
-    </div>
-
-  </section>
-
 
   <!-- Main Content -->
   <main class="content-section">
-
     <div class="row g-4">
-
-
       <!-- Records -->
-      <div class="col-lg-9 records-column">
+      <div
+        class="records-column"
+        [ngClass]="isReadOnly ? 'col-12' : 'col-lg-9'">
 
+        <div class="records-toolbar d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center pb-3">
+            <span class="selector-label">
+              SELECT RECORD:
+            </span>
 
-        <!-- Heading -->
-        <div
-          class="records-heading d-flex align-items-end justify-content-between">
+            <button
+              type="button"
+              class="record-btn"
+              [class.active]="selectedRecord === 'baptism'"
+              (click)="selectRecord('baptism')">
+              Baptism Record
+            </button>
 
-          <div>
-
-            <div class="section-label">
-              SECRETARIAT
-            </div>
-
-            <div class="section-description">
-
-              {{
-                selectedRecord === 'baptism'
-                  ? 'Baptism records'
-                  : 'Death records'
-              }}
-
-            </div>
-
+            <button
+              type="button"
+              class="record-btn"
+              [class.active]="selectedRecord === 'death'"
+              (click)="selectRecord('death')">
+              Death Record
+            </button>
           </div>
 
-
-          <!-- Add Baptism -->
+          <!-- Add Record -->
           <a
-            *ngIf="selectedRecord === 'baptism'"
-            routerLink="/pastor/bapaddrec"
+            *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
+            [routerLink]="selectedRecord === 'baptism'
+              ? '/pastor/bapaddrec'
+              : '/pastor/deathaddrec'"
             class="add-record-btn">
-
             + Add Record
-
           </a>
-
-
-          <!-- Add Death -->
-          <a
-            *ngIf="selectedRecord === 'death'"
-            routerLink="/pastor/deathaddrec"
-            class="add-record-btn">
-
-            + Add Record
-
-          </a>
-
         </div>
 
-
         <div class="table-responsive">
-
 
           <!-- ================================================= -->
           <!-- BAPTISM RECORD -->
@@ -129,47 +66,26 @@
             *ngIf="selectedRecord === 'baptism'">
 
             <thead>
-
               <tr>
-
                 <th>No.</th>
-
                 <th>Name</th>
-
                 <th>Church</th>
-
-                <th>Birthdate</th>
-
+                <th>Quarter</th>
                 <th>Date of Baptism</th>
-
+                <th>Officiating Minister</th>
+                <th>Place of Baptism</th>
                 <th>Age</th>
-
                 <th>Gender</th>
-
-                <th>Marital</th>
-
               </tr>
-
             </thead>
 
-
             <tbody>
-
-
               <!-- Loading -->
-              <tr
-                *ngIf="loadingBaptisms">
-
-                <td
-                  colspan="8"
-                  class="text-center">
-
+              <tr *ngIf="loadingBaptisms">
+                <td colspan="9" class="text-center">
                   Loading baptism records...
-
                 </td>
-
               </tr>
-
 
               <!-- Error -->
               <tr
@@ -177,98 +93,76 @@
                   !loadingBaptisms &&
                   baptismError
                 ">
-
-                <td
-                  colspan="8"
-                  class="text-center">
-
+                <td colspan="9" class="text-center">
                   {{ baptismError }}
-
                 </td>
-
               </tr>
 
-
-              <!-- No records -->
+              <!-- No Records -->
               <tr
                 *ngIf="
                   !loadingBaptisms &&
                   !baptismError &&
-                  baptisms.length === 0
+                  displayedBaptisms.length === 0
                 ">
-
-                <td
-                  colspan="8"
-                  class="text-center">
-
+                <td colspan="9" class="text-center">
                   No baptism records found.
-
                 </td>
-
               </tr>
-
 
               <!-- Baptism Records -->
               <tr
                 *ngFor="
-                  let baptism of baptisms;
+                  let baptism of displayedBaptisms;
                   let i = index
-                ">
+                "
+                class="baptism-record-row"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="'View details for ' + getFullName(baptism)"
+                title="Click to view complete baptism information"
+                (click)="openBaptismModal(baptism)"
+                (keydown.enter)="openBaptismModal(baptism)"
+                (keydown.space)="openBaptismModal(baptism); $event.preventDefault()">
 
                 <td>
                   {{ i + 1 }}
                 </td>
 
                 <td class="member-name">
-
                   {{ getFullName(baptism) }}
-
                 </td>
 
                 <td>
-
                   {{ getChurchName(baptism.church_id) }}
-
                 </td>
 
                 <td>
-
-                  {{ formatDate(baptism.birthdate) }}
-
+                  {{ baptism.quarter || '—' }}
                 </td>
 
                 <td>
-
                   {{ formatDate(baptism.date_of_baptism) }}
-
                 </td>
 
                 <td>
+                  {{ baptism.officiating_minister || '—' }}
+                </td>
 
+                <td>
+                  {{ baptism.place_of_baptism || '—' }}
+                </td>
+
+                <td>
                   {{ calculateAge(baptism.birthdate) }}
-
                 </td>
 
                 <td>
-
-                  {{ baptism.gender }}
-
+                  {{ baptism.gender || '—' }}
                 </td>
-
-                <td>
-
-                  {{ baptism.marital_status }}
-
-                </td>
-
               </tr>
-
-
             </tbody>
-
           </table>
-
-
 
           <!-- ================================================= -->
           <!-- DEATH RECORD -->
@@ -279,47 +173,26 @@
             *ngIf="selectedRecord === 'death'">
 
             <thead>
-
               <tr>
-
                 <th>No.</th>
-
                 <th>Name</th>
-
                 <th>Church</th>
-
+                <th>Quarter</th>
                 <th>Birthdate</th>
-
                 <th>Date of Death</th>
-
                 <th>Age</th>
-
                 <th>Gender</th>
-
                 <th>Marital</th>
-
               </tr>
-
             </thead>
 
-
             <tbody>
-
-
               <!-- Loading -->
-              <tr
-                *ngIf="loadingDeaths">
-
-                <td
-                  colspan="8"
-                  class="text-center">
-
+              <tr *ngIf="loadingDeaths">
+                <td colspan="9" class="text-center">
                   Loading death records...
-
                 </td>
-
               </tr>
-
 
               <!-- Error -->
               <tr
@@ -327,144 +200,107 @@
                   !loadingDeaths &&
                   deathError
                 ">
-
-                <td
-                  colspan="8"
-                  class="text-center">
-
+                <td colspan="9" class="text-center">
                   {{ deathError }}
-
                 </td>
-
               </tr>
 
-
-              <!-- No records -->
+              <!-- No Records -->
               <tr
                 *ngIf="
                   !loadingDeaths &&
                   !deathError &&
-                  deaths.length === 0
+                  displayedDeaths.length === 0
                 ">
-
-                <td
-                  colspan="8"
-                  class="text-center">
-
+                <td colspan="9" class="text-center">
                   No death records found.
-
                 </td>
-
               </tr>
-
 
               <!-- Death Records -->
               <tr
                 *ngFor="
-                  let death of deaths;
+                  let death of displayedDeaths;
                   let i = index
-                ">
+                "
+                class="baptism-record-row"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="'View details for ' + getFullName(getDeathBaptism(death))"
+                title="Click to view complete death information"
+                (click)="openDeathModal(death)"
+                (keydown.enter)="openDeathModal(death)"
+                (keydown.space)="openDeathModal(death); $event.preventDefault()">
 
                 <td>
                   {{ i + 1 }}
                 </td>
 
-
-                <!-- Name -->
                 <td class="member-name">
-
                   {{
                     getFullName(
                       getDeathBaptism(death)
                     )
                   }}
-
                 </td>
 
-
-                <!-- Church -->
                 <td>
-
                   {{
                     getChurchName(
                       getDeathBaptism(death)?.church_id
                     )
                   }}
-
                 </td>
 
-
-                <!-- Birthdate -->
                 <td>
+                  {{ death.quarter || '—' }}
+                </td>
 
+                <td>
                   {{
                     formatDate(
                       getDeathBaptism(death)?.birthdate || ''
                     )
                   }}
-
                 </td>
 
-
-                <!-- Date of Death -->
                 <td>
-
                   {{ formatDate(death.date_of_death) }}
-
                 </td>
 
-
-                <!-- Age -->
                 <td>
-
                   {{
                     calculateAgeAtDeath(
                       getDeathBaptism(death)?.birthdate || '',
                       death.date_of_death
                     )
                   }}
-
                 </td>
 
-
-                <!-- Gender -->
                 <td>
-
                   {{
                     getDeathBaptism(death)?.gender || '—'
                   }}
-
                 </td>
 
-
-                <!-- Marital -->
                 <td>
-
                   {{
                     getDeathBaptism(death)?.marital_status || '—'
                   }}
-
                 </td>
-
               </tr>
-
-
             </tbody>
-
           </table>
-
-
         </div>
-
       </div>
-
-
 
       <!-- ================================================= -->
       <!-- COMMENTS -->
       <!-- ================================================= -->
 
-      <div class="col-lg-3 comments-column">
+      <div
+        *ngIf="!isReadOnly"
+        class="col-lg-3 comments-column">
 
         <h2>
           Comments
@@ -474,53 +310,824 @@
           Administrative Assistant
         </div>
 
-
         <div class="comment-card">
-
           <div class="comment-top">
-
             <div>
-
-              <div class="comment-author">
-                Administrative Assistant
-              </div>
-
               <div class="comment-role">
-                Administrative Assistant · Sample comment
+                Sep 15, 2026, 3:00 PM
               </div>
-
             </div>
-
 
             <div class="comment-date">
-              Sep 15, 2026, 3:00 PM
             </div>
-
           </div>
 
-
           <p class="comment-text">
-
             The report has been reviewed by the Administrative Assistant.
             Please ensure the entries are complete and any supporting notes
             are included before final submission.
-
           </p>
-
         </div>
 
-
         <div class="comment-line"></div>
-
       </div>
-
-
     </div>
-
   </main>
-
 </div>
 
+<!-- ================================================= -->
+<!-- PROFESSIONAL BAPTISM DETAILS MODAL -->
+<!-- ================================================= -->
+
+<div
+  *ngIf="selectedBaptism"
+  class="baptism-modal-backdrop"
+  (click)="closeBaptismModal()">
+</div>
+
+<div
+  *ngIf="selectedBaptism"
+  class="baptism-modal-wrapper"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="baptismModalTitle"
+  (click)="$event.stopPropagation()">
+
+  <div class="baptism-modal">
+    <!-- Modal Header -->
+    <div class="baptism-modal-header">
+      <div class="modal-heading-content">
+        <div>
+          <h2 id="baptismModalTitle">
+            Baptism Record
+          </h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div
+      class="baptism-modal-body"
+      *ngIf="selectedBaptism">
+
+      <!-- Combined Information Section -->
+      <div class="details-section">
+        <div class="details-section-heading">
+          <div>
+            <h3>
+              {{ getFullName(selectedBaptism) }}
+            </h3>
+          </div>
+        </div>
+
+        <div class="details-grid">
+          <!-- First Name -->
+          <div class="detail-item">
+            <span class="detail-label">
+              First Name
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.first_name || '—' }}
+            </span>
+          </div>
+
+          <!-- Middle Name -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Middle Name
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.middle_name || '—' }}
+            </span>
+          </div>
+
+          <!-- Last Name -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Last Name
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.last_name || '—' }}
+            </span>
+          </div>
+
+          <!-- Extension Name -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Extension Name
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.extension_name || '—' }}
+            </span>
+          </div>
+
+          <!-- Gender -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Gender
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.gender || '—' }}
+            </span>
+          </div>
+
+          <!-- Marital Status -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Marital Status
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.marital_status || '—' }}
+            </span>
+          </div>
+
+          <!-- Birthdate -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Birthdate
+            </span>
+            <span class="detail-value">
+              {{ formatDate(selectedBaptism.birthdate) }}
+            </span>
+          </div>
+
+          <!-- Age -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Current Age
+            </span>
+            <span class="detail-value">
+              {{ calculateAge(selectedBaptism.birthdate) }}
+              <span class="detail-unit">years old</span>
+            </span>
+          </div>
+
+          <!-- Address and Church -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Address
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.address || '—' }}
+            </span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">
+              Church
+            </span>
+            <span class="detail-value">
+              {{ getChurchName(selectedBaptism.church_id) }}
+            </span>
+          </div>
+
+          <!-- Quarter -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Quarter
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.quarter || '—' }}
+            </span>
+          </div>
+
+          <!-- Baptism Date -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Date of Baptism
+            </span>
+            <span class="detail-value">
+              {{ formatDate(selectedBaptism.date_of_baptism) }}
+            </span>
+          </div>
+
+          <!-- Officiating Minister -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Officiating Minister
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.officiating_minister || '—' }}
+            </span>
+          </div>
+
+          <!-- Place of Baptism -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Place of Baptism
+            </span>
+            <span class="detail-value">
+              {{ selectedBaptism.place_of_baptism || '—' }}
+            </span>
+          </div>
+
+
+
+          <!-- Reclaimed Member -->
+          <div class="detail-item">
+            <span class="detail-label">
+              Reclaimed Member
+            </span>
+            <span
+              class="status-badge"
+              [class.status-yes]="selectedBaptism.is_reclaimed"
+              [class.status-no]="!selectedBaptism.is_reclaimed">
+              {{
+                selectedBaptism.is_reclaimed
+                  ? 'Yes'
+                  : 'No'
+              }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="baptism-modal-footer">
+      <button
+        type="button"
+        class="modal-done-btn"
+        (click)="closeBaptismModal()">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================= -->
+<!-- PROFESSIONAL DEATH DETAILS MODAL -->
+<!-- ================================================= -->
+
+<div
+  *ngIf="selectedDeath"
+  class="baptism-modal-backdrop"
+  (click)="closeDeathModal()">
+</div>
+
+<div
+  *ngIf="selectedDeath"
+  class="baptism-modal-wrapper"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="deathModalTitle"
+  (click)="$event.stopPropagation()">
+
+  <div class="baptism-modal">
+    <!-- Modal Header -->
+    <div class="baptism-modal-header">
+      <div class="modal-heading-content">
+        <div>
+          <h2 id="deathModalTitle">Death Record</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="baptism-modal-body" *ngIf="selectedDeath as deathRecord">
+      <div class="details-section">
+        <div class="details-section-heading">
+          <div>
+            <h3>{{ getFullName(getDeathBaptism(deathRecord)) }}</h3>
+          </div>
+        </div>
+
+        <div class="details-grid">
+
+
+          <div class="detail-item">
+            <span class="detail-label">First Name</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.first_name || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Middle Name</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.middle_name || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Last Name</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.last_name || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Extension Name</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.extension_name || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Gender</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.gender || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Marital Status</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.marital_status || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Birthdate</span>
+            <span class="detail-value">{{ formatDate(getDeathBaptism(deathRecord)?.birthdate || '') }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Age at Death</span>
+            <span class="detail-value">
+              {{ calculateAgeAtDeath(getDeathBaptism(deathRecord)?.birthdate || '', deathRecord.date_of_death) }}
+              <span class="detail-unit">years old</span>
+            </span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Address</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.address || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Church</span>
+            <span class="detail-value">{{ getChurchName(getDeathBaptism(deathRecord)?.church_id) }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Date of Death</span>
+            <span class="detail-value">{{ formatDate(deathRecord.date_of_death) }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Quarter</span>
+            <span class="detail-value">{{ deathRecord.quarter || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Date of Baptism</span>
+            <span class="detail-value">{{ formatDate(getDeathBaptism(deathRecord)?.date_of_baptism || '') }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Officiating Minister</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.officiating_minister || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Place of Baptism</span>
+            <span class="detail-value">{{ getDeathBaptism(deathRecord)?.place_of_baptism || '—' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Reclaimed Member</span>
+            <span
+              class="status-badge"
+              [class.status-yes]="getDeathBaptism(deathRecord)?.is_reclaimed"
+              [class.status-no]="!getDeathBaptism(deathRecord)?.is_reclaimed">
+              {{ getDeathBaptism(deathRecord)?.is_reclaimed ? 'Yes' : 'No' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="baptism-modal-footer">
+      <button
+        type="button"
+        class="modal-done-btn"
+        (click)="closeDeathModal()">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================= -->
+<!-- STYLES -->
+<!-- ================================================= -->
+
+<style>
+  .baptism-record-row {
+    cursor: pointer;
+    transition: background-color 0.18s ease;
+  }
+
+  .baptism-record-row:hover {
+    background-color: #f0f5ff;
+  }
+
+  .baptism-record-row:focus-visible {
+    outline: 2px solid #3156a5;
+    outline-offset: -2px;
+  }
+
+  .baptism-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: rgba(15, 23, 42, 0.58);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .baptism-modal-wrapper {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .baptism-modal {
+    width: 100%;
+    max-width: 900px;
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+    animation: baptismModalAppear 0.2s ease-out;
+  }
+
+  @keyframes baptismModalAppear {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.99);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .baptism-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 23px 28px;
+    background: #ffffff;
+    border-bottom: 1px solid #e8edf4;
+  }
+
+  .modal-heading-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-width: 0;
+  }
+
+  .modal-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3156a5;
+    background: #edf3ff;
+    border: 1px solid #dce7ff;
+    border-radius: 13px;
+  }
+
+  .modal-heading-content h2 {
+    margin: 0 0 5px;
+    color: #17243a;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.35px;
+  }
+
+  .modal-heading-content p {
+    margin: 0;
+    color: #718096;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .modal-close-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #648b84;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition:
+      color 0.18s ease,
+      background-color 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .modal-close-btn:hover {
+    color: #092c13;
+    background: #eef2f7;
+    border-color: #cbd5e1;
+  }
+
+  .baptism-modal-body {
+    padding: 26px 28px;
+    overflow-y: auto;
+    background: #f8fafc;
+  }
+
+  .member-identity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    background: #ffffff;
+    border: 1px solid #e6ebf2;
+    border-radius: 14px;
+  }
+
+  .member-avatar {
+    width: 58px;
+    height: 58px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    background: #3156a5;
+    border-radius: 16px;
+    font-size: 26px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .member-identity-info {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .member-identity-info h3 {
+    margin: 0 0 5px;
+    color: #17243a;
+    font-size: 20px;
+    line-height: 1.35;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .member-identity-info p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .record-number {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+    padding-left: 15px;
+    border-left: 1px solid #e8edf4;
+  }
+
+  .record-number span {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .record-number strong {
+    color: #3156a5;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .details-section {
+    padding: 23px;
+    background: #ffffff;
+    border: 1px solid #e6ebf2;
+    border-radius: 14px;
+  }
+
+  .details-section-heading {
+    margin-bottom: 20px;
+    padding-bottom: 17px;
+    border-bottom: 1px solid #e8edf4;
+  }
+
+  .details-section-heading h3 {
+    margin: 0 0 5px;
+    color: #17243a;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .details-section-heading p {
+    margin: 0;
+    color: #718096;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 28px;
+  }
+
+  .detail-item {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 15px 0;
+    border-bottom: 1px solid #edf1f6;
+  }
+
+  .detail-item-full {
+    grid-column: 1 / -1;
+  }
+
+  .detail-label {
+    color: #8190a5;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.55px;
+    text-transform: uppercase;
+  }
+
+  .detail-value {
+    color: #263449;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .detail-unit {
+    margin-left: 4px;
+    color: #8794a7;
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  .status-badge {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .status-yes {
+    color: #166534;
+    background: #dcfce7;
+  }
+
+  .status-no {
+    color: #475569;
+    background: #f1f5f9;
+  }
+
+  .baptism-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 17px 28px;
+    background: #ffffff;
+    border-top: 1px solid #e8edf4;
+  }
+
+  .modal-footer-note {
+    color: #94a3b8;
+    font-size: 12px;
+  }
+
+  .modal-done-btn {
+    min-width: 100px;
+    padding: 10px 20px;
+    color: #ffffff;
+    background: #0c502f;
+    border: 1px solid #084d23;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .modal-done-btn:hover {
+    background: #5d835e;
+    border-color: #044f06;
+  }
+
+  @media (max-width: 640px) {
+    .baptism-modal-wrapper {
+      align-items: center;
+      padding: 12px;
+    }
+
+    .baptism-modal {
+      max-height: calc(100vh - 24px);
+      border-radius: 14px;
+    }
+
+    .baptism-modal-header {
+      padding: 18px;
+    }
+
+    .modal-heading-content {
+      gap: 10px;
+    }
+
+    .modal-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+    }
+
+    .modal-heading-content h2 {
+      font-size: 17px;
+    }
+
+    .modal-heading-content p {
+      font-size: 11px;
+    }
+
+    .baptism-modal-body {
+      padding: 16px;
+    }
+
+    .member-identity {
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 15px;
+      margin-bottom: 16px;
+    }
+
+    .member-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      font-size: 21px;
+    }
+
+    .member-identity-info h3 {
+      font-size: 16px;
+    }
+
+    .record-number {
+      width: 100%;
+      align-items: flex-start;
+      gap: 4px;
+      padding: 10px 0 0;
+      border-left: none;
+      border-top: 1px solid #e8edf4;
+    }
+
+    .details-section {
+      padding: 16px;
+    }
+
+    .details-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+
+    .detail-item-full {
+      grid-column: auto;
+    }
+
+    .baptism-modal-footer {
+      padding: 14px 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .baptism-modal {
+      animation: none;
+    }
+
+    .baptism-record-row,
+    .modal-close-btn,
+    .modal-done-btn {
+      transition: none;
+    }
+  }
+</style>
 
 <link
   href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
