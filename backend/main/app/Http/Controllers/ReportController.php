@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ReportMonitoringService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Services\ReportMonitoringService;
 
 class ReportController extends Controller
 {
@@ -18,7 +18,7 @@ class ReportController extends Controller
             ->where('church_id', $churchId)
             ->first();
 
-        if (!$church) {
+        if (! $church) {
             return response()->json([
                 'message' => 'Church not found.',
             ], 404);
@@ -38,6 +38,18 @@ class ReportController extends Controller
                 'q2_approved' => $approvals[$department->department_id]['q2_approved'] ?? false,
                 'q3_approved' => $approvals[$department->department_id]['q3_approved'] ?? false,
                 'q4_approved' => $approvals[$department->department_id]['q4_approved'] ?? false,
+                'q1_submitted' => $approvals[$department->department_id]['q1_submitted'] ?? false,
+                'q2_submitted' => $approvals[$department->department_id]['q2_submitted'] ?? false,
+                'q3_submitted' => $approvals[$department->department_id]['q3_submitted'] ?? false,
+                'q4_submitted' => $approvals[$department->department_id]['q4_submitted'] ?? false,
+                'q1_data_progress' => $approvals[$department->department_id]['q1_data_progress'] ?? null,
+                'q2_data_progress' => $approvals[$department->department_id]['q2_data_progress'] ?? null,
+                'q3_data_progress' => $approvals[$department->department_id]['q3_data_progress'] ?? null,
+                'q4_data_progress' => $approvals[$department->department_id]['q4_data_progress'] ?? null,
+                'q1_submitted_data_progress' => $approvals[$department->department_id]['q1_submitted_data_progress'] ?? null,
+                'q2_submitted_data_progress' => $approvals[$department->department_id]['q2_submitted_data_progress'] ?? null,
+                'q3_submitted_data_progress' => $approvals[$department->department_id]['q3_submitted_data_progress'] ?? null,
+                'q4_submitted_data_progress' => $approvals[$department->department_id]['q4_submitted_data_progress'] ?? null,
             ];
         });
 
@@ -54,7 +66,7 @@ class ReportController extends Controller
             ->where('church_id', $churchId)
             ->first();
 
-        if (!$church) {
+        if (! $church) {
             return response()->json([
                 'message' => 'Church not found.',
             ], 404);
@@ -64,7 +76,7 @@ class ReportController extends Controller
             ->where('department_id', $departmentId)
             ->first();
 
-        if (!$department) {
+        if (! $department) {
             return response()->json([
                 'message' => 'Department not found.',
             ], 404);
@@ -180,7 +192,10 @@ class ReportController extends Controller
             'items.*.particular_id' => ['required', 'integer'],
             'items.*.quarter_id' => ['required', 'integer'],
             'items.*.value' => ['nullable', 'numeric', 'min:0'],
+            'submitted' => ['sometimes', 'boolean'],
         ]);
+
+        $submitted = (bool) ($validated['submitted'] ?? false);
 
         DB::beginTransaction();
 
@@ -211,7 +226,7 @@ class ReportController extends Controller
                     ])
                     ->first();
 
-                if (!$particular) {
+                if (! $particular) {
                     throw new \Exception(
                         'Invalid particular for this department.'
                     );
@@ -224,7 +239,7 @@ class ReportController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$quarter) {
+                if (! $quarter) {
                     throw new \Exception(
                         'Invalid quarter for this church or program.'
                     );
@@ -243,7 +258,7 @@ class ReportController extends Controller
                 }
 
                 if ($quarterNumber > 1) {
-                    $previousQuarterName = 'Q' . ($quarterNumber - 1);
+                    $previousQuarterName = 'Q'.($quarterNumber - 1);
 
                     $previousQuarter = DB::table('quarters')
                         ->where('church_id', $churchId)
@@ -252,18 +267,18 @@ class ReportController extends Controller
                         ->where('quarter', $previousQuarterName)
                         ->first();
 
-                    if (!$previousQuarter) {
+                    if (! $previousQuarter) {
                         throw new \Exception(
-                            $previousQuarterName .
+                            $previousQuarterName.
                             ' must exist before this quarter can be submitted.'
                         );
                     }
 
-                    if (!$this->isApproved($previousQuarter->mission_approve)) {
+                    if (! $this->isApproved($previousQuarter->mission_approve)) {
                         throw new \Exception(
-                            $previousQuarterName .
-                            ' must be approved before saving ' .
-                            $quarter->quarter . '.'
+                            $previousQuarterName.
+                            ' must be approved before saving '.
+                            $quarter->quarter.'.'
                         );
                     }
                 }
@@ -277,17 +292,34 @@ class ReportController extends Controller
                     DB::table('particular_items')
                         ->where('item_id', $existing->item_id)
                         ->update([
-                            'value' => $item['value'],
+                            'value' => $submitted && $item['value'] === null
+                                ? 0
+                                : $item['value'],
                         ]);
                 } else {
                     DB::table('particular_items')->insert([
                         'particular_id' => $item['particular_id'],
                         'quarter_id' => $item['quarter_id'],
-                        'value' => $item['value'],
+                        'value' => $submitted && $item['value'] === null
+                            ? 0
+                            : $item['value'],
                     ]);
                 }
 
                 $savedCount++;
+            }
+
+            if ($submitted) {
+                $quarterIds = collect($validated['items'])
+                    ->pluck('quarter_id')
+                    ->unique()
+                    ->values();
+
+                DB::table('quarters')
+                    ->whereIn('quarter_id', $quarterIds)
+                    ->update([
+                        'date_submitted' => now()->toDateString(),
+                    ]);
             }
 
             DB::commit();
@@ -346,7 +378,7 @@ class ReportController extends Controller
             ->where('church_id', $churchId)
             ->first(['church_id', 'parent_id']);
 
-        if (!$church) {
+        if (! $church) {
             return response()->json([
                 'message' => 'Church not found.',
             ], 404);
@@ -356,7 +388,7 @@ class ReportController extends Controller
             ->where('department_id', $departmentId)
             ->first();
 
-        if (!$department) {
+        if (! $department) {
             return response()->json([
                 'message' => 'Department not found.',
             ], 404);
@@ -404,7 +436,7 @@ class ReportController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'message' => 'You must log in to comment.',
             ], 401);
@@ -423,7 +455,7 @@ class ReportController extends Controller
             'assistant',
         ];
 
-        if (!in_array($role, $allowedRoles, true)) {
+        if (! in_array($role, $allowedRoles, true)) {
             return response()->json([
                 'message' => 'You are not authorized to add comments.',
             ], 403);
@@ -457,7 +489,7 @@ class ReportController extends Controller
             ->where('church_id', $data['church_id'])
             ->first();
 
-        if (!$quarter) {
+        if (! $quarter) {
             return response()->json([
                 'message' => 'The selected quarter does not belong to this church.',
             ], 422);
@@ -470,7 +502,7 @@ class ReportController extends Controller
             ->where('p.department_id', $data['department_id'])
             ->exists();
 
-        if (!$quarterBelongsToDepartment) {
+        if (! $quarterBelongsToDepartment) {
             return response()->json([
                 'message' => 'The selected quarter does not belong to this department.',
             ], 422);
@@ -574,13 +606,13 @@ class ReportController extends Controller
     ) {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'message' => 'You must log in to endorse a report.',
             ], 401);
         }
 
-        if (!$this->isPastorRole($this->normalizeRole($user->role ?? ''))) {
+        if (! $this->isPastorRole($this->normalizeRole($user->role ?? ''))) {
             return response()->json([
                 'message' => 'Only the district pastor can endorse this report.',
             ], 403);
@@ -615,6 +647,14 @@ class ReportController extends Controller
         $quarters = DB::table('quarters')
             ->whereIn('quarter_id', $quarterIds)
             ->get();
+
+        if ($quarters->contains(
+            fn ($quarter) => ! $this->isApproved($quarter->date_submitted)
+        )) {
+            return response()->json([
+                'message' => 'The representative must submit all report data before endorsement.',
+            ], 422);
+        }
 
         if ($quarters->contains(fn ($quarter) => $this->isApproved($quarter->mission_approve))) {
             return response()->json([
@@ -659,13 +699,13 @@ class ReportController extends Controller
     ) {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'message' => 'You must log in to approve a report.',
             ], 401);
         }
 
-        if (!$this->isAssistantRole($this->normalizeRole($user->role ?? ''))) {
+        if (! $this->isAssistantRole($this->normalizeRole($user->role ?? ''))) {
             return response()->json([
                 'message' => 'Only the administrative assistant can approve this report.',
             ], 403);
@@ -701,7 +741,7 @@ class ReportController extends Controller
             ->whereIn('quarter_id', $quarterIds)
             ->get();
 
-        if ($quarters->contains(fn ($quarter) => !$this->isApproved($quarter->district_endorse))) {
+        if ($quarters->contains(fn ($quarter) => ! $this->isApproved($quarter->district_endorse))) {
             return response()->json([
                 'message' => 'The district pastor must endorse this report before it can be approved.',
             ], 422);
