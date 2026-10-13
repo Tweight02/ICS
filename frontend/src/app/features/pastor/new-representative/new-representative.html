@@ -2,18 +2,18 @@
     <!-- Back link -->
     <a
         routerLink="/pastor/view-representatives"
-        class="mb-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-slate-500 transition hover:text-[#0F4A30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40"
+        class="mb-2 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-slate-500 transition hover:text-[#0F4A30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40"
     >
         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M12.7 4.3a1 1 0 010 1.4L8.4 10l4.3 4.3a1 1 0 01-1.4 1.4l-5-5a1 1 0 010-1.4l5-5a1 1 0 011.4 0z" clip-rule="evenodd" />
         </svg>
-        All representatives
+        Back
     </a>
 
     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <form [formGroup]="form" (ngSubmit)="save()" novalidate>
             <!-- Header -->
-            <div class="flex items-center gap-4 border-b border-slate-200 bg-gradient-to-b from-[#0F4A30]/[0.04] to-transparent p-5 sm:p-6">
+            <div class="flex items-center gap-2 border-b border-slate-200 bg-gradient-to-b from-[#0F4A30]/[0.04] to-transparent p-2 sm:p-3">
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0F4A30] text-white" aria-hidden="true">
                     <svg class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM2 16a6 6 0 0112 0v1H2v-1zM15 6a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1V7a1 1 0 011-1z" />
@@ -34,7 +34,7 @@
                 </div>
             }
 
-            <div class="space-y-8 p-5 sm:p-6">
+            <div class="space-y-3 p-2 sm:p-6">
                 <!-- Church -->
                 <section>
                     <h2 class="text-sm font-semibold text-slate-900">Church</h2>
@@ -200,14 +200,14 @@
             <div class="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/80 px-5 py-3 sm:px-6">
                 <a
                     routerLink="/pastor/view-representatives"
-                    class="inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2"
+                    class="inline-flex !no-underline h-9 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2"
                 >
                     Cancel
                 </a>
                 <button
                     type="submit"
                     [disabled]="saving() || loadingChurches()"
-                    class="inline-flex h-9 items-center gap-2 rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="inline-flex h-9 items-center gap-2 !rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     @if (saving()) {
                         <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
