@@ -65,7 +65,7 @@ class RepresentativeController extends Controller
         $query = User::query()
             ->where(
                 'role',
-                'church_representative'
+                'representative'
             )
             ->with([
                 'department:department_id,department_name',
@@ -242,7 +242,7 @@ class RepresentativeController extends Controller
             if ((int) $church->parent_id !== (int) $authUser->church_id) {
                 abort(403, 'You can only assign representatives to churches in your district.');
             }
-        } elseif ($authUser->role === 'church_representative') {
+        } elseif ($authUser->role === 'representative') {
             if ((int) $church->church_id !== (int) $authUser->church_id) {
                 abort(403, 'You can only assign a representative to your own church.');
             }
