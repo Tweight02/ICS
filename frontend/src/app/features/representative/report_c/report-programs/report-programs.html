@@ -21,11 +21,8 @@
 
     <!-- HEADER -->
     <header class="mb-6">
-      <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
-        Report Management
-      </p>
       <h1 class="text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
-        {{ churchName }}
+        {{ churchName || 'Church Reports' }}
       </h1>
       <p class="mt-0.5 text-sm font-medium text-emerald-900/70">
         {{ districtName }}

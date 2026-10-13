@@ -10,11 +10,10 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 import { ReportService } from '../../../../core/services/report/report';
+import { AuthService } from '../../../../core/services/auth/auth-service';
+import { ChurchService } from '../../../../core/services/church/church-service';
 
-import {
-  Department,
-  ChurchesResponse
-} from '../../../../core/models/report.model';
+import { Department } from '../../../../core/models/report.model';
 
 interface Monitoring {
   q1: number | null;
@@ -33,32 +32,14 @@ interface Monitoring {
 export class ReportPrograms implements OnInit {
 
   private readonly reportService = inject(ReportService);
+  private readonly auth = inject(AuthService);
+  private readonly churchService = inject(ChurchService);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  // Current user
-  private readonly CURRENT_USER = {
-    user_id: 1,
-    department_id: 1,
-    church_id: 214,
-    first_name: 'Juan',
-    middle_name: 'Santos',
-    last_name: 'Dela Cruz',
-    extension_name: null,
-    birthdate: '1980-05-15',
-    gender: 'Male',
-    email: 'district.representative@example.com',
-    role: 'representative'
-  };
-
-  // District
-  readonly districtId = 210;
-  readonly districtName = 'Eastern Nueva Vizcaya';
-
-  // Church
-  churchId = this.CURRENT_USER.church_id;
-  churchName = 'Church';
-  churchAddress = '';
+  churchId = 0;
+  churchName = '';
+  districtName = '';
 
   // Departments
   departments: Department[] = [];
@@ -74,37 +55,42 @@ export class ReportPrograms implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
-    this.loadChurch();
+    const user = this.auth.getCurrentUser();
+
+    if (!user?.church_id) {
+      this.errorMessage =
+        'Your account does not have a church assigned. Please contact the administrator.';
+      return;
+    }
+
+    this.churchId = Number(user.church_id);
+    this.loadChurchNames();
     this.loadDepartments();
   }
 
-  // Load church
-  private loadChurch(): void {
-    fetch(`http://127.0.0.1:8000/api/districts/${this.districtId}/churches`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Unable to load churches.');
-        }
-        return response.json();
-      })
-      .then((response: ChurchesResponse) => {
+  private loadChurchNames(): void {
+    this.churchService.getAllChurches().subscribe({
+      next: response => {
         const churches = response.data || [];
-
-        const currentChurch = churches.find(
-          church => Number(church.church_id) === Number(this.churchId)
+        const church = churches.find(
+          item => Number(item.church_id) === this.churchId
         );
 
-        if (currentChurch) {
-          this.churchName = currentChurch.name;
-          this.churchAddress = currentChurch.address || '';
+        if (!church) {
+          return;
         }
 
+        this.churchName = church.name;
+
+        const districtId = church.parent_id ?? church.church_id;
+        this.districtName = churches.find(
+          item => Number(item.church_id) === Number(districtId)
+        )?.name || '';
+
         this.cdr.detectChanges();
-      })
-      .catch(() => {
-        this.churchName = 'Church Representative';
-        this.cdr.detectChanges();
-      });
+      },
+      error: () => this.cdr.detectChanges()
+    });
   }
 
   // The department list includes approval summaries for each quarter.
