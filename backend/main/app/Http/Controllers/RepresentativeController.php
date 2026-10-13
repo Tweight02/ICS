@@ -38,7 +38,7 @@ class RepresentativeController extends Controller
                 $q->select(DB::raw(1))
                     ->from('users')
                     ->whereColumn('users.church_id', 'churches.church_id')
-                    ->where('users.role', 'church_representative');
+                    ->where('users.role', 'representative');
             })
             ->orderBy('name')
             ->get(['church_id', 'name']);
@@ -53,7 +53,7 @@ class RepresentativeController extends Controller
         if (
             !in_array(
                 $authUser->role,
-                ['pastor', 'church_representative']
+                ['pastor', 'representative']
             )
         ) {
             abort(
@@ -95,7 +95,7 @@ class RepresentativeController extends Controller
     |--------------------------------------------------------------------------
     */
 
-        if ($authUser->role === 'church_representative') {
+        if ($authUser->role === 'representative') {
 
             $query->where(
                 'church_id',
@@ -169,7 +169,7 @@ class RepresentativeController extends Controller
         $authUser = $request->user();
 
         $representative = User::query()
-            ->where('role', 'church_representative')
+            ->where('role', 'representative')
             ->with([
                 'department:department_id,department_name',
                 'church:church_id,name,parent_id',
@@ -191,7 +191,7 @@ class RepresentativeController extends Controller
             if (!$allowed) {
                 abort(403, 'This representative is outside your district.');
             }
-        } elseif ($authUser->role === 'church_representative') {
+        } elseif ($authUser->role === 'representative') {
 
             if (
                 (int) $representative->church_id !==
@@ -258,7 +258,7 @@ class RepresentativeController extends Controller
         }
 
         $data['department_id'] = $authUser->department_id;
-        $data['role']          = 'church_representative';
+        $data['role']          = 'representative';
         $data['password']      = Hash::make($data['password']);
 
         $representative = DB::transaction(function () use ($data) {
@@ -268,7 +268,7 @@ class RepresentativeController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            $occupied = User::where('role', 'church_representative')
+            $occupied = User::where('role', 'representative')
                 ->where('church_id', $data['church_id'])
                 ->exists();
 
@@ -302,7 +302,7 @@ class RepresentativeController extends Controller
 
         $representative = User::where(
             'role',
-            'church_representative'
+            'representative'
         )->findOrFail($id);
 
 
@@ -326,7 +326,7 @@ class RepresentativeController extends Controller
                     'This representative is outside your district.'
                 );
             }
-        } elseif ($authUser->role === 'church_representative') {
+        } elseif ($authUser->role === 'representative') {
 
             if (
                 (int) $representative->church_id !==
@@ -444,7 +444,7 @@ class RepresentativeController extends Controller
             abort(403, 'Only pastors can delete representatives.');
         }
 
-        $representative = User::where('role', 'church_representative')
+        $representative = User::where('role', 'representative')
             ->with('church:church_id,parent_id')
             ->findOrFail($id);
 
