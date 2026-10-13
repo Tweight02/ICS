@@ -29,7 +29,7 @@ describe('ReportPrograms', () => {
       q1_data_progress: 50,
       q2_approved: true,
       q2_data_progress: 100,
-      q3_approved: false,
+      q3_approved: true,
       q3_data_progress: 0
     }]));
     const getAllChurches = vi.fn().mockReturnValue(of({
@@ -78,8 +78,8 @@ describe('ReportPrograms', () => {
     expect(quarterCells.map(cell => cell.textContent.trim())).toEqual([
       '50%',
       '✓',
-      '—',
-      '—'
+      '-',
+      '-'
     ]);
   });
 });

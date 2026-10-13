@@ -235,10 +235,10 @@ export class ReportPrograms implements OnInit {
     }
 
     return {
-      q1: { progress: department.q1_submitted_data_progress ?? null, approved: !!department.q1_approved },
-      q2: { progress: department.q2_submitted_data_progress ?? null, approved: !!department.q2_approved },
-      q3: { progress: department.q3_submitted_data_progress ?? null, approved: !!department.q3_approved },
-      q4: { progress: department.q4_submitted_data_progress ?? null, approved: !!department.q4_approved }
+      q1: { progress: department.q1_data_progress ?? null, approved: !!department.q1_approved },
+      q2: { progress: department.q2_data_progress ?? null, approved: !!department.q2_approved },
+      q3: { progress: department.q3_data_progress ?? null, approved: !!department.q3_approved },
+      q4: { progress: department.q4_data_progress ?? null, approved: !!department.q4_approved }
     };
   }
 

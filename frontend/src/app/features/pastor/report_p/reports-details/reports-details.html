@@ -1,5 +1,7 @@
 <ng-template #monitoringCell let-value>
-  @if (value.approved) {
+  @if (value.progress === 0) {
+    <span class="dash">-</span>
+  } @else if (value.approved) {
     <span class="check">✓</span>
   } @else if (value.progress > 0) {
     <div class="progress-wrapper">
@@ -9,7 +11,7 @@
       </div>
     </div>
   } @else {
-    <span class="dash">–</span>
+    <span class="dash">-</span>
   }
 </ng-template>
 

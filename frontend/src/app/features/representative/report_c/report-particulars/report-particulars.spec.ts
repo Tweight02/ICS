@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { AuthService } from '../../../../core/services/auth/auth-service';
+import { ChurchService } from '../../../../core/services/church/church-service';
 import { ReportService } from '../../../../core/services/report/report';
 import { ReportParticulars } from './report-particulars';
 
@@ -10,6 +11,7 @@ describe('ReportParticulars', () => {
   let component: ReportParticulars;
   let fixture: ComponentFixture<ReportParticulars>;
   let saveDepartmentReport: ReturnType<typeof vi.fn>;
+  let getDepartmentReport: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     const report = {
@@ -48,7 +50,15 @@ describe('ReportParticulars', () => {
       }]
     };
 
+    getDepartmentReport = vi.fn().mockReturnValue(of(report));
     saveDepartmentReport = vi.fn().mockReturnValue(of({ message: 'Report submitted.' }));
+    const getAllChurches = vi.fn().mockReturnValue(of({
+      success: true,
+      data: [
+        { church_id: 1, name: 'Batanes', address: null, parent_id: null },
+        { church_id: 2, name: 'Pasuc', address: null, parent_id: 1 }
+      ]
+    }));
 
     await TestBed.configureTestingModule({
       imports: [ReportParticulars],
@@ -60,11 +70,12 @@ describe('ReportParticulars', () => {
             snapshot: { queryParamMap: convertToParamMap({}) }
           }
         },
-        { provide: AuthService, useValue: { getCurrentUser: () => ({ church_id: 2 }) } },
+        { provide: AuthService, useValue: { getCurrentUser: () => ({ church_id: 1 }) } },
+        { provide: ChurchService, useValue: { getAllChurches } },
         {
           provide: ReportService,
           useValue: {
-            getDepartmentReport: () => of(report),
+            getDepartmentReport,
             getDepartmentComments: () => of({ data: [] }),
             saveDepartmentReport
           }
@@ -80,6 +91,14 @@ describe('ReportParticulars', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('loads and saves reports for the local church assigned to the representative district', () => {
+    expect(getDepartmentReport).toHaveBeenCalledWith(2, 3);
+
+    component.saveReport();
+
+    expect(saveDepartmentReport.mock.calls[0][0]).toBe(2);
   });
 
   it('submits blank inputs as zero', () => {
