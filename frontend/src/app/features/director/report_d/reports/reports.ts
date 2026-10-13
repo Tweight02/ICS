@@ -3,7 +3,8 @@ import {
   OnInit,
   NgZone,
   ChangeDetectorRef,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -39,7 +40,13 @@ export class Reports implements OnInit {
 
   districts: Church[] = [];
 
-  loadingDistricts = false;
+  private readonly loadingDistrictsState = signal(false);
+  get loadingDistricts(): boolean {
+    return this.loadingDistrictsState();
+  }
+  set loadingDistricts(value: boolean) {
+    this.loadingDistrictsState.set(value);
+  }
 
   errorMessage = '';
 
@@ -122,10 +129,25 @@ export class Reports implements OnInit {
       });
   }
 
-  getMonitoringPercentage(
-    _district: Church
-  ): number {
-    return 50;
+  getMonitoring(district: Church): {
+    q1: number | null;
+    q2: number | null;
+    q3: number | null;
+    q4: number | null;
+  } {
+    return {
+      q1: district.q1 ?? null,
+      q2: district.q2 ?? null,
+      q3: district.q3 ?? null,
+      q4: district.q4 ?? null
+    };
+  }
+
+  get churchCount(): number {
+    return this.districts.reduce(
+      (count, district) => count + (district.church_count ?? 0),
+      0
+    );
   }
 
   openDistrict(

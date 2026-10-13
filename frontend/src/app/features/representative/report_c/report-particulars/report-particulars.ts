@@ -4,7 +4,8 @@ import {
   OnInit,
   OnDestroy,
   ChangeDetectorRef,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -105,18 +106,43 @@ export class ReportParticulars implements OnInit, OnDestroy {
   selectedProgramId: number | null = null;
 
   isAnnualView = false;
-  loading = false;
-  saving = false;
+  private readonly loadingState = signal(false);
+  get loading(): boolean {
+    return this.loadingState();
+  }
+  set loading(value: boolean) {
+    this.loadingState.set(value);
+  }
+
+  private readonly savingState = signal(false);
+  get saving(): boolean {
+    return this.savingState();
+  }
+  set saving(value: boolean) {
+    this.savingState.set(value);
+  }
   errorMessage = '';
   successMessage = '';
 
   // ---- Comments (from District Pastor & Assistant, read-only) ----
   comments: ReportComment[] = [];
-  commentsLoading = false;
+  private readonly commentsLoadingState = signal(false);
+  get commentsLoading(): boolean {
+    return this.commentsLoadingState();
+  }
+  set commentsLoading(value: boolean) {
+    this.commentsLoadingState.set(value);
+  }
   commentsError = '';
 
   // ---- Auto-save state ----
-  autoSaveStatus: AutoSaveStatus = 'idle';
+  private readonly autoSaveStatusState = signal<AutoSaveStatus>('idle');
+  get autoSaveStatus(): AutoSaveStatus {
+    return this.autoSaveStatusState();
+  }
+  set autoSaveStatus(value: AutoSaveStatus) {
+    this.autoSaveStatusState.set(value);
+  }
   private readonly autoSaveDelayMs = 800;
   private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private autoSaving = false;

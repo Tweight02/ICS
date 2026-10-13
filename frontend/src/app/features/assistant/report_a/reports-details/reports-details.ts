@@ -2,17 +2,15 @@ import {
   ChangeDetectorRef,
   Component,
   OnInit,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
 
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
-import { ReportMonitoring } from '../../../../core/models/report.model';
-import { ReportService } from '../../../../core/services/report/report';
 
 @Component({
   selector: 'app-reports-details',
@@ -27,16 +25,19 @@ export class ReportsDetails implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private churchService = inject(ChurchService);
-  private reportService = inject(ReportService);
 
   districtId = 0;
   districtName = '';
 
   district: Church | null = null;
   churches: Church[] = [];
-  monitoring: Record<number, ReportMonitoring> = {};
-  loadingChurches = false;
-  loadingMonitoring = false;
+  private readonly loadingChurchesState = signal(false);
+  get loadingChurches(): boolean {
+    return this.loadingChurchesState();
+  }
+  set loadingChurches(value: boolean) {
+    this.loadingChurchesState.set(value);
+  }
 
   errorMessage = '';
 
@@ -56,7 +57,6 @@ export class ReportsDetails implements OnInit {
 
   loadChurches(): void {
     this.loadingChurches = true;
-    this.loadingMonitoring = false;
     this.errorMessage = '';
     this.cdr.detectChanges();
     this.churchService.getChurches(this.districtId).subscribe({
@@ -73,8 +73,6 @@ export class ReportsDetails implements OnInit {
           Array.isArray(response.data)
             ? response.data
             : [];
-
-        this.loadChurchMonitoring();
 
         console.log(
           '[REPORT DETAILS] District:',
@@ -98,9 +96,7 @@ export class ReportsDetails implements OnInit {
 
         this.district = null;
         this.churches = [];
-        this.monitoring = {};
         this.loadingChurches = false;
-        this.loadingMonitoring = false;
 
         this.errorMessage =
           'Unable to load district details.';
@@ -157,40 +153,8 @@ export class ReportsDetails implements OnInit {
       : '/director';
   }
 
-  private loadChurchMonitoring(): void {
-    this.monitoring = {};
-
-    if (this.churches.length === 0) {
-      this.loadingMonitoring = false;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    this.loadingMonitoring = true;
-    this.cdr.detectChanges();
-    forkJoin(
-      this.churches.map(church =>
-        this.reportService.getChurchMonitoring(church.church_id)
-      )
-    ).subscribe({
-      next: summaries => {
-        summaries.forEach((summary, index) => {
-          this.monitoring[this.churches[index].church_id] = summary;
-        });
-        this.loadingMonitoring = false;
-        this.cdr.detectChanges();
-      },
-      error: error => {
-        console.error('Unable to load church report monitoring:', error);
-        this.loadingMonitoring = false;
-        this.errorMessage = 'Unable to load church report monitoring.';
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  getMonitoring(churchId: number): ReportMonitoring {
-    return this.monitoring[churchId] ?? {
+  getMonitoring(churchId: number): { q1: number | null; q2: number | null; q3: number | null; q4: number | null } {
+    return this.churches.find(church => church.church_id === churchId)?.monitoring ?? {
       q1: null,
       q2: null,
       q3: null,

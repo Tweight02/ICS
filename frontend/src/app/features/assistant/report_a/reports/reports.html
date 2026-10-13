@@ -1,9 +1,7 @@
 <ng-template #monitoringCell let-value>
-  @if (loadingMonitoring) {
-    <span class="empty-quarter" aria-label="Loading">…</span>
-  } @else if (value === 100) {
+  @if (value === 100) {
     <span class="check">✓</span>
-  } @else if (value !== null) {
+  } @else if (value > 0) {
     <div class="progress-container">
       <span class="percentage">{{ value }}%</span>
       <div class="progress">

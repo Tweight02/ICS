@@ -2,21 +2,18 @@ import {
   Component,
   OnInit,
   ChangeDetectorRef,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 import { ReportService } from '../../../../core/services/report/report';
 import { ChurchService } from '../../../../core/services/church/church-service';
 
 import {
-  Department,
-  DepartmentReport,
-  ReportQuarter
+  Department
 } from '../../../../core/models/report.model';
 
 interface Monitoring {
@@ -52,8 +49,14 @@ export class ReportPrograms implements OnInit {
 
   departments: Department[] = [];
 
-  loading = false;
-  loadingMonitoring = false;
+  private readonly loadingState = signal(false);
+  get loading(): boolean {
+    return this.loadingState();
+  }
+  set loading(value: boolean) {
+    this.loadingState.set(value);
+  }
+
   errorMessage = '';
 
   ngOnInit(): void {
@@ -67,10 +70,8 @@ export class ReportPrograms implements OnInit {
       this.churchName = queryParams.get('church_name') || '';
 
       this.departments = [];
-      this.monitoring = {};
       this.errorMessage = '';
       this.loading = false;
-      this.loadingMonitoring = false;
 
       if (!this.churchId) {
         this.errorMessage = 'Church ID was not provided.';
@@ -208,7 +209,6 @@ export class ReportPrograms implements OnInit {
         this.departments = Array.isArray(data) ? data : [];
         this.loading = false;
         this.cdr.detectChanges();
-        this.loadMonitoring();
       },
       error: error => {
         this.departments = [];
@@ -220,8 +220,6 @@ export class ReportPrograms implements OnInit {
     });
   }
 
-  private monitoring: Record<number, Monitoring> = {};
-
   private readonly emptyMonitoring: Monitoring = {
     q1: { value: null, endorsed: false },
     q2: { value: null, endorsed: false },
@@ -232,111 +230,16 @@ export class ReportPrograms implements OnInit {
   getMonitoring(index: number): Monitoring {
     const department = this.reportDepartments[index];
 
-    return (department && this.monitoring[department.department_id])
-      || this.emptyMonitoring;
-  }
-
-  private loadMonitoring(): void {
-    const departments = this.reportDepartments;
-
-    if (departments.length === 0) {
-      this.loadingMonitoring = false;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    this.loadingMonitoring = true;
-    this.cdr.detectChanges();
-
-    const requests = departments.map(department =>
-      this.reportService
-        .getDepartmentReport(this.churchId, department.department_id)
-        .pipe(
-          map(report => this.buildMonitoring(report))
-        )
-    );
-
-    forkJoin(requests).subscribe({
-      next: results => {
-        departments.forEach((department, index) => {
-          this.monitoring[department.department_id] = results[index];
-        });
-
-        this.loadingMonitoring = false;
-        this.cdr.detectChanges();
-      },
-      error: error => {
-        console.error('Unable to load department report monitoring:', error);
-        this.loadingMonitoring = false;
-        this.errorMessage = 'Unable to load report monitoring.';
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  private buildMonitoring(report: DepartmentReport): Monitoring {
-    const records: ReportQuarter[] = [];
-
-    for (const program of report.programs ?? []) {
-      for (const section of program.sections ?? []) {
-        for (const particular of section.particulars ?? []) {
-          records.push(...(particular.quarters ?? []));
-        }
-      }
-    }
-
-    if (records.length === 0) {
+    if (!department) {
       return this.emptyMonitoring;
     }
 
-    const latestYear = Math.max(...records.map(item => Number(item.year)));
-    const current = records.filter(item => Number(item.year) === latestYear);
-
-    const progressFor = (quarterNumber: number): QuarterMonitoring => {
-      const items = current.filter(
-        item => this.getQuarterNumber(item.quarter) === quarterNumber
-      );
-
-      if (items.length === 0) {
-        return { value: null, endorsed: false };
-      }
-
-      const approved = items.every(item => this.hasDate(item.mission_approve));
-      const filled = items.filter(
-        item => item.value !== null && item.value !== undefined
-      ).length;
-
-      return {
-        value: approved
-          ? 100
-          : filled === 0
-            ? null
-            : Math.min(99, Math.round((filled / items.length) * 100)),
-        endorsed: !approved && items.every(item => this.hasDate(item.district_endorse))
-      };
-    };
-
     return {
-      q1: progressFor(1),
-      q2: progressFor(2),
-      q3: progressFor(3),
-      q4: progressFor(4)
+      q1: { value: department.q1_approved ? 100 : null, endorsed: false },
+      q2: { value: department.q2_approved ? 100 : null, endorsed: false },
+      q3: { value: department.q3_approved ? 100 : null, endorsed: false },
+      q4: { value: department.q4_approved ? 100 : null, endorsed: false }
     };
-  }
-
-  private hasDate(value: unknown): boolean {
-    return value !== null && value !== undefined && String(value).trim() !== '';
-  }
-
-  private getQuarterNumber(quarter: string): number {
-    const value = String(quarter).toUpperCase();
-
-    if (value.includes('1')) return 1;
-    if (value.includes('2')) return 2;
-    if (value.includes('3')) return 3;
-    if (value.includes('4')) return 4;
-
-    return 99;
   }
 
   getDepartmentIcon(departmentName: string): string {

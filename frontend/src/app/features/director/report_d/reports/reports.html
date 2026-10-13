@@ -1,4 +1,18 @@
 <div class="reports-container">
+  <ng-template #monitoringCell let-value>
+    @if (value === 100) {
+      <span class="check">✓</span>
+    } @else if (value > 0) {
+      <div class="progress-container">
+        <span class="percentage">{{ value }}%</span>
+        <div class="progress">
+          <div class="progress-bar" [style.width.%]="value"></div>
+        </div>
+      </div>
+    } @else {
+      <span class="empty-quarter">–</span>
+    }
+  </ng-template>
 
   <!-- HEADER -->
   <div class="reports-header">
@@ -22,7 +36,7 @@
 
       <div class="stat-card">
         <div class="stat-number">
-          —
+          {{ churchCount }}
         </div>
 
         <div class="stat-label">
@@ -155,68 +169,25 @@
               </td>
 
 
-              <!-- Q1 -->
               <td class="quarter-cell">
-
-                <span class="check">
-                  ✓
-                </span>
-
+                <ng-container
+                  *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(district).q1 }">
+                </ng-container>
               </td>
-
-
-              <!-- Q2 -->
               <td class="quarter-cell">
-
-                <span class="check">
-                  ✓
-                </span>
-
+                <ng-container
+                  *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(district).q2 }">
+                </ng-container>
               </td>
-
-
-              <!-- Q3 -->
               <td class="q3-cell">
-
-                <div class="progress-container">
-
-                  <span class="percentage">
-
-                    {{ getMonitoringPercentage(district) }}%
-
-                  </span>
-
-                  <div class="progress">
-
-                    <div
-                      class="progress-bar"
-
-                      [style.width.%]="
-                        getMonitoringPercentage(district)
-                      "
-
-                      [attr.aria-valuenow]="
-                        getMonitoringPercentage(district)
-                      "
-
-                      aria-valuemin="0"
-                      aria-valuemax="100"
-                    ></div>
-
-                  </div>
-
-                </div>
-
+                <ng-container
+                  *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(district).q3 }">
+                </ng-container>
               </td>
-
-
-              <!-- Q4 -->
               <td class="quarter-cell">
-
-                <span class="empty-quarter">
-                  –
-                </span>
-
+                <ng-container
+                  *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(district).q4 }">
+                </ng-container>
               </td>
 
             </tr>

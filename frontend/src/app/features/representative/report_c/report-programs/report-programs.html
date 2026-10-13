@@ -12,18 +12,6 @@
       ✓
     </span>
 
-    <div *ngIf="v !== null && v !== 100" class="flex items-center gap-2.5">
-      <span class="w-9 text-right text-xs font-semibold tabular-nums text-emerald-950/80">
-        {{ v }}%
-      </span>
-      <div class="h-2 w-28 overflow-hidden rounded-full bg-emerald-900/10">
-        <div
-          class="h-full rounded-full bg-gradient-to-r from-amber-300 to-amber-400 transition-all"
-          [style.width.%]="v">
-        </div>
-      </div>
-    </div>
-
   </div>
 </ng-template>
 

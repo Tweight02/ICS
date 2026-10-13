@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
@@ -47,9 +47,21 @@ export class DeathaddrecComponent implements OnInit {
 
   selectedBaptism: Baptism | null = null;
 
-  loadingBaptisms = false;
+  private readonly loadingBaptismsState = signal(false);
+  get loadingBaptisms(): boolean {
+    return this.loadingBaptismsState();
+  }
+  set loadingBaptisms(value: boolean) {
+    this.loadingBaptismsState.set(value);
+  }
 
-  saving = false;
+  private readonly savingState = signal(false);
+  get saving(): boolean {
+    return this.savingState();
+  }
+  set saving(value: boolean) {
+    this.savingState.set(value);
+  }
 
   death = {
     baptism_id: null as number | null,
