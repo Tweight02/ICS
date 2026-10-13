@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('title');
             $table->date('date_start');
             $table->date('date_end');
+            $table->time('time_start');
+            $table->time('time_end');
             $table->string('details');
             $table->string('status');
             $table->string('location');
