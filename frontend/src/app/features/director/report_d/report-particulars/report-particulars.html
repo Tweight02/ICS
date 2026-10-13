@@ -259,17 +259,7 @@
                             *ngIf="getParticularQuarterRecord(particular, quarter) as record;
                                    else noAnnualValue">
 
-                            <span
-                              *ngIf="isRecordApproved(record)"
-                              class="inline-flex h-6 w-6 items-center justify-center rounded-full
-                                     bg-emerald-700 text-xs font-bold text-white"
-                              title="Approved">
-                              ✓
-                            </span>
-
-                            <span *ngIf="!isRecordApproved(record)">
-                              {{ record.value ?? '—' }}
-                            </span>
+                            <span>{{ record.value ?? '—' }}</span>
                           </ng-container>
 
                           <ng-template #noAnnualValue>
@@ -284,17 +274,7 @@
                             <ng-container
                               *ngIf="getParticularQuarterRecord(particular, quarter) as record; else noValue">
 
-                              <span
-                                *ngIf="isRecordApproved(record)"
-                                class="inline-flex h-7 w-7 items-center justify-center rounded-full
-                                       bg-emerald-700 text-sm font-bold text-white"
-                                title="Approved">
-                                ✓
-                              </span>
-
-                              <span *ngIf="!isRecordApproved(record)">
-                                {{ record.value ?? '—' }}
-                              </span>
+                              <span>{{ record.value ?? '—' }}</span>
                             </ng-container>
 
                             <ng-template #noValue>

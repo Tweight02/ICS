@@ -15,11 +15,16 @@ import { ChurchService } from '../../../../core/services/church/church-service';
 
 import { Department } from '../../../../core/models/report.model';
 
+interface QuarterMonitoring {
+  progress: number | null;
+  approved: boolean;
+}
+
 interface Monitoring {
-  q1: number | null;
-  q2: number | null;
-  q3: number | null;
-  q4: number | null;
+  q1: QuarterMonitoring;
+  q2: QuarterMonitoring;
+  q3: QuarterMonitoring;
+  q4: QuarterMonitoring;
 }
 
 @Component({
@@ -37,9 +42,10 @@ export class ReportPrograms implements OnInit {
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
 
+  districtId = 0;
+  districtName = '';
   churchId = 0;
   churchName = '';
-  districtName = '';
 
   // Departments
   departments: Department[] = [];
@@ -63,33 +69,71 @@ export class ReportPrograms implements OnInit {
       return;
     }
 
-    this.churchId = Number(user.church_id);
-    this.loadChurchNames();
-    this.loadDepartments();
+    this.loadChurchNames(Number(user.church_id));
   }
 
-  private loadChurchNames(): void {
+  private loadChurchNames(assignedChurchId: number): void {
+    this.loading = true;
+
     this.churchService.getAllChurches().subscribe({
       next: response => {
-        const churches = response.data || [];
-        const church = churches.find(
-          item => Number(item.church_id) === this.churchId
+        const churches = Array.isArray(response.data) ? response.data : [];
+        const assignedChurch = churches.find(
+          item => Number(item.church_id) === assignedChurchId
         );
 
-        if (!church) {
+        if (!assignedChurch) {
+          this.loading = false;
+          this.errorMessage = 'Your assigned church could not be found.';
+          this.cdr.detectChanges();
           return;
         }
 
-        this.churchName = church.name;
+        this.districtId = Number(
+          assignedChurch.parent_id ?? assignedChurch.church_id
+        );
+        const district = churches.find(
+          item => Number(item.church_id) === this.districtId && item.parent_id === null
+        );
 
-        const districtId = church.parent_id ?? church.church_id;
-        this.districtName = churches.find(
-          item => Number(item.church_id) === Number(districtId)
-        )?.name || '';
+        if (!district) {
+          this.loading = false;
+          this.errorMessage = 'The district for your assigned church could not be found.';
+          this.cdr.detectChanges();
+          return;
+        }
+
+        this.districtName = district.name;
+
+        let reportChurch = assignedChurch;
+        if (assignedChurch.parent_id === null) {
+          const districtChurches = churches.filter(
+            item => Number(item.parent_id) === this.districtId
+          );
+
+          if (districtChurches.length !== 1) {
+            this.loading = false;
+            this.errorMessage = districtChurches.length === 0
+              ? 'No local church is assigned to this district.'
+              : 'Your account is assigned to a district with multiple churches. Please contact the administrator.';
+            this.cdr.detectChanges();
+            return;
+          }
+
+          reportChurch = districtChurches[0];
+        }
+
+        this.churchId = Number(reportChurch.church_id);
+        this.churchName = reportChurch.name;
+        this.loadDepartments();
 
         this.cdr.detectChanges();
       },
-      error: () => this.cdr.detectChanges()
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Unable to load church and district names.';
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -152,10 +196,10 @@ export class ReportPrograms implements OnInit {
   ========================================================= */
 
   private readonly emptyMonitoring: Monitoring = {
-    q1: null,
-    q2: null,
-    q3: null,
-    q4: null
+    q1: { progress: null, approved: false },
+    q2: { progress: null, approved: false },
+    q3: { progress: null, approved: false },
+    q4: { progress: null, approved: false }
   };
 
   getMonitoring(index: number): Monitoring {
@@ -166,10 +210,10 @@ export class ReportPrograms implements OnInit {
     }
 
     return {
-      q1: department.q1_approved ? 100 : null,
-      q2: department.q2_approved ? 100 : null,
-      q3: department.q3_approved ? 100 : null,
-      q4: department.q4_approved ? 100 : null
+      q1: { progress: department.q1_data_progress ?? null, approved: !!department.q1_approved },
+      q2: { progress: department.q2_data_progress ?? null, approved: !!department.q2_approved },
+      q3: { progress: department.q3_data_progress ?? null, approved: !!department.q3_approved },
+      q4: { progress: department.q4_data_progress ?? null, approved: !!department.q4_approved }
     };
   }
 

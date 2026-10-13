@@ -19,15 +19,24 @@ describe('ReportPrograms', () => {
       last_name: 'Representative',
       email: 'casey@example.com',
       role: 'representative',
-      church_id: 42
+      church_id: 1
     });
 
-    getDepartments = vi.fn().mockReturnValue(of([]));
+    getDepartments = vi.fn().mockReturnValue(of([{
+      department_id: 4,
+      department_name: 'Youth',
+      q1_approved: false,
+      q1_data_progress: 50,
+      q2_approved: true,
+      q2_data_progress: 100,
+      q3_approved: false,
+      q3_data_progress: 0
+    }]));
     const getAllChurches = vi.fn().mockReturnValue(of({
       success: true,
       data: [
-        { church_id: 8, name: 'North District', address: null, parent_id: null },
-        { church_id: 42, name: 'River Church', address: null, parent_id: 8 }
+        { church_id: 1, name: 'Batanes', address: null, parent_id: null },
+        { church_id: 2, name: 'Pasuc', address: null, parent_id: 1 }
       ]
     }));
 
@@ -50,10 +59,27 @@ describe('ReportPrograms', () => {
     expect(component).toBeTruthy();
   });
 
-  it('loads departments for the signed-in representative church', () => {
+  it('resolves a district assignment to its sole local church', () => {
     expect(getDepartments).toHaveBeenCalledOnce();
-    expect(getDepartments).toHaveBeenCalledWith(42);
-    expect(component.churchName).toBe('River Church');
-    expect(component.districtName).toBe('North District');
+    expect(getDepartments).toHaveBeenCalledWith(2);
+    expect(component.churchName).toBe('Pasuc');
+    expect(component.districtName).toBe('Batanes');
+  });
+
+  it('shows quarter data progress separately from approval', () => {
+    const monitoring = component.getMonitoring(0);
+
+    expect(monitoring.q1).toEqual({ progress: 50, approved: false });
+    expect(monitoring.q2).toEqual({ progress: 100, approved: true });
+
+    const quarterCells = Array.from(
+      fixture.nativeElement.querySelectorAll('tbody tr td')
+    ).slice(1) as HTMLTableCellElement[];
+    expect(quarterCells.map(cell => cell.textContent.trim())).toEqual([
+      '50%',
+      '✓',
+      '—',
+      '—'
+    ]);
   });
 });

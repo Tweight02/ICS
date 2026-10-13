@@ -24,8 +24,8 @@ interface Monitoring {
 }
 
 interface QuarterMonitoring {
-  value: number | null;
-  endorsed: boolean;
+  progress: number | null;
+  approved: boolean;
 }
 
 @Component({
@@ -221,10 +221,10 @@ export class ReportPrograms implements OnInit {
   }
 
   private readonly emptyMonitoring: Monitoring = {
-    q1: { value: null, endorsed: false },
-    q2: { value: null, endorsed: false },
-    q3: { value: null, endorsed: false },
-    q4: { value: null, endorsed: false }
+    q1: { progress: null, approved: false },
+    q2: { progress: null, approved: false },
+    q3: { progress: null, approved: false },
+    q4: { progress: null, approved: false }
   };
 
   getMonitoring(index: number): Monitoring {
@@ -235,10 +235,10 @@ export class ReportPrograms implements OnInit {
     }
 
     return {
-      q1: { value: department.q1_approved ? 100 : null, endorsed: false },
-      q2: { value: department.q2_approved ? 100 : null, endorsed: false },
-      q3: { value: department.q3_approved ? 100 : null, endorsed: false },
-      q4: { value: department.q4_approved ? 100 : null, endorsed: false }
+      q1: { progress: department.q1_submitted_data_progress ?? null, approved: !!department.q1_approved },
+      q2: { progress: department.q2_submitted_data_progress ?? null, approved: !!department.q2_approved },
+      q3: { progress: department.q3_submitted_data_progress ?? null, approved: !!department.q3_approved },
+      q4: { progress: department.q4_submitted_data_progress ?? null, approved: !!department.q4_approved }
     };
   }
 

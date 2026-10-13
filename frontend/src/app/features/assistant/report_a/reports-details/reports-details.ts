@@ -153,12 +153,16 @@ export class ReportsDetails implements OnInit {
       : '/director';
   }
 
-  getMonitoring(churchId: number): { q1: number | null; q2: number | null; q3: number | null; q4: number | null } {
-    return this.churches.find(church => church.church_id === churchId)?.monitoring ?? {
-      q1: null,
-      q2: null,
-      q3: null,
-      q4: null
+  getMonitoring(churchId: number) {
+    const monitoring = this.churches.find(
+      church => church.church_id === churchId
+    )?.monitoring;
+
+    return {
+      q1: { progress: monitoring?.q1 ?? null, approved: !!monitoring?.q1_approved },
+      q2: { progress: monitoring?.q2 ?? null, approved: !!monitoring?.q2_approved },
+      q3: { progress: monitoring?.q3 ?? null, approved: !!monitoring?.q3_approved },
+      q4: { progress: monitoring?.q4 ?? null, approved: !!monitoring?.q4_approved }
     };
   }
 

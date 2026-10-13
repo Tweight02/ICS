@@ -54,11 +54,11 @@ export class BapaddrecComponent implements OnInit {
 
     gender: null as string | null,
 
-    address: 'N/A',
+    address: '',
 
-    officiating_minister: 'N/A',
+    officiating_minister: '',
 
-    place_of_baptism: 'N/A',
+    place_of_baptism: '',
 
     date_of_baptism: '',
 

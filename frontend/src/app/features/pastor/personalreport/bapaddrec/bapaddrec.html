@@ -4,13 +4,9 @@
 
     <!-- Header -->
     <div class="form-header">
-
       <div>
-
-
         <h1>Add Baptism Record</h1>
       </div>
-
     </div>
 
     <!-- Form -->
@@ -39,7 +35,6 @@
               required>
           </div>
 
-
           <!-- Middle Name -->
           <div class="form-group">
             <label for="middle_name">
@@ -55,7 +50,6 @@
               placeholder="Middle name"
               autocomplete="additional-name">
           </div>
-
 
           <!-- Last Name -->
           <div class="form-group">
@@ -74,7 +68,6 @@
               required>
           </div>
 
-
           <!-- Extension Name -->
           <div class="form-group">
             <label for="extension_name">
@@ -89,7 +82,6 @@
               [(ngModel)]="baptism.extension_name"
               placeholder="Jr., Sr., III, IV, etc.">
           </div>
-
 
           <!-- Church -->
           <div class="form-group">
@@ -107,17 +99,17 @@
               <option
                 [ngValue]="null"
                 disabled>
-                {{ churches.length === 0
-                  ? 'Loading churches...'
-                  : 'Select church' }}
+                {{
+                  churches.length === 0
+                    ? 'Loading churches...'
+                    : 'Select church'
+                }}
               </option>
 
               <option
                 *ngFor="let church of churches"
                 [ngValue]="church.church_id">
-
                 {{ church.name }}
-
               </option>
 
             </select>
@@ -125,12 +117,24 @@
             <small
               *ngIf="churches.length === 0"
               class="form-help">
-
               No churches loaded. Please make sure the Laravel server is running.
-
             </small>
           </div>
 
+          <!-- Address -->
+          <div class="form-group">
+            <label for="address">
+              Address
+            </label>
+
+            <input
+              id="address"
+              type="text"
+              name="address"
+              class="form-control"
+              [(ngModel)]="baptism.address"
+              placeholder="Enter complete address">
+          </div>
 
           <!-- Birthdate -->
           <div class="form-group">
@@ -148,7 +152,6 @@
               required>
           </div>
 
-
           <!-- Date of Baptism -->
           <div class="form-group">
             <label for="date_of_baptism">
@@ -164,6 +167,35 @@
               required>
           </div>
 
+          <!-- Officiating Minister -->
+          <div class="form-group">
+            <label for="officiating_minister">
+              Officiating Minister
+            </label>
+
+            <input
+              id="officiating_minister"
+              type="text"
+              name="officiating_minister"
+              class="form-control"
+              [(ngModel)]="baptism.officiating_minister"
+              placeholder="Enter minister's name">
+          </div>
+
+          <!-- Place of Baptism -->
+          <div class="form-group">
+            <label for="place_of_baptism">
+              Place of Baptism
+            </label>
+
+            <input
+              id="place_of_baptism"
+              type="text"
+              name="place_of_baptism"
+              class="form-control"
+              [(ngModel)]="baptism.place_of_baptism"
+              placeholder="Enter place of baptism">
+          </div>
 
           <!-- Gender -->
           <div class="form-group">
@@ -194,7 +226,6 @@
 
             </select>
           </div>
-
 
           <!-- Marital Status -->
           <div class="form-group">
@@ -231,9 +262,7 @@
           </div>
 
         </div>
-
       </div>
-
 
       <!-- Footer -->
       <div class="form-footer">
@@ -249,9 +278,7 @@
           type="submit"
           class="save-button"
           [disabled]="saving || baptismForm.invalid">
-
           {{ saving ? 'Saving...' : 'Save' }}
-
         </button>
 
       </div>

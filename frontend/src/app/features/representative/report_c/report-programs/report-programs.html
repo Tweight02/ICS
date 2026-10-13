@@ -2,14 +2,21 @@
 <ng-template #qcell let-v>
   <div class="flex items-center justify-center">
 
-    <span *ngIf="v === null" class="text-sm text-emerald-900/40">—</span>
+    <span *ngIf="v.progress === null || v.progress === 0" class="text-sm text-emerald-900/40">—</span>
 
     <span
-      *ngIf="v === 100"
+      *ngIf="v.approved"
       title="Complete"
       class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700
              text-xs font-bold text-white shadow-sm">
       ✓
+    </span>
+
+    <span
+      *ngIf="!v.approved && v.progress !== null && v.progress > 0"
+      [attr.title]="'Report data entered: ' + v.progress + '%'"
+      class="text-sm font-semibold tabular-nums text-emerald-800">
+      {{ v.progress }}%
     </span>
 
   </div>

@@ -66,6 +66,7 @@ export class DeathbapComponent implements OnInit {
   private router = inject(Router);
 
   selectedRecord: 'baptism' | 'death' = 'baptism';
+
   churchId = 0;
   districtId = 0;
   departmentId = 0;
@@ -77,18 +78,25 @@ export class DeathbapComponent implements OnInit {
 
   churches: Church[] = [];
 
+  // Selected baptism record for the details modal
+  selectedBaptism: Baptism | null = null;
+
   private readonly loadingBaptismsState = signal(false);
+
   get loadingBaptisms(): boolean {
     return this.loadingBaptismsState();
   }
+
   set loadingBaptisms(value: boolean) {
     this.loadingBaptismsState.set(value);
   }
 
   private readonly loadingDeathsState = signal(false);
+
   get loadingDeaths(): boolean {
     return this.loadingDeathsState();
   }
+
   set loadingDeaths(value: boolean) {
     this.loadingDeathsState.set(value);
   }
@@ -98,10 +106,18 @@ export class DeathbapComponent implements OnInit {
   deathError: string = '';
 
   ngOnInit(): void {
-    this.departmentId = Number(this.route.snapshot.paramMap.get('departmentId')) || 0;
-    this.churchId = Number(this.route.snapshot.paramMap.get('churchId')) || 0;
-    this.districtId = Number(this.route.snapshot.paramMap.get('districtId')) || 0;
-    this.isReadOnly = this.router.url.startsWith('/assistant')
+
+    this.departmentId =
+      Number(this.route.snapshot.paramMap.get('departmentId')) || 0;
+
+    this.churchId =
+      Number(this.route.snapshot.paramMap.get('churchId')) || 0;
+
+    this.districtId =
+      Number(this.route.snapshot.paramMap.get('districtId')) || 0;
+
+    this.isReadOnly =
+      this.router.url.startsWith('/assistant')
       || this.router.url.startsWith('/director');
 
     if (this.departmentId === 23) {
@@ -116,30 +132,69 @@ export class DeathbapComponent implements OnInit {
 
   }
 
+  // =================================================
+  // BAPTISM DETAILS MODAL
+  // =================================================
+
+  /**
+   * Open the modal with the information
+   * of the selected baptism record.
+   */
+  openBaptismModal(baptism: Baptism): void {
+    this.selectedBaptism = baptism;
+  }
+
+  /**
+   * Close the baptism details modal.
+   */
+  closeBaptismModal(): void {
+    this.selectedBaptism = null;
+  }
+
+  // =================================================
+  // DISPLAYED RECORDS
+  // =================================================
+
   get displayedBaptisms(): Baptism[] {
+
     return this.churchId
-      ? this.baptisms.filter(record => Number(record.church_id) === this.churchId)
+      ? this.baptisms.filter(
+          record => Number(record.church_id) === this.churchId
+        )
       : this.baptisms;
+
   }
 
   get displayedDeaths(): Death[] {
+
     return this.churchId
       ? this.deaths.filter(
-          record => Number(this.getDeathBaptism(record)?.church_id) === this.churchId
+          record =>
+            Number(this.getDeathBaptism(record)?.church_id) === this.churchId
         )
       : this.deaths;
+
   }
 
   get reportLocation(): string {
-    const churchName = this.getChurchName(this.churchId);
-    const districtName = this.getChurchName(this.districtId);
 
-    return [churchName, districtName !== 'Unknown Church' ? districtName : '']
+    const churchName =
+      this.getChurchName(this.churchId);
+
+    const districtName =
+      this.getChurchName(this.districtId);
+
+    return [
+      churchName,
+      districtName !== 'Unknown Church' ? districtName : ''
+    ]
       .filter(Boolean)
       .join(' · ');
+
   }
 
   backToReports(): void {
+
     if (!this.isReadOnly) {
       return;
     }
@@ -149,8 +204,8 @@ export class DeathbapComponent implements OnInit {
       this.districtId,
       this.churchId
     ]);
-  }
 
+  }
 
   /**
    * Select Baptism or Death record.
@@ -160,6 +215,9 @@ export class DeathbapComponent implements OnInit {
   ): void {
 
     this.selectedRecord = record;
+
+    // Close the baptism modal when switching records.
+    this.closeBaptismModal();
 
     /*
      * Reload the selected records so newly
@@ -176,7 +234,6 @@ export class DeathbapComponent implements OnInit {
     }
 
   }
-
 
   /**
    * Load Baptism records from Laravel.
@@ -296,7 +353,6 @@ export class DeathbapComponent implements OnInit {
 
   }
 
-
   /**
    * Load Death records from Laravel.
    */
@@ -415,7 +471,6 @@ export class DeathbapComponent implements OnInit {
 
   }
 
-
   /**
    * Load Churches from Laravel.
    */
@@ -499,7 +554,6 @@ export class DeathbapComponent implements OnInit {
 
   }
 
-
   /**
    * Get Church name by church ID.
    */
@@ -533,7 +587,6 @@ export class DeathbapComponent implements OnInit {
 
   }
 
-
   /**
    * Get Baptism record by ID.
    */
@@ -551,7 +604,6 @@ export class DeathbapComponent implements OnInit {
     return baptism ?? null;
 
   }
-
 
   /**
    * Get the baptism associated with a death.
@@ -575,7 +627,6 @@ export class DeathbapComponent implements OnInit {
     );
 
   }
-
 
   /**
    * Build the full member name.
@@ -640,7 +691,6 @@ export class DeathbapComponent implements OnInit {
 
   }
 
-
   /**
    * Format database date.
    */
@@ -679,7 +729,6 @@ export class DeathbapComponent implements OnInit {
     );
 
   }
-
 
   /**
    * Calculate age from birthdate.
@@ -736,7 +785,6 @@ export class DeathbapComponent implements OnInit {
     return age;
 
   }
-
 
   /**
    * Calculate age at the time of death.
