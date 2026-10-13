@@ -12,26 +12,6 @@
       ✓
     </span>
 
-    <div class="flex flex-col items-center gap-1.5">
-      <div *ngIf="v.value !== null && v.value !== 100" class="flex items-center gap-2.5">
-        <span class="w-9 text-right text-xs font-semibold tabular-nums text-emerald-950/80">
-          {{ v.value }}%
-        </span>
-        <div class="h-2 w-28 overflow-hidden rounded-full bg-emerald-900/10">
-          <div
-            class="h-full rounded-full bg-gradient-to-r from-amber-300 to-amber-400 transition-all"
-            [style.width.%]="v.value">
-          </div>
-        </div>
-      </div>
-
-      <span
-        *ngIf="v.endorsed"
-        class="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-800">
-        Endorsed
-      </span>
-    </div>
-
   </div>
 </ng-template>
 
@@ -87,7 +67,7 @@
 
     <!-- LOADING -->
     <div
-      *ngIf="loading || loadingMonitoring"
+      *ngIf="loading"
       class="mx-auto flex w-fit flex-col items-center gap-3 rounded-2xl border border-white/60
              bg-white/60 px-10 py-8 text-emerald-900 shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-700"></div>
@@ -98,7 +78,7 @@
 
     <!-- TABLE -->
     <div
-      *ngIf="!loading && !loadingMonitoring && !errorMessage && reportDepartments.length > 0"
+      *ngIf="!loading && !errorMessage && reportDepartments.length > 0"
       class="h-fit self-start overflow-hidden rounded-2xl border border-white/60 bg-white/60
              shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
@@ -180,7 +160,7 @@
 
     <!-- EMPTY STATE -->
     <div
-      *ngIf="!loading && !loadingMonitoring && !errorMessage && reportDepartments.length === 0"
+      *ngIf="!loading && !errorMessage && reportDepartments.length === 0"
       class="mx-auto max-w-md rounded-2xl border border-white/60 bg-white/60 px-8 py-12
              text-center shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
       <div

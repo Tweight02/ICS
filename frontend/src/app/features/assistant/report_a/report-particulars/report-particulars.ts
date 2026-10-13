@@ -3,7 +3,8 @@ import {
   Component,
   OnInit,
   ChangeDetectorRef,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -99,16 +100,41 @@ export class ReportParticulars implements OnInit {
   selectedProgramId: number | null = null;
 
   isAnnualView = false;
-  loading = false;
-  savingAction = false;
+  private readonly loadingState = signal(false);
+  get loading(): boolean {
+    return this.loadingState();
+  }
+  set loading(value: boolean) {
+    this.loadingState.set(value);
+  }
+
+  private readonly savingActionState = signal(false);
+  get savingAction(): boolean {
+    return this.savingActionState();
+  }
+  set savingAction(value: boolean) {
+    this.savingActionState.set(value);
+  }
   errorMessage = '';
   successMessage = '';
 
   comments: ReportComment[] = [];
-  commentsLoading = false;
+  private readonly commentsLoadingState = signal(false);
+  get commentsLoading(): boolean {
+    return this.commentsLoadingState();
+  }
+  set commentsLoading(value: boolean) {
+    this.commentsLoadingState.set(value);
+  }
   commentsError = '';
   newComment = '';
-  savingComment = false;
+  private readonly savingCommentState = signal(false);
+  get savingComment(): boolean {
+    return this.savingCommentState();
+  }
+  set savingComment(value: boolean) {
+    this.savingCommentState.set(value);
+  }
 
   currentUserRole: UserRole | null = null;
 

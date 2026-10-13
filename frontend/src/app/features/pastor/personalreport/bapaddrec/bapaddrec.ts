@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
@@ -31,7 +31,13 @@ export class BapaddrecComponent implements OnInit {
 
   age: number | null = null;
 
-  saving: boolean = false;
+  private readonly savingState = signal(false);
+  get saving(): boolean {
+    return this.savingState();
+  }
+  set saving(value: boolean) {
+    this.savingState.set(value);
+  }
 
   baptism = {
     church_id: null as number | null,

@@ -3,7 +3,8 @@ import {
   ChangeDetectorRef,
   Component,
   OnInit,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -76,9 +77,21 @@ export class DeathbapComponent implements OnInit {
 
   churches: Church[] = [];
 
-  loadingBaptisms: boolean = false;
+  private readonly loadingBaptismsState = signal(false);
+  get loadingBaptisms(): boolean {
+    return this.loadingBaptismsState();
+  }
+  set loadingBaptisms(value: boolean) {
+    this.loadingBaptismsState.set(value);
+  }
 
-  loadingDeaths: boolean = false;
+  private readonly loadingDeathsState = signal(false);
+  get loadingDeaths(): boolean {
+    return this.loadingDeathsState();
+  }
+  set loadingDeaths(value: boolean) {
+    this.loadingDeathsState.set(value);
+  }
 
   baptismError: string = '';
 

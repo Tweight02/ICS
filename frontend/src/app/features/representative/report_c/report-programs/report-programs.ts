@@ -2,21 +2,18 @@ import {
   Component,
   OnInit,
   ChangeDetectorRef,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
 
 import { ReportService } from '../../../../core/services/report/report';
 
 import {
   Department,
-  ChurchesResponse,
-  DepartmentReport,
-  ReportQuarter
+  ChurchesResponse
 } from '../../../../core/models/report.model';
 
 interface Monitoring {
@@ -67,7 +64,13 @@ export class ReportPrograms implements OnInit {
   departments: Department[] = [];
 
   // UI state
-  loading = false;
+  private readonly loadingState = signal(false);
+  get loading(): boolean {
+    return this.loadingState();
+  }
+  set loading(value: boolean) {
+    this.loadingState.set(value);
+  }
   errorMessage = '';
 
   ngOnInit(): void {
@@ -104,7 +107,7 @@ export class ReportPrograms implements OnInit {
       });
   }
 
-  // Load departments, then load the monitoring for each one
+  // The department list includes approval summaries for each quarter.
   private loadDepartments(): void {
     this.loading = true;
     this.errorMessage = '';
@@ -115,7 +118,6 @@ export class ReportPrograms implements OnInit {
         this.loading = false;
         this.cdr.detectChanges();
 
-        this.loadMonitoring();
       },
 
       error: (error) => {
@@ -163,9 +165,6 @@ export class ReportPrograms implements OnInit {
      MONITORING (from the database)
   ========================================================= */
 
-  // department_id -> { q1, q2, q3, q4 }
-  private monitoring: Record<number, Monitoring> = {};
-
   private readonly emptyMonitoring: Monitoring = {
     q1: null,
     q2: null,
@@ -173,106 +172,19 @@ export class ReportPrograms implements OnInit {
     q4: null
   };
 
-  // Used by the template: getMonitoring(i).q1 ... q4
   getMonitoring(index: number): Monitoring {
     const department = this.representativeDepartments[index];
 
-    return (department && this.monitoring[department.department_id])
-      || this.emptyMonitoring;
-  }
-
-  // Load every department's saved report in one go
-  private loadMonitoring(): void {
-    const departments = this.representativeDepartments;
-
-    if (departments.length === 0) {
-      return;
-    }
-
-    const requests = departments.map(department =>
-      this.reportService
-        .getDepartmentReport(this.churchId, department.department_id)
-        .pipe(
-          map(report => this.buildMonitoring(report)),
-          catchError(() => of(this.emptyMonitoring))
-        )
-    );
-
-    forkJoin(requests).subscribe(results => {
-      departments.forEach((department, i) => {
-        this.monitoring[department.department_id] = results[i];
-      });
-
-      this.cdr.detectChanges();
-    });
-  }
-
-  // Rules per quarter:
-  //   approved by the mission      -> 100  (shows the green check)
-  //   some particulars have values -> % filled, capped at 99 until approved
-  //   nothing entered / no quarter -> null (shows the dash)
-  private buildMonitoring(report: DepartmentReport): Monitoring {
-    // Collect every quarter record of every particular
-    const records: ReportQuarter[] = [];
-
-    for (const program of report.programs ?? []) {
-      for (const section of program.sections ?? []) {
-        for (const particular of section.particulars ?? []) {
-          records.push(...(particular.quarters ?? []));
-        }
-      }
-    }
-
-    if (records.length === 0) {
+    if (!department) {
       return this.emptyMonitoring;
     }
 
-    // Only use the latest year
-    const latestYear = Math.max(...records.map(q => Number(q.year)));
-    const current = records.filter(q => Number(q.year) === latestYear);
-
-    const percentFor = (quarterNumber: number): number | null => {
-      const items = current.filter(
-        q => this.getQuarterNumber(q.quarter) === quarterNumber
-      );
-
-      if (items.length === 0) {
-        return null;
-      }
-
-      if (items.every(q => !!q.mission_approve)) {
-        return 100;
-      }
-
-      const filled = items.filter(
-        q => q.value !== null && q.value !== undefined
-      ).length;
-
-      if (filled === 0) {
-        return null;
-      }
-
-      return Math.min(99, Math.round((filled / items.length) * 100));
-    };
-
     return {
-      q1: percentFor(1),
-      q2: percentFor(2),
-      q3: percentFor(3),
-      q4: percentFor(4)
+      q1: department.q1_approved ? 100 : null,
+      q2: department.q2_approved ? 100 : null,
+      q3: department.q3_approved ? 100 : null,
+      q4: department.q4_approved ? 100 : null
     };
-  }
-
-  // "Q1" / "Quarter 1" -> 1
-  private getQuarterNumber(quarter: string): number {
-    const value = String(quarter).toUpperCase();
-
-    if (value.includes('1')) return 1;
-    if (value.includes('2')) return 2;
-    if (value.includes('3')) return 3;
-    if (value.includes('4')) return 4;
-
-    return 99;
   }
 
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\ReportMonitoringService;
 
 class ReportController extends Controller
 {
@@ -11,7 +12,7 @@ class ReportController extends Controller
        GET DEPARTMENTS
     ========================================================= */
 
-    public function getDepartments($churchId)
+    public function getDepartments($churchId, ReportMonitoringService $monitoring)
     {
         $church = DB::table('churches')
             ->where('church_id', $churchId)
@@ -27,42 +28,20 @@ class ReportController extends Controller
             ->orderBy('department_name')
             ->get();
 
-        $result = $departments->map(function ($department) use ($churchId) {
-            $quarters = DB::table('quarters')
-                ->join(
-                    'programs',
-                    'quarters.program_id',
-                    '=',
-                    'programs.program_id'
-                )
-                ->where('quarters.church_id', $churchId)
-                ->where('programs.department_id', $department->department_id)
-                ->select(
-                    'quarters.quarter',
-                    'quarters.year',
-                    'quarters.mission_approve'
-                )
-                ->get();
+        $approvals = $monitoring->departmentApprovals((int) $churchId);
 
+        $result = $departments->map(function ($department) use ($approvals) {
             return [
                 'department_id' => (int) $department->department_id,
                 'department_name' => $department->department_name,
-                'q1_approved' => $this->hasApprovedQuarter($quarters, 'Q1'),
-                'q2_approved' => $this->hasApprovedQuarter($quarters, 'Q2'),
-                'q3_approved' => $this->hasApprovedQuarter($quarters, 'Q3'),
-                'q4_approved' => $this->hasApprovedQuarter($quarters, 'Q4'),
+                'q1_approved' => $approvals[$department->department_id]['q1_approved'] ?? false,
+                'q2_approved' => $approvals[$department->department_id]['q2_approved'] ?? false,
+                'q3_approved' => $approvals[$department->department_id]['q3_approved'] ?? false,
+                'q4_approved' => $approvals[$department->department_id]['q4_approved'] ?? false,
             ];
         });
 
         return response()->json($result->values());
-    }
-
-    private function hasApprovedQuarter($quarters, string $quarterName): bool
-    {
-        return $quarters->contains(function ($quarter) use ($quarterName) {
-            return strtoupper(trim((string) $quarter->quarter)) === $quarterName
-                && $this->isApproved($quarter->mission_approve);
-        });
     }
 
     /* =========================================================
