@@ -70,12 +70,12 @@
         </label>
 
         <button
-          type="submit"
-          [disabled]="loading()"
-          class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {{ loading() ? 'Signing in…' : 'Login' }}
-        </button>
+  type="submit"
+  [disabled]="loading()"
+  class="w-full rounded-lg bg-green-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+>
+  {{ loading() ? 'Signing in…' : 'Login' }}
+</button>
       </form>
     </div>
   </main>
