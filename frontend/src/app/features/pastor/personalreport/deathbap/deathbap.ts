@@ -13,6 +13,7 @@ import { finalize, timeout } from 'rxjs/operators';
 interface Baptism {
   baptism_id: number;
   church_id: number;
+  quarter: string;
   first_name: string;
   middle_name: string | null;
   last_name: string;
@@ -37,6 +38,7 @@ interface Church {
 interface Death {
   death_id: number;
   baptism_id: number;
+  quarter: string;
   date_of_death: string;
   baptism?: Baptism | null;
 }

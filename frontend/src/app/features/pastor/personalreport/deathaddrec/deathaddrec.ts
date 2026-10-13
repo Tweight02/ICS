@@ -7,6 +7,7 @@ import { Router, RouterLink } from '@angular/router';
 interface Baptism {
   baptism_id: number;
   church_id: number;
+  quarter: string;
 
   first_name: string;
   middle_name: string | null;
@@ -69,6 +70,7 @@ export class DeathaddrecComponent implements OnInit {
 
   death = {
     baptism_id: null as number | null,
+    quarter: '',
     date_of_death: ''
   };
 
@@ -464,11 +466,12 @@ export class DeathaddrecComponent implements OnInit {
 
     if (
       this.death.baptism_id === null ||
+      !this.death.quarter ||
       !this.death.date_of_death
     ) {
 
       alert(
-        'Please select a baptized member and enter the date of death.'
+        'Please select a baptized member, enter the quarter, and enter the date of death.'
       );
 
       return;
@@ -511,18 +514,19 @@ export class DeathaddrecComponent implements OnInit {
     }
 
     /*
-     * Your deaths table contains only:
+     * Fields saved in the deaths table:
      *
-     * death_id
      * baptism_id
+     * quarter
      * date_of_death
-     *
-     * So these are the only fields sent.
      */
     const payload = {
 
       baptism_id:
         baptismId,
+
+      quarter:
+        this.death.quarter,
 
       date_of_death:
         this.death.date_of_death

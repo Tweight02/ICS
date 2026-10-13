@@ -23,7 +23,7 @@ interface Church {
   styleUrls: ['./bapaddrec.css']
 })
 export class BapaddrecComponent implements OnInit {
-  
+
   private http = inject(HttpClient);
   private router = inject(Router);
 
@@ -32,15 +32,19 @@ export class BapaddrecComponent implements OnInit {
   age: number | null = null;
 
   private readonly savingState = signal(false);
+
   get saving(): boolean {
     return this.savingState();
   }
+
   set saving(value: boolean) {
     this.savingState.set(value);
   }
 
   baptism = {
     church_id: null as number | null,
+
+    quarter: '',
 
     first_name: '',
 
@@ -224,6 +228,7 @@ export class BapaddrecComponent implements OnInit {
       !this.baptism.first_name.trim() ||
       !this.baptism.last_name.trim() ||
       !this.baptism.church_id ||
+      !this.baptism.quarter.trim() ||
       !this.baptism.birthdate ||
       !this.baptism.date_of_baptism ||
       !this.baptism.gender ||
@@ -252,6 +257,9 @@ export class BapaddrecComponent implements OnInit {
 
     this.baptism.extension_name =
       this.baptism.extension_name?.trim() || '';
+
+    this.baptism.quarter =
+      this.baptism.quarter.trim();
 
     this.saving = true;
 
