@@ -219,18 +219,14 @@
           }
 
           @if (status === 'Draft') {
-            @if (isComplete) {
-              <button
-                type="button"
-                style="border-radius: 0.25rem"
-                class="border border-emerald-700 bg-emerald-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800"
-                (click)="submit()"
-              >
-                Submit report
-              </button>
-            } @else {
-              <span class="text-sm text-emerald-900/70">Fill in every field to submit.</span>
-            }
+            <button
+              type="button"
+              style="border-radius: 0.25rem"
+              class="border border-emerald-700 bg-emerald-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800"
+              (click)="submit()"
+            >
+              Submit report
+            </button>
           } @else if (status === 'Submitted') {
             <button
               type="button"

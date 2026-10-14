@@ -125,11 +125,6 @@ export class Stewardship {
     return members ? (units / members) * 100 : 0;
   }
 
-  /** True once every box in the report is filled; the Submit button only shows then. */
-  get isComplete(): boolean {
-    return this.missingActivities() + this.missingOffering() === 0;
-  }
-
   get statusNote(): string {
     switch (this.status) {
       case 'Submitted':
@@ -206,15 +201,7 @@ export class Stewardship {
   }
 
   submit(): void {
-    const missingActivities = this.missingActivities();
-    const missingOffering = this.missingOffering();
-    if (missingActivities + missingOffering > 0) {
-      const parts: string[] = [];
-      if (missingActivities) parts.push(`${missingActivities} in Stewardship Activities`);
-      if (missingOffering) parts.push(`${missingOffering} in Offering and Tithes`);
-      this.setMessage(`Complete the whole report before submitting. Missing: ${parts.join(', ')}.`, true);
-      return;
-    }
+    this.fillEmptyWithZero();
     this.status = 'Submitted';
     this.dateSubmitted = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, local time
     this.persist();
@@ -292,20 +279,15 @@ export class Stewardship {
     return v !== null && v !== undefined && (v as unknown) !== '' && !Number.isNaN(v);
   }
 
-  /** Stewardship activity boxes still empty. */
-  private missingActivities(): number {
-    return this.fields.filter((f) => !this.isFilled(this.values[f.particular_id])).length;
-  }
-
-  /** Offering and Tithes month boxes still empty. */
-  private missingOffering(): number {
-    let missing = 0;
-    for (const p of this.monthlyFields) {
-      for (let i = 0; i < 3; i++) {
-        if (!this.isFilled(this.monthly[p.particular_id]?.[i])) missing++;
-      }
+  /** Any box left empty is submitted as 0. */
+  private fillEmptyWithZero(): void {
+    for (const f of this.fields) {
+      if (!this.isFilled(this.values[f.particular_id])) this.values[f.particular_id] = 0;
     }
-    return missing;
+    for (const p of this.monthlyFields) {
+      const months = this.monthly[p.particular_id] ?? [null, null, null];
+      this.monthly[p.particular_id] = months.map((v) => (this.isFilled(v) ? v : 0));
+    }
   }
 
   private setParticulars(list: Particular[]): void {
