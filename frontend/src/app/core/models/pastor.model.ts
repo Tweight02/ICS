@@ -8,6 +8,7 @@ export interface Pastor {
     gender: 'male' | 'female' | 'other';
     email: string;
     role: 'pastor';
+    status?: 'active' | 'inactive';
     department_id: number;
     church_id: number;
     department?: {
