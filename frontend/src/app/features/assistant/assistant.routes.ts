@@ -20,6 +20,12 @@ export const AssistantRoute: Routes = [
                 .then(m => m.Reports)
     },
     {
+        path: 'reports/new',
+        loadComponent: () =>
+            import('./report_a/new-report/new-report')
+                .then(m => m.NewReport)
+    },
+    {
         path: 'reports/details/:id',
         loadComponent: () =>
             import('./report_a/reports-details/reports-details')

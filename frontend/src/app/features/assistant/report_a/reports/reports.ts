@@ -115,6 +115,14 @@ export class Reports implements OnInit {
     this.router.navigate([`${prefix}/reports/details`, districtid]);
   }
 
+  createReportTemplate(): void {
+    this.router.navigate(['/assistant/reports/new']);
+  }
+
+  get isAssistantPortal(): boolean {
+    return this.router.url.startsWith('/assistant');
+  }
+
   get districtCount(): number {
     return this.districts.length;
   }

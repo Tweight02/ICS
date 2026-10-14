@@ -131,4 +131,17 @@ describe('ReportParticulars', () => {
     expect(inputs.map(input => input.value)).toEqual(['15', '0']);
     expect(inputs.every(input => input.disabled)).toBe(true);
   });
+
+  it('shows the endorsement state only when every particular in the selected program is endorsed', () => {
+    const particulars = component.report!.programs[0].sections[0].particulars;
+    particulars[0].quarters[0].district_endorse = '2026-10-13';
+
+    expect(component.isQuarterEndorsed(9)).toBe(false);
+
+    particulars[1].quarters[0].district_endorse = '2026-10-13';
+    expect(component.isQuarterEndorsed(9)).toBe(true);
+
+    particulars[0].quarters[0].mission_approve = '2026-10-14';
+    expect(component.isQuarterEndorsed(9)).toBe(false);
+  });
 });
