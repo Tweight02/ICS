@@ -8,6 +8,104 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    public function createReportTemplate(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'You must log in to create a report template.',
+            ], 401);
+        }
+
+        if (! $this->isAssistantRole($this->normalizeRole($user->role ?? ''))) {
+            return response()->json([
+                'message' => 'Only the administrative assistant can create report templates.',
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'department_id' => ['required', 'integer', 'exists:departments,department_id'],
+            'program_name' => ['required', 'string', 'max:255'],
+            'section_name' => ['required', 'string', 'max:255'],
+            'particular_items' => ['required', 'array', 'min:1'],
+            'particular_items.*' => ['required', 'string', 'max:255', 'distinct:ignore_case'],
+        ]);
+
+        $normalizedItems = array_map(
+            static fn (string $name) => mb_strtolower(trim($name)),
+            $data['particular_items']
+        );
+
+        if (count(array_unique($normalizedItems)) !== count($normalizedItems)) {
+            return response()->json([
+                'message' => 'Each particular item must have a unique name.',
+                'errors' => [
+                    'particular_items' => ['Duplicate report item names are not allowed.'],
+                ],
+            ], 422);
+        }
+
+        $created = DB::transaction(function () use ($data) {
+            $programId = DB::table('programs')->insertGetId([
+                'department_id' => $data['department_id'],
+                'program_name' => trim($data['program_name']),
+                'parent_id' => null,
+            ], 'program_id');
+
+            $sectionId = DB::table('programs')->insertGetId([
+                'department_id' => $data['department_id'],
+                'program_name' => trim($data['section_name']),
+                'parent_id' => $programId,
+            ], 'program_id');
+
+            $particulars = [];
+            foreach ($data['particular_items'] as $name) {
+                $particulars[] = [
+                    'particular_id' => DB::table('particulars')->insertGetId([
+                        'program_id' => $sectionId,
+                        'particular_name' => trim($name),
+                    ], 'particular_id'),
+                    'particular_name' => trim($name),
+                ];
+            }
+
+            $churchIds = DB::table('churches')
+                ->whereNotNull('parent_id')
+                ->pluck('church_id');
+            $quarters = [];
+            foreach ($churchIds as $churchId) {
+                foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarterName) {
+                    $quarters[] = [
+                        'program_id' => $programId,
+                        'church_id' => $churchId,
+                        'quarter' => $quarterName,
+                        'year' => (string) now()->year,
+                        'date_submitted' => null,
+                        'district_endorse' => null,
+                        'mission_approve' => null,
+                    ];
+                }
+            }
+
+            if ($quarters !== []) {
+                DB::table('quarters')->insert($quarters);
+            }
+
+            return [
+                'program_id' => $programId,
+                'section_id' => $sectionId,
+                'particulars' => $particulars,
+                'quarters_created' => count($quarters),
+            ];
+        });
+
+        return response()->json([
+            'message' => 'Report template created successfully.',
+            'data' => $created,
+        ], 201);
+    }
+
     /* =========================================================
        GET DEPARTMENTS
     ========================================================= */

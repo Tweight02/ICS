@@ -244,6 +244,11 @@ Route::middleware('auth:sanctum')->group(function () {
         'approveDepartmentReport',
     ]);
 
+    Route::post('/assistant/report-templates', [
+        ReportController::class,
+        'createReportTemplate',
+    ]);
+
     /*
     | Authentication test
     */
