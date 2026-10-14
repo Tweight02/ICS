@@ -36,6 +36,7 @@ export interface Representative {
 export interface RepresentativeFilters {
     search?: string;
     church_id?: number;
+    status?: 'active' | 'inactive' | '';
     per_page?: number;
     page?: number;
 }

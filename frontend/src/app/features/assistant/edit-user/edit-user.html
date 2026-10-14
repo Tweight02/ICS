@@ -237,12 +237,12 @@
 
                     @if (editing()) {
                     <button type="button" (click)="cancelEdit()" [disabled]="saving()"
-                        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
+                        class="inline-flex items-center justify-center !rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
                         Cancel
                     </button>
 
                     <button type="submit" [disabled]="saving()"
-                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                        class="inline-flex items-center justify-center gap-2 !rounded-lg bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                             aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" />
@@ -262,12 +262,8 @@
                     } @else {
                     <button type="button" (click)="onRemove()" [disabled]="removing()"
                         class="inline-flex items-center justify-center gap-2 !rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:cursor-not-allowed disabled:opacity-60">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                            aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M4 7h16M10 11v6m4-6v6M6 7l1 12a1.5 1.5 0 0 0 1.5 1.4h7A1.5 1.5 0 0 0 17 19l1-12M9 7V4.5A.5.5 0 0 1 9.5 4h5a.5.5 0 0 1 .5.5V7" />
-                        </svg>
-                        {{ removing() ? 'Removing…' : 'Remove' }}
+                        <i class="bi bi-person-dash" aria-hidden="true"></i>
+                        {{ removing() ? 'Deactivating…' : 'Deactivate' }}
                     </button>
                     }
 

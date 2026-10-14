@@ -188,11 +188,11 @@ async onRemove(): Promise<void> {
   if (!p) return;
 
   const result = await Swal.fire({
-    title: 'Remove Pastor?',
-    text: `Remove ${p.first_name} ${p.last_name} from active pastors? Their account and records will be kept, but they will no longer be able to sign in.`,
+    title: 'Deactivate Pastor?',
+    text: `Deactivate ${p.first_name} ${p.last_name}? Their account and records will be kept, but they will no longer be able to sign in.`,
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonText: 'Yes, remove',
+    confirmButtonText: 'Yes, deactivate',
     cancelButtonText: 'Cancel',
     reverseButtons: true,
     focusCancel: true,
@@ -216,8 +216,8 @@ async onRemove(): Promise<void> {
       this.removing.set(false);
 
       await Swal.fire({
-        title: 'Pastor Removed',
-        text: `${p.first_name} ${p.last_name} was removed from active pastors. Their records were kept.`,
+        title: 'Pastor Deactivated',
+        text: `${p.first_name} ${p.last_name} was deactivated. Their account and records were kept.`,
         icon: 'success',
         confirmButtonText: 'OK',
         confirmButtonColor: '#065f46',
@@ -230,12 +230,12 @@ async onRemove(): Promise<void> {
 
       const message =
         err.error?.message ??
-        'Could not remove this pastor. Please try again.';
+        'Could not deactivate this pastor. Please try again.';
 
       this.submitErrors.set([message]);
 
       await Swal.fire({
-        title: 'Removal Failed',
+        title: 'Deactivation Failed',
         text: message,
         icon: 'error',
         confirmButtonText: 'OK',

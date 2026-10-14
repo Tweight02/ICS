@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged, finalize, Subject } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { RepresentativeService } from '../../../core/services/representative/representative-service'; // adjust to your real path
@@ -20,11 +21,14 @@ import {
 })
 export class ViewRepresentative implements OnInit {
     private rep = inject(RepresentativeService);
+    private destroyRef = inject(DestroyRef);
+    private search$ = new Subject<string>();
 
     representatives = signal<Representative[]>([]);
     loading = signal(false);
     error = signal('');
     search = signal('');
+    status = signal<'active' | 'inactive' | ''>('');
     transferMode = signal(false);
     transferChurches = signal<{ church_id: number; name: string }[]>([]);
     loadingTransferChurches = signal(false);
@@ -36,8 +40,24 @@ export class ViewRepresentative implements OnInit {
     currentPage = signal(1);
     lastPage = signal(1);
     total = signal(0);
+    from = signal(0);
+    to = signal(0);
+
+    readonly perPage = 10;
 
     ngOnInit(): void {
+        this.search$
+            .pipe(
+                debounceTime(300),
+                distinctUntilChanged(),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe((value) => {
+                this.search.set(value);
+                this.currentPage.set(1);
+                this.loadRepresentatives();
+            });
+
         this.loadRepresentatives();
     }
 
@@ -47,8 +67,9 @@ export class ViewRepresentative implements OnInit {
 
         const filters: RepresentativeFilters = {
             search: this.search(),
+            status: this.status(),
             page: this.currentPage(),
-            per_page: 15
+            per_page: this.perPage
         };
 
         this.rep.getRepresentatives(filters)
@@ -60,6 +81,8 @@ export class ViewRepresentative implements OnInit {
                     this.currentPage.set(response.current_page ?? 1);
                     this.lastPage.set(response.last_page ?? 1);
                     this.total.set(response.total ?? data.length);
+                    this.from.set(response.from ?? (data.length ? (this.currentPage() - 1) * this.perPage + 1 : 0));
+                    this.to.set(response.to ?? (data.length ? this.from() + data.length - 1 : 0));
                 },
                 error: (err) => {
                     console.error('Failed to load representatives:', err);
@@ -75,6 +98,18 @@ export class ViewRepresentative implements OnInit {
     searchRepresentatives(): void {
         this.selectedRepresentativeIds.set([]);
         this.individualDestinations.set({});
+        this.currentPage.set(1);
+        this.loadRepresentatives();
+    }
+
+    onSearch(value: string): void {
+        this.search$.next(value.trim());
+    }
+
+    onStatusChange(value: 'active' | 'inactive' | ''): void {
+        this.selectedRepresentativeIds.set([]);
+        this.individualDestinations.set({});
+        this.status.set(value);
         this.currentPage.set(1);
         this.loadRepresentatives();
     }
@@ -311,6 +346,13 @@ export class ViewRepresentative implements OnInit {
             representative.last_name,
             representative.extension_name
         ].filter(Boolean).join(' ');
+    }
+
+    initials(representative: Representative): string {
+        return (
+            (representative.first_name?.[0] ?? '') +
+            (representative.last_name?.[0] ?? '')
+        ).toUpperCase();
     }
 
     async deleteRepresentative(representative: Representative): Promise<void> {

@@ -25,6 +25,7 @@ export class EditRepresentative implements OnInit {
 
     id = 0;
     churchName = signal('');
+    status = signal<'active' | 'inactive'>('active');
     churches = signal<{ church_id: number; name: string }[]>([]);
     loadingChurches = signal(true);
     churchLoadError = signal('');
@@ -48,7 +49,6 @@ export class EditRepresentative implements OnInit {
         birthdate: ['', Validators.required],
         gender: ['', Validators.required],
         email: ['', [Validators.required, Validators.email]],
-        status: ['active', Validators.required],
         password: ['', Validators.minLength(8)]
     });
 
@@ -106,6 +106,7 @@ export class EditRepresentative implements OnInit {
                         church_id: r.church_id,
                         name: r.church?.name ?? 'Current church'
                     };
+                    this.status.set(r.status ?? 'active');
                     this.includeCurrentChurch();
                     this.form.patchValue({
                         department_id: r.department_id,
@@ -117,7 +118,6 @@ export class EditRepresentative implements OnInit {
                         birthdate: r.birthdate ? String(r.birthdate).slice(0, 10) : '',
                         gender: r.gender ?? '',
                         email: r.email,
-                        status: r.status ?? 'active',
                         password: ''
                     });
 
@@ -241,11 +241,11 @@ export class EditRepresentative implements OnInit {
         const { first_name, last_name } = this.form.getRawValue();
 
         const result = await Swal.fire({
-            title: 'Remove representative?',
+            title: 'Deactivate representative?',
             text: `${first_name} ${last_name} will be made inactive and signed out. Their account and records will be kept.`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, remove',
+            confirmButtonText: 'Yes, deactivate',
             cancelButtonText: 'Cancel',
             confirmButtonColor: '#dc2626',
             cancelButtonColor: '#64748b',
@@ -267,7 +267,7 @@ export class EditRepresentative implements OnInit {
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
-                        title: 'Representative removed',
+                        title: 'Representative deactivated',
                         showConfirmButton: false,
                         timer: 2500,
                         timerProgressBar: true
@@ -275,16 +275,16 @@ export class EditRepresentative implements OnInit {
                     this.router.navigate(['/pastor/view-representatives']);
                 },
                 error: (err) => {
-                    console.error('Failed to delete representative:', err);
+                    console.error('Failed to deactivate representative:', err);
                     this.error.set(
-                        err?.error?.message ?? 'Unable to remove this representative. Please try again.'
+                        err?.error?.message ?? 'Unable to deactivate this representative. Please try again.'
                     );
                 }
             });
     }
 
         async activateRepresentative(): Promise<void> {
-            if (this.activating() || this.form.controls.status.value === 'active') {
+            if (this.activating() || this.status() === 'active') {
                 return;
             }
 
@@ -312,8 +312,7 @@ export class EditRepresentative implements OnInit {
                 .pipe(finalize(() => this.activating.set(false)))
                 .subscribe({
                     next: async (response) => {
-                        this.form.patchValue({ status: 'active' });
-                        this.original = this.form.getRawValue();
+                        this.status.set('active');
 
                         await Swal.fire({
                             toast: true,
