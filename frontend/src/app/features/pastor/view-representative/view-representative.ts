@@ -11,6 +11,7 @@ import {
     Representative,
     RepresentativeFilters
 } from '../../../core/models/representative.model';
+import { ChurchService } from '../../../core/services/church/church-service';
 
 @Component({
     selector: 'app-view-representative',
@@ -21,6 +22,7 @@ import {
 })
 export class ViewRepresentative implements OnInit {
     private rep = inject(RepresentativeService);
+    private churchService = inject(ChurchService);
     private destroyRef = inject(DestroyRef);
     private search$ = new Subject<string>();
 
@@ -29,6 +31,9 @@ export class ViewRepresentative implements OnInit {
     error = signal('');
     search = signal('');
     status = signal<'active' | 'inactive' | ''>('');
+    churchId = signal<number | ''>('');
+    churches = signal<{ church_id: number; name: string }[]>([]);
+    churchOptionsError = signal('');
     transferMode = signal(false);
     transferChurches = signal<{ church_id: number; name: string }[]>([]);
     loadingTransferChurches = signal(false);
@@ -58,7 +63,21 @@ export class ViewRepresentative implements OnInit {
                 this.loadRepresentatives();
             });
 
+        this.loadChurchOptions();
+
         this.loadRepresentatives();
+    }
+
+    loadChurchOptions(): void {
+        this.churchOptionsError.set('');
+        this.churchService.getMyDistrictChurches().subscribe({
+            next: (response) => this.churches.set(response.data ?? []),
+            error: (err) => {
+                this.churchOptionsError.set(
+                    err?.error?.message ?? 'Unable to load churches for filtering.'
+                );
+            }
+        });
     }
 
     loadRepresentatives(): void {
@@ -68,6 +87,7 @@ export class ViewRepresentative implements OnInit {
         const filters: RepresentativeFilters = {
             search: this.search(),
             status: this.status(),
+            church_id: this.churchId() || undefined,
             page: this.currentPage(),
             per_page: this.perPage
         };
@@ -110,6 +130,14 @@ export class ViewRepresentative implements OnInit {
         this.selectedRepresentativeIds.set([]);
         this.individualDestinations.set({});
         this.status.set(value);
+        this.currentPage.set(1);
+        this.loadRepresentatives();
+    }
+
+    onChurchChange(value: string): void {
+        this.selectedRepresentativeIds.set([]);
+        this.individualDestinations.set({});
+        this.churchId.set(value ? Number(value) : '');
         this.currentPage.set(1);
         this.loadRepresentatives();
     }
