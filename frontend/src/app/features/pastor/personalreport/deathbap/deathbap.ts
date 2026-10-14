@@ -401,9 +401,7 @@ export class DeathbapComponent implements OnInit {
     this.loadingBaptisms = true;
     this.baptismError = '';
 
-    console.log(
-      'Loading baptism records...'
-    );
+   
 
     this.http
       .get<any>(
@@ -415,9 +413,7 @@ export class DeathbapComponent implements OnInit {
 
           this.loadingBaptisms = false;
 
-          console.log(
-            'Finished loading baptism records.'
-          );
+         
 
           this.cdr.detectChanges();
 
@@ -507,10 +503,6 @@ export class DeathbapComponent implements OnInit {
 
     this.loadingDeaths = true;
     this.deathError = '';
-
-    console.log(
-      'Loading death records...'
-    );
 
     this.http
       .get<any>(
