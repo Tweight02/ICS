@@ -92,8 +92,8 @@
                                 <input type="checkbox" aria-label="Select all active representatives on this page" [checked]="allVisibleSelected()" (change)="toggleAllVisible()" class="h-3.5 w-3.5 rounded border-slate-300 text-[#0F4A30] focus:ring-[#0F4A30]" />
                             </th>
                         }
-                        <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Representative</th>
                         <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Church</th>
+                        <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Representative</th>
                         <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Birthdate</th>
                         <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Email</th>
                         <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Status</th>
@@ -141,6 +141,9 @@
                                         <input type="checkbox" [attr.aria-label]="'Select ' + fullName(representative)" [checked]="isSelected(representative.user_id)" [disabled]="representative.status !== 'active' || savingTransfer()" (change)="toggleRepresentative(representative.user_id)" class="h-3.5 w-3.5 rounded border-slate-300 text-[#0F4A30] focus:ring-[#0F4A30] disabled:opacity-40" />
                                     </td>
                                 }
+                                <td class="px-3 py-2 text-xs text-slate-700">
+                                    {{ representative.church?.name ?? '—' }}
+                                </td>
                                 <td class="px-3 py-2 text-xs font-medium text-slate-900">
                                     {{ fullName(representative) }}
                                     @if (transferMode() && isSelected(representative.user_id)) {
@@ -156,9 +159,6 @@
                                             </select>
                                         </div>
                                     }
-                                </td>
-                                <td class="px-3 py-2 text-xs text-slate-700">
-                                    {{ representative.church?.name ?? '—' }}
                                 </td>
                                 <td class="whitespace-nowrap px-3 py-2 text-xs text-slate-700">
                                     {{ representative.birthdate ? (representative.birthdate | date: 'MMM d, y') : '—' }}
