@@ -250,6 +250,16 @@
                         {{ saving() ? 'Saving…' : 'Save changes' }}
                     </button>
                     } @else {
+                    @if (pastor()?.status === 'inactive') {
+                    <button type="button" (click)="onActivate()" [disabled]="activating()"
+                        class="inline-flex items-center justify-center gap-2 !rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                            aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                        {{ activating() ? 'Activating…' : 'Activate' }}
+                    </button>
+                    } @else {
                     <button type="button" (click)="onRemove()" [disabled]="removing()"
                         class="inline-flex items-center justify-center gap-2 !rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:cursor-not-allowed disabled:opacity-60">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -259,6 +269,7 @@
                         </svg>
                         {{ removing() ? 'Removing…' : 'Remove' }}
                     </button>
+                    }
 
                     <button type="button" (click)="enableEdit()"
                         class="inline-flex items-center justify-center gap-2 !rounded-lg bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">

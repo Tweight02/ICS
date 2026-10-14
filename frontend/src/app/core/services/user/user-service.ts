@@ -216,6 +216,18 @@ export class UserService {
     }
 
 
+    activatePastor(id: number | string) {
+        return this.http.post<{
+            message: string;
+        }>(
+            `${this.apiUrl}/assistant/pastors/${id}/activate`,
+            {},
+            {
+                withCredentials: true,
+            }
+        );
+    }
+
     deactivatePastor(id: number | string) {
         return this.http.delete<{
             message: string;
