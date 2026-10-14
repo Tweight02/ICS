@@ -56,9 +56,17 @@ export const PASTOR_ROUTES: Routes = [
         .then(m => m.Events)
   },
 
-  // Baptism Records
+   // Baptism Records - Existing route
   {
     path: 'baptism',
+    loadComponent: () =>
+      import('./personalreport/deathbap/deathbap')
+        .then(m => m.DeathbapComponent)
+  },
+
+  // Death and Baptism Records - Route alias
+  {
+    path: 'deathbap',
     loadComponent: () =>
       import('./personalreport/deathbap/deathbap')
         .then(m => m.DeathbapComponent)
@@ -75,6 +83,7 @@ export const PASTOR_ROUTES: Routes = [
     path: 'deathaddrec',
     component: DeathaddrecComponent
   },
+  
 
   // Church Role
   {
