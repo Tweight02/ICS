@@ -506,7 +506,6 @@ export class DeathaddrecComponent implements OnInit {
       Swal.fire({
         icon: 'warning',
         title: 'Invalid Date',
-        text: 'The date of death cannot be later than today.',
         confirmButtonText: 'OK',
         confirmButtonColor: '#176b52',
         customClass: this.swalCustomClass
@@ -609,13 +608,14 @@ export class DeathaddrecComponent implements OnInit {
   cancelForm(): void {
     Swal.fire({
       icon: 'warning',
+      iconColor: '#dc3545',
       title: 'Cancel Adding Record?',
-      text: 'Your unsaved death information will be discarded.',
+      text: 'Your unsaved baptism information will be discarded.',
       showCancelButton: true,
       confirmButtonText: 'Yes, Cancel',
       cancelButtonText: 'Continue Editing',
       confirmButtonColor: '#dc3545',
-      cancelButtonColor: '#64748b',
+      cancelButtonColor: '#14532d',
       reverseButtons: true,
       customClass: this.swalCustomClass
     }).then((result) => {

@@ -463,14 +463,15 @@ export class BapaddrecComponent implements OnInit {
   cancelForm(): void {
 
     Swal.fire({
-      icon: 'warning',
+     icon: 'warning',
+iconColor: '#dc3545',
       title: 'Cancel Adding Record?',
       text: 'Your unsaved baptism information will be discarded.',
       showCancelButton: true,
-      confirmButtonText: 'Yes, Cancel',
-      cancelButtonText: 'Continue Editing',
-      confirmButtonColor: '#dc3545',
-      cancelButtonColor: '#64748b',
+  confirmButtonText: 'Yes, Cancel',
+cancelButtonText: 'Continue Editing',
+confirmButtonColor: '#dc3545',
+cancelButtonColor: '#14532d',
       reverseButtons: true,
       customClass: this.swalCustomClass
     }).then((result) => {
