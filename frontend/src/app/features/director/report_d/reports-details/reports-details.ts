@@ -30,6 +30,7 @@ export class ReportsDetails implements OnInit {
 
   district: Church | null = null;
   churches: Church[] = [];
+  loadingChurches = false;
 
   errorMessage = '';
 
@@ -48,10 +49,13 @@ export class ReportsDetails implements OnInit {
   }
 
   loadChurches(): void {
+    this.loadingChurches = true;
+    this.errorMessage = '';
 
     this.churchService.getChurches(this.districtId).subscribe({
 
       next: (response) => {
+        this.loadingChurches = false;
 
         this.district = response.district;
 
@@ -77,6 +81,7 @@ export class ReportsDetails implements OnInit {
       },
 
       error: (error) => {
+        this.loadingChurches = false;
 
         console.error(
           '[REPORT DETAILS] API error:',

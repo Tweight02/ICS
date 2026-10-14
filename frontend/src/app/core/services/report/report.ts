@@ -18,6 +18,35 @@ export class ReportService {
 
   private readonly apiUrl = 'http://127.0.0.1:8000/api';
 
+  createReportTemplate(payload: {
+    department_id: number;
+    program_name: string;
+    section_name: string;
+    particular_items: string[];
+  }): Observable<{
+    message: string;
+    data: {
+      program_id: number;
+      section_id: number;
+      particulars: Array<{
+        particular_id: number;
+        particular_name: string;
+      }>;
+    };
+  }> {
+    return this.http.post<{
+      message: string;
+      data: {
+        program_id: number;
+        section_id: number;
+        particulars: Array<{
+          particular_id: number;
+          particular_name: string;
+        }>;
+      };
+    }>(`${this.apiUrl}/assistant/report-templates`, payload);
+  }
+
   getDepartments(churchId: number): Observable<Department[]> {
     return this.http.get<Department[]>(
       `${this.apiUrl}/churches/${churchId}/departments`

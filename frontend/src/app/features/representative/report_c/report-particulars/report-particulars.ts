@@ -19,6 +19,7 @@ interface QuarterRecord {
   year?: number | string;
   value: number | string | null;
   date_submitted?: string | null;
+  district_endorse?: string | null;
   mission_approve: string | null;
 }
 
@@ -417,6 +418,22 @@ ngOnInit(): void {
         return this.isRecordApproved(record ?? null);
       })
     );
+  }
+
+  isQuarterEndorsed(quarterId: number): boolean {
+    if (this.isQuarterApproved(quarterId)) return false;
+
+    const program = this.getSelectedProgram();
+    if (!program) return false;
+
+    const records = program.sections.flatMap(section =>
+      section.particulars.flatMap(particular =>
+        particular.quarters.filter(record => record.quarter_id === quarterId)
+      )
+    );
+
+    return records.length > 0 &&
+      records.every(record => String(record.district_endorse ?? '').trim() !== '');
   }
 
   getQuarterValue(
