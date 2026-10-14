@@ -113,12 +113,6 @@
               </option>
 
             </select>
-
-            <small
-              *ngIf="churches.length === 0"
-              class="form-help">
-              No churches loaded. Please make sure the Laravel server is running.
-            </small>
           </div>
 
           <!-- Quarter -->
@@ -177,9 +171,6 @@
 
             </select>
 
-            <small class="form-help">
-              Choose whether the member is newly baptized or reclaimed.
-            </small>
           </div>
 
           <!-- Address -->
@@ -212,10 +203,6 @@
               (change)="calculateAge()"
               [max]="today"
               required>
-
-            <small class="form-help">
-              Birthdate cannot be later than today.
-            </small>
           </div>
 
           <!-- Date of Baptism -->
@@ -233,9 +220,7 @@
               [max]="today"
               required>
 
-            <small class="form-help">
-              Date of Baptism cannot be later than today.
-            </small>
+          
           </div>
 
           <!-- Officiating Minister -->

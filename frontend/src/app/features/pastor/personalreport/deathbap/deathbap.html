@@ -1,5 +1,4 @@
 <div class="page">
-
   <header class="top-header">
     <div class="d-flex align-items-center justify-content-between">
       <div class="header-actions">
@@ -17,37 +16,34 @@
   <!-- Main Content -->
   <main class="content-section">
     <div class="row g-4">
-
       <!-- Records -->
       <div
         class="records-column"
         [ngClass]="isReadOnly ? 'col-12' : 'col-lg-9'">
-
         <div class="records-toolbar d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center pb-2">
+  <span class="selector-label">
+    SELECT RECORD:
+  </span>
 
-          <div class="d-flex align-items-center pb-3">
+  <button
+    type="button"
+    class="record-btn"
+    style="padding: 6px 12px; font-size: 13px; min-width: 120px; height: 34px;"
+    [class.active]="selectedRecord === 'baptism'"
+    (click)="selectRecord('baptism')">
+    Baptism Record
+  </button>
 
-            <span class="selector-label">
-              SELECT RECORD:
-            </span>
-
-            <button
-              type="button"
-              class="record-btn"
-              [class.active]="selectedRecord === 'baptism'"
-              (click)="selectRecord('baptism')">
-              Baptism Record
-            </button>
-
-            <button
-              type="button"
-              class="record-btn"
-              [class.active]="selectedRecord === 'death'"
-              (click)="selectRecord('death')">
-              Death Record
-            </button>
-
-          </div>
+  <button
+    type="button"
+    class="record-btn"
+    style="padding: 6px 12px; font-size: 13px; min-width: 120px; height: 34px;"
+    [class.active]="selectedRecord === 'death'"
+    (click)="selectRecord('death')">
+    Death Record
+  </button>
+</div>
 
           <!-- Add Record -->
           <a
@@ -58,59 +54,53 @@
             class="add-record-btn">
             + Add Record
           </a>
-
         </div>
 
         <!-- ================================================= -->
         <!-- YEAR AND QUARTER SELECTOR -->
         <!-- ================================================= -->
+       <div class="quarter-filter-toolbar">
 
-        <div class="quarter-filter-toolbar">
+  <!-- Year Selector -->
+  <select
+    class="year-selector"
+    style="padding: 5px 10px; font-size: 13px; height: 34px; min-width: 90px;"
+    [value]="selectedYear"
+    (change)="onYearChange($event)"
+    aria-label="Select year">
+    <option
+      *ngFor="let year of availableYears"
+      [value]="year">
+      {{ year }}
+    </option>
+  </select>
 
-          <!-- Year Selector -->
-          <select
-            class="year-selector"
-            [value]="selectedYear"
-            (change)="onYearChange($event)"
-            aria-label="Select year">
+  <!-- Quarter Selector -->
+  <div
+    class="quarter-selector"
+    style="display: flex; gap: 5px;">
 
-            <option
-              *ngFor="let year of availableYears"
-              [value]="year">
-              {{ year }}
-            </option>
+    <button
+      *ngFor="let quarter of quarterOptions"
+      type="button"
+      class="quarter-tab"
+      style="padding: 5px 12px; font-size: 12px; min-width: 75px; height: 34px;"
+      [class.active]="selectedQuarter === quarter"
+      [attr.aria-pressed]="selectedQuarter === quarter"
+      (click)="selectQuarter(quarter)">
+      {{ quarter }}
+    </button>
 
-          </select>
-
-          <!-- Quarter Selector -->
-          <div class="quarter-selector">
-
-            <button
-              *ngFor="let quarter of quarterOptions"
-              type="button"
-              class="quarter-tab"
-              [class.active]="selectedQuarter === quarter"
-              [attr.aria-pressed]="selectedQuarter === quarter"
-              (click)="selectQuarter(quarter)">
-
-              {{ quarter }}
-
-            </button>
-
-          </div>
-
-        </div>
+  </div>
+</div>
 
         <div class="table-responsive">
-
           <!-- ================================================= -->
-          <!-- BAPTISM RECORD -->
+          <!-- BAPTISM RECORD TABLE -->
           <!-- ================================================= -->
-
           <table
             class="table records-table"
             *ngIf="selectedRecord === 'baptism'">
-
             <thead>
               <tr>
                 <th>No.</th>
@@ -125,9 +115,6 @@
             </thead>
 
             <tbody>
-
-            
-
               <!-- Error -->
               <tr
                 *ngIf="
@@ -198,21 +185,16 @@
                 <td>
                   {{ baptism.gender || '—' }}
                 </td>
-
               </tr>
-
             </tbody>
-
           </table>
 
           <!-- ================================================= -->
-          <!-- DEATH RECORD -->
+          <!-- DEATH RECORD TABLE -->
           <!-- ================================================= -->
-
           <table
             class="table records-table"
             *ngIf="selectedRecord === 'death'">
-
             <thead>
               <tr>
                 <th>No.</th>
@@ -227,8 +209,6 @@
             </thead>
 
             <tbody>
-
-            
               <!-- Error -->
               <tr
                 *ngIf="
@@ -304,20 +284,15 @@
                 <td>
                   {{ getDeathBaptism(death)?.marital_status || '—' }}
                 </td>
-
               </tr>
-
             </tbody>
-
           </table>
-
         </div>
       </div>
 
       <!-- ================================================= -->
       <!-- COMMENTS -->
       <!-- ================================================= -->
-
       <div
         *ngIf="!isReadOnly"
         class="col-lg-3 comments-column">
@@ -331,9 +306,7 @@
         </div>
 
         <div class="comment-card">
-
           <div class="comment-top">
-
             <div>
               <div class="comment-role">
                 Sep 15, 2026, 3:00 PM
@@ -342,7 +315,6 @@
 
             <div class="comment-date">
             </div>
-
           </div>
 
           <p class="comment-text">
@@ -350,13 +322,10 @@
             Please ensure the entries are complete and any supporting notes
             are included before final submission.
           </p>
-
         </div>
 
         <div class="comment-line"></div>
-
       </div>
-
     </div>
   </main>
 </div>
@@ -364,7 +333,6 @@
 <!-- ================================================= -->
 <!-- BAPTISM DETAILS MODAL -->
 <!-- ================================================= -->
-
 <div
   *ngIf="selectedBaptism"
   class="baptism-modal-backdrop"
@@ -380,10 +348,8 @@
   (click)="$event.stopPropagation()">
 
   <div class="baptism-modal">
-
     <!-- Modal Header -->
     <div class="baptism-modal-header">
-
       <div class="modal-heading-content">
         <div>
           <h2 id="baptismModalTitle">
@@ -391,7 +357,6 @@
           </h2>
         </div>
       </div>
-
     </div>
 
     <!-- Modal Body -->
@@ -400,7 +365,6 @@
       *ngIf="selectedBaptism">
 
       <div class="details-section">
-
         <div class="details-section-heading">
           <div>
             <h3>
@@ -410,7 +374,6 @@
         </div>
 
         <div class="details-grid">
-
           <div class="detail-item">
             <span class="detail-label">First Name</span>
             <span class="detail-value">
@@ -510,46 +473,35 @@
             </span>
           </div>
 
+          <!-- Baptism Status: shown in the modal only -->
           <div class="detail-item">
-            <span class="detail-label">Reclaimed Member</span>
-
+            <span class="detail-label">Baptism Status</span>
             <span
               class="status-badge"
-              [class.status-yes]="selectedBaptism.is_reclaimed"
-              [class.status-no]="!selectedBaptism.is_reclaimed">
-
-              {{
-                selectedBaptism.is_reclaimed
-                  ? 'Yes'
-                  : 'No'
-              }}
-
+              [class.status-yes]="getBaptismStatus(selectedBaptism.is_reclaimed) === 'Reclaimed Member'"
+              [class.status-no]="getBaptismStatus(selectedBaptism.is_reclaimed) === 'Newly Baptized'">
+              {{ getBaptismStatus(selectedBaptism.is_reclaimed) }}
             </span>
           </div>
-
         </div>
       </div>
     </div>
 
     <!-- Modal Footer -->
     <div class="baptism-modal-footer">
-
       <button
         type="button"
         class="modal-done-btn"
         (click)="closeBaptismModal()">
         Close
       </button>
-
     </div>
-
   </div>
 </div>
 
 <!-- ================================================= -->
 <!-- DEATH DETAILS MODAL -->
 <!-- ================================================= -->
-
 <div
   *ngIf="selectedDeath"
   class="baptism-modal-backdrop"
@@ -565,10 +517,8 @@
   (click)="$event.stopPropagation()">
 
   <div class="baptism-modal">
-
     <!-- Modal Header -->
     <div class="baptism-modal-header">
-
       <div class="modal-heading-content">
         <div>
           <h2 id="deathModalTitle">
@@ -576,7 +526,6 @@
           </h2>
         </div>
       </div>
-
     </div>
 
     <!-- Modal Body -->
@@ -585,7 +534,6 @@
       *ngIf="selectedDeath as deathRecord">
 
       <div class="details-section">
-
         <div class="details-section-heading">
           <div>
             <h3>
@@ -595,7 +543,6 @@
         </div>
 
         <div class="details-grid">
-
           <div class="detail-item">
             <span class="detail-label">First Name</span>
             <span class="detail-value">
@@ -709,47 +656,38 @@
 
           <div class="detail-item">
             <span class="detail-label">Reclaimed Member</span>
-
             <span
               class="status-badge"
               [class.status-yes]="getDeathBaptism(deathRecord)?.is_reclaimed"
               [class.status-no]="!getDeathBaptism(deathRecord)?.is_reclaimed">
-
               {{
                 getDeathBaptism(deathRecord)?.is_reclaimed
                   ? 'Yes'
                   : 'No'
               }}
-
             </span>
           </div>
-
         </div>
       </div>
     </div>
 
     <!-- Modal Footer -->
     <div class="baptism-modal-footer">
-
       <button
         type="button"
         class="modal-done-btn"
         (click)="closeDeathModal()">
         Close
       </button>
-
     </div>
-
   </div>
 </div>
 
 <!-- ================================================= -->
 <!-- STYLES -->
 <!-- ================================================= -->
-
 <style>
   /* Year and quarter selector */
-
   .quarter-filter-toolbar {
     display: flex;
     align-items: center;
@@ -807,7 +745,6 @@
   }
 
   /* Record rows */
-
   .baptism-record-row {
     cursor: pointer;
     transition: background-color 0.18s ease;
@@ -823,7 +760,6 @@
   }
 
   /* Modal backdrop */
-
   .baptism-modal-backdrop {
     position: fixed;
     inset: 0;
@@ -834,7 +770,6 @@
   }
 
   /* Modal wrapper */
-
   .baptism-modal-wrapper {
     position: fixed;
     inset: 0;
@@ -874,7 +809,6 @@
   }
 
   /* Modal header */
-
   .baptism-modal-header {
     display: flex;
     align-items: center;
@@ -945,7 +879,6 @@
   }
 
   /* Modal body */
-
   .baptism-modal-body {
     padding: 26px 28px;
     overflow-y: auto;
@@ -1023,7 +956,6 @@
   }
 
   /* Details section */
-
   .details-section {
     padding: 23px;
     background: #ffffff;
@@ -1095,7 +1027,6 @@
   }
 
   /* Reclaimed status */
-
   .status-badge {
     width: fit-content;
     display: inline-flex;
@@ -1117,7 +1048,6 @@
   }
 
   /* Modal footer */
-
   .baptism-modal-footer {
     display: flex;
     align-items: center;
@@ -1154,9 +1084,7 @@
   }
 
   /* Responsive design */
-
   @media (max-width: 640px) {
-
     .quarter-filter-toolbar {
       flex-wrap: wrap;
       gap: 12px;
@@ -1258,7 +1186,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-
     .baptism-modal {
       animation: none;
     }
