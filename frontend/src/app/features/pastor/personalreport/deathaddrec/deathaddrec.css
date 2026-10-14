@@ -147,3 +147,97 @@
     padding: 10px;
   }
 }
+
+
+
+
+
+
+/* ==========================================
+   COMPACT PROFESSIONAL SWEETALERT
+========================================== */
+
+.swal2-popup.compact-swal-popup {
+  width: 340px !important;
+  max-width: calc(100vw - 32px) !important;
+  padding: 22px 22px 18px !important;
+  border-radius: 14px !important;
+  font-family: Arial, sans-serif !important;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.14) !important;
+}
+
+/* Smaller icon */
+.compact-swal-popup .swal2-icon {
+  width: 48px !important;
+  height: 48px !important;
+  margin: 2px auto 13px !important;
+  border-width: 3px !important;
+}
+
+/* Professional title */
+.compact-swal-popup .compact-swal-title {
+  padding: 0 !important;
+  margin: 0 0 8px !important;
+  color: #1f2937 !important;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+}
+
+/* Smaller message */
+.compact-swal-popup .compact-swal-message {
+  margin: 0 !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+/* Button spacing */
+.compact-swal-popup .compact-swal-actions {
+  gap: 8px !important;
+  margin: 17px auto 0 !important;
+}
+
+/* Compact buttons */
+.compact-swal-popup .compact-swal-confirm,
+.compact-swal-popup .compact-swal-cancel {
+  min-width: 78px !important;
+  margin: 0 !important;
+  padding: 9px 13px !important;
+  border: none !important;
+  border-radius: 7px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  box-shadow: none !important;
+}
+
+/* Keyboard focus */
+.compact-swal-popup .compact-swal-confirm:focus-visible,
+.compact-swal-popup .compact-swal-cancel:focus-visible {
+  outline: 2px solid #94a3b8 !important;
+  outline-offset: 3px !important;
+}
+
+/* Mobile sizing */
+@media (max-width: 400px) {
+  .swal2-popup.compact-swal-popup {
+    width: calc(100vw - 36px) !important;
+    padding: 19px 16px 16px !important;
+  }
+
+  .compact-swal-popup .compact-swal-title {
+    font-size: 16px !important;
+  }
+
+  .compact-swal-popup .compact-swal-actions {
+    gap: 7px !important;
+  }
+
+  .compact-swal-popup .compact-swal-confirm,
+  .compact-swal-popup .compact-swal-cancel {
+    padding: 9px 11px !important;
+  }
+}

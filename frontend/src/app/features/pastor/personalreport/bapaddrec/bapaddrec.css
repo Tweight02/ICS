@@ -162,3 +162,91 @@
   }
 
 }
+
+
+
+
+
+
+/* ========================================
+   PROFESSIONAL COMPACT SWEETALERT
+======================================== */
+
+.swal2-popup {
+  width: 350px !important;
+  max-width: calc(100vw - 32px) !important;
+  padding: 22px 22px 18px !important;
+  border-radius: 14px !important;
+  font-family: Arial, sans-serif !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Alert Icon */
+.swal2-icon {
+  width: 52px !important;
+  height: 52px !important;
+  margin: 2px auto 14px !important;
+  border-width: 3px !important;
+}
+
+/* Alert Title */
+.swal2-title {
+  padding: 0 !important;
+  margin: 0 0 9px !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  color: #1f2937 !important;
+}
+
+/* Alert Message */
+.swal2-html-container {
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: #64748b !important;
+  overflow-wrap: anywhere;
+}
+
+/* Buttons Container */
+.swal2-actions {
+  gap: 9px !important;
+  margin: 19px auto 0 !important;
+}
+
+/* Confirm and Cancel Buttons */
+.swal2-styled {
+  min-width: 85px !important;
+  margin: 0 !important;
+  padding: 9px 15px !important;
+  border-radius: 7px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  box-shadow: none !important;
+}
+
+/* Remove unnecessary button outline */
+.swal2-styled:focus {
+  box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.15) !important;
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 400px) {
+  .swal2-popup {
+    width: calc(100vw - 36px) !important;
+    padding: 19px 16px 16px !important;
+  }
+
+  .swal2-title {
+    font-size: 17px !important;
+  }
+
+  .swal2-actions {
+    gap: 7px !important;
+  }
+
+  .swal2-styled {
+    padding: 9px 12px !important;
+  }
+}
