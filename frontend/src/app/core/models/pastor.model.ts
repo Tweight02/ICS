@@ -36,6 +36,7 @@ export interface PastorFilters {
     search?: string;
     department_id?: number | string;
     church_id?: number | string;
+    status?: 'active' | 'inactive' | '';
     page?: number;
     per_page?: number;
 }

@@ -139,6 +139,13 @@ class UserController extends Controller
                         $id
                     )
                 )
+                ->when(
+                    $request->filled('status'),
+                    fn ($q) => $q->where(
+                        'status',
+                        $request->input('status')
+                    )
+                )
                 ->orderBy(
                     'last_name'
                 )
