@@ -32,6 +32,7 @@ export class ViewUser implements OnInit {
 
   search = signal('');
   churchId = signal('');
+  status = signal<'active' | 'inactive' | ''>('');
 
   page = signal(1);
   lastPage = signal(1);
@@ -101,6 +102,7 @@ export class ViewUser implements OnInit {
       .getPastors({
         search: this.search(),
         church_id: this.churchId(),
+        status: this.status(),
         page: this.page(),
         per_page: this.perPage,
       })
@@ -131,6 +133,12 @@ export class ViewUser implements OnInit {
 
   onDistrictChange(value: string): void {
     this.churchId.set(value);
+    this.page.set(1);
+    this.loadPastors();
+  }
+
+  onStatusChange(value: 'active' | 'inactive' | ''): void {
+    this.status.set(value);
     this.page.set(1);
     this.loadPastors();
   }

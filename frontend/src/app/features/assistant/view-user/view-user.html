@@ -105,7 +105,7 @@
 
   <!-- FILTERS -->
   <div class="mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
 
       <!-- Search -->
       <div>
@@ -148,6 +148,27 @@
               {{ district.name }}
             </option>
           }
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div>
+        <label
+          for="status-filter"
+          class="block text-xs font-medium text-slate-700"
+        >
+          Status
+        </label>
+
+        <select
+          id="status-filter"
+          [value]="status()"
+          (change)="onStatusChange($any($event.target).value)"
+          class="mt-1 block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]"
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
         </select>
       </div>
     </div>
