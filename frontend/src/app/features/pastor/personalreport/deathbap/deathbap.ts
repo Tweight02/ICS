@@ -298,22 +298,24 @@ export class DeathbapComponent implements OnInit {
    */
   get displayedBaptisms(): Baptism[] {
 
-    const records = this.churchId
-      ? this.baptisms.filter(
-          record =>
-            Number(record.church_id) === this.churchId
-        )
-      : this.baptisms;
+  const records = this.churchId
+    ? this.baptisms.filter(
+        record =>
+          Number(record.church_id) === Number(this.churchId)
+      )
+    : this.baptisms;
 
-    return records.filter(record => {
-
+  return records
+    .filter(record => {
       return (
         this.normalizeQuarter(record.quarter) === this.selectedQuarter &&
         this.getYearFromDate(record.date_of_baptism) === this.selectedYear
       );
-
-    });
-  }
+    })
+    .sort(
+      (a, b) => Number(a.baptism_id) - Number(b.baptism_id)
+    );
+}
 
   /**
    * Filter death records by church, quarter and year.
