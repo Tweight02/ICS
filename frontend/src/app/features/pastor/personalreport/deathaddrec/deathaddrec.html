@@ -4,11 +4,9 @@
 
     <!-- Header -->
     <div class="form-header">
-
       <div>
         <div class="record-label">ADD DEATH RECORD</div>
       </div>
-
     </div>
 
     <!-- Form -->
@@ -32,20 +30,30 @@
               name="baptism_id"
               [(ngModel)]="death.baptism_id"
               (ngModelChange)="selectBaptism($event)"
+              [disabled]="
+                loadingBaptisms ||
+                loadingDeaths ||
+                deathLoadError ||
+                availableBaptisms.length === 0
+              "
               required>
 
               <option
                 [ngValue]="null"
                 disabled>
                 {{
-                  baptisms.length === 0
-                    ? 'Loading baptized members...'
-                    : 'Select baptized member'
+                  loadingBaptisms || loadingDeaths
+                    ? 'Loading records...'
+                    : deathLoadError
+                      ? 'Unable to verify death records'
+                      : availableBaptisms.length === 0
+                        ? 'No eligible members available'
+                        : 'Select baptized member'
                 }}
               </option>
 
               <option
-                *ngFor="let baptism of baptisms"
+                *ngFor="let baptism of availableBaptisms"
                 [ngValue]="baptism.baptism_id">
                 {{ getFullName(baptism) }}
               </option>
@@ -53,18 +61,38 @@
             </select>
 
             <small
-              *ngIf="loadingBaptisms"
+              *ngIf="loadingBaptisms || loadingDeaths"
               class="form-help">
-              Loading baptized members...
+              Checking existing records...
+            </small>
+
+            <small
+              *ngIf="deathLoadError"
+              class="form-help">
+              Death records could not be verified. Refresh the page to try again.
             </small>
 
             <small
               *ngIf="
                 !loadingBaptisms &&
+                !loadingDeaths &&
+                !deathLoadError &&
                 baptisms.length === 0
               "
               class="form-help">
               No baptism records found.
+            </small>
+
+            <small
+              *ngIf="
+                !loadingBaptisms &&
+                !loadingDeaths &&
+                !deathLoadError &&
+                baptisms.length > 0 &&
+                availableBaptisms.length === 0
+              "
+              class="form-help">
+              All available baptized members already have death records.
             </small>
 
           </div>
@@ -170,14 +198,25 @@
               Quarter
             </label>
 
-            <input
+            <select
               id="quarter"
-              type="text"
-              name="quarter"
               class="form-control"
+              name="quarter"
               [(ngModel)]="death.quarter"
-              placeholder="Enter quarter"
               required>
+
+              <option
+                value=""
+                disabled>
+                Select quarter
+              </option>
+
+              <option value="Q1">Q1</option>
+              <option value="Q2">Q2</option>
+              <option value="Q3">Q3</option>
+              <option value="Q4">Q4</option>
+
+            </select>
           </div>
 
           <!-- Date of Death -->
@@ -192,7 +231,12 @@
               name="date_of_death"
               class="form-control"
               [(ngModel)]="death.date_of_death"
+              [max]="today"
               required>
+
+            <small class="form-help">
+              The date of death cannot be later than today.
+            </small>
           </div>
 
           <!-- Age at Death -->
@@ -260,15 +304,21 @@
 
         <button
           type="button"
-          routerLink="/pastor/deathbap"
-          class="cancel-button">
+          class="cancel-button"
+          (click)="cancelForm()">
           Cancel
         </button>
 
         <button
           type="submit"
           class="save-button"
-          [disabled]="saving || deathForm.invalid">
+          [disabled]="
+            saving ||
+            deathForm.invalid ||
+            loadingBaptisms ||
+            loadingDeaths ||
+            deathLoadError
+          ">
           {{ saving ? 'Saving...' : 'Save' }}
         </button>
 

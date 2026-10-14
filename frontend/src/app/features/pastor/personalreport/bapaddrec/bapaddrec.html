@@ -127,14 +127,59 @@
               Quarter
             </label>
 
-            <input
+            <select
               id="quarter"
-              type="text"
-              name="quarter"
               class="form-control"
+              name="quarter"
               [(ngModel)]="baptism.quarter"
-              placeholder="Enter quarter"
               required>
+
+              <option
+                value=""
+                disabled>
+                Select quarter
+              </option>
+
+              <option value="Q1">Q1</option>
+              <option value="Q2">Q2</option>
+              <option value="Q3">Q3</option>
+              <option value="Q4">Q4</option>
+
+            </select>
+          </div>
+
+          <!-- Baptism Status -->
+          <div class="form-group">
+            <label for="is_reclaimed">
+              Baptism Status
+            </label>
+
+            <select
+              id="is_reclaimed"
+              class="form-control"
+              name="is_reclaimed"
+              [(ngModel)]="baptism.is_reclaimed"
+              required>
+
+              <option
+                [ngValue]="null"
+                disabled>
+                Select baptism status
+              </option>
+
+              <option [ngValue]="false">
+                Newly Baptized
+              </option>
+
+              <option [ngValue]="true">
+                Reclaimed Member
+              </option>
+
+            </select>
+
+            <small class="form-help">
+              Choose whether the member is newly baptized or reclaimed.
+            </small>
           </div>
 
           <!-- Address -->
@@ -165,7 +210,12 @@
               class="form-control"
               [(ngModel)]="baptism.birthdate"
               (change)="calculateAge()"
+              [max]="today"
               required>
+
+            <small class="form-help">
+              Birthdate cannot be later than today.
+            </small>
           </div>
 
           <!-- Date of Baptism -->
@@ -180,7 +230,12 @@
               name="date_of_baptism"
               class="form-control"
               [(ngModel)]="baptism.date_of_baptism"
+              [max]="today"
               required>
+
+            <small class="form-help">
+              Date of Baptism cannot be later than today.
+            </small>
           </div>
 
           <!-- Officiating Minister -->
@@ -285,8 +340,8 @@
 
         <button
           type="button"
-          routerLink="/pastor/deathbap"
-          class="cancel-button">
+          class="cancel-button"
+          (click)="cancelForm()">
           Cancel
         </button>
 
