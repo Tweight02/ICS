@@ -72,12 +72,28 @@
 
 <!-- FILTERS -->
 <div class="mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div>
             <label for="representative-search" class="block text-xs font-medium text-slate-700">Search</label>
             <input id="representative-search" type="text" [value]="search()"
                 (input)="onSearch($any($event.target).value)" placeholder="Search representative name or email..."
                 class="mt-1 block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]" />
+        </div>
+        <div>
+            <label for="representative-church" class="block text-xs font-medium text-slate-700">Church</label>
+            <select id="representative-church" [value]="churchId()" (change)="onChurchChange($any($event.target).value)"
+                class="mt-1 block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]">
+                <option value="">All churches</option>
+                @for (church of churches(); track church.church_id) {
+                    <option [value]="church.church_id">{{ church.name }}</option>
+                }
+            </select>
+            @if (churchOptionsError()) {
+                <p class="mt-1 text-xs text-rose-600" role="alert">
+                    {{ churchOptionsError() }}
+                    <button type="button" (click)="loadChurchOptions()" class="font-semibold underline">Retry</button>
+                </p>
+            }
         </div>
         <div>
             <label for="representative-status" class="block text-xs font-medium text-slate-700">Status</label>
