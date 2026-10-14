@@ -90,7 +90,6 @@ class UserController extends Controller
                     'role',
                     'pastor'
                 )
-                ->where('status', 'active')
                 ->with([
 
                     'department:department_id,department_name',
@@ -499,6 +498,38 @@ class UserController extends Controller
                 'first_name' => $pastor->first_name,
                 'last_name' => $pastor->last_name,
             ],
+        ]);
+    }
+
+    public function activate_pastor($id)
+    {
+        $pastor = User::where('role', 'pastor')
+            ->findOrFail($id);
+
+        if ($pastor->status === 'active') {
+            return response()->json([
+                'message' => 'Pastor is already active.',
+            ]);
+        }
+
+        $occupied = User::where('role', 'pastor')
+            ->where('church_id', $pastor->church_id)
+            ->where('status', 'active')
+            ->whereKeyNot($pastor->getKey())
+            ->exists();
+
+        if ($occupied) {
+            throw ValidationException::withMessages([
+                'church_id' => 'This district already has an active pastor assigned.',
+            ]);
+        }
+
+        DB::transaction(function () use ($pastor) {
+            $pastor->update(['status' => 'active']);
+        });
+
+        return response()->json([
+            'message' => 'Pastor activated successfully.',
         ]);
     }
 

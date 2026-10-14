@@ -124,6 +124,11 @@ Route::prefix('assistant')->group(function () {
         'update_pastor',
     ]);
 
+    Route::post('/pastors/{id}/activate', [
+        UserController::class,
+        'activate_pastor',
+    ]);
+
     Route::delete(
         '/pastors/{id}',
         [UserController::class, 'deactivate_pastor']
