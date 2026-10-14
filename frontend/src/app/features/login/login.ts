@@ -22,6 +22,9 @@ export class Login {
   loading = signal(false);
   error = signal<string | null>(null);
 
+  // Controls the eye button on the password field.
+  showPassword = signal(false);
+
   credentials = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
