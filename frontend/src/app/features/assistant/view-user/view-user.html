@@ -183,6 +183,10 @@
               </th>
             }
 
+            <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              District
+            </th>
+
             <th class="whitespace-nowrap px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Pastor
             </th>
@@ -196,7 +200,7 @@
             </th>
 
             <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              District
+              Active
             </th>
           </tr>
         </thead>
@@ -208,7 +212,7 @@
           @if (loading()) {
             <tr>
               <td
-                [attr.colspan]="bulkMode() ? 5 : 4"
+                [attr.colspan]="bulkMode() ? 6 : 5"
                 class="px-3 py-6 text-center"
               >
                 <div class="flex items-center justify-center gap-2 text-xs text-slate-500">
@@ -242,7 +246,7 @@
           @else if (pastors().length === 0) {
             <tr>
               <td
-                [attr.colspan]="bulkMode() ? 5 : 4"
+                [attr.colspan]="bulkMode() ? 6 : 5"
                 class="px-3 py-6 text-center text-xs text-slate-500"
               >
                 No pastors found.
@@ -281,6 +285,13 @@
                     />
                   </td>
                 }
+
+                <!-- DISTRICT -->
+                <td class="px-3 py-2 align-middle">
+                  <div class="text-xs font-medium text-slate-800">
+                    {{ pastor.church?.name ?? 'Unassigned' }}
+                  </div>
+                </td>
 
                 <!-- PASTOR -->
                 <td class="px-3 py-2 align-middle">
@@ -351,11 +362,17 @@
                   </span>
                 </td>
 
-                <!-- DISTRICT -->
+                <!-- ACTIVE -->
                 <td class="px-3 py-2 align-middle">
-                  <div class="text-xs font-medium text-slate-800">
-                    {{ pastor.church?.name ?? 'Unassigned' }}
-                  </div>
+                  <span
+                    class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                    [class.bg-emerald-50]="pastor.status === 'active' || !pastor.status"
+                    [class.text-emerald-700]="pastor.status === 'active' || !pastor.status"
+                    [class.bg-slate-100]="pastor.status === 'inactive'"
+                    [class.text-slate-600]="pastor.status === 'inactive'"
+                  >
+                    {{ pastor.status === 'inactive' ? 'Inactive' : 'Active' }}
+                  </span>
                 </td>
 
               </tr>
