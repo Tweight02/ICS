@@ -106,7 +106,8 @@
       </button>
     </div>
 
-    <!-- Summary -->
+    <!-- Summary (Offering and Tithes tab only) -->
+    @if (activeTab === 'offering') {
     <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
       @for (p of monthlyFields; track p.particular_id) {
         <div class="rounded-xl border border-white/60 bg-white/60 px-5 py-4 shadow-sm backdrop-blur">
@@ -121,6 +122,7 @@
         </div>
       }
     </div>
+    }
 
     <!-- Stewardship activities -->
     @if (activeTab === 'activities') {
