@@ -1,0 +1,95 @@
+<main class="mx-auto max-w-7xl px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
+	<header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+		<div>
+			<a routerLink="/assistant/view-user" class="mb-2 inline-flex text-sm font-medium text-emerald-800 hover:text-emerald-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700">
+				Back to Pastors
+			</a>
+			<h1 class="text-2xl font-semibold text-slate-950">District Pastor Assignments</h1>
+		</div>
+	</header>
+
+	@if (loadError()) {
+		<div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+			<span>{{ loadError() }}</span>
+			<button type="button" (click)="loadAssignments()" class="font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700">Retry</button>
+		</div>
+	}
+
+	@if (successMessage()) {
+		<div class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
+			{{ successMessage() }}
+		</div>
+	}
+
+	<section class="mb-8 border-y border-slate-200 py-5" aria-labelledby="assignment-form-heading">
+		<h2 id="assignment-form-heading" class="mb-4 text-base font-semibold text-slate-900">Assign a pastor</h2>
+		<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+			<fieldset [disabled]="loading() || saving()" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+				<div>
+					<label for="district_id" class="mb-1.5 block text-sm font-medium text-slate-700">Vacant district <span class="text-red-700">*</span></label>
+					<select id="district_id" formControlName="district_id" class="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/25 disabled:bg-slate-100">
+						<option value="">Select a vacant district</option>
+						@for (assignment of vacantDistricts(); track assignment.church_id) {
+							<option [value]="assignment.church_id">{{ assignment.district_name }}</option>
+						}
+					</select>
+					@if (form.controls.district_id.touched && form.controls.district_id.hasError('required')) {
+						<p class="mt-1 text-sm text-red-700">Select a district.</p>
+					}
+				</div>
+
+				<div>
+					<label for="user_id" class="mb-1.5 block text-sm font-medium text-slate-700">Active pastor <span class="text-red-700">*</span></label>
+					<select id="user_id" formControlName="user_id" class="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/25 disabled:bg-slate-100">
+						<option value="">Select a pastor</option>
+						@for (pastor of pastors(); track pastor.user_id) {
+							<option [value]="pastor.user_id">{{ pastor.full_name }}</option>
+						}
+					</select>
+					@if (form.controls.user_id.touched && form.controls.user_id.hasError('required')) {
+						<p class="mt-1 text-sm text-red-700">Select an active pastor.</p>
+					}
+				</div>
+
+				<button type="submit" [disabled]="loading() || saving() || form.invalid || vacantDistricts().length === 0 || pastors().length === 0" class="inline-flex h-11 items-center justify-center rounded-md bg-[#0F4A30] px-5 text-sm font-semibold text-white transition hover:bg-[#0B3925] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+					@if (saving()) {
+						<svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+						</svg>
+					}
+					{{ saving() ? 'Saving...' : 'Assign pastor' }}
+				</button>
+			</fieldset>
+		</form>
+
+		@if (submitError()) {
+			<p class="mt-3 text-sm text-red-700" role="alert">{{ submitError() }}</p>
+		}
+		@if (!loading() && vacantDistricts().length === 0) {
+			<p class="mt-3 text-sm text-slate-600">There are no vacant districts to assign.</p>
+		}
+		@if (!loading() && pastors().length === 0) {
+			<p class="mt-3 text-sm text-slate-600">There are no active pastors available.</p>
+		}
+	</section>
+
+	<section aria-labelledby="assignment-list-heading">
+		<h2 id="assignment-list-heading" class="mb-4 text-base font-semibold text-slate-900">Current assignments</h2>
+
+		@if (loading()) {
+			<p class="py-8 text-center text-sm text-slate-600" role="status">Loading assignments...</p>
+		} @else if (!loadError() && assignments().length === 0) {
+			<p class="py-8 text-center text-sm text-slate-600">No districts are available.</p>
+		} @else if (!loadError()) {
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+				@for (assignment of assignments(); track assignment.church_id) {
+					<article class="flex min-h-28 flex-col justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-4">
+						<h3 class="text-sm font-semibold text-slate-950">{{ assignment.district_name }}</h3>
+						<p class="text-sm text-slate-700">{{ assignment.pastor_name ?? 'No pastor assigned' }}</p>
+					</article>
+				}
+			</div>
+		}
+	</section>
+</main>
