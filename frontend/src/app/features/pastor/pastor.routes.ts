@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { BapaddrecComponent } from './personalreport/bapaddrec/bapaddrec';
 import { DeathaddrecComponent } from './personalreport/deathaddrec/deathaddrec';
+import { EditbapComponent } from './personalreport/editbap/editbap';
 
 export const PASTOR_ROUTES: Routes = [
   // Default route
@@ -11,30 +12,30 @@ export const PASTOR_ROUTES: Routes = [
     pathMatch: 'full'
   },
 
-{
-  path: 'reports/details',
-  loadComponent: () =>
-    import('./report_p/reports-details/reports-details')
-      .then(m => m.ReportsDetails)
-},
-{
-  path: 'reports/details/:id',
-  loadComponent: () =>
-    import('./report_p/reports-details/reports-details')
-      .then(m => m.ReportsDetails)
-},
-{
-  path: 'reports/programs/:districtId/:churchId',
-  loadComponent: () =>
-    import('./report_p/report-programs/report-programs')
-      .then(m => m.ReportPrograms)
-},
-{
-  path: 'reports/programs',
-  loadComponent: () =>
-    import('./report_p/report-programs/report-programs')
-      .then(m => m.ReportPrograms)
-},
+  {
+    path: 'reports/details',
+    loadComponent: () =>
+      import('./report_p/reports-details/reports-details')
+        .then(m => m.ReportsDetails)
+  },
+  {
+    path: 'reports/details/:id',
+    loadComponent: () =>
+      import('./report_p/reports-details/reports-details')
+        .then(m => m.ReportsDetails)
+  },
+  {
+    path: 'reports/programs/:districtId/:churchId',
+    loadComponent: () =>
+      import('./report_p/report-programs/report-programs')
+        .then(m => m.ReportPrograms)
+  },
+  {
+    path: 'reports/programs',
+    loadComponent: () =>
+      import('./report_p/report-programs/report-programs')
+        .then(m => m.ReportPrograms)
+  },
   {
     path: 'reports/particulars/:departmentId/:districtId/:churchId',
     loadComponent: () =>
@@ -56,7 +57,7 @@ export const PASTOR_ROUTES: Routes = [
         .then(m => m.Events)
   },
 
-   // Baptism Records - Existing route
+  // Baptism Records - Existing route
   {
     path: 'baptism',
     loadComponent: () =>
@@ -83,7 +84,18 @@ export const PASTOR_ROUTES: Routes = [
     path: 'deathaddrec',
     component: DeathaddrecComponent
   },
-  
+
+  // Edit the selected baptism record by ID
+  {
+    path: 'editbap/:id',
+    component: EditbapComponent
+  },
+
+  // Preserve the existing edit route
+  {
+    path: 'editbap',
+    component: EditbapComponent
+  },
 
   // Church Role
   {
@@ -108,7 +120,9 @@ export const PASTOR_ROUTES: Routes = [
   },
   {
     path: 'new-representative',
-    loadComponent: () => import('./new-representative/new-representative').then(m=>m.NewRepresentative)
+    loadComponent: () =>
+      import('./new-representative/new-representative')
+        .then(m => m.NewRepresentative)
   },
 
   // Fallback route — keep this last
