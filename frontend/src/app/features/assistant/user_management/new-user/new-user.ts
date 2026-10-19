@@ -28,6 +28,12 @@ export class NewUser implements OnInit {
   formError = '';
   serverErrors: Record<string, string> = {};
 
+  // District combobox state (the church_id form control stays the source of truth)
+  districtText = '';     // what the search input displays
+  districtFilter = '';   // what filters the list ('' = show all)
+  districtOpen = false;
+  activeIndex = 0;
+
   private readonly currentDate = new Date();
   readonly maxBirthdate = [
     this.currentDate.getFullYear(),
@@ -76,6 +82,92 @@ export class NewUser implements OnInit {
     email: new FormControl('', [Validators.required, Validators.email, Validators.maxLength(255)]),
     password: new FormControl('', [Validators.required, Validators.minLength(8)]),
   });
+
+  // ---------- District combobox ----------
+
+  get filteredDistricts(): Church[] {
+    const q = this.districtFilter.trim().toLowerCase();
+    return q
+      ? this.districts.filter(d => d.name.toLowerCase().includes(q))
+      : this.districts;
+  }
+
+  isSelectedDistrict(d: Church): boolean {
+    const value = this.form.controls.church_id.value;
+    return !!value && String(d.church_id) === value;
+  }
+
+  openDistricts(): void {
+    if (this.isLoadingDistricts || this.districts.length === 0) return;
+    this.districtOpen = true;
+    const idx = this.filteredDistricts.findIndex(d => this.isSelectedDistrict(d));
+    this.activeIndex = Math.max(idx, 0);
+  }
+
+  onDistrictInput(value: string): void {
+    this.districtText = value;
+    this.districtFilter = value;
+    this.districtOpen = true;
+    this.activeIndex = 0;
+    // Typing invalidates any earlier selection, so a stale district can't be submitted.
+    this.form.controls.church_id.setValue('');
+    this.clearServerError('church_id');
+  }
+
+  selectDistrict(d: Church): void {
+    const control = this.form.controls.church_id;
+    control.setValue(String(d.church_id)); // string, same as the old <select [value]>
+    control.markAsDirty();
+    control.markAsTouched();
+    this.districtText = d.name;
+    this.districtFilter = '';
+    this.districtOpen = false;
+    this.clearServerError('church_id');
+  }
+
+  onDistrictKeydown(e: KeyboardEvent): void {
+    const count = this.filteredDistricts.length;
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        if (!this.districtOpen) { this.openDistricts(); return; }
+        this.activeIndex = count ? (this.activeIndex + 1) % count : 0;
+        this.scrollActiveIntoView();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (!this.districtOpen) { this.openDistricts(); return; }
+        this.activeIndex = count ? (this.activeIndex - 1 + count) % count : 0;
+        this.scrollActiveIntoView();
+        break;
+      case 'Enter':
+        if (this.districtOpen && count) {
+          e.preventDefault(); // don't submit the form while picking
+          this.selectDistrict(this.filteredDistricts[this.activeIndex]);
+        }
+        break;
+      case 'Escape':
+        if (this.districtOpen) { e.preventDefault(); this.districtOpen = false; }
+        break;
+    }
+  }
+
+  onDistrictBlur(): void {
+    this.districtOpen = false;
+    const control = this.form.controls.church_id;
+    control.markAsTouched();
+    // If a district is selected, make sure the input shows its name again.
+    const match = this.districts.find(d => this.isSelectedDistrict(d));
+    if (match) this.districtText = match.name;
+  }
+
+  private scrollActiveIntoView(): void {
+    queueMicrotask(() =>
+      document.getElementById('district-opt-' + this.activeIndex)?.scrollIntoView({ block: 'nearest' })
+    );
+  }
+
+  // ---------- Submit ----------
 
   onSubmit(): void {
     if (this.isSubmitting) {
@@ -136,6 +228,10 @@ export class NewUser implements OnInit {
           email: '',
           password: '',
         });
+        // Clear the district search box too
+        this.districtText = '';
+        this.districtFilter = '';
+        this.districtOpen = false;
 
         Swal.fire({
           icon: 'success',
