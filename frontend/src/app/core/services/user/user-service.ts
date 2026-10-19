@@ -5,6 +5,8 @@ import { User } from '../../models/user.model';
 import { Church } from '../../models/church.model';
 import { Department } from '../../models/department.model';
 import {
+    AssignablePastor,
+    DistrictPastorAssignment,
     Paginated,
     Pastor,
     PastorFilters
@@ -118,21 +120,20 @@ export class UserService {
         );
     }
 
-    /**
-     * Bulk transfer pastors to different districts.
-     */
-    bulkTransfer(
-        transfers: {
-            user_id: number;
-            church_id: number;
-        }[]
-    ) {
-        return this.http.post<{
-            message: string;
-            transferred_count: number;
+    getDistrictPastorAssignments() {
+        return this.http.get<{
+            assignments: DistrictPastorAssignment[];
+            pastors: AssignablePastor[];
         }>(
-            `${this.apiUrl}/assistant/pastors/bulk-transfer`,
-            { transfers },
+            `${this.apiUrl}/assistant/district-pastor-assignments`,
+            { withCredentials: true }
+        );
+    }
+
+    assignPastorToDistrict(districtId: number, userId: number) {
+        return this.http.put<{ message: string }>(
+            `${this.apiUrl}/assistant/district-pastor-assignments/${districtId}`,
+            { user_id: userId },
             { withCredentials: true }
         );
     }

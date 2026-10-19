@@ -1,167 +1,308 @@
-<div class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-  <a routerLink="/assistant/view-user"
-    class="mb-2 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-slate-500 transition hover:text-[#0F4A30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40">
-    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-      <path fill-rule="evenodd" d="M12.7 4.3a1 1 0 010 1.4L8.4 10l4.3 4.3a1 1 0 01-1.4 1.4l-5-5a1 1 0 010-1.4l5-5a1 1 0 011.4 0z" clip-rule="evenodd" />
-    </svg>
-    Back
-  </a>
+<div class="min-h-screen bg-slate-100 px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
+  <main class="mx-auto max-w-5xl">
+    <section class="overflow-hidden rounded-3xl bg-white shadow-xl shadow-slate-200/70 ring-1 ring-slate-200">
+      <div class="grid lg:grid-cols-[0.85fr_1.15fr]">
 
-  <div class="mx-auto max-w-4xl overflow-hidden rounded-lg border border-slate-200 bg-white">
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-      <div class="flex items-center gap-3 border-b border-slate-200 bg-emerald-50/40 px-4 py-4 sm:px-6">
-        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0F4A30] text-white" aria-hidden="true">
-          <svg class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM4 17a6 6 0 0112 0H4z" />
-          </svg>
-        </div>
-        <div class="min-w-0">
-          <h1 class="text-lg font-semibold text-slate-900">New pastor</h1>
-          <p class="text-sm text-slate-500">Create a pastor account and assign a district.</p>
-        </div>
-      </div>
-
-      <div class="space-y-6 p-4 sm:p-6">
-        <section>
-          <h2 class="text-sm font-semibold text-slate-900">District</h2>
-          <div class="mt-3">
-            <label for="church-id" class="mb-1.5 block text-sm font-medium text-slate-700">Assigned district <span class="text-red-700">*</span></label>
-            <select id="church-id" formControlName="church_id"
-              [attr.aria-invalid]="form.controls['church_id'].invalid && form.controls['church_id'].touched"
-              class="h-10 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:bg-slate-50 disabled:text-slate-400">
-              <option value="" disabled>{{ isLoadingDistricts ? 'Loading districts...' : 'Select a district' }}</option>
-              @for (district of districts; track district.church_id) {
-              <option [value]="district.church_id">{{ district.name }}</option>
-              }
-            </select>
-            @if (form.controls['church_id'].invalid && form.controls['church_id'].touched) {
-            <p class="mt-1.5 text-xs text-red-600">Select a district.</p>
-            } @else if (districtsError) {
-            <div class="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800" role="alert">
-              <span>{{ districtsError }}</span>
-              <button type="button" (click)="loadDistricts()" class="font-medium underline hover:text-amber-900">Retry</button>
+        <!-- Side panel -->
+        <aside class="hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-10 text-white lg:flex lg:flex-col lg:justify-between">
+          <div>
+            <div class="mb-10 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-xl font-bold ring-1 ring-white/25" aria-hidden="true">
+              P
             </div>
-            } @else if (!isLoadingDistricts && districts.length === 0) {
-            <p class="mt-1.5 text-xs text-slate-500">No districts are currently available.</p>
-            }
+            <p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-indigo-100">Assistant / User management</p>
+            <h1 class="max-w-sm text-4xl font-bold leading-tight">Create a pastor account and assign a district.</h1>
+            <p class="mt-5 max-w-sm text-base leading-7 text-indigo-100">
+              Enter the pastor's personal information, district assignment, and sign-in details.
+            </p>
           </div>
-        </section>
+          <p class="text-sm text-indigo-100">Secure registration · Your information is protected</p>
+        </aside>
 
-        <section>
-          <h2 class="text-sm font-semibold text-slate-900">Personal information</h2>
-          <div class="mt-3 grid gap-x-4 gap-y-5 sm:grid-cols-6">
-            <div class="sm:col-span-3">
-              <label for="first-name" class="mb-1.5 block text-sm font-medium text-slate-700">First name <span class="text-red-700">*</span></label>
-              <input id="first-name" formControlName="first_name" type="text" autocomplete="given-name"
-                [attr.aria-invalid]="form.controls['first_name'].invalid && form.controls['first_name'].touched"
-                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20" />
-              @if (form.controls['first_name'].invalid && form.controls['first_name'].touched) {
-              <p class="mt-1.5 text-xs text-red-600">Enter a first name.</p>
-              }
-            </div>
+        <!-- Form column -->
+        <div class="p-6 sm:p-10">
+          <a routerLink="/assistant/view-user" class="mb-6 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-slate-600 transition hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-indigo-100">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M12.7 4.3a1 1 0 010 1.4L8.4 10l4.3 4.3a1 1 0 01-1.4 1.4l-5-5a1 1 0 010-1.4l5-5a1 1 0 011.4 0z" clip-rule="evenodd" /></svg>
+            Back to pastors
+          </a>
 
-            <div class="sm:col-span-3">
-              <label for="middle-name" class="mb-1.5 block text-sm font-medium text-slate-700">Middle name <span class="text-xs font-normal text-slate-400">Optional</span></label>
-              <input id="middle-name" formControlName="middle_name" type="text" autocomplete="additional-name"
-                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20" />
-            </div>
-
-            <div class="sm:col-span-4">
-                <label for="last-name" class="mb-1.5 block text-sm font-medium text-slate-700">Last name <span class="text-red-700">*</span></label>
-              <input id="last-name" formControlName="last_name" type="text" autocomplete="family-name"
-                [attr.aria-invalid]="form.controls['last_name'].invalid && form.controls['last_name'].touched"
-                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20" />
-              @if (form.controls['last_name'].invalid && form.controls['last_name'].touched) {
-              <p class="mt-1.5 text-xs text-red-600">Enter a last name.</p>
-              }
-            </div>
-
-            <div class="sm:col-span-2">
-              <label for="extension-name" class="mb-1.5 block text-sm font-medium text-slate-700">Suffix <span class="text-xs font-normal text-slate-400">Optional</span></label>
-              <input id="extension-name" formControlName="extension_name" type="text" placeholder="Jr., Sr., III"
-                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20" />
-            </div>
-
-            <div class="sm:col-span-3">
-              <label for="birthdate" class="mb-1.5 block text-sm font-medium text-slate-700">Birthdate <span class="text-red-700">*</span></label>
-              <input id="birthdate" formControlName="birthdate" type="date" autocomplete="bday"
-                [attr.aria-invalid]="form.controls['birthdate'].invalid && form.controls['birthdate'].touched"
-                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20" />
-              @if (form.controls['birthdate'].invalid && form.controls['birthdate'].touched) {
-              <p class="mt-1.5 text-xs text-red-600">Choose a birthdate.</p>
-              }
-            </div>
-
-            <div class="sm:col-span-3">
-              <label for="gender" class="mb-1.5 block text-sm font-medium text-slate-700">Gender <span class="text-red-700">*</span></label>
-              <select id="gender" formControlName="gender"
-                [attr.aria-invalid]="form.controls['gender'].invalid && form.controls['gender'].touched"
-                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20">
-                <option value="" disabled>Select gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-              @if (form.controls['gender'].invalid && form.controls['gender'].touched) {
-              <p class="mt-1.5 text-xs text-red-600">Select a gender.</p>
-              }
-            </div>
+          <div class="mb-8">
+            <p class="mb-2 text-sm font-semibold text-indigo-600 lg:hidden">ASSISTANT / USER MANAGEMENT</p>
+            <h2 class="text-3xl font-bold tracking-tight text-slate-950">Create pastor account</h2>
+            <p class="mt-2 text-slate-500">Enter the pastor's personal information, district assignment, and sign-in details.</p>
+            <p class="mt-3 text-sm text-slate-500"><span class="font-semibold text-red-600" aria-hidden="true">*</span> Required fields</p>
           </div>
-        </section>
 
-        <section>
-          <h2 class="text-sm font-semibold text-slate-900">Account</h2>
-          <p class="mt-0.5 text-xs text-slate-500">The pastor will use these details to sign in.</p>
-          <div class="mt-3 grid gap-x-4 gap-y-5 sm:grid-cols-2">
-            <div>
-              <label for="email" class="mb-1.5 block text-sm font-medium text-slate-700">Email <span class="text-red-700">*</span></label>
-              <input id="email" formControlName="email" type="email" autocomplete="email" placeholder="name@example.com"
-                [attr.aria-invalid]="form.controls['email'].invalid && form.controls['email'].touched"
-                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20" />
-              @if (form.controls['email'].invalid && form.controls['email'].touched) {
-              <p class="mt-1.5 text-xs text-red-600">Enter a valid email address.</p>
-              }
-            </div>
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="space-y-6">
 
-            <div>
-              <label for="password" class="mb-1.5 block text-sm font-medium text-slate-700">Password <span class="text-red-700">*</span></label>
-              <div class="relative">
-                <input #pw id="password" formControlName="password" [type]="pw.type" autocomplete="new-password"
-                  aria-describedby="password-hint"
-                  [attr.aria-invalid]="form.controls['password'].invalid && form.controls['password'].touched"
-                  class="h-10 w-full rounded-lg border border-slate-300 bg-white pl-3 pr-16 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20" />
-                <button type="button" (click)="pw.type = pw.type === 'password' ? 'text' : 'password'"
-                  [attr.aria-label]="pw.type === 'password' ? 'Show password' : 'Hide password'"
-                  class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40">
-                  {{ pw.type === 'password' ? 'Show' : 'Hide' }}
-                </button>
+            <!-- General error -->
+            @if(formError) {
+              <div role="alert" class="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <svg class="h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M18 10A8 8 0 112 10a8 8 0 0116 0zM9 5h2v5H9V5zm0 7h2v2H9v-2z" clip-rule="evenodd" /></svg>
+                <span>{{ formError }}</span>
+                <button type="button" (click)="onSubmit()" [disabled]="isSubmitting" class="ml-auto rounded underline text-red-700 hover:text-red-900 focus:outline-none focus:ring-4 focus:ring-red-100">Try again</button>
               </div>
-              @if (form.controls['password'].invalid && form.controls['password'].touched) {
-              <p class="mt-1.5 text-xs text-red-600">Use at least 8 characters.</p>
-              } @else {
-              <p id="password-hint" class="mt-1.5 text-xs text-slate-400">At least 8 characters.</p>
+            }
+
+            <div class="grid gap-5 sm:grid-cols-2">
+
+              <!-- First Name -->
+              <div>
+                <label for="first-name" class="mb-2 block text-sm font-medium text-slate-700">
+                  First name <span class="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="first-name" formControlName="first_name" type="text" maxlength="255" autocomplete="given-name" placeholder="Juan"
+                  (input)="clearServerError('first_name')"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-100"
+                  [attr.aria-invalid]="!!serverErrors['first_name'] || (form.controls['first_name'].invalid && form.controls['first_name'].touched)"
+                  [attr.aria-describedby]="serverErrors['first_name'] || (form.controls['first_name'].invalid && form.controls['first_name'].touched) ? 'first-name-error' : null"
+                />
+                @if(serverErrors['first_name']) {
+                  <p id="first-name-error" class="mt-1.5 text-xs text-red-600">{{ serverErrors['first_name'] }}</p>
+                } @else if(form.controls['first_name'].invalid && form.controls['first_name'].touched) {
+                  <p id="first-name-error" class="mt-1.5 text-xs text-red-600">Enter a first name.</p>
+                }
+              </div>
+
+              <!-- Middle Name -->
+              <div>
+                <label for="middle-name" class="mb-2 block text-sm font-medium text-slate-700">
+                  Middle name <span class="font-normal text-slate-500">(optional)</span>
+                </label>
+                <input
+                  id="middle-name" formControlName="middle_name" type="text" autocomplete="additional-name" placeholder="Santos" maxlength="255"
+                  (input)="clearServerError('middle_name')"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                />
+              </div>
+
+              <!-- Last Name -->
+              <div>
+                <label for="last-name" class="mb-2 block text-sm font-medium text-slate-700">
+                  Last name <span class="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="last-name" formControlName="last_name" type="text" maxlength="255" autocomplete="family-name" placeholder="Dela Cruz"
+                  (input)="clearServerError('last_name')"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-100"
+                  [attr.aria-invalid]="!!serverErrors['last_name'] || (form.controls['last_name'].invalid && form.controls['last_name'].touched)"
+                  [attr.aria-describedby]="serverErrors['last_name'] || (form.controls['last_name'].invalid && form.controls['last_name'].touched) ? 'last-name-error' : null"
+                />
+                @if(serverErrors['last_name']) {
+                  <p id="last-name-error" class="mt-1.5 text-xs text-red-600">{{ serverErrors['last_name'] }}</p>
+                } @else if(form.controls['last_name'].invalid && form.controls['last_name'].touched) {
+                  <p id="last-name-error" class="mt-1.5 text-xs text-red-600">Enter a last name.</p>
+                }
+              </div>
+
+              <!-- Suffix -->
+              <div>
+                <label for="extension-name" class="mb-2 block text-sm font-medium text-slate-700">
+                  Suffix <span class="font-normal text-slate-500">(optional)</span>
+                </label>
+                <select
+                  id="extension-name" formControlName="extension_name" (change)="clearServerError('extension_name')"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                >
+                  <option value="">None</option>
+                  <option value="Jr.">Jr.</option>
+                  <option value="Sr.">Sr.</option>
+                  <option value="II">II</option>
+                  <option value="III">III</option>
+                  <option value="IV">IV</option>
+                </select>
+              </div>
+
+              <!-- Birthdate -->
+              <div>
+                <label for="birthdate" class="mb-2 block text-sm font-medium text-slate-700">
+                  Birthdate <span class="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="birthdate" formControlName="birthdate" type="date" autocomplete="bday" [max]="maxBirthdate"
+                  (change)="clearServerError('birthdate')"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-100"
+                  [attr.aria-invalid]="!!serverErrors['birthdate'] || (form.controls['birthdate'].invalid && form.controls['birthdate'].touched)"
+                  [attr.aria-describedby]="serverErrors['birthdate'] || (form.controls['birthdate'].invalid && form.controls['birthdate'].touched) ? 'birthdate-error' : null"
+                />
+                @if(serverErrors['birthdate']) {
+                  <p id="birthdate-error" class="mt-1.5 text-xs text-red-600">{{ serverErrors['birthdate'] }}</p>
+                } @else if(form.controls['birthdate'].touched && form.controls['birthdate'].hasError('required')) {
+                  <p id="birthdate-error" class="mt-1.5 text-xs text-red-600">Choose a birthdate.</p>
+                } @else if(form.controls['birthdate'].touched && form.controls['birthdate'].hasError('beforeToday')) {
+                  <p id="birthdate-error" class="mt-1.5 text-xs text-red-600">Birthdate must be before today.</p>
+                }
+              </div>
+
+              <!-- Gender -->
+              <div role="radiogroup" aria-labelledby="gender-label"
+                [attr.aria-invalid]="!!serverErrors['gender'] || (form.controls['gender'].invalid && form.controls['gender'].touched)"
+                [attr.aria-describedby]="serverErrors['gender'] || (form.controls['gender'].invalid && form.controls['gender'].touched) ? 'gender-error' : null">
+                <span id="gender-label" class="mb-2 block text-sm font-medium text-slate-700">
+                  Gender <span class="text-red-500" aria-hidden="true">*</span>
+                </span>
+                <div class="grid grid-cols-3 gap-2">
+                  <label class="flex cursor-pointer items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-indigo-100">
+                    <input type="radio" formControlName="gender" value="male" (change)="clearServerError('gender')" class="sr-only" />
+                    Male
+                  </label>
+                  <label class="flex cursor-pointer items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-indigo-100">
+                    <input type="radio" formControlName="gender" value="female" (change)="clearServerError('gender')" class="sr-only" />
+                    Female
+                  </label>
+                  <label class="flex cursor-pointer items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-indigo-100">
+                    <input type="radio" formControlName="gender" value="other" (change)="clearServerError('gender')" class="sr-only" />
+                    Other
+                  </label>
+                </div>
+                @if(serverErrors['gender']) {
+                  <p id="gender-error" class="mt-1.5 text-xs text-red-600">{{ serverErrors['gender'] }}</p>
+                } @else if(form.controls['gender'].invalid && form.controls['gender'].touched) {
+                  <p id="gender-error" class="mt-1.5 text-xs text-red-600">Select one option.</p>
+                }
+              </div>
+
+              <!-- District assignment -->
+              <section class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5 sm:col-span-2" aria-labelledby="district-heading">
+                <div class="mb-4">
+                  <h3 id="district-heading" class="text-base font-semibold text-indigo-950">District assignment</h3>
+                  <p class="mt-1 text-sm text-slate-600">Select where this pastor will serve initially.</p>
+                </div>
+
+                <div class="rounded-xl border border-indigo-200 bg-indigo-100/70 px-4 py-3 text-xs leading-5 text-indigo-900">
+                  Each active district can have one assigned pastor. Review the selection carefully before creating the account.
+                </div>
+
+                <div class="mt-4">
+                  <label for="church-id" class="mb-2 block text-sm font-medium text-slate-700">
+                    District <span class="text-red-500" aria-hidden="true">*</span>
+                  </label>
+                  <select
+                    id="church-id" formControlName="church_id"
+                    [disabled]="isLoadingDistricts || districts.length === 0"
+                    (change)="clearServerError('church_id')"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                    [attr.aria-invalid]="!!serverErrors['church_id'] || (form.controls['church_id'].invalid && form.controls['church_id'].touched)"
+                    [attr.aria-describedby]="serverErrors['church_id'] ? 'church-id-error' : (form.controls['church_id'].invalid && form.controls['church_id'].touched ? 'church-id-error' : null)"
+                  >
+                    <option value="" disabled>{{ isLoadingDistricts ? 'Loading districts…' : 'Select a district' }}</option>
+                    @for(district of districts; track district.church_id) {
+                      <option [value]="district.church_id">{{ district.name }}</option>
+                    }
+                  </select>
+                  @if(serverErrors['church_id']) {
+                    <p id="church-id-error" class="mt-1.5 text-xs text-red-600">{{ serverErrors['church_id'] }}</p>
+                  } @else if(form.controls['church_id'].invalid && form.controls['church_id'].touched) {
+                    <p id="church-id-error" class="mt-1.5 text-xs text-red-600">Select a district.</p>
+                  } @else if(districtsError) {
+                    <div role="alert" class="mt-2 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                      <span>{{ districtsError }}</span>
+                      <button type="button" (click)="loadDistricts()" class="shrink-0 rounded font-medium underline hover:text-amber-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">Retry</button>
+                    </div>
+                  } @else if(!isLoadingDistricts && districts.length === 0) {
+                    <p class="mt-1.5 text-xs text-slate-500">No districts are available. Add a district before creating a pastor.</p>
+                  }
+                </div>
+              </section>
+
+              <!-- Email -->
+              <div>
+                <label for="email" class="mb-2 block text-sm font-medium text-slate-700">
+                  Email <span class="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="email" formControlName="email" type="email" maxlength="255" inputmode="email" autocomplete="email" placeholder="name@example.com"
+                  (input)="clearServerError('email')"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-100"
+                  [attr.aria-invalid]="!!serverErrors['email'] || (form.controls['email'].invalid && form.controls['email'].touched)"
+                  [attr.aria-describedby]="serverErrors['email'] || (form.controls['email'].invalid && form.controls['email'].touched) ? 'email-error' : null"
+                />
+                @if(serverErrors['email']) {
+                  <p id="email-error" class="mt-1.5 text-xs text-red-600">{{ serverErrors['email'] }}</p>
+                } @else if(form.controls['email'].invalid && form.controls['email'].touched) {
+                  @if (form.controls['email'].hasError('required')) {
+                    <p id="email-error" class="mt-1.5 text-xs text-red-600">Enter an email address.</p>
+                  } @else {
+                    <p id="email-error" class="mt-1.5 text-xs text-red-600">Use the format name&#64;example.com.</p>
+                  }
+                }
+              </div>
+
+              <!-- Password -->
+              <div>
+                <label for="password" class="mb-2 block text-sm font-medium text-slate-700">
+                  Password <span class="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <div class="relative">
+                  <input
+                    #pw id="password" formControlName="password"
+                    [type]="pw.type" autocomplete="new-password" placeholder="At least 8 characters"
+                    (input)="clearServerError('password')"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-16 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-100"
+                    [attr.aria-invalid]="!!serverErrors['password'] || (form.controls['password'].invalid && form.controls['password'].touched)"
+                    [attr.aria-describedby]="serverErrors['password'] ? 'password-rule password-error' : 'password-rule'"
+                  />
+                  <button
+                    type="button"
+                    (click)="pw.type = pw.type === 'password' ? 'text' : 'password'"
+                    [attr.aria-label]="pw.type === 'password' ? 'Show password' : 'Hide password'"
+                    class="absolute inset-y-0 right-0 rounded-r-xl px-4 text-sm text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-indigo-100"
+                  >
+                    {{ pw.type === 'password' ? 'Show' : 'Hide' }}
+                  </button>
+                </div>
+                @if(serverErrors['password']) {
+                  <p id="password-error" class="mt-1.5 text-xs text-red-600">{{ serverErrors['password'] }}</p>
+                } @else if(form.controls['password'].invalid && form.controls['password'].touched) {
+                  <p id="password-error" class="mt-1.5 text-xs text-red-600">Use at least 8 characters.</p>
+                }
+                <p id="password-rule" class="mt-1.5 flex items-center gap-1.5 text-xs" [class.text-slate-500]="(form.controls['password'].value?.length ?? 0) < 8" [class.text-emerald-700]="(form.controls['password'].value?.length ?? 0) >= 8">
+                  @if((form.controls['password'].value?.length ?? 0) >= 8) {
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"/></svg>
+                    <span class="sr-only">Password requirement met:</span>
+                  } @else {
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/></svg>
+                    <span class="sr-only">Password requirement not met yet:</span>
+                  }
+                  At least 8 characters
+                </p>
+              </div>
+
+            </div>
+
+            <!-- Status message -->
+            <div role="status" class="text-sm">
+              @if(form.invalid && form.touched) {
+                <span class="rounded-xl bg-red-50 px-4 py-2.5 text-red-700 inline-block">Some required fields need attention.</span>
+              } @else if(form.valid) {
+                <span class="rounded-xl bg-emerald-50 px-4 py-2.5 font-medium text-emerald-700 inline-block">Ready to create.</span>
               }
             </div>
-          </div>
-        </section>
-      </div>
 
-      <footer class="flex flex-col-reverse items-stretch justify-end gap-2 border-t border-slate-200 bg-slate-50/80 px-4 py-4 sm:flex-row sm:items-center sm:px-6">
-        <a routerLink="/assistant/view-user"
-          class="inline-flex !no-underline h-9 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2">
-          Cancel
-        </a>
-        <button type="submit" [disabled]="isSubmitting || isLoadingDistricts || districts.length === 0"
-          class="inline-flex h-9 items-center gap-2 !rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
-          @if (isSubmitting) {
-          <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-          </svg>
-          }
-          {{ isSubmitting ? 'Creating...' : 'Create pastor' }}
-        </button>
-      </footer>
-    </form>
-  </div>
+            <!-- Actions -->
+            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <a routerLink="/assistant/view-user" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200">
+                Cancel
+              </a>
+
+              <button
+                type="submit"
+                [disabled]="isSubmitting || isLoadingDistricts || districts.length === 0"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 sm:min-w-44"
+              >
+                @if(isSubmitting) {
+                  <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  </svg>
+                }
+                {{ isSubmitting ? 'Creating…' : 'Create pastor' }}
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>

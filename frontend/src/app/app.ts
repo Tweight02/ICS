@@ -57,7 +57,9 @@ export class App implements OnInit{
 
   get showSidebar(): boolean {
 
-    return !!this.currentUser() && !this.router.url.startsWith('/login');
+    return !!this.currentUser()
+      && !this.router.url.startsWith('/login')
+      && !this.router.url.startsWith('/assistant/new-user');
 
   }
 

@@ -40,3 +40,15 @@ export interface PastorFilters {
     page?: number;
     per_page?: number;
 }
+
+export interface DistrictPastorAssignment {
+    church_id: number;
+    district_name: string;
+    pastor_user_id: number | null;
+    pastor_name: string | null;
+}
+
+export interface AssignablePastor {
+    user_id: number;
+    full_name: string;
+}
