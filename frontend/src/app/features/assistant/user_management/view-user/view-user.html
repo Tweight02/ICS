@@ -1,110 +1,85 @@
-
-<div class="mx-auto max-w-7xl px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
+<!--
+  Spacing system (Tailwind scale, 4px base):
+  - gap-2 / mr-2  → inside a control (icon + label, spinner + text)
+  - gap-3         → between sibling controls (buttons, icon + title)
+  - gap-4 / p-4   → between sections, grid gaps, card padding, table cell padding
+  - py-6 / py-8   → page top/bottom, empty & loading states
+  - Controls are all h-10.
+-->
+<div class="mx-auto max-w-7xl space-y-4 px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
 
   <!-- HEADER -->
   <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <div class="flex items-center gap-2">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-[#0F4A30]">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              stroke-width="1.8"
-              d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m6-10a4 4 0 100-8 4 4 0 000 8zm10 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-          </svg>
-        </div>
-
-        <div>
-          <h1 class="text-xl font-bold tracking-tight text-slate-900">
-            Manage Pastors
-          </h1>
-        </div>
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#0F4A30]">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+            d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m6-10a4 4 0 100-8 4 4 0 000 8zm10 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+        </svg>
       </div>
+      <h1 class="text-xl font-bold tracking-tight text-slate-900">Manage Pastors</h1>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center gap-3">
       <a
         routerLink="/assistant/assign-user"
-        class="inline-flex !no-underline h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-[#0F4A30] focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+        class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 !no-underline transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-[#0F4A30] focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
       >
         District Pastor Assignments
       </a>
-        <a
-          routerLink="/assistant/new-user"
-          class="inline-flex !no-underline h-10 items-center justify-center gap-2 rounded-lg bg-[#0F4A30] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0B3925] focus:outline-none focus:ring-2 focus:ring-[#0F4A30]/30 focus:ring-offset-2"
-        >
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              stroke-width="2" d="M12 5v14m7-7H5" />
-          </svg>
-          Add New User
-        </a>
+      <a
+        routerLink="/assistant/new-user"
+        class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#0F4A30] px-4 text-sm font-semibold text-white shadow-sm !no-underline transition hover:bg-[#0B3925] focus:outline-none focus:ring-2 focus:ring-[#0F4A30]/30 focus:ring-offset-2"
+      >
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m7-7H5" />
+        </svg>
+        Add New User
+      </a>
     </div>
   </div>
 
   <!-- FILTERS -->
-  <div class="mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+  <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
       <!-- Search -->
       <div>
-        <label
-          for="pastor-search"
-          class="block text-xs font-medium text-slate-700"
-        >
-          Search
-        </label>
-
+        <label for="pastor-search" class="mb-1 block text-xs font-medium text-slate-700">Search</label>
         <input
           id="pastor-search"
           type="text"
           [value]="search()"
           (input)="onSearch($any($event.target).value)"
           placeholder="Search pastor name or email..."
-          class="mt-1 block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]"
+          class="block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]"
         />
       </div>
 
       <!-- District Filter -->
       <div>
-        <label
-          for="district-filter"
-          class="block text-xs font-medium text-slate-700"
-        >
-          District
-        </label>
-
+        <label for="district-filter" class="mb-1 block text-xs font-medium text-slate-700">District</label>
         <select
           id="district-filter"
           [value]="churchId()"
           (change)="onDistrictChange($any($event.target).value)"
-          class="mt-1 block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]"
+          class="block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]"
         >
           <option value="">All districts</option>
-
           @for (district of districts(); track district.church_id) {
-            <option [value]="district.church_id">
-              {{ district.name }}
-            </option>
+            <option [value]="district.church_id">{{ district.name }}</option>
           }
         </select>
       </div>
 
       <!-- Status Filter -->
       <div>
-        <label
-          for="status-filter"
-          class="block text-xs font-medium text-slate-700"
-        >
-          Status
-        </label>
-
+        <label for="status-filter" class="mb-1 block text-xs font-medium text-slate-700">Status</label>
         <select
           id="status-filter"
           [value]="status()"
           (change)="onStatusChange($any($event.target).value)"
-          class="mt-1 block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]"
+          class="block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]"
         >
           <option value="">All statuses</option>
           <option value="active">Active</option>
@@ -116,10 +91,7 @@
 
   <!-- ERROR -->
   @if (error()) {
-    <div
-      role="alert"
-      class="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
-    >
+    <div role="alert" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
       {{ error() }}
     </div>
   }
@@ -129,137 +101,76 @@
     <div class="overflow-x-auto">
       <table class="w-full divide-y divide-slate-200">
 
-        <!-- TABLE HEADER -->
         <thead class="bg-slate-50">
           <tr>
-            <th class="whitespace-nowrap px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Pastor
-            </th>
-
-            <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              District
-            </th>
-
-            <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Email
-            </th>
-
-            <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Birthdate
-            </th>
-
-            <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Status
-            </th>
+            <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pastor</th>
+            <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">District</th>
+            <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Email</th>
+            <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Birthdate</th>
+            <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Status</th>
           </tr>
         </thead>
 
-        <!-- TABLE BODY -->
+        <!-- Loading / empty / rows -->
         <tbody class="divide-y divide-slate-100">
-
-          <!-- LOADING -->
           @if (loading()) {
             <tr>
-              <td
-                colspan="5"
-                class="px-3 py-6 text-center"
-              >
+              <td colspan="5" class="px-4 py-8 text-center">
                 <div class="flex items-center justify-center gap-2 text-xs text-slate-500">
-                  <svg
-                    class="h-4 w-4 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    />
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    />
+                  <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                   </svg>
                   Loading pastors...
                 </div>
               </td>
             </tr>
-          }
-
-          <!-- EMPTY STATE -->
-          @else if (pastors().length === 0) {
+          } @else if (pastors().length === 0) {
             <tr>
-              <td
-                colspan="5"
-                class="px-3 py-6 text-center text-xs text-slate-500"
-              >
-                No pastors found.
-              </td>
+              <td colspan="5" class="px-4 py-8 text-center text-xs text-slate-500">No pastors found.</td>
             </tr>
-          }
-
-          <!-- PASTOR ROWS -->
-          @else {
+          } @else {
             @for (pastor of pastors(); track pastor.user_id) {
               <tr
-                class="transition"
-                class="cursor-pointer transition hover:bg-slate-50"
+                class="cursor-pointer transition-colors hover:bg-emerald-100 focus:outline-none focus-visible:bg-emerald-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F4A30]/40"
                 tabindex="0"
                 [attr.aria-label]="'View pastor ' + fullName(pastor)"
                 (click)="viewPastor(pastor)"
                 (keydown.enter)="viewPastor(pastor)"
                 (keydown.space)="onRowSpace($any($event), pastor)"
               >
-
                 <!-- PASTOR -->
-                <td class="px-3 py-2 align-middle">
-                  <div class="text-xs font-medium text-slate-900">
-                    {{ fullName(pastor) }}
-                  </div>
-                  <div class="text-[10px] text-slate-500">
-                    Pastor
-                  </div>
+                <td class="px-4 py-3 align-middle">
+                  <div class="text-xs font-medium text-slate-900">{{ fullName(pastor) }}</div>
                 </td>
 
                 <!-- DISTRICT -->
-                <td class="px-3 py-2 align-middle">
-                  <div class="text-xs font-medium text-slate-800">
-                    {{ pastor.church?.name ?? 'Unassigned' }}
-                  </div>
+                <td class="px-4 py-3 align-middle">
+                  <span class="text-xs font-medium text-slate-800">{{ pastor.church?.name ?? 'Unassigned' }}</span>
                 </td>
 
                 <!-- EMAIL -->
-                <td class="px-3 py-2 align-middle">
-                  <span class="text-xs text-slate-600">
-                    {{ pastor.email }}
-                  </span>
+                <td class="px-4 py-3 align-middle">
+                  <span class="text-xs text-slate-600">{{ pastor.email }}</span>
                 </td>
 
                 <!-- BIRTHDATE -->
-                <td class="px-3 py-2 align-middle">
+                <td class="px-4 py-3 align-middle">
                   <span class="text-xs text-slate-600">
-                    {{ pastor.birthdate || '—' }}
+                    {{ pastor.birthdate ? (pastor.birthdate | date:'MMM d, y':'UTC') : '—' }}
                   </span>
                 </td>
 
-                <!-- ACTIVE -->
-                <td class="px-3 py-2 align-middle">
+                <!-- STATUS -->
+                <td class="px-4 py-3 align-middle">
                   <span
-                    class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                    [class.bg-emerald-50]="pastor.status === 'active' || !pastor.status"
+                    class="inline-flex px-2 py-0.5 text-[10px] font-semibold"
                     [class.text-emerald-700]="pastor.status === 'active' || !pastor.status"
-                    [class.bg-slate-100]="pastor.status === 'inactive'"
                     [class.text-slate-600]="pastor.status === 'inactive'"
                   >
                     {{ pastor.status === 'inactive' ? 'Inactive' : 'Active' }}
                   </span>
                 </td>
-
               </tr>
             }
           }
@@ -267,9 +178,9 @@
       </table>
     </div>
 
+    @if (total() > perPage) {
     <!-- PAGINATION -->
-    <div class="flex flex-col gap-2 border-t border-slate-200 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-
+    <div class="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-xs text-slate-500">
         Showing
         <span class="font-medium text-slate-700">{{ from() }}</span>
@@ -280,29 +191,28 @@
         pastors
       </p>
 
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-3">
         <button
           type="button"
           (click)="prevPage()"
           [disabled]="page() <= 1 || loading()"
-          class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
         </button>
 
-        <span class="whitespace-nowrap px-1.5 text-xs text-slate-500">
-          Page {{ page() }} of {{ lastPage() }}
-        </span>
+        <span class="whitespace-nowrap text-xs text-slate-500">Page {{ page() }} of {{ lastPage() }}</span>
 
         <button
           type="button"
           (click)="nextPage()"
           [disabled]="page() >= lastPage() || loading()"
-          class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
         </button>
       </div>
     </div>
+    }
   </div>
 </div>
