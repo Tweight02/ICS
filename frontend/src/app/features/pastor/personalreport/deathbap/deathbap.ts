@@ -175,6 +175,28 @@ export class DeathbapComponent implements OnInit {
     this.selectedBaptism = null;
   }
 
+  // Navigate to the edit page for the selected baptism.
+  editSelectedBaptism(): void {
+
+    if (this.isReadOnly || !this.selectedBaptism) {
+      return;
+    }
+
+    const baptismId =
+      Number(this.selectedBaptism.baptism_id);
+
+    if (!Number.isInteger(baptismId) || baptismId <= 0) {
+      return;
+    }
+
+    this.closeBaptismModal();
+
+    this.router.navigate([
+      '/pastor/editbap',
+      baptismId
+    ]);
+  }
+
   // =================================================
   // DEATH DETAILS MODAL
   // =================================================
@@ -298,24 +320,24 @@ export class DeathbapComponent implements OnInit {
    */
   get displayedBaptisms(): Baptism[] {
 
-  const records = this.churchId
-    ? this.baptisms.filter(
-        record =>
-          Number(record.church_id) === Number(this.churchId)
-      )
-    : this.baptisms;
+    const records = this.churchId
+      ? this.baptisms.filter(
+          record =>
+            Number(record.church_id) === Number(this.churchId)
+        )
+      : this.baptisms;
 
-  return records
-    .filter(record => {
-      return (
-        this.normalizeQuarter(record.quarter) === this.selectedQuarter &&
-        this.getYearFromDate(record.date_of_baptism) === this.selectedYear
+    return records
+      .filter(record => {
+        return (
+          this.normalizeQuarter(record.quarter) === this.selectedQuarter &&
+          this.getYearFromDate(record.date_of_baptism) === this.selectedYear
+        );
+      })
+      .sort(
+        (a, b) => Number(a.baptism_id) - Number(b.baptism_id)
       );
-    })
-    .sort(
-      (a, b) => Number(a.baptism_id) - Number(b.baptism_id)
-    );
-}
+  }
 
   /**
    * Filter death records by church, quarter and year.
