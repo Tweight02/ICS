@@ -13,7 +13,6 @@ import { RouterLink } from '@angular/router';
 @Component({
   imports: [ReactiveFormsModule, RouterLink],
   selector: 'app-new-user',
-  styleUrl: './new-user.css',
   templateUrl: './new-user.html',
 })
 export class NewUser implements OnInit {
