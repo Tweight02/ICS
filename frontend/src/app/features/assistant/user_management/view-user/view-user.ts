@@ -1,4 +1,5 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
@@ -10,7 +11,7 @@ import { Church } from '../../../../core/models/church.model';
 @Component({
   selector: 'app-view-user',
   standalone: true,
-  imports: [RouterLink],
+  imports: [DatePipe, RouterLink],
   templateUrl: './view-user.html',
   styleUrl: './view-user.css',
 })

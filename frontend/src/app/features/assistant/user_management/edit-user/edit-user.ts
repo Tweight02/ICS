@@ -1,6 +1,5 @@
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -12,9 +11,8 @@ import { Department } from '../../../../core/models/department.model';
 import Swal from 'sweetalert2';
 
 @Component({
-  imports: [ReactiveFormsModule, DatePipe, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink],
   selector: 'app-edit-user',
-  styleUrl: './edit-user.css',
   templateUrl: './edit-user.html',
 })
 export class EditUser implements OnInit {
@@ -299,12 +297,6 @@ async onRemove(): Promise<void> {
         });
       },
     });
-  }
-
-  initials(p: Pastor): string {
-    return (
-      (p.first_name?.[0] ?? '') + (p.last_name?.[0] ?? '')
-    ).toUpperCase();
   }
 
   age(birthdate: string): number {
