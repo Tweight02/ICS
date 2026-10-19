@@ -132,12 +132,12 @@
         <!-- TABLE HEADER -->
         <thead class="bg-slate-50">
           <tr>
-            <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              District
-            </th>
-
             <th class="whitespace-nowrap px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Pastor
+            </th>
+
+            <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              District
             </th>
 
             <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
@@ -216,32 +216,21 @@
                 (keydown.space)="onRowSpace($any($event), pastor)"
               >
 
+                <!-- PASTOR -->
+                <td class="px-3 py-2 align-middle">
+                  <div class="text-xs font-medium text-slate-900">
+                    {{ fullName(pastor) }}
+                  </div>
+                  <div class="text-[10px] text-slate-500">
+                    Pastor
+                  </div>
+                </td>
+
                 <!-- DISTRICT -->
                 <td class="px-3 py-2 align-middle">
                   <div class="text-xs font-medium text-slate-800">
                     {{ pastor.church?.name ?? 'Unassigned' }}
                   </div>
-                </td>
-
-                <!-- PASTOR -->
-                <td class="px-3 py-2 align-middle">
-                  <div class="flex items-center gap-2">
-                    <div
-                      class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0F4A30] text-[10px] font-semibold text-white"
-                    >
-                      {{ initials(pastor) }}
-                    </div>
-
-                    <div class="min-w-0">
-                      <div class="text-xs font-medium text-slate-900">
-                        {{ fullName(pastor) }}
-                      </div>
-                      <div class="text-[10px] text-slate-500">
-                        Pastor
-                      </div>
-                    </div>
-                  </div>
-
                 </td>
 
                 <!-- EMAIL -->
