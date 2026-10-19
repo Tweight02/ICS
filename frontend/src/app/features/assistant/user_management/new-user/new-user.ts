@@ -26,6 +26,15 @@ export class NewUser implements OnInit {
   isSubmitting = false;
   isLoadingDistricts = false;
   districtsError = '';
+  formError = '';
+  serverErrors: Record<string, string> = {};
+
+  private readonly currentDate = new Date();
+  readonly maxBirthdate = [
+    this.currentDate.getFullYear(),
+    String(this.currentDate.getMonth() + 1).padStart(2, '0'),
+    String(this.currentDate.getDate()).padStart(2, '0'),
+  ].join('-');
 
   ngOnInit(): void {
     this.loadDistricts();
@@ -49,18 +58,23 @@ export class NewUser implements OnInit {
   }
 
   form = new FormGroup({
-    first_name: new FormControl('', Validators.required),
-    middle_name: new FormControl(''),
-    last_name: new FormControl('', Validators.required),
-    extension_name: new FormControl(''),
-    birthdate: new FormControl('', Validators.required),
+    first_name: new FormControl('', [Validators.required, Validators.maxLength(255)]),
+    middle_name: new FormControl('', Validators.maxLength(255)),
+    last_name: new FormControl('', [Validators.required, Validators.maxLength(255)]),
+    extension_name: new FormControl('', Validators.maxLength(50)),
+    birthdate: new FormControl('', [
+      Validators.required,
+      (control) => control.value && control.value >= this.maxBirthdate
+        ? { beforeToday: true }
+        : null,
+    ]),
     gender: new FormControl('', Validators.required),
     department_id: new FormControl(16, {
       nonNullable: true,
       validators: [Validators.required],
     }),
     church_id: new FormControl('', Validators.required),
-    email: new FormControl('', [Validators.required, Validators.email]),
+    email: new FormControl('', [Validators.required, Validators.email, Validators.maxLength(255)]),
     password: new FormControl('', [Validators.required, Validators.minLength(8)]),
   });
 
@@ -74,6 +88,8 @@ export class NewUser implements OnInit {
       return;
     }
 
+    this.formError = '';
+    this.serverErrors = {};
     const churchId = this.form.controls.church_id.value!;
     this.isSubmitting = true;
 
@@ -84,7 +100,9 @@ export class NewUser implements OnInit {
           const name = res.pastor
             ? `${res.pastor.first_name} ${res.pastor.last_name}`
             : null;
-          this.showPastorExistsAlert(churchId, name);
+          this.serverErrors['church_id'] = name
+            ? `${name} is already assigned to this district.`
+            : 'This district already has an assigned pastor.';
           return;
         }
 
@@ -93,12 +111,7 @@ export class NewUser implements OnInit {
       error: (error: unknown) => {
         this.isSubmitting = false;
         console.error('Failed to check district pastor:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Could not verify district',
-          text: 'Unable to check whether this district already has a pastor. Please try again.',
-          confirmButtonColor: '#166534',
-        });
+        this.formError = 'Unable to verify the selected district. Check your connection and try again.';
       },
     });
   }
@@ -135,46 +148,18 @@ export class NewUser implements OnInit {
       error: (error) => {
         this.isSubmitting = false;
         console.error('Failed to create user:', error);
-
-        // Safety net: backend rejected it because the district already has a pastor
-        if (error.status === 409 || error.status === 422) {
-          const message =
-            error.error?.errors?.church_id?.[0] ??
-            error.error?.message ??
-            'Please check the form and try again.';
-          Swal.fire({
-            icon: 'warning',
-            title: 'Unable to create user',
-            text: message,
-            confirmButtonColor: '#166534',
-          });
-          return;
-        }
-
-        Swal.fire({
-          icon: 'error',
-          title: 'Failed to create user',
-          text: 'An unexpected error occurred.',
-          confirmButtonColor: '#166534',
-        });
+        const errors = error.error?.errors as Record<string, string[]> | undefined;
+        this.serverErrors = errors
+          ? Object.fromEntries(Object.entries(errors).map(([field, messages]) => [field, messages[0]]))
+          : {};
+        this.formError = errors
+          ? ''
+          : error.error?.message ?? 'The pastor account could not be created. Please try again.';
       },
     });
   }
 
-  private showPastorExistsAlert(churchId: string, pastorName?: string | null): void {
-    const district = this.districts.find(
-      (d) => String(d.church_id) === String(churchId)
-    );
-
-    Swal.fire({
-      icon: 'warning',
-      title: 'District already has a pastor',
-      html: `
-        <b>${district?.name ?? 'This district'}</b> already has an assigned pastor: <br>${
-          pastorName ? `<b>${pastorName}</b>` : ''
-        }.<br>Please select a different district.`,
-      confirmButtonText: 'OK',
-      confirmButtonColor: '#166534',
-    });
+  clearServerError(field: string): void {
+    delete this.serverErrors[field];
   }
 }

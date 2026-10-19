@@ -134,10 +134,17 @@ Route::prefix('assistant')->group(function () {
         [UserController::class, 'deactivate_pastor']
     );
 
-    Route::post('/pastors/bulk-transfer', [
-        UserController::class,
-        'bulk_transfer',
-    ]);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/district-pastor-assignments', [
+            UserController::class,
+            'districtPastorAssignments',
+        ]);
+
+        Route::put('/district-pastor-assignments/{districtId}', [
+            UserController::class,
+            'assignPastorToDistrict',
+        ])->whereNumber('districtId');
+    });
 });
 
 /*
