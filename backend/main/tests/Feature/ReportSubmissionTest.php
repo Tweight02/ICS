@@ -70,10 +70,85 @@ function createDistrictPastor(int $churchId, int $departmentId): User
     ]);
 }
 
+function createRepresentative(int $churchId, int $departmentId): User
+{
+    return User::query()->create([
+        'department_id' => $departmentId,
+        'church_id' => $churchId,
+        'first_name' => 'Church',
+        'middle_name' => '',
+        'last_name' => 'Representative',
+        'birthdate' => '1980-01-01',
+        'gender' => 'other',
+        'role' => 'representative',
+        'email' => 'representative-comments@example.com',
+        'password' => Hash::make('password'),
+    ]);
+}
+
+test('representative can reply to an existing unapproved report conversation', function () {
+    $fixture = reportSubmissionFixture();
+    $pastor = createDistrictPastor(
+        $fixture['churchId'],
+        $fixture['departmentId']
+    );
+    $representative = createRepresentative(
+        $fixture['churchId'],
+        $fixture['departmentId']
+    );
+
+    $this->actingAs($pastor, 'sanctum')
+        ->postJson('/api/comments', [
+            'quarter_id' => $fixture['quarterId'],
+            'church_id' => $fixture['churchId'],
+            'department_id' => $fixture['departmentId'],
+            'details' => 'Please finish the remaining report items.',
+        ])
+        ->assertCreated();
+
+    $this->actingAs($representative, 'sanctum')
+        ->postJson('/api/comments', [
+            'quarter_id' => $fixture['quarterId'],
+            'church_id' => $fixture['churchId'],
+            'department_id' => $fixture['departmentId'],
+            'details' => 'I will complete the remaining items.',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.details', 'I will complete the remaining items.')
+        ->assertJsonPath('data.commenter_role', 'representative');
+
+    $this->assertDatabaseHas('comments', [
+        'quarter_id' => $fixture['quarterId'],
+        'commented_by' => $representative->user_id,
+        'details' => 'I will complete the remaining items.',
+    ]);
+});
+
+test('representative cannot start a report conversation without a previous comment', function () {
+    $fixture = reportSubmissionFixture();
+    $representative = createRepresentative(
+        $fixture['churchId'],
+        $fixture['departmentId']
+    );
+
+    $this->actingAs($representative, 'sanctum')
+        ->postJson('/api/comments', [
+            'quarter_id' => $fixture['quarterId'],
+            'church_id' => $fixture['churchId'],
+            'department_id' => $fixture['departmentId'],
+            'details' => 'Starting a new conversation.',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'You can only reply to an existing conversation.');
+});
+
 test('submitting report values stores blank entries as zero and marks the quarter submitted', function () {
     $fixture = reportSubmissionFixture();
 
-    $response = $this->postJson(
+    $response = $this->actingAs(
+        createDistrictPastor($fixture['churchId'], $fixture['departmentId']),
+        'sanctum'
+    )->postJson(
         "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/save",
         [
             'submitted' => true,
@@ -114,7 +189,10 @@ test('submitting report values stores blank entries as zero and marks the quarte
 test('submitting a completely blank report stores every entry as zero', function () {
     $fixture = reportSubmissionFixture();
 
-    $this->postJson(
+    $this->actingAs(
+        createDistrictPastor($fixture['churchId'], $fixture['departmentId']),
+        'sanctum'
+    )->postJson(
         "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/save",
         [
             'submitted' => true,
@@ -169,7 +247,10 @@ test('approved report values cannot be changed', function () {
         'value' => 12,
     ]);
 
-    $this->postJson(
+    $this->actingAs(
+        createDistrictPastor($fixture['churchId'], $fixture['departmentId']),
+        'sanctum'
+    )->postJson(
         "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/save",
         [
             'items' => [[
@@ -195,7 +276,10 @@ test('department monitoring returns data completion before approval', function (
         'value' => 12,
     ]);
 
-    $this->getJson(
+    $this->actingAs(
+        createDistrictPastor($fixture['churchId'], $fixture['departmentId']),
+        'sanctum'
+    )->getJson(
         "/api/churches/{$fixture['churchId']}/departments"
     )->assertOk()
         ->assertJsonPath('0.q1_approved', false)

@@ -163,7 +163,13 @@ export class ReportPrograms implements OnInit {
   // Reports the representative does not handle
   isRepresentativeReport(department: Department): boolean {
     const name = String(department.department_name || '').trim().toLowerCase();
-    const excludedReports = ['baptism', 'death'];
+    const excludedReports = [
+      'baptism',
+      'death',
+      'ministerial',
+      'evangelism',
+      'adventist'
+    ];
 
     return !excludedReports.some(excluded => name.includes(excluded));
   }

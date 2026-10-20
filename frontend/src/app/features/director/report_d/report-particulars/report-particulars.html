@@ -1,10 +1,8 @@
-<div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+<div class="report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
   <div class="mx-auto max-w-6xl">
 
-    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-4">
-        <button type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="group inline-flex items-center gap-2.5 bg-gradient-to-b from-emerald-400 to-emerald-600
-         py-1.5 pl-1.5 pr-6 text-sm font-medium tracking-widest text-white
+        <button type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="group mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
+          px-5 text-sm font-medium tracking-widest text-white
          [text-shadow:0_0_10px_rgba(255,255,255,0.55)]
          shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)]
          transition duration-200 ease-out
@@ -12,20 +10,20 @@
          hover:shadow-[0_16px_24px_-8px_rgba(6,78,59,0.5)]
          active:translate-y-0 active:shadow-[0_6px_12px_-6px_rgba(6,78,59,0.4)]
          focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
-          <span>
-            <svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 5l-5 5 5 5" />
-            </svg>
-          </span>
-          Back
-        </button>
+      <svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 5l-5 5 5 5" />
+      </svg>
+      Back
+    </button>
 
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
         <div>
           <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
             Department Report
           </p>
-          <h1 class="text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
+          <h1 class="font-serif text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
             {{ report?.department?.department_name || 'Report Particulars' }}
           </h1>
           <p *ngIf="churchName" class="mt-0.5 text-sm font-medium text-emerald-900/70">
@@ -170,6 +168,21 @@
               class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
+              <details name="report-section-accordions" (toggle)="onSectionToggle($event)">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-emerald-900/10 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-emerald-950">
+                  <span>{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
+                  <span class="ml-auto flex items-center gap-2">
+                    <span *ngIf="!isAnnualView && isQuarterEndorsed()"
+                      class="inline-flex items-center rounded-full bg-sky-700 px-2.5 py-1 text-[11px] font-semibold normal-case tracking-normal text-white">
+                      Endorsed
+                    </span>
+                    <span *ngIf="!isAnnualView && isQuarterApproved()"
+                      class="inline-flex items-center rounded-full bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold normal-case tracking-normal text-white">
+                      ✓ Approved
+                    </span>
+                  </span>
+                </summary>
+
               <div class="overflow-x-auto">
                 <table class="w-full border-collapse text-sm">
 
@@ -178,19 +191,7 @@
                       <th
                         class="min-w-[220px] px-5 py-3.5 text-left text-xs font-bold
                                uppercase tracking-wider">
-                        {{ section.program_name || section.section_name || program.program_name || 'Particular' }}
-                        <span
-                          *ngIf="!isAnnualView && isQuarterEndorsed()"
-                          class="ml-2 inline-flex items-center rounded-full bg-sky-700 px-2.5 py-1
-                                 text-[11px] font-semibold normal-case tracking-normal text-white">
-                          Endorsed
-                        </span>
-                        <span
-                          *ngIf="!isAnnualView && isQuarterApproved()"
-                          class="ml-2 inline-flex items-center rounded-full bg-emerald-700 px-2.5 py-1
-                                 text-[11px] font-semibold normal-case tracking-normal text-white">
-                          ✓ Approved
-                        </span>
+                        <span class="sr-only">Particular</span>
                       </th>
 
                       <ng-container *ngIf="isAnnualView; else quarterHeader">
@@ -264,6 +265,7 @@
                   </tbody>
                 </table>
               </div>
+              </details>
             </section>
           </ng-container>
 

@@ -26,13 +26,13 @@
 
 /* Sidebar is expanded */
 .app-main.sidebar-expanded {
-  margin-left: 15rem;
+  margin-left: 235px;
   background-image: url('/assets/mountain.png');
 }
 
 /* Sidebar is collapsed */
 .app-main.sidebar-collapsed {
-  margin-left: 4rem;
+  margin-left: 76px;
   background-image: url('/assets/mountain.png');
 }
 
@@ -61,51 +61,57 @@
 
 /* Overlay starts after the sidebar */
 .app-main.sidebar-expanded .app-background-overlay {
-  left: 15rem;
+  left: 235px;
 }
 
 .app-main.sidebar-collapsed .app-background-overlay {
-  left: 4rem;
+  left: 76px;
 }
 
 /* Content above the overlay */
 .app-content {
   position: relative;
   z-index: 1;
+  min-width: 0;
+  max-width: 100%;
   min-height: 100vh;
   padding: 1.5rem;
   box-sizing: border-box;
 }
 
-/* Tablet and small desktop */
-@media (max-width: 768px) {
-  .app-main.sidebar-expanded {
-    margin-left: 4rem;
-  }
-
-  .app-main.sidebar-expanded .app-background-overlay {
-    left: 4rem;
-  }
-
-  .app-content {
-    padding: 1rem;
-  }
+.app-sidebar-backdrop {
+  display: none;
 }
 
-/* Mobile */
-@media (max-width: 600px) {
+/* Use the sidebar as an overlay drawer on tablet and phone widths. */
+@media (max-width: 768px) {
   .app-main.sidebar-expanded,
   .app-main.sidebar-collapsed {
-    margin-left: 4rem;
+    margin-left: 0;
   }
 
   .app-main.sidebar-expanded .app-background-overlay,
   .app-main.sidebar-collapsed .app-background-overlay {
-    left: 4rem;
+    left: 0;
   }
 
   .app-content {
-    padding: 0.75rem;
+    padding: 4.5rem 1rem 1rem;
+  }
+
+  .app-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: block;
+    border: 0;
+    background: rgba(2, 24, 17, 0.32);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-content {
+    padding: 4.25rem 0.75rem 0.75rem;
   }
 }
 

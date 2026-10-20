@@ -8,60 +8,61 @@
   }
 </ng-template>
 
-<div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
-  <div class="mx-auto max-w-6xl">
-    <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+<div class="report-responsive-page min-h-screen px-4 py-8 text-emerald-950 sm:px-8 lg:px-12">
+  <div class="mx-auto max-w-310">
+    <header class="mb-6 flex flex-wrap items-end justify-between gap-6 border-b border-emerald-950/15 pb-6">
       <div>
-        <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">Report Management</p>
-        <h1 class="text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">Report Monitoring</h1>
+        <p class="mb-2 text-[11px] font-bold uppercase tracking-widest text-emerald-800">Report Management</p>
+        <h1 class="font-serif text-3xl font-semibold text-emerald-950">Report Monitoring</h1>
+        <p class="mt-2 text-sm text-emerald-950/65">Quarterly submissions by district</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
         <button *ngIf="isAssistantPortal" type="button" (click)="createReportTemplate()"
-          style="border-radius: 9999px"
-          class="inline-flex items-center gap-1.5 bg-gradient-to-b from-emerald-700 to-emerald-600 px-3.5 py-2
-                 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5
-                 hover:from-emerald-900 hover:to-emerald-700
-                 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
-          <span aria-hidden="true">+</span>
+          class="inline-flex items-center gap-2 border border-emerald-900 bg-emerald-900 px-4 py-2.5
+                 text-sm font-semibold text-white transition hover:bg-emerald-800
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M10 3v14M3 10h14" />
+          </svg>
           New Field Report
         </button>
-        <div class="min-w-28 rounded-xl border border-white/60 bg-white/60 px-3.5 py-2 text-center shadow-md shadow-emerald-950/5 backdrop-blur-xl">
-          <p class="text-lg font-bold text-emerald-950">{{ districtCount }}</p>
-          <p class="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/70">Districts</p>
+        <div class="min-w-28 border border-emerald-950/15 bg-white/75 px-4 py-2.5 text-center">
+          <p class="text-lg font-bold tabular-nums text-emerald-950">{{ districtCount }}</p>
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-emerald-950/65">Districts</p>
         </div>
-        <div class="min-w-36 rounded-xl border border-white/60 bg-white/60 px-3.5 py-2 text-center shadow-md shadow-emerald-950/5 backdrop-blur-xl">
-          <p class="text-lg font-bold text-emerald-950">{{ churchCount }}</p>
-          <p class="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/70">Churches / Companies</p>
+        <div class="min-w-36 border border-emerald-950/15 bg-white/75 px-4 py-2.5 text-center">
+          <p class="text-lg font-bold tabular-nums text-emerald-950">{{ churchCount }}</p>
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-emerald-950/65">Churches / Companies</p>
         </div>
       </div>
     </header>
 
     <div *ngIf="errorMessage" role="alert"
-      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-700 backdrop-blur-md">
+      class="mb-4 flex flex-wrap items-center justify-between gap-3 border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
       <span class="flex items-center gap-2"><span aria-hidden="true">⚠</span>{{ errorMessage }}</span>
-      <button type="button" (click)="loadDistricts()" style="border-radius: 9999px"
-        class="bg-gradient-to-b from-emerald-700 to-emerald-600 px-5 py-2 font-semibold text-white shadow-sm transition hover:from-emerald-900 hover:to-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
+      <button type="button" (click)="loadDistricts()"
+        class="border border-emerald-900 bg-emerald-900 px-4 py-2 font-semibold text-white transition hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
         Retry
       </button>
     </div>
 
-    <div *ngIf="loadingDistricts" class="mx-auto flex w-fit items-center gap-3 rounded-2xl border border-white/60 bg-white/60 px-8 py-6 text-emerald-900 shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
-      <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700" aria-hidden="true"></span>
+    <div *ngIf="loadingDistricts" class="flex w-fit items-center gap-3 border border-emerald-950/15 bg-white/75 px-6 py-4 text-emerald-950">
+      <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-800" aria-hidden="true"></span>
       <span class="text-sm font-medium">Loading districts...</span>
     </div>
 
     <section *ngIf="!loadingDistricts && districts.length > 0"
-      class="overflow-hidden rounded-2xl border border-white/60 bg-white/60 shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
+      class="overflow-hidden border border-emerald-950/15 bg-white/85">
       <div class="overflow-x-auto">
-        <table class="w-full min-w-[680px] border-collapse text-sm">
+        <table class="w-full min-w-170 border-collapse text-sm">
           <thead>
-            <tr class="bg-emerald-900/10 text-xs font-bold uppercase tracking-wider text-emerald-950">
-              <th scope="col" class="w-[35%] min-w-[220px] px-5 py-3.5 text-left">District</th>
-              <th scope="col" class="min-w-[110px] px-3 py-3.5 text-center">Q1</th>
-              <th scope="col" class="min-w-[110px] px-3 py-3.5 text-center">Q2</th>
-              <th scope="col" class="min-w-[110px] px-3 py-3.5 text-center">Q3</th>
-              <th scope="col" class="min-w-[110px] px-3 py-3.5 text-center">Q4</th>
+            <tr class="bg-emerald-950 text-[11px] font-bold uppercase tracking-widest text-white">
+              <th scope="col" class="w-[35%] min-w-55 px-5 py-3.5 text-left">District</th>
+              <th scope="col" class="min-w-27.5 px-3 py-3.5 text-center">Q1</th>
+              <th scope="col" class="min-w-27.5 px-3 py-3.5 text-center">Q2</th>
+              <th scope="col" class="min-w-27.5 px-3 py-3.5 text-center">Q3</th>
+              <th scope="col" class="min-w-27.5 px-3 py-3.5 text-center">Q4</th>
             </tr>
           </thead>
           <tbody>
@@ -70,10 +71,10 @@
               (click)="openDistrict(district.church_id)"
               (keydown.enter)="openDistrict(district.church_id)"
               (keydown.space)="$event.preventDefault(); openDistrict(district.church_id)"
-              class="group cursor-pointer border-t border-emerald-900/5 transition hover:bg-white/70 focus:outline-none focus-visible:bg-white/80 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600">
+              class="group cursor-pointer border-t border-emerald-950/10 transition-colors hover:bg-emerald-50 focus:outline-none focus-visible:bg-emerald-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500">
               <th scope="row" class="px-5 py-4 text-left font-semibold text-emerald-950">
                 <span class="flex items-center gap-3">
-                  <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700/10 text-emerald-700 transition group-hover:bg-emerald-700 group-hover:text-white" aria-hidden="true">
+                  <span class="flex h-9 w-9 shrink-0 items-center justify-center bg-emerald-100 text-emerald-900 transition-colors group-hover:bg-emerald-900 group-hover:text-white" aria-hidden="true">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
                       <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01" />
@@ -96,8 +97,8 @@
     </section>
 
     <div *ngIf="!loadingDistricts && !errorMessage && districts.length === 0"
-      class="mx-auto mt-4 max-w-md rounded-2xl border border-white/60 bg-white/60 px-8 py-12 text-center shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
-      <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700/10 text-emerald-700" aria-hidden="true">
+      class="mx-auto mt-4 max-w-md border border-emerald-950/15 bg-white/75 px-8 py-10 text-center">
+      <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center bg-emerald-100 text-emerald-900" aria-hidden="true">
         <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
         </svg>

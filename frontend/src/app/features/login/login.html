@@ -1,17 +1,4 @@
-<!--
-  Design-only. Same bindings, text and logic as the original.
-
-  Fonts (add to index.html):
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
-
-  Tailwind config:
-  fontFamily: {
-    display: ['Outfit', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-  }
--->
-<div class="font-display relative isolate min-h-dvh overflow-x-hidden text-white antialiased">
+<div class="relative isolate min-h-dvh overflow-x-hidden font-sans text-white antialiased">
 
   <!-- Photo + scrims -->
   <img
@@ -28,11 +15,11 @@
     <!-- Brand, headline, system intro -->
     <section class="mx-auto flex max-w-2xl flex-col items-center text-center">
 
-      <span class="inline-flex ">
+      <span class="inline-flex">
         <img
           src="/assets/logo.png"
           alt="Northeast Luzon Mission"
-          class="brand-logo h-45 w-auto"
+          class="h-44 w-auto object-contain"
         />
       </span>
 
@@ -44,7 +31,8 @@
 
       <!-- System intro -->
       <p class="mt-8 max-w-lg text-pretty text-lg leading-relaxed text-white/90 drop-shadow-[0_1px_12px_rgba(0,0,0,0.4)] sm:text-xl">
-       The Integrated Communication System (ICS) is a web-based platform for the Northeast Luzon Mission that brings ministry reporting, event coordination, and notifications together in one place.
+        The Integrated Communication System (ICS) is a web-based platform for the Northeast Luzon Mission that brings ministry reporting, event coordination, and notifications together in one place.
+      </p>
     </section>
 
     <!-- Glass card -->

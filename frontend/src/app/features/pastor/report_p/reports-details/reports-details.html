@@ -10,12 +10,12 @@
   }
 </ng-template>
 
-<div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+<div class="report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
   <div class="mx-auto max-w-6xl">
     <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">Report Management</p>
-        <h1 class="!m-0 !text-2xl !font-bold !tracking-tight !text-emerald-950 sm:!text-3xl">{{ district?.name || 'District Reports' }}</h1>
+        <h1 class="font-serif !m-0 !text-2xl !font-bold !tracking-tight !text-emerald-950 sm:!text-3xl">{{ district?.name || 'District Reports' }}</h1>
         <p *ngIf="district?.address" class="mt-1 text-sm text-emerald-900/70">{{ district?.address }}</p>
       </div>
 
