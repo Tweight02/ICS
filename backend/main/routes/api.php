@@ -153,7 +153,7 @@ Route::prefix('assistant')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('churches/{churchId}')->group(function () {
+Route::middleware('auth:sanctum')->prefix('churches/{churchId}')->group(function () {
     Route::get('/departments', [
         ReportController::class,
         'getDepartments',
@@ -184,7 +184,7 @@ Route::prefix('churches/{churchId}')->group(function () {
 Route::get('/quarters/{quarterId}/comments', [
     ReportController::class,
     'comments',
-]);
+])->middleware('auth:sanctum');
 
 Route::post('/comments', [
     ReportController::class,
@@ -197,9 +197,10 @@ Route::post('/comments', [
 |--------------------------------------------------------------------------
 */
 
-Route::apiResource('baptisms', BaptismController::class);
-
-Route::apiResource('deaths', DeathController::class);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('baptisms', BaptismController::class);
+    Route::apiResource('deaths', DeathController::class);
+});
 
 /*
 |--------------------------------------------------------------------------

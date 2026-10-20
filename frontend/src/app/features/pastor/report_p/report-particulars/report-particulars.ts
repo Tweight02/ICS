@@ -2,16 +2,22 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   OnInit,
+  OnDestroy,
   ChangeDetectorRef,
+  ElementRef,
   inject,
-  signal
+  NgZone,
+  signal,
+  ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReportService } from '../../../../core/services/report/report';
+import { CommentReadStateService } from '../../../../core/services/report/comment-read-state';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { UserRole } from '../../../../core/models/user.model';
+import Swal from 'sweetalert2';
 
 interface QuarterRecord {
   quarter_id: number;
@@ -79,12 +85,17 @@ interface QuarterRef {
   templateUrl: './report-particulars.html',
   styleUrl: './report-particulars.css'
 })
-export class ReportParticulars implements OnInit {
+export class ReportParticulars implements OnInit, OnDestroy {
+  @ViewChild('commentMessages')
+  private commentMessages?: ElementRef<HTMLUListElement>;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly reportService = inject(ReportService);
+  private readonly commentReadState = inject(CommentReadStateService);
   private readonly churchService = inject(ChurchService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly ngZone = inject(NgZone);
   private readonly auth = inject(AuthService);
 
   churchId = 0;
@@ -118,7 +129,6 @@ export class ReportParticulars implements OnInit {
     this.savingActionState.set(value);
   }
   errorMessage = '';
-  successMessage = '';
 
   comments: ReportComment[] = [];
   private readonly commentsLoadingState = signal(false);
@@ -139,12 +149,22 @@ export class ReportParticulars implements OnInit {
   }
 
   currentUserRole: UserRole | null = null;
+  currentUserId = 0;
+  mobileCommentsOpen = false;
+  private commentPollingTimer: ReturnType<typeof setInterval> | null = null;
+  private commentsRequestInFlight = false;
+  private readonly commentPollingIntervalMs = 5000;
 
   ngOnInit(): void {
     const user = this.auth.getCurrentUser();
     this.currentUserRole = user?.role ?? null;
+    this.currentUserId = Number(user?.user_id) || 0;
 
     this.route.paramMap.subscribe(() => this.readRoute());
+  }
+
+  ngOnDestroy(): void {
+    this.stopCommentPolling();
   }
 
   get canComment(): boolean {
@@ -449,59 +469,157 @@ export class ReportParticulars implements OnInit {
     return this.getParticularQuarterRecord(particular, quarter)?.value ?? null;
   }
 
-  loadComments(): void {
-    this.commentsLoading = true;
-    this.commentsError = '';
-    this.cdr.detectChanges();
+  loadComments(silent = false): void {
+    if (this.commentsRequestInFlight) return;
+
+    this.commentsRequestInFlight = true;
+    if (!silent) {
+      this.commentsLoading = true;
+      this.commentsError = '';
+      this.cdr.detectChanges();
+    }
+
+    const previousVisibleIds = new Set(
+      this.getVisibleComments().map(comment => comment.comment_id)
+    );
 
     this.reportService
       .getDepartmentComments(this.churchId, this.departmentId)
       .subscribe({
         next: (response: any) => {
           const list = response?.data ?? response;
-          this.comments = Array.isArray(list) ? list : [];
+          const nextComments: ReportComment[] = Array.isArray(list) ? list : [];
+          const wasNearBottom = this.isCommentListNearBottom();
+          const hasNewVisibleComment = nextComments.some(comment =>
+            !previousVisibleIds.has(comment.comment_id) &&
+            this.getVisibleQuarters().some(quarter =>
+              this.matchesQuarter(comment, quarter)
+            )
+          );
+
+          this.comments = nextComments;
           this.commentsLoading = false;
+          this.commentsError = '';
+          this.commentsRequestInFlight = false;
           this.cdr.detectChanges();
+          if (this.mobileCommentsOpen && hasNewVisibleComment && wasNearBottom) {
+            this.markVisibleCommentsRead();
+            this.scrollCommentMessagesToLatest();
+          }
+          this.startCommentPolling();
         },
         error: (error: any) => {
-          this.commentsError =
-            error?.error?.message || 'Unable to load comments.';
-          this.commentsLoading = false;
-          this.cdr.detectChanges();
+          this.commentsRequestInFlight = false;
+          if (!silent) {
+            this.commentsError =
+              error?.error?.message || 'Unable to load comments.';
+            this.commentsLoading = false;
+            this.cdr.detectChanges();
+          }
+          this.startCommentPolling();
         }
       });
+  }
+
+  private startCommentPolling(): void {
+    if (this.commentPollingTimer) return;
+
+    this.commentPollingTimer = this.ngZone.runOutsideAngular(() =>
+      setInterval(() => {
+        if (typeof document === 'undefined' || !document.hidden) {
+          this.loadComments(true);
+        }
+      }, this.commentPollingIntervalMs)
+    );
+  }
+
+  private stopCommentPolling(): void {
+    if (!this.commentPollingTimer) return;
+
+    clearInterval(this.commentPollingTimer);
+    this.commentPollingTimer = null;
   }
 
   getVisibleComments(): ReportComment[] {
     const quarters = this.getVisibleQuarters();
 
     return this.comments
-      .filter(comment => {
-        const matchesVisibleQuarter = quarters.some(
-          quarter => this.matchesQuarter(comment, quarter)
-        );
-
-        return matchesVisibleQuarter &&
-          (!this.canApprove || this.isAssistantComment(comment));
-      })
+      .filter(comment =>
+        quarters.some(quarter => this.matchesQuarter(comment, quarter))
+      )
       .sort(
         (a, b) =>
-          String(b.date_commented).localeCompare(String(a.date_commented)) ||
-          b.comment_id - a.comment_id
+          String(a.date_commented).localeCompare(String(b.date_commented)) ||
+          a.comment_id - b.comment_id
       );
-  }
-
-  private isAssistantComment(comment: ReportComment): boolean {
-    return ['assistant', 'administrative assistant'].includes(
-      String(comment.commenter_role ?? '')
-        .toLowerCase()
-        .trim()
-        .replace(/[_-]/g, ' ')
-    );
   }
 
   getCommentStatus(): 'commented' | 'none' {
     return this.getVisibleComments().length > 0 ? 'commented' : 'none';
+  }
+
+  isOwnComment(comment: ReportComment): boolean {
+    return comment.commented_by === this.currentUserId;
+  }
+
+  openComments(): void {
+    this.mobileCommentsOpen = true;
+    this.markVisibleCommentsRead();
+    this.cdr.detectChanges();
+    this.scrollCommentMessagesToLatest();
+    this.loadComments(true);
+  }
+
+  closeComments(): void {
+    this.mobileCommentsOpen = false;
+  }
+
+  getUnreadCommentCount(): number {
+    return this.commentReadState.getUnreadCount(
+      this.comments,
+      this.currentUserId,
+      this.churchId,
+      this.departmentId
+    );
+  }
+
+  private markVisibleCommentsRead(): void {
+    this.commentReadState.markAsRead(
+      this.getVisibleComments(),
+      this.currentUserId,
+      this.churchId,
+      this.departmentId
+    );
+  }
+
+  onCommentMessagesScroll(): void {
+    if (
+      this.mobileCommentsOpen &&
+      this.isCommentListNearBottom() &&
+      this.getUnreadCommentCount() > 0
+    ) {
+      this.markVisibleCommentsRead();
+      this.cdr.detectChanges();
+    }
+  }
+
+  private isCommentListNearBottom(): boolean {
+    const messages = this.commentMessages?.nativeElement;
+
+    return !messages ||
+      messages.scrollHeight - messages.scrollTop - messages.clientHeight < 64;
+  }
+
+  private scrollCommentMessagesToLatest(): void {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const messages = this.commentMessages?.nativeElement;
+
+        if (this.mobileCommentsOpen && messages) {
+          messages.scrollTop = messages.scrollHeight;
+        }
+      });
+    });
   }
 
   getCommentQuarterLabel(comment: ReportComment): string {
@@ -593,7 +711,6 @@ export class ReportParticulars implements OnInit {
 
     this.savingComment = true;
     this.errorMessage = '';
-    this.successMessage = '';
 
     this.reportService
       .addComment(quarterId, this.churchId, this.departmentId, details)
@@ -607,8 +724,9 @@ export class ReportParticulars implements OnInit {
 
           this.newComment = '';
           this.savingComment = false;
-          this.successMessage = 'Comment published.';
+          this.showSuccess('Comment published.');
           this.cdr.detectChanges();
+          this.scrollCommentMessagesToLatest();
         },
         error: (error: any) => {
           this.savingComment = false;
@@ -648,7 +766,6 @@ export class ReportParticulars implements OnInit {
 
     this.savingAction = true;
     this.errorMessage = '';
-    this.successMessage = '';
 
     const request = action === 'endorse'
       ? this.reportService.endorseDepartmentReport(
@@ -666,11 +783,12 @@ export class ReportParticulars implements OnInit {
 
     request.subscribe({
       next: response => {
-        this.successMessage =
+        this.showSuccess(
           response?.message ||
           (action === 'endorse'
             ? 'Report endorsed for the administrative assistant.'
-            : 'Report approved.');
+            : 'Report approved.')
+        );
         this.savingAction = false;
         this.loadReport();
       },
@@ -686,9 +804,17 @@ export class ReportParticulars implements OnInit {
     });
   }
 
+  private showSuccess(message: string): void {
+    void Swal.fire({
+      icon: 'success',
+      title: 'Success',
+      text: message,
+      confirmButtonColor: '#047857'
+    });
+  }
+
   private clearMessages(): void {
     this.errorMessage = '';
-    this.successMessage = '';
   }
 
   backToPrograms(): void {
@@ -728,6 +854,21 @@ export class ReportParticulars implements OnInit {
 
   trackSection(index: number, section: Section): number {
     return section.program_id ?? index;
+  }
+
+  onSectionToggle(event: Event): void {
+    const openedSection = event.currentTarget as HTMLDetailsElement;
+
+    if (!openedSection.open) return;
+
+    const sections = openedSection.parentElement?.parentElement
+      ?.querySelectorAll<HTMLDetailsElement>('details[name="report-section-accordions"]');
+
+    sections?.forEach(section => {
+      if (section !== openedSection) {
+        section.open = false;
+      }
+    });
   }
 
   trackParticular(_index: number, particular: Particular): number {

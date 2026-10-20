@@ -11,6 +11,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ReportService } from '../../../../core/services/report/report';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { UserRole } from '../../../../core/models/user.model';
+import Swal from 'sweetalert2';
 
 interface QuarterRecord {
   quarter_id: number;
@@ -596,11 +597,20 @@ export class ReportParticulars implements OnInit {
 
     request.subscribe({
       next: response => {
-        this.successMessage =
-          response?.message ||
+        const message = response?.message ||
           (action === 'endorse'
             ? 'Report endorsed for the administrative assistant.'
             : 'Report approved.');
+        if (action === 'approve') {
+          void Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: message,
+            confirmButtonColor: '#047857'
+          });
+        } else {
+          this.successMessage = message;
+        }
         this.savingAction = false;
         this.loadReport();
       },
@@ -656,6 +666,21 @@ export class ReportParticulars implements OnInit {
 
   trackSection(index: number, section: Section): number {
     return section.program_id ?? index;
+  }
+
+  onSectionToggle(event: Event): void {
+    const openedSection = event.currentTarget as HTMLDetailsElement;
+
+    if (!openedSection.open) return;
+
+    const sections = openedSection.parentElement?.parentElement
+      ?.querySelectorAll<HTMLDetailsElement>('details[name="report-section-accordions"]');
+
+    sections?.forEach(section => {
+      if (section !== openedSection) {
+        section.open = false;
+      }
+    });
   }
 
   trackParticular(_index: number, particular: Particular): number {

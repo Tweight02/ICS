@@ -28,13 +28,19 @@ describe('ReportPrograms', () => {
         {
           provide: ReportService,
           useValue: {
-            getDepartments: () => of([{
-              department_id: 4,
-              department_name: 'Youth',
-              q1_approved: false,
-              q1_data_progress: 50,
-              q1_submitted_data_progress: null
-            }])
+            getDepartments: () => of([
+              {
+                department_id: 4,
+                department_name: 'Youth',
+                q1_approved: false,
+                q1_data_progress: 50,
+                q1_submitted_data_progress: null
+              },
+              { department_id: 16, department_name: 'Ministerial & Evangelism' },
+              { department_id: 20, department_name: 'Adventist Mission' },
+              { department_id: 22, department_name: 'Baptism Record' },
+              { department_id: 23, department_name: 'Death Record' }
+            ])
           }
         },
         { provide: ChurchService, useValue: { getChurches: () => of({ district: { name: 'Batanes' }, data: [] }) } },
@@ -56,5 +62,12 @@ describe('ReportPrograms', () => {
       progress: 50,
       approved: false
     });
+  });
+
+  it('groups the four personal-report departments separately', () => {
+    expect(component.reportDepartments.map(department => department.department_id))
+      .toEqual([4]);
+    expect(component.personalReportDepartments.map(department => department.department_id))
+      .toEqual([16, 20, 22, 23]);
   });
 });
