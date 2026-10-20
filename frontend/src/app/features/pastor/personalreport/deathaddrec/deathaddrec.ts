@@ -1,5 +1,14 @@
+
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+  inject,
+  signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
@@ -53,6 +62,13 @@ export class DeathaddrecComponent implements OnInit {
   deaths: DeathRecord[] = [];
 
   selectedBaptism: Baptism | null = null;
+
+  // Searchable Baptized Member dropdown
+  @ViewChild('memberDropdown')
+  memberDropdown?: ElementRef<HTMLElement>;
+
+  baptismSearch = '';
+  memberDropdownOpen = false;
 
   // Use the browser's local date, not a UTC date.
   today = this.getTodayDate();
@@ -136,6 +152,129 @@ export class DeathaddrecComponent implements OnInit {
     );
   }
 
+  /* ==========================================
+     SEARCHABLE BAPTIZED MEMBER DROPDOWN
+  ========================================== */
+
+  /**
+   * Filter eligible baptized members by name.
+   */
+  get filteredAvailableBaptisms(): Baptism[] {
+    const search = this.baptismSearch.trim().toLowerCase();
+
+    return this.availableBaptisms.filter(baptism =>
+      this.getFullName(baptism)
+        .toLowerCase()
+        .includes(search)
+    );
+  }
+
+  /**
+   * Display the selected member's full name.
+   */
+  getSelectedBaptismName(): string {
+    return this.selectedBaptism
+      ? this.getFullName(this.selectedBaptism)
+      : '';
+  }
+
+  /**
+   * Compare member IDs safely.
+   */
+  sameBaptism(
+    id1: number | null | undefined,
+    id2: number | null | undefined
+  ): boolean {
+    return (
+      id1 !== null &&
+      id1 !== undefined &&
+      id2 !== null &&
+      id2 !== undefined &&
+      String(id1) === String(id2)
+    );
+  }
+
+  /**
+   * Open the dropdown when the search input receives focus.
+   */
+  openBaptismDropdown(): void {
+    if (
+      this.loadingBaptisms ||
+      this.loadingDeaths ||
+      this.deathLoadError ||
+      this.availableBaptisms.length === 0
+    ) {
+      return;
+    }
+
+    if (!this.memberDropdownOpen) {
+      this.baptismSearch = '';
+      this.memberDropdownOpen = true;
+    }
+  }
+
+  /**
+   * Filter members as the user types.
+   */
+  onBaptismSearch(event: Event): void {
+    this.baptismSearch =
+      (event.target as HTMLInputElement).value;
+
+    this.memberDropdownOpen = true;
+  }
+
+  /**
+   * Toggle the dropdown arrow.
+   */
+  toggleBaptismDropdown(): void {
+    if (this.memberDropdownOpen) {
+      this.closeBaptismDropdown();
+      return;
+    }
+
+    if (
+      !this.loadingBaptisms &&
+      !this.loadingDeaths &&
+      !this.deathLoadError &&
+      this.availableBaptisms.length > 0
+    ) {
+      this.baptismSearch = '';
+      this.memberDropdownOpen = true;
+    }
+  }
+
+  /**
+   * Select a member and update the existing form fields.
+   */
+  chooseBaptism(baptism: Baptism): void {
+    this.selectBaptism(baptism.baptism_id);
+    this.closeBaptismDropdown();
+  }
+
+  /**
+   * Close the dropdown when clicking outside it.
+   */
+  @HostListener('document:click', ['$event'])
+  onMemberDocumentClick(event: MouseEvent): void {
+    const target = event.target as Node | null;
+
+    if (
+      target &&
+      this.memberDropdownOpen &&
+      !this.memberDropdown?.nativeElement.contains(target)
+    ) {
+      this.closeBaptismDropdown();
+    }
+  }
+
+  /**
+   * Close the dropdown and clear the search text.
+   */
+  closeBaptismDropdown(): void {
+    this.memberDropdownOpen = false;
+    this.baptismSearch = '';
+  }
+
   /**
    * Check whether a person already has a death record.
    */
@@ -166,6 +305,7 @@ export class DeathaddrecComponent implements OnInit {
 
           console.log('Baptism records loaded:', this.baptisms);
         },
+
         error: (error) => {
           console.error('Failed to load baptism records:', error);
 
@@ -205,16 +345,19 @@ export class DeathaddrecComponent implements OnInit {
           if (this.isAlreadyDeceased(this.death.baptism_id)) {
             this.death.baptism_id = null;
             this.selectedBaptism = null;
+            this.closeBaptismDropdown();
           }
 
           console.log('Existing death records loaded:', this.deaths);
         },
+
         error: (error) => {
           console.error('Failed to load death records:', error);
 
           this.deaths = [];
           this.loadingDeaths = false;
           this.deathLoadError = true;
+          this.closeBaptismDropdown();
 
           Swal.fire({
             icon: 'error',
@@ -255,6 +398,7 @@ export class DeathaddrecComponent implements OnInit {
             this.churches = [];
           }
         },
+
         error: (error) => {
           console.error('Failed to load churches:', error);
 
@@ -439,7 +583,11 @@ export class DeathaddrecComponent implements OnInit {
    * Save a death record.
    */
   saveDeath(): void {
-    if (this.loadingBaptisms || this.loadingDeaths || this.deathLoadError) {
+    if (
+      this.loadingBaptisms ||
+      this.loadingDeaths ||
+      this.deathLoadError
+    ) {
       Swal.fire({
         icon: 'warning',
         title: 'Records Not Ready',
