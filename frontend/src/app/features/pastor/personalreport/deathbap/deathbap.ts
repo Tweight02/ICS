@@ -8,7 +8,12 @@ import {
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { finalize, timeout } from 'rxjs/operators';
+import { ReportParticulars } from '../../report_p/report-particulars/report-particulars';
+import { ChurchService } from '../../../../core/services/church/church-service';
+import { ReportService } from '../../../../core/services/report/report';
+import { ReportComment } from '../../../../core/models/report.model';
 
 interface Baptism {
   baptism_id: number;
@@ -48,7 +53,8 @@ interface Death {
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink
+    RouterLink,
+    ReportParticulars
   ],
   templateUrl: './deathbap.html',
   styleUrls: ['./deathbap.css']
@@ -56,14 +62,17 @@ interface Death {
 export class DeathbapComponent implements OnInit {
 
   private http = inject(HttpClient);
+  private churchService = inject(ChurchService);
+  private reportService = inject(ReportService);
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  selectedRecord: 'baptism' | 'death' = 'baptism';
+  selectedRecord: 'baptism' | 'death' | 'ministerial' | 'mission' = 'baptism';
 
   // Year and quarter selector
   selectedYear = new Date().getFullYear();
+  isAnnualView = false;
 
   selectedQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q1';
 
@@ -82,6 +91,10 @@ export class DeathbapComponent implements OnInit {
   baptisms: Baptism[] = [];
   deaths: Death[] = [];
   churches: Church[] = [];
+  churchesLoading = false;
+  latestComment: ReportComment | null = null;
+  commentsLoading = false;
+  commentsOpen = false;
 
   // Selected records for the details modals
   selectedBaptism: Baptism | null = null;
@@ -125,6 +138,25 @@ export class DeathbapComponent implements OnInit {
       this.router.url.startsWith('/assistant')
       || this.router.url.startsWith('/director');
 
+    const queryParams = this.route.snapshot.queryParamMap;
+    const record = queryParams.get('record');
+    const year = Number(queryParams.get('year'));
+    const quarter = queryParams.get('quarter');
+
+    if (record === 'baptism' || record === 'death') {
+      this.selectedRecord = record;
+    }
+
+    if (Number.isInteger(year) && year > 0) {
+      this.selectedYear = year;
+    }
+
+    if (quarter === 'Q1' || quarter === 'Q2' || quarter === 'Q3' || quarter === 'Q4') {
+      this.selectedQuarter = quarter;
+    }
+
+    this.isAnnualView = queryParams.get('annual') === 'true';
+
     if (this.departmentId === 23) {
       this.selectedRecord = 'death';
     }
@@ -132,6 +164,24 @@ export class DeathbapComponent implements OnInit {
     this.loadChurches();
     this.loadBaptisms();
     this.loadDeaths();
+  }
+
+  get reportChurches(): Church[] {
+    return this.churches.filter(church => church.parent_id !== null);
+  }
+
+  get selectedDepartmentId(): 16 | 20 | null {
+    if (this.selectedRecord === 'ministerial') return 16;
+    if (this.selectedRecord === 'mission') return 20;
+    return null;
+  }
+
+  openComments(): void {
+    this.commentsOpen = true;
+  }
+
+  closeComments(): void {
+    this.commentsOpen = false;
   }
 
   // =================================================
@@ -216,7 +266,12 @@ export class DeathbapComponent implements OnInit {
   selectQuarter(
     quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'
   ): void {
+    this.isAnnualView = false;
     this.selectedQuarter = quarter;
+  }
+
+  selectAnnual(): void {
+    this.isAnnualView = true;
   }
 
   onYearChange(event: Event): void {
@@ -330,7 +385,7 @@ export class DeathbapComponent implements OnInit {
     return records
       .filter(record => {
         return (
-          this.normalizeQuarter(record.quarter) === this.selectedQuarter &&
+          (this.isAnnualView || this.normalizeQuarter(record.quarter) === this.selectedQuarter) &&
           this.getYearFromDate(record.date_of_baptism) === this.selectedYear
         );
       })
@@ -356,7 +411,7 @@ export class DeathbapComponent implements OnInit {
     return records.filter(record => {
 
       return (
-        this.normalizeQuarter(record.quarter) === this.selectedQuarter &&
+        (this.isAnnualView || this.normalizeQuarter(record.quarter) === this.selectedQuarter) &&
         this.getYearFromDate(record.date_of_death) === this.selectedYear
       );
 
@@ -385,6 +440,13 @@ export class DeathbapComponent implements OnInit {
       return;
     }
 
+    if (this.route.snapshot.queryParamMap.get('return_to') === 'monitoring') {
+      this.router.navigate([
+        this.router.url.startsWith('/assistant') ? '/assistant/reports' : '/director/reports'
+      ]);
+      return;
+    }
+
     this.router.navigate([
       `${this.router.url.startsWith('/assistant') ? '/assistant' : '/director'}/reports/programs`,
       this.districtId,
@@ -396,7 +458,7 @@ export class DeathbapComponent implements OnInit {
    * Select Baptism or Death record.
    */
   selectRecord(
-    record: 'baptism' | 'death'
+    record: 'baptism' | 'death' | 'ministerial' | 'mission'
   ): void {
 
     this.selectedRecord = record;
@@ -406,9 +468,51 @@ export class DeathbapComponent implements OnInit {
 
     if (record === 'baptism') {
       this.loadBaptisms();
-    } else {
+    } else if (record === 'death') {
       this.loadDeaths();
     }
+
+    if (record === 'baptism' || record === 'death') {
+      this.loadLatestComment();
+    } else {
+      this.latestComment = null;
+    }
+  }
+
+  private loadLatestComment(): void {
+    const departmentId = this.selectedRecord === 'baptism' ? 22 : 23;
+    const churchIds = this.churchId
+      ? [this.churchId]
+      : this.reportChurches.map(church => church.church_id);
+
+    this.latestComment = null;
+    if (churchIds.length === 0) {
+      this.commentsLoading = false;
+      return;
+    }
+
+    this.commentsLoading = true;
+    forkJoin(churchIds.map(churchId =>
+      this.reportService.getDepartmentComments(churchId, departmentId)
+    )).subscribe({
+      next: responses => {
+        const comments = responses.flatMap(response =>
+          Array.isArray(response) ? response : response.data ?? []
+        );
+        comments.sort((a, b) =>
+          b.date_commented.localeCompare(a.date_commented) ||
+          b.comment_id - a.comment_id
+        );
+        this.latestComment = comments[0] ?? null;
+        this.commentsLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.latestComment = null;
+        this.commentsLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // =================================================
@@ -617,6 +721,37 @@ export class DeathbapComponent implements OnInit {
 
   loadChurches(): void {
 
+    this.churchesLoading = true;
+
+    if (!this.isReadOnly) {
+      this.churchService.getMyDistrictChurches().subscribe({
+        next: response => {
+          this.districtId = Number(response.district?.church_id) || this.districtId;
+          this.churches = (response.data || []).map(church => ({
+            church_id: Number(church.church_id),
+            name: church.name || '',
+            address: church.address || '',
+            parent_id: church.parent_id == null
+              ? null
+              : Number(church.parent_id)
+          }));
+          this.churchesLoading = false;
+          if (this.selectedRecord === 'baptism' || this.selectedRecord === 'death') {
+            this.loadLatestComment();
+          }
+          this.cdr.detectChanges();
+        },
+        error: error => {
+          console.error('Failed to load district churches:', error);
+          this.churches = [];
+          this.churchesLoading = false;
+          this.latestComment = null;
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    }
+
     console.log('Loading churches...');
 
     this.http
@@ -662,6 +797,8 @@ export class DeathbapComponent implements OnInit {
 
           }
 
+          this.churchesLoading = false;
+
           console.log('Churches loaded:', this.churches);
 
           this.cdr.detectChanges();
@@ -676,6 +813,7 @@ export class DeathbapComponent implements OnInit {
           );
 
           this.churches = [];
+          this.churchesLoading = false;
 
         }
 

@@ -109,21 +109,28 @@ export const PASTOR_ROUTES: Routes = [
   {
     path: 'view-representatives',
     loadComponent: () =>
-      import('./view-representative/view-representative')
+      import('./user_management/view-representative/view-representative')
         .then(m => m.ViewRepresentative)
   },
   {
     path: 'view-representatives/:id/edit',
     loadComponent: () =>
-      import('./edit-representative/edit-representative')
+      import('./user_management/edit-representative/edit-representative')
         .then(m => m.EditRepresentative)
   },
   {
     path: 'new-representative',
     loadComponent: () =>
-      import('./new-representative/new-representative')
+      import('./user_management/new-representative/new-representative')
         .then(m => m.NewRepresentative)
   },
+  {
+    path: 'assign-representative',
+    loadComponent: () =>
+      import('./user_management/assign-church/assign-church')
+        .then(m => m.AssignChurch)
+  },
+
 
        // ==============================
         // EVENTS (Adicionados aqui diretamente)

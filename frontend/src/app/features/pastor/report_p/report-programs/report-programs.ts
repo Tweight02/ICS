@@ -49,6 +49,8 @@ export class ReportPrograms implements OnInit {
 
   departments: Department[] = [];
 
+  private readonly personalReportDepartmentIds = new Set([16, 20, 22, 23]);
+
   private readonly loadingState = signal(false);
   get loading(): boolean {
     return this.loadingState();
@@ -86,16 +88,24 @@ export class ReportPrograms implements OnInit {
 
   get reportDepartments(): Department[] {
     return this.departments.filter(department =>
-      this.isReportDepartment(department)
+      !this.isPersonalReportDepartment(department)
     );
   }
 
-  isReportDepartment(department: Department): boolean {
-    const name = String(department.department_name || '').trim().toLowerCase();
-    const excludedReports = ['baptism', 'death'];
+  get personalReportDepartments(): Department[] {
+    return this.departments.filter(department =>
+      this.isPersonalReportDepartment(department)
+    );
+  }
 
-    return this.portalPrefix() !== '/pastor'
-      || !excludedReports.some(excluded => name.includes(excluded));
+  private isPersonalReportDepartment(department: Department): boolean {
+    const name = String(department.department_name || '').trim().toLowerCase();
+
+    return this.personalReportDepartmentIds.has(Number(department.department_id))
+      || name.includes('adventist mission')
+      || name.includes('ministerial')
+      || name.includes('baptism record')
+      || name.includes('death record');
   }
 
   openDepartment(department: Department): void {
@@ -106,15 +116,17 @@ export class ReportPrograms implements OnInit {
     const portalPrefix = this.portalPrefix();
     const departmentName = String(department.department_name || '').toLowerCase();
 
-    if (
-      portalPrefix !== '/pastor'
-      && (
-        department.department_id === 22
-        || department.department_id === 23
-        || departmentName.includes('baptism')
-        || departmentName.includes('death')
-      )
-    ) {
+    const isBaptismOrDeath = department.department_id === 22
+      || department.department_id === 23
+      || departmentName.includes('baptism')
+      || departmentName.includes('death');
+
+    if (isBaptismOrDeath && portalPrefix === '/pastor') {
+      this.router.navigate(['/pastor/deathbap']);
+      return;
+    }
+
+    if (isBaptismOrDeath) {
       this.router.navigate([
         `${portalPrefix}/reports/records`,
         department.department_id,
@@ -229,6 +241,17 @@ export class ReportPrograms implements OnInit {
 
   getMonitoring(index: number): Monitoring {
     const department = this.reportDepartments[index];
+
+    return this.monitoringFor(department);
+  }
+
+  getPersonalMonitoring(index: number): Monitoring {
+    const department = this.personalReportDepartments[index];
+
+    return this.monitoringFor(department);
+  }
+
+  private monitoringFor(department: Department | undefined): Monitoring {
 
     if (!department) {
       return this.emptyMonitoring;

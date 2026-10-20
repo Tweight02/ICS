@@ -1,258 +1,236 @@
-<div class="mx-auto max-w-7xl px-3 py-4 text-slate-900 sm:px-4">
-    <!-- Header -->
+<!--
+  Spacing system (Tailwind scale, 4px base):
+  - gap-2 / mr-2  → inside a control (icon + label, spinner + text)
+  - gap-3         → between sibling controls (buttons, icon + title)
+  - gap-4 / p-4   → between sections, grid gaps, card padding, table cell padding
+  - py-6 / py-8   → page top/bottom, empty & loading states
+  - Controls are all h-10.
+-->
+<div class="mx-auto max-w-7xl space-y-4 px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
+
+    <!-- HEADER -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex items-center gap-2">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-[#0F4A30]">
+        <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#0F4A30]">
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                         d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m6-10a4 4 0 100-8 4 4 0 000 8zm10 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
                 </svg>
             </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-tight text-slate-900">Church Representatives</h1>
-                <p class="text-xs text-slate-500">Representatives assigned to churches in your district.</p>
-            </div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">Manage Representatives</h1>
         </div>
-        @if (!transferMode()) {
-        <div class="flex flex-wrap items-center gap-2">
-            <button type="button" (click)="enterTransferMode()"
-                class="inline-flex h-10 items-center justify-center gap-2 rounded-lg! border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-[#0F4A30] focus:outline-none focus:ring-2 focus:ring-emerald-700/20">
-                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                    aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M7 7h14m0 0-4-4m4 4-4 4M17 17H3m0 0 4 4m-4-4 4-4" />
-                </svg>
-                Church Transfer
-            </button>
+
+        <div class="flex shrink-0 flex-wrap items-center gap-3 sm:flex-nowrap">
+            <a routerLink="/pastor/assign-representative"
+                class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap !rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 !no-underline transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-[#0F4A30] focus:outline-none focus:ring-2 focus:ring-emerald-700/20">
+                Assign to Church
+            </a>
             <a routerLink="/pastor/new-representative"
-                class="inline-flex no-underline! h-10 items-center justify-center gap-2 rounded-lg bg-[#0F4A30] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0B3925] focus:outline-none focus:ring-2 focus:ring-[#0F4A30]/30 focus:ring-offset-2">
+                class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap !rounded-lg bg-[#0F4A30] px-4 text-sm font-semibold text-white shadow-sm !no-underline transition hover:bg-[#0B3925] focus:outline-none focus:ring-2 focus:ring-[#0F4A30]/30 focus:ring-offset-2">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m7-7H5" />
                 </svg>
                 Add New Representative
             </a>
         </div>
-        } @else {
-        <button type="button" (click)="cancelTransferMode()"
-            class="shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100">Cancel
-            transfer</button>
-        }
     </div>
 
-    @if (transferMode()) {
-        <div class="mb-3 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-2.5">
-                <h2 class="text-sm font-semibold text-slate-900">Church Transfer</h2>
-                @if (selectedCount() > 0) {
-                    <p class="text-xs text-slate-600"><span class="font-semibold text-slate-900">{{ selectedCount() }}</span> representative{{ selectedCount() === 1 ? '' : 's' }} selected</p>
+    <!-- FILTERS -->
+    <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+
+            <!-- Search -->
+            <div>
+                <label for="representative-search" class="mb-1 block text-xs font-medium text-slate-700">Search</label>
+                <input id="representative-search" type="text" [value]="search()"
+                    (input)="onSearch($any($event.target).value)" placeholder="Search representative name or email..."
+                    class="block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]" />
+            </div>
+
+            <!-- Church Filter -->
+            <div class="relative" (focusout)="onChurchFilterFocusOut($event)">
+                <label for="church-filter" class="mb-1 block text-xs font-medium text-slate-700">Church</label>
+                <input id="church-filter" type="text" role="combobox" aria-autocomplete="list"
+                    aria-controls="church-filter-list" [attr.aria-expanded]="churchFilterOpen()"
+                    [attr.aria-activedescendant]="churchFilterOpen() && filteredChurchFilterOptions().length ? 'church-filter-opt-' + churchFilterActiveIndex() : null"
+                    [value]="churchFilterOpen() ? churchFilterQuery() : selectedChurchLabel()"
+                    (focus)="openChurchFilter()" (click)="openChurchFilter()"
+                    (input)="onChurchFilterInput($any($event.target).value)" (keydown)="onChurchFilterKeydown($event)"
+                    placeholder="All churches" autocomplete="off"
+                    class="block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]" />
+                @if (churchFilterOpen()) { 
+                <ul id="church-filter-list" role="listbox" aria-label="Churches" (mousedown)="$event.preventDefault()"
+                    class="absolute left-0 right-0 top-full z-20 mt-1 max-h-52 overflow-auto rounded-md border border-slate-200 bg-white py-1 text-xs shadow-lg">
+                    @for (option of filteredChurchFilterOptions(); track option.value; let i = $index) {
+                    <li role="option" [id]="'church-filter-opt-' + i" [attr.aria-selected]="option.value === churchId()"
+                        (click)="onChurchChange(option.value)" (mouseenter)="churchFilterActiveIndex.set(i)"
+                        class="cursor-pointer px-3 py-2 text-slate-800"
+                        [class.bg-emerald-50]="i === churchFilterActiveIndex()"
+                        [class.font-semibold]="option.value === churchId()">
+                        {{ option.label }}
+                    </li>
+                    } @empty {
+                    <li role="presentation" class="px-3 py-2 text-slate-500">No churches found.</li>
+                    }
+                </ul>
+                }
+                @if (churchOptionsError()) {
+                <p class="mt-1 text-xs text-red-700" role="alert">
+                    {{ churchOptionsError() }}
+                    <button type="button" (click)="loadChurchOptions()"
+                        class="ml-1 font-semibold underline">Retry</button>
+                </p>
                 }
             </div>
-            <div class="p-3">
-                @if (selectedCount() > 0) {
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <p class="text-xs text-slate-500">Choose a destination church for each selected representative below.</p>
-                        <button type="button" (click)="reviewTransfers()" [disabled]="savingTransfer() || loadingTransferChurches()" class="rounded-md bg-[#0F4A30] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#0B3925] disabled:cursor-not-allowed disabled:opacity-50">
-                            {{ savingTransfer() ? 'Processing...' : 'Review Transfers' }}
-                        </button>
-                    </div>
-                } @else {
-                    <p class="text-xs text-slate-500">Select active representatives using the checkboxes below.</p>
-                }
+
+            <!-- Status Filter -->
+            <div>
+                <label for="representative-status" class="mb-1 block text-xs font-medium text-slate-700">Status</label>
+                <select id="representative-status" [value]="status()"
+                    (change)="onStatusChange($any($event.target).value)"
+                    class="block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]">
+                    <option value="">All statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
             </div>
-            @if (loadingTransferChurches()) {
-                <p class="border-t border-slate-100 px-3 py-2 text-xs text-slate-500" aria-live="polite">Loading destination churches...</p>
-            } @else if (transferError()) {
-                <div class="flex items-center justify-between gap-2 border-t border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert">
-                    <span>{{ transferError() }}</span>
-                    <button type="button" (click)="enterTransferMode()" class="font-medium underline">Retry</button>
-                </div>
-            }
         </div>
+    </div>
+
+    <!-- ERROR -->
+    @if (error()) {
+    <div role="alert" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+        {{ error() }}
+        <button type="button" (click)="loadRepresentatives()" class="ml-2 font-medium underline">Retry</button>
+    </div>
     }
 
-<!-- FILTERS -->
-<div class="mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div>
-            <label for="representative-search" class="block text-xs font-medium text-slate-700">Search</label>
-            <input id="representative-search" type="text" [value]="search()"
-                (input)="onSearch($any($event.target).value)" placeholder="Search representative name or email..."
-                class="mt-1 block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]" />
-        </div>
-        <div>
-            <label for="representative-church" class="block text-xs font-medium text-slate-700">Church</label>
-            <select id="representative-church" [value]="churchId()" (change)="onChurchChange($any($event.target).value)"
-                class="mt-1 block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]">
-                <option value="">All churches</option>
-                @for (church of churches(); track church.church_id) {
-                    <option [value]="church.church_id">{{ church.name }}</option>
-                }
-            </select>
-            @if (churchOptionsError()) {
-                <p class="mt-1 text-xs text-rose-600" role="alert">
-                    {{ churchOptionsError() }}
-                    <button type="button" (click)="loadChurchOptions()" class="font-semibold underline">Retry</button>
-                </p>
-            }
-        </div>
-        <div>
-            <label for="representative-status" class="block text-xs font-medium text-slate-700">Status</label>
-            <select id="representative-status" [value]="status()" (change)="onStatusChange($any($event.target).value)"
-                class="mt-1 block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]">
-                <option value="">All statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
-        </div>
-    </div>
-</div>
+    <!-- TABLE -->
+    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full divide-y divide-slate-200">
 
-@if (error()) {
-<div role="alert" class="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-    {{ error() }}
-    <button type="button" (click)="loadRepresentatives()" class="ml-2 font-medium underline">Retry</button>
-</div>
-}
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th
+                            class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Representative</th>
+                        <th
+                            class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Church</th>
+                        <th
+                            class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Email</th>
+                        <th
+                            class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Birthdate</th>
+                        <th
+                            class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Status</th>
+                    </tr>
+                </thead>
 
-<!-- TABLE -->
-<div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-    <div class="overflow-x-auto">
-        <table class="w-full divide-y divide-slate-200">
-            <thead class="bg-slate-50">
-                <tr>
-                    @if (transferMode()) {
-                    <th class="w-8 px-2 py-2 text-center">
-                        <input type="checkbox" aria-label="Select all active representatives on this page"
-                            [checked]="allVisibleSelected()" (change)="toggleAllVisible()"
-                            class="h-3.5 w-3.5 rounded border-slate-300 text-[#0F4A30] focus:ring-[#0F4A30]" />
-                    </th>
-                    }
-                    <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                        Church</th>
-                    <th
-                        class="whitespace-nowrap px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                        Representative</th>
-                    <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                        Email</th>
-                    <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                        Birthdate</th>
-                    <th class="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                        Active</th>
-                </tr>
-            </thead>
-
-            <tbody class="divide-y divide-slate-100">
-                @if (loading()) {
-                <tr>
-                    <td [attr.colspan]="transferMode() ? 6 : 5" class="px-3 py-6 text-center">
-                        <div class="flex items-center justify-center gap-2 text-xs text-slate-500">
-                            <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4" />
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                            </svg>
-                            Loading representatives...
-                        </div>
-                    </td>
-                </tr>
-                } @else if (representatives().length === 0) {
-                <tr>
-                    <td [attr.colspan]="transferMode() ? 6 : 5" class="px-3 py-6 text-center text-xs text-slate-500">
-                        No representatives found.
-                    </td>
-                </tr>
-                } @else {
-                @for (representative of representatives(); track representative.user_id) {
-                <tr [routerLink]="transferMode() ? null : ['/pastor/view-representatives', representative.user_id, 'edit']"
-                    [attr.tabindex]="transferMode() ? null : 0"
-                    [attr.aria-label]="'View representative ' + fullName(representative)"
-                    (keydown.enter)="!transferMode() && $any($event.currentTarget).click()"
-                    (keydown.space)="!transferMode() && $any($event.currentTarget).click()"
-                    [class.cursor-pointer]="!transferMode()" class="transition"
-                    [class.hover:bg-slate-50]="!transferMode()" [class.cursor-default]="transferMode()"
-                    [class.bg-emerald-50]="transferMode() && isSelected(representative.user_id)">
-                    @if (transferMode()) {
-                    <td class="w-8 px-2 py-2 text-center align-middle" (click)="$event.stopPropagation()">
-                        <input type="checkbox" [attr.aria-label]="'Select ' + fullName(representative)"
-                            [checked]="isSelected(representative.user_id)"
-                            [disabled]="representative.status !== 'active' || savingTransfer()"
-                            (change)="toggleRepresentative(representative.user_id)"
-                            class="h-3.5 w-3.5 rounded border-slate-300 text-[#0F4A30] focus:ring-[#0F4A30] disabled:opacity-40" />
-                    </td>
-                    }
-                    <td class="px-3 py-2 align-middle">
-                        <div class="text-xs font-medium text-slate-800">{{ representative.church?.name ?? 'Unassigned'
-                            }}</div>
-                    </td>
-                    <td class="px-3 py-2 align-middle">
-                        <div class="flex items-center gap-2">
-                            <div
-                                class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0F4A30] text-[10px] font-semibold text-white">
-                                {{ initials(representative) }}
+                <!-- Loading / empty / rows -->
+                <tbody class="divide-y divide-slate-100">
+                    @if (loading()) {
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center">
+                            <div class="flex items-center justify-center gap-2 text-xs text-slate-500">
+                                <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4" />
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                </svg>
+                                Loading representatives...
                             </div>
-                            <div class="min-w-0">
-                                <div class="text-xs font-medium text-slate-900">{{ fullName(representative) }}</div>
-                                <div class="text-[10px] text-slate-500">Representative</div>
-                            </div>
-                        </div>
-                        @if (transferMode() && isSelected(representative.user_id)) {
-                        <div class="mt-2 max-w-55" (click)="$event.stopPropagation()">
-                            <label class="mb-0.5 block text-[10px] font-medium text-slate-500"
-                                [for]="'destination-' + representative.user_id">Destination Church</label>
-                            <select [id]="'destination-' + representative.user_id"
-                                [value]="getIndividualDestination(representative.user_id) ?? ''"
-                                [disabled]="savingTransfer()"
-                                (change)="updateIndividualDestination(representative.user_id, $any($event.target).value)"
-                                class="block w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-normal text-slate-700 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30] disabled:bg-slate-50">
-                                <option value="">Select destination</option>
-                                @for (church of transferChurches(); track church.church_id) {
-                                @if (church.church_id !== representative.church_id) {
-                                <option [value]="church.church_id">{{ church.name }}</option>
-                                }
-                                }
-                            </select>
-                        </div>
-                        }
-                    </td>
-                    <td class="px-3 py-2 align-middle">
-                        <span class="text-xs text-slate-600">{{ representative.email }}</span>
-                    </td>
-                    <td class="px-3 py-2 align-middle">
-                        <span class="text-xs text-slate-600">{{ representative.birthdate ? (representative.birthdate |
-                            date: 'MMM d, y') : '—' }}</span>
-                    </td>
-                    <td class="px-3 py-2 align-middle">
-                        <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                            [class.bg-emerald-50]="representative.status === 'active'"
-                            [class.text-emerald-700]="representative.status === 'active'"
-                            [class.bg-slate-100]="representative.status !== 'active'"
-                            [class.text-slate-600]="representative.status !== 'active'">
-                            {{ representative.status === 'active' ? 'Active' : representative.status === 'inactive' ?
-                            'Inactive' : 'Unknown' }}
-                        </span>
-                    </td>
-                </tr>
-                }
-                }
-            </tbody>
-        </table>
-    </div>
+                        </td>
+                    </tr>
+                    } @else if (representatives().length === 0) {
+                    <tr>
+                        <td colspan="5"
+                            class="px-4 py-8 text-center text-xs text-slate-500">
+                            No representatives found.
+                        </td>
+                    </tr>
+                    } @else {
+                    @for (representative of representatives(); track representative.user_id) {
+                    <tr [routerLink]="['/pastor/view-representatives', representative.user_id, 'edit']"
+                        tabindex="0"
+                        [attr.aria-label]="'View representative ' + fullName(representative)"
+                        (keydown.enter)="$any($event.currentTarget).click()"
+                        (keydown.space)="$event.preventDefault(); $any($event.currentTarget).click()"
+                        class="cursor-pointer transition-colors hover:bg-emerald-100 focus:outline-none focus-visible:bg-emerald-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F4A30]/40">
 
-    <!-- PAGINATION -->
-    <div
-        class="flex flex-col gap-2 border-t border-slate-200 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-        <p class="text-xs text-slate-500">
-            Showing <span class="font-medium text-slate-700">{{ from() }}</span> to <span
-                class="font-medium text-slate-700">{{ to() }}</span>
-            of <span class="font-medium text-slate-700">{{ total() }}</span> representatives
-        </p>
-        <div class="flex items-center gap-1.5">
-            <button type="button" (click)="previousPage()" [disabled]="currentPage() <= 1 || loading()"
-                class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">Previous</button>
-            <span class="whitespace-nowrap px-1.5 text-xs text-slate-500">Page {{ currentPage() }} of {{ lastPage()
-                }}</span>
-            <button type="button" (click)="nextPage()" [disabled]="currentPage() >= lastPage() || loading()"
-                class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">Next</button>
+                        <!-- REPRESENTATIVE -->
+                        <td class="px-4 py-3 align-middle">
+                            <div class="text-xs font-medium text-slate-900">{{ fullName(representative) }}</div>
+                        </td>
+
+                        <!-- CHURCH -->
+                        <td class="px-4 py-3 align-middle">
+                            <span class="text-xs font-medium text-slate-800">{{ representative.church?.name ??
+                                'Unassigned' }}</span>
+                        </td>
+
+                        <!-- EMAIL -->
+                        <td class="px-4 py-3 align-middle">
+                            <span class="text-xs text-slate-600">{{ representative.email }}</span>
+                        </td>
+
+                        <!-- BIRTHDATE -->
+                        <td class="px-4 py-3 align-middle">
+                            <span class="text-xs text-slate-600">
+                                {{ representative.birthdate ? (representative.birthdate | date:'MMM d, y':'UTC') : '—'
+                                }}
+                            </span>
+                        </td>
+
+                        <!-- STATUS -->
+                        <td class="px-4 py-3 align-middle">
+                            <span class="inline-flex px-2 py-0.5 text-[10px] font-semibold"
+                                [class.text-emerald-700]="representative.status === 'active'"
+                                [class.text-slate-600]="representative.status !== 'active'">
+                                {{ representative.status === 'active' ? 'Active' : representative.status === 'inactive'
+                                ? 'Inactive' : 'Unknown' }}
+                            </span>
+                        </td>
+                    </tr>
+                    }
+                    }
+                </tbody>
+            </table>
         </div>
+
+        @if (total() > perPage) {
+        <!-- PAGINATION -->
+        <div
+            class="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-xs text-slate-500">
+                Showing
+                <span class="font-medium text-slate-700">{{ from() }}</span>
+                to
+                <span class="font-medium text-slate-700">{{ to() }}</span>
+                of
+                <span class="font-medium text-slate-700">{{ total() }}</span>
+                representatives
+            </p>
+
+            <div class="flex items-center gap-3">
+                <button type="button" (click)="previousPage()" [disabled]="currentPage() <= 1 || loading()"
+                    class="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+                    Previous
+                </button>
+
+                <span class="whitespace-nowrap text-xs text-slate-500">Page {{ currentPage() }} of {{ lastPage()
+                    }}</span>
+
+                <button type="button" (click)="nextPage()" [disabled]="currentPage() >= lastPage() || loading()"
+                    class="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+                    Next
+                </button>
+            </div>
+        </div>
+        }
     </div>
 </div>

@@ -3,6 +3,15 @@
     [user]="currentUser()!"
     (collapsedChange)="collapsed = $event"
   />
+
+  @if (!collapsed) {
+    <button
+      type="button"
+      class="app-sidebar-backdrop"
+      aria-label="Close navigation"
+      (click)="collapsed = true"
+    ></button>
+  }
 }
 
 <main

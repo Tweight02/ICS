@@ -53,6 +53,15 @@ describe('AssignUser', () => {
     expect(pageText).not.toContain('North region');
   });
 
+  it('keeps selected values visible while removing them from available choices', () => {
+    component.form.setValue({ district_id: '2', user_id: '5' });
+
+    expect(component.selectedLabel('district_id')).toBe('South District');
+    expect(component.selectedLabel('user_id')).toBe('Amina Pastor');
+    expect(component.optionsFor('district_id')).toEqual([]);
+    expect(component.optionsFor('user_id')).toEqual([]);
+  });
+
   it('assigns a selected pastor and reloads assignments after success', () => {
     component.form.setValue({ district_id: '2', user_id: '5' });
 

@@ -1,32 +1,30 @@
-<div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+<div class="report-responsive-page particulars-modern min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
   <div class="mx-auto max-w-6xl">
+
+    <button type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="group mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
+     px-5 text-sm font-medium tracking-widest text-white
+     [text-shadow:0_0_10px_rgba(255,255,255,0.55)]
+     shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)]
+     transition duration-200 ease-out
+     hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700
+     hover:shadow-[0_16px_24px_-8px_rgba(6,78,59,0.5)]
+     active:translate-y-0 active:shadow-[0_6px_12px_-6px_rgba(6,78,59,0.4)]
+     focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
+      <svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 5l-5 5 5 5" />
+      </svg>
+      Back
+    </button>
 
     <!-- HEADER -->
     <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-4">
-        <button type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="group inline-flex items-center gap-2.5 bg-gradient-to-b from-emerald-400 to-emerald-600
-         py-1.5 pl-1.5 pr-6 text-sm font-medium tracking-widest text-white
-         [text-shadow:0_0_10px_rgba(255,255,255,0.55)]
-         shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)]
-         transition duration-200 ease-out
-         hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700
-         hover:shadow-[0_16px_24px_-8px_rgba(6,78,59,0.5)]
-         active:translate-y-0 active:shadow-[0_6px_12px_-6px_rgba(6,78,59,0.4)]
-         focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
-          <span>
-            <svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 5l-5 5 5 5" />
-            </svg>
-          </span>
-          Back
-        </button>
-
         <div>
           <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
             Department Report
           </p>
-          <h1 class="text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
+          <h1 class="font-serif text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
             {{ report?.department?.department_name || 'Report Particulars' }}
           </h1>
         </div>
@@ -44,12 +42,6 @@
              px-4 py-3 text-sm text-red-700 backdrop-blur-md">
       <span aria-hidden="true">⚠</span>
       <span>{{ errorMessage }}</span>
-    </div>
-
-    <div *ngIf="successMessage" role="status" class="mb-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/90
-             px-4 py-3 text-sm text-emerald-800 backdrop-blur-md">
-      <span aria-hidden="true">✓</span>
-      <span>{{ successMessage }}</span>
     </div>
 
     <ng-container *ngIf="!loading && report">
@@ -107,7 +99,7 @@
       </div>
 
       <!-- REPORT + COMMENTS (side by side) -->
-      <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      <div class="grid gap-6">
 
         <!-- LEFT: REPORT TABLES -->
         <div class="min-w-0">
@@ -116,6 +108,34 @@
             <section *ngFor="let section of program.sections; trackBy: trackSection" class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
+              <details>
+                <summary class="relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
+                  <span class="block min-w-0 pr-32">
+                    {{ section.program_name || section.section_name || program.program_name || 'Particular' }}
+
+                    <span *ngIf="!isAnnualView" [ngClass]="{
+                      'text-emerald-700': isSectionDataComplete(section),
+                      'text-amber-700': !isSectionDataComplete(section)
+                    }" class="text-[11px] font-semibold normal-case">
+                      {{ isSectionDataComplete(section) ? 'Data complete' : 'Data incomplete' }}
+                    </span>
+                  </span>
+
+                  <span class="absolute right-5 top-2.5 flex items-center gap-2 whitespace-nowrap">
+                    <span *ngIf="!isAnnualView &&
+               selectedQuarterId !== null &&
+               isQuarterEndorsed(selectedQuarterId)" class="text-sm font-bold normal-case tracking-normal text-sky-800">
+                      Endorsed
+                    </span>
+
+                    <span *ngIf="!isAnnualView &&
+               selectedQuarterId !== null &&
+               isQuarterApproved(selectedQuarterId)" class="text-sm font-bold normal-case tracking-normal text-emerald-800">
+                      ✓ Approved
+                    </span>
+                  </span>
+                </summary>
+
               <div class="overflow-x-auto">
                 <table class="w-full border-collapse text-sm">
 
@@ -123,24 +143,6 @@
                     <tr class="bg-emerald-900/10 text-emerald-950">
                       <th class="min-w-[220px] px-5 py-3.5 text-left text-xs font-bold
                                uppercase tracking-wider">
-                        {{ section.program_name || section.section_name || program.program_name || 'Particular' }}
-
-                        <!-- STATUS BADGES -->
-
-                        <span *ngIf="!isAnnualView &&
-                   selectedQuarterId !== null &&
-                   isQuarterEndorsed(selectedQuarterId)" class="inline-flex items-center gap-1  px-3 py-1
-                   text-sm font-semibold text-emerald-950 ">
-                          Endorsed
-                        </span>
-
-                        <span *ngIf="!isAnnualView &&
-                   selectedQuarterId !== null &&
-                   isQuarterApproved(selectedQuarterId)" class="inline-flex items-center gap-1   px-3 py-1
-                   text-sm font-semibold text-emerald ">
-                          ✓ Approved
-                        </span>
-
                       </th>
 
                       <ng-container *ngIf="isAnnualView; else quarterHeader">
@@ -224,6 +226,7 @@
                   </tbody>
                 </table>
               </div>
+              </details>
             </section>
 
           </ng-container>
@@ -235,19 +238,33 @@
         </div>
 
         <!-- RIGHT: COMMENTS (District Pastor & Assistant) -->
-        <aside class="min-w-0 lg:sticky lg:top-6">
-          <section class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
+          <aside class="min-w-0">
+          <section [ngClass]="mobileCommentsOpen
+            ? 'fixed inset-x-3 bottom-3 z-50 flex h-[min(78vh,640px)] flex-col shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]'
+            : 'hidden'"
+            class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                    shadow-lg shadow-emerald-950/5 backdrop-blur-xl lg:mb-0">
 
-            <div class="flex items-center justify-between gap-2 bg-emerald-900/10 px-5 py-3.5">
-              <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-950">Comments</h2>
-
-              <!-- COUNT -->
-              <span *ngIf="getCommentStatus() === 'commented'" class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1
-                       text-xs font-semibold text-amber-800">
-                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                {{ getVisibleComments().length }}
-              </span>
+            <div class="flex shrink-0 items-center justify-between gap-3 bg-emerald-900 px-4 py-3 text-white">
+              <div class="flex min-w-0 items-center gap-3">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
+                  </svg>
+                </span>
+                <div class="min-w-0">
+                  <h2 class="font-serif text-base font-semibold text-white">Comments</h2>
+                  <p class="text-xs text-white/70">Report conversation</p>
+                </div>
+              </div>
+              <button type="button" (click)="closeMobileComments()" aria-label="Close comments"
+                title="Close comments" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="m5 5 10 10M15 5 5 15" />
+                </svg>
+              </button>
             </div>
 
             <div *ngIf="commentsError" role="alert"
@@ -261,39 +278,24 @@
             </div>
 
             <ul *ngIf="!commentsLoading && getVisibleComments().length > 0"
-              class="max-h-[60vh] divide-y divide-emerald-900/5 overflow-y-auto">
+              #commentMessages (scroll)="onCommentMessagesScroll()"
+              class="flex min-h-0 max-h-[60vh] flex-1 flex-col gap-4 overflow-y-auto bg-emerald-50/70 px-4 py-4">
               <li *ngFor="let comment of getVisibleComments(); trackBy: trackComment"
-                class="flex items-start gap-3 px-5 py-4 transition hover:bg-white/50">
-
-                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
-                         bg-emerald-700 text-xs font-bold text-white">
-                  {{ getInitials(comment.commenter_name) }}
-                </span>
-
-                <div class="min-w-0 flex-1">
-                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span class="text-sm font-semibold text-emerald-950">
-                      {{ comment.commenter_name || 'Pastor' }}
-                    </span>
-
-                    <span *ngIf="comment.commenter_role" class="rounded-full bg-emerald-900/10 px-2 py-0.5 text-[11px] font-semibold
-                             capitalize text-emerald-900">
-                      {{ comment.commenter_role }}
-                    </span>
-
-                    <span *ngIf="isAnnualView && getCommentQuarterLabel(comment)"
-                      class="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
-                      {{ getCommentQuarterLabel(comment) }}
-                    </span>
-
-                    <span class="text-xs text-emerald-900/60">
-                      {{ comment.date_commented | date: 'mediumDate' }}
-                    </span>
-                  </div>
-
-                  <p class="mt-1 whitespace-pre-line break-words text-sm text-emerald-950/80">
-                    {{ comment.details }}
-                  </p>
+                class="flex flex-col gap-1" [ngClass]="isOwnComment(comment) ? 'items-end' : 'items-start'">
+                <article [ngClass]="isOwnComment(comment)
+                    ? 'rounded-br-md bg-emerald-700 text-white'
+                    : 'rounded-bl-md border border-emerald-900/10 bg-white text-emerald-950'"
+                  class="max-w-[88%] rounded-2xl px-4 py-3 shadow-sm">
+                  <p class="whitespace-pre-line break-words text-sm">{{ comment.details }}</p>
+                </article>
+                <div class="flex max-w-[88%] flex-wrap items-center gap-x-2 px-2 text-[11px] text-emerald-900/60"
+                  [ngClass]="isOwnComment(comment) ? 'justify-end text-right' : 'justify-start'">
+                  <span class="font-semibold text-emerald-900/75">
+                    {{ comment.commenter_name || (isOwnComment(comment) ? 'You' : 'Pastor') }}
+                  </span>
+                  <span *ngIf="comment.commenter_role" class="capitalize">{{ comment.commenter_role }}</span>
+                  <span *ngIf="isAnnualView && getCommentQuarterLabel(comment)">{{ getCommentQuarterLabel(comment) }}</span>
+                  <time>{{ comment.date_commented | date: 'mediumDate' }}</time>
                 </div>
               </li>
             </ul>
@@ -302,7 +304,49 @@
               class="px-5 py-8 text-center text-sm text-emerald-900/60">
               No comments yet.
             </div>
+
+            <form *ngIf="isRepresentative() && hasPreviousComment()" (ngSubmit)="submitComment()"
+              class="shrink-0 border-t border-emerald-900/10 bg-white/80 p-3">
+              <p *ngIf="!canReplyToComments()" class="mb-2 text-xs text-emerald-900/60">
+                Replies are unavailable for this quarter.
+              </p>
+              <div class="flex items-center gap-2">
+                <input id="representative-reply" type="text" name="reply" [(ngModel)]="commentDraft" maxlength="255"
+                [disabled]="!canReplyToComments() || commentSubmitting"
+                placeholder="Write a comment..." aria-label="Write a comment"
+                class="h-11 min-w-0 flex-1 rounded-full border-0 bg-emerald-900/5 px-4 text-sm text-emerald-950 outline-none transition placeholder:text-emerald-900/45 focus:bg-white focus:ring-2 focus:ring-emerald-600/25 disabled:cursor-not-allowed disabled:opacity-60">
+                <button type="submit" aria-label="Send comment" title="Send comment"
+                  [disabled]="!commentDraft.trim() || !canReplyToComments() || commentSubmitting"
+                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-emerald-900/30">
+                  <svg *ngIf="!commentSubmitting" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m4 4 17 8-17 8 3-8-3-8Z" />
+                    <path d="M7 12h14" />
+                  </svg>
+                  <span *ngIf="commentSubmitting" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                </button>
+              </div>
+            </form>
+
+            <div *ngIf="isRepresentative() && !commentsLoading && !commentsError && !hasPreviousComment()"
+              class="border-t border-emerald-900/10 px-4 py-3 text-xs text-emerald-900/60">
+              You can reply after a pastor or assistant starts this conversation.
+            </div>
           </section>
+
+          <button *ngIf="!mobileCommentsOpen" type="button" (click)="openMobileComments()"
+            aria-label="Open comments" title="Open comments" [attr.aria-expanded]="mobileCommentsOpen"
+            class="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-950/25 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
+              <path d="M8 11.5h8M8 8.5h5" />
+            </svg>
+            <span *ngIf="getUnreadCommentCount() > 0"
+              class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white">
+              {{ getUnreadCommentCount() }}
+            </span>
+          </button>
         </aside>
 
       </div>

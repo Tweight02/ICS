@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'reporting_year' => env('REPORTING_YEAR', date('Y')),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment
