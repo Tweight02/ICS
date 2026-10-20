@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,6 +7,11 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { UserService } from '../../../../core/services/user/user-service';
 import { Pastor } from '../../../../core/models/pastor.model';
 import { Church } from '../../../../core/models/church.model';
+
+interface DistrictFilterOption {
+  value: string;
+  label: string;
+}
 
 @Component({
   selector: 'app-view-user',
@@ -31,7 +36,30 @@ export class ViewUser implements OnInit {
 
   search = signal('');
   churchId = signal('');
+  districtFilterOpen = signal(false);
+  districtFilterQuery = signal('');
+  districtFilterActiveIndex = signal(0);
   status = signal<'active' | 'inactive' | ''>('');
+
+  districtFilterOptions = computed<DistrictFilterOption[]>(() => [
+    { value: '', label: 'All districts' },
+    ...this.districts().map((district) => ({
+      value: String(district.church_id),
+      label: district.name,
+    })),
+  ]);
+
+  filteredDistrictFilterOptions = computed(() => {
+    const query = this.districtFilterQuery().trim().toLowerCase();
+    const options = this.districtFilterOptions();
+    return query
+      ? options.filter((option) => option.label.toLowerCase().includes(query))
+      : options;
+  });
+
+  selectedDistrictLabel = computed(() =>
+    this.districtFilterOptions().find((option) => option.value === this.churchId())?.label ?? 'All districts'
+  );
 
   page = signal(1);
   lastPage = signal(1);
@@ -122,8 +150,67 @@ export class ViewUser implements OnInit {
 
   onDistrictChange(value: string): void {
     this.churchId.set(value);
+    this.districtFilterOpen.set(false);
+    this.districtFilterQuery.set('');
     this.page.set(1);
     this.loadPastors();
+  }
+
+  openDistrictFilter(): void {
+    this.districtFilterOpen.set(true);
+  }
+
+  onDistrictFilterInput(value: string): void {
+    this.districtFilterQuery.set(value);
+    this.districtFilterOpen.set(true);
+    this.districtFilterActiveIndex.set(0);
+  }
+
+  onDistrictFilterFocusOut(event: FocusEvent): void {
+    const host = event.currentTarget as HTMLElement;
+    if (!host.contains(event.relatedTarget as Node | null)) {
+      this.districtFilterOpen.set(false);
+      this.districtFilterQuery.set('');
+    }
+  }
+
+  onDistrictFilterKeydown(event: KeyboardEvent): void {
+    const options = this.filteredDistrictFilterOptions();
+    const count = options.length;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.districtFilterOpen.set(true);
+        this.districtFilterActiveIndex.set(count ? (this.districtFilterActiveIndex() + 1) % count : 0);
+        this.scrollActiveDistrictIntoView();
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.districtFilterOpen.set(true);
+        this.districtFilterActiveIndex.set(count ? (this.districtFilterActiveIndex() - 1 + count) % count : 0);
+        this.scrollActiveDistrictIntoView();
+        break;
+      case 'Enter':
+        if (this.districtFilterOpen() && count) {
+          event.preventDefault();
+          this.onDistrictChange(options[this.districtFilterActiveIndex()].value);
+        }
+        break;
+      case 'Escape':
+        if (this.districtFilterOpen()) {
+          event.preventDefault();
+          this.districtFilterOpen.set(false);
+          this.districtFilterQuery.set('');
+        }
+        break;
+    }
+  }
+
+  private scrollActiveDistrictIntoView(): void {
+    queueMicrotask(() =>
+      document.getElementById(`district-filter-opt-${this.districtFilterActiveIndex()}`)?.scrollIntoView({ block: 'nearest' })
+    );
   }
 
   onStatusChange(value: 'active' | 'inactive' | ''): void {
