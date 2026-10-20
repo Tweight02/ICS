@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, finalize, Subject } from 'rxjs';
@@ -34,13 +34,27 @@ export class ViewRepresentative implements OnInit {
     churchId = signal<number | ''>('');
     churches = signal<{ church_id: number; name: string }[]>([]);
     churchOptionsError = signal('');
-    transferMode = signal(false);
-    transferChurches = signal<{ church_id: number; name: string }[]>([]);
-    loadingTransferChurches = signal(false);
-    transferError = signal('');
-    selectedRepresentativeIds = signal<number[]>([]);
-    individualDestinations = signal<Record<number, number | null>>({});
-    savingTransfer = signal(false);
+
+    // Church filter combobox
+    churchFilterOpen = signal(false);
+    churchFilterQuery = signal('');
+    churchFilterActiveIndex = signal(0);
+
+    private churchFilterOptions = computed(() => [
+        { value: '', label: 'All churches' },
+        ...this.churches().map((c) => ({ value: String(c.church_id), label: c.name }))
+    ]);
+
+    filteredChurchFilterOptions = computed(() => {
+        const q = this.churchFilterQuery().trim().toLowerCase();
+        const options = this.churchFilterOptions();
+        return q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options;
+    });
+
+    selectedChurchLabel = computed(() => {
+        const id = String(this.churchId());
+        return this.churchFilterOptions().find((o) => o.value === id)?.label ?? 'All churches';
+    });
 
     currentPage = signal(1);
     lastPage = signal(1);
@@ -59,8 +73,7 @@ export class ViewRepresentative implements OnInit {
             )
             .subscribe((value) => {
                 this.search.set(value);
-                this.currentPage.set(1);
-                this.loadRepresentatives();
+                this.searchRepresentatives();
             });
 
         this.loadChurchOptions();
@@ -116,8 +129,6 @@ export class ViewRepresentative implements OnInit {
     }
 
     searchRepresentatives(): void {
-        this.selectedRepresentativeIds.set([]);
-        this.individualDestinations.set({});
         this.currentPage.set(1);
         this.loadRepresentatives();
     }
@@ -127,244 +138,74 @@ export class ViewRepresentative implements OnInit {
     }
 
     onStatusChange(value: 'active' | 'inactive' | ''): void {
-        this.selectedRepresentativeIds.set([]);
-        this.individualDestinations.set({});
         this.status.set(value);
         this.currentPage.set(1);
         this.loadRepresentatives();
     }
 
     onChurchChange(value: string): void {
-        this.selectedRepresentativeIds.set([]);
-        this.individualDestinations.set({});
         this.churchId.set(value ? Number(value) : '');
+        this.churchFilterOpen.set(false);
         this.currentPage.set(1);
         this.loadRepresentatives();
+    }
+
+    openChurchFilter(): void {
+        if (this.churchFilterOpen()) {
+            return;
+        }
+
+        this.churchFilterQuery.set('');
+        const idx = this.filteredChurchFilterOptions()
+            .findIndex((o) => o.value === String(this.churchId()));
+        this.churchFilterActiveIndex.set(Math.max(idx, 0));
+        this.churchFilterOpen.set(true);
+    }
+
+    onChurchFilterInput(value: string): void {
+        this.churchFilterQuery.set(value);
+        this.churchFilterActiveIndex.set(0);
+        this.churchFilterOpen.set(true);
+    }
+
+    onChurchFilterFocusOut(event: FocusEvent): void {
+        const host = event.currentTarget as HTMLElement;
+        if (!host.contains(event.relatedTarget as Node | null)) {
+            this.churchFilterOpen.set(false);
+        }
+    }
+
+    onChurchFilterKeydown(event: KeyboardEvent): void {
+        const options = this.filteredChurchFilterOptions();
+
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                this.churchFilterOpen.set(true);
+                this.churchFilterActiveIndex.update((i) => Math.min(i + 1, options.length - 1));
+                break;
+            case 'ArrowUp':
+                event.preventDefault();
+                this.churchFilterActiveIndex.update((i) => Math.max(i - 1, 0));
+                break;
+            case 'Enter': {
+                event.preventDefault();
+                const option = options[this.churchFilterActiveIndex()];
+                if (option) {
+                    this.onChurchChange(option.value);
+                }
+                break;
+            }
+            case 'Escape':
+                this.churchFilterOpen.set(false);
+                break;
+        }
     }
 
     clearSearch(): void {
-        this.selectedRepresentativeIds.set([]);
-        this.individualDestinations.set({});
         this.search.set('');
         this.currentPage.set(1);
         this.loadRepresentatives();
-    }
-
-    enterTransferMode(): void {
-        this.transferMode.set(true);
-        this.selectedRepresentativeIds.set([]);
-        this.individualDestinations.set({});
-        this.transferError.set('');
-        this.loadingTransferChurches.set(true);
-
-        this.rep.getTransferChurches()
-            .pipe(finalize(() => this.loadingTransferChurches.set(false)))
-            .subscribe({
-                next: (response) => this.transferChurches.set(response.data ?? []),
-                error: (err) => {
-                    this.transferError.set(
-                        err?.error?.message ?? 'Unable to load churches for transfer.'
-                    );
-                }
-            });
-    }
-
-    cancelTransferMode(): void {
-        this.transferMode.set(false);
-        this.selectedRepresentativeIds.set([]);
-        this.individualDestinations.set({});
-        this.transferError.set('');
-    }
-
-    isSelected(userId: number): boolean {
-        return this.selectedRepresentativeIds().includes(userId);
-    }
-
-    toggleRepresentative(userId: number): void {
-        const selected = this.selectedRepresentativeIds();
-        this.selectedRepresentativeIds.set(
-            selected.includes(userId)
-                ? selected.filter((id) => id !== userId)
-                : [...selected, userId]
-        );
-    }
-
-    toggleAllVisible(): void {
-        const selectable = this.representatives()
-            .filter((representative) => representative.status === 'active')
-            .map((representative) => representative.user_id);
-        const selected = new Set(this.selectedRepresentativeIds());
-        const allSelected = selectable.length > 0 && selectable.every((id) => selected.has(id));
-
-        for (const id of selectable) {
-            if (allSelected) {
-                selected.delete(id);
-            } else {
-                selected.add(id);
-            }
-        }
-
-        this.selectedRepresentativeIds.set([...selected]);
-    }
-
-    allVisibleSelected(): boolean {
-        const selectable = this.representatives()
-            .filter((representative) => representative.status === 'active');
-
-        return selectable.length > 0 && selectable.every((representative) => this.isSelected(representative.user_id));
-    }
-
-    selectedCount(): number {
-        return this.selectedRepresentativeIds().length;
-    }
-
-    updateIndividualDestination(userId: number, value: string): void {
-        this.individualDestinations.update((destinations) => ({
-            ...destinations,
-            [userId]: value ? Number(value) : null
-        }));
-    }
-
-    getIndividualDestination(userId: number): number | null {
-        return this.individualDestinations()[userId] ?? null;
-    }
-
-    private validateTransfer(): string | null {
-        const selectedIds = this.selectedRepresentativeIds();
-
-        if (selectedIds.length === 0) {
-            return 'Select at least one representative.';
-        }
-
-        if (this.loadingTransferChurches()) {
-            return 'Wait for the church list to finish loading.';
-        }
-
-        if (this.transferError()) {
-            return this.transferError();
-        }
-
-        const destinations = selectedIds.map((id) => this.getIndividualDestination(id));
-        if (destinations.some((destination) => destination === null)) {
-            return 'Choose a destination church for every selected representative.';
-        }
-
-        if (new Set(destinations).size !== destinations.length) {
-            return 'Each representative must have a different destination church.';
-        }
-
-        for (const userId of selectedIds) {
-            const representative = this.representatives().find((item) => item.user_id === userId);
-            const destinationId = this.getIndividualDestination(userId);
-
-            if (!representative || destinationId === null) {
-                return 'The representative list changed. Reload it and try again.';
-            }
-
-            if (Number(destinationId) === Number(representative.church_id)) {
-                return `${this.fullName(representative)} is already assigned to that church.`;
-            }
-        }
-
-        return null;
-    }
-
-    private buildTransfers(): { user_id: number; church_id: number }[] {
-        return this.selectedRepresentativeIds().map((userId) => ({
-            user_id: userId,
-            church_id: this.getIndividualDestination(userId)!
-        }));
-    }
-
-    async reviewTransfers(): Promise<void> {
-        const validation = this.validateTransfer();
-        if (validation) {
-            await Swal.fire({
-                icon: 'warning',
-                title: 'Invalid transfer',
-                text: validation,
-                confirmButtonColor: '#0F4A30'
-            });
-            return;
-        }
-
-        const rows = this.buildTransfers().map((transfer) => {
-            const representative = this.representatives().find((item) => item.user_id === transfer.user_id)!;
-            const destination = this.transferChurches().find((church) => church.church_id === transfer.church_id);
-
-            return `<div class="flex items-center justify-between gap-4 border-b border-slate-100 py-3 text-left">
-                <div><div class="font-medium text-slate-900">${this.escapeHtml(this.fullName(representative))}</div>
-                <div class="text-xs text-slate-500">${this.escapeHtml(representative.church?.name ?? 'Current church')}</div></div>
-                <div class="text-right"><div class="text-xs text-slate-400">Transfer to</div>
-                <div class="font-medium text-[#0F4A30]">${this.escapeHtml(destination?.name ?? 'Unknown church')}</div></div>
-            </div>`;
-        }).join('');
-
-        const result = await Swal.fire({
-            title: 'Review Transfers',
-            html: `<div class="max-h-80 overflow-y-auto">${rows}</div>`,
-            showCancelButton: true,
-            confirmButtonText: 'Confirm Transfers',
-            cancelButtonText: 'Cancel',
-            confirmButtonColor: '#0F4A30',
-            cancelButtonColor: '#64748b',
-            width: 650
-        });
-
-        if (result.isConfirmed) {
-            this.executeTransfers();
-        }
-    }
-
-    private escapeHtml(value: string): string {
-        return value.replace(/[&<>"']/g, (character) => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        })[character] ?? character);
-    }
-
-    private executeTransfers(): void {
-        if (this.savingTransfer()) {
-            return;
-        }
-
-        const validation = this.validateTransfer();
-        if (validation) {
-            void Swal.fire({
-                icon: 'warning',
-                title: 'Invalid transfer',
-                text: validation,
-                confirmButtonColor: '#0F4A30'
-            });
-            return;
-        }
-
-        this.savingTransfer.set(true);
-        this.rep.transferRepresentatives(this.buildTransfers())
-            .pipe(finalize(() => this.savingTransfer.set(false)))
-            .subscribe({
-                next: async (response) => {
-                    await Swal.fire({
-                        icon: 'success',
-                        title: 'Transfer Complete',
-                        text: response.message,
-                        confirmButtonColor: '#0F4A30'
-                    });
-                    this.cancelTransferMode();
-                    this.loadRepresentatives();
-                },
-                error: async (err) => {
-                    await Swal.fire({
-                        icon: 'error',
-                        title: 'Transfer Failed',
-                        text: err?.error?.message ?? err?.error?.errors?.transfers?.[0] ?? 'Representative transfers could not be completed.',
-                        confirmButtonColor: '#0F4A30'
-                    });
-                }
-            });
     }
 
     fullName(representative: Representative): string {
@@ -374,13 +215,6 @@ export class ViewRepresentative implements OnInit {
             representative.last_name,
             representative.extension_name
         ].filter(Boolean).join(' ');
-    }
-
-    initials(representative: Representative): string {
-        return (
-            (representative.first_name?.[0] ?? '') +
-            (representative.last_name?.[0] ?? '')
-        ).toUpperCase();
     }
 
     async deleteRepresentative(representative: Representative): Promise<void> {
@@ -434,8 +268,6 @@ export class ViewRepresentative implements OnInit {
 
     previousPage(): void {
         if (this.currentPage() > 1) {
-            this.selectedRepresentativeIds.set([]);
-            this.individualDestinations.set({});
             this.currentPage.update((p) => p - 1);
             this.loadRepresentatives();
         }
@@ -443,8 +275,6 @@ export class ViewRepresentative implements OnInit {
 
     nextPage(): void {
         if (this.currentPage() < this.lastPage()) {
-            this.selectedRepresentativeIds.set([]);
-            this.individualDestinations.set({});
             this.currentPage.update((p) => p + 1);
             this.loadRepresentatives();
         }
