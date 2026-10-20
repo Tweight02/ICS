@@ -124,6 +124,13 @@ export const PASTOR_ROUTES: Routes = [
       import('./user_management/new-representative/new-representative')
         .then(m => m.NewRepresentative)
   },
+  {
+    path: 'assign-representative',
+    loadComponent: () =>
+      import('./user_management/assign-church/assign-church')
+        .then(m => m.AssignChurch)
+  },
+
 
   // Fallback route — keep this last
   {

@@ -1,213 +1,184 @@
-<div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
-    <!-- Back link -->
-    <a
-        routerLink="/pastor/view-representatives"
-        class="mb-2 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-slate-500 transition hover:text-[#0F4A30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40"
-    >
-        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M12.7 4.3a1 1 0 010 1.4L8.4 10l4.3 4.3a1 1 0 01-1.4 1.4l-5-5a1 1 0 010-1.4l5-5a1 1 0 011.4 0z" clip-rule="evenodd" />
-        </svg>
-        Back
-    </a>
+<div class="-m-3 min-h-screen w-[calc(100%+1.5rem)] bg-[linear-gradient(135deg,rgba(255,255,255,0.82),rgba(245,252,250,0.68),rgba(255,255,255,0.78)),url(/assets/images/mountain-bg.png)] bg-cover bg-center bg-no-repeat p-3 text-slate-900 sm:-m-4 sm:w-[calc(100%+2rem)] sm:p-4 md:-m-6 md:w-[calc(100%+3rem)] md:bg-fixed md:p-6">
+    <section class="mx-auto min-h-[calc(100vh-1.5rem)] w-full max-w-6xl overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-slate-200 sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)]">
+        <div class="grid lg:min-h-[calc(100vh-3rem)] lg:grid-cols-[0.75fr_1.25fr]">
+            <aside class="relative hidden overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-800 to-teal-900 p-8 text-white lg:flex lg:flex-col lg:justify-between">
+                <div class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" aria-hidden="true"></div>
+                <div class="pointer-events-none absolute -bottom-20 -left-12 h-64 w-64 rounded-full bg-teal-400/10" aria-hidden="true"></div>
 
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
-            <!-- Header -->
-            <div class="flex items-center gap-2 border-b border-slate-200 bg-gradient-to-b from-[#0F4A30]/[0.04] to-transparent p-2 sm:p-3">
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0F4A30] text-white" aria-hidden="true">
-                    <svg class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM2 16a6 6 0 0112 0v1H2v-1zM15 6a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1V7a1 1 0 011-1z" />
-                    </svg>
+                <div class="relative">
+                    <div class="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25" aria-hidden="true">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.1a6 6 0 00-12 0M9 11a4 4 0 100-8 4 4 0 000 8zm8 2v6m3-3h-6" />
+                        </svg>
+                    </div>
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">Pastor · User management</p>
+                    <p class="text-2xl font-bold leading-snug">Add a representative and assign a church.</p>
+                    <p class="mt-3 text-sm leading-6 text-emerald-100">Create an account for a representative serving in your district.</p>
                 </div>
-                <div class="min-w-0">
-                    <h1 class="text-lg font-semibold text-slate-900">New representative</h1>
-                    <p class="text-sm text-slate-500">Assign a representative to a church in your district.</p>
-                </div>
-            </div>
+            </aside>
 
-            <div class="space-y-3 p-2 sm:p-6">
-                <!-- Church -->
-                <section>
-                    <h2 class="text-sm font-semibold text-slate-900">Church</h2>
-                    <div class="mt-3">
-                        <label for="church_id" class="mb-1.5 block text-sm font-medium text-slate-700">Assigned church</label>
-                        <select
-                            id="church_id" formControlName="church_id"
-                            [attr.aria-invalid]="invalid('church_id')"
-                            class="h-10 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20 disabled:bg-slate-50 disabled:text-slate-400"
-                        >
-                            <option [ngValue]="0" disabled>
-                                {{ loadingChurches() ? 'Loading churches...' : 'Select a church' }}
-                            </option>
-                            @for (church of churches(); track church.church_id) {
-                                <option [ngValue]="church.church_id">{{ church.name }}</option>
-                            }
-                        </select>
-                        @if (invalid('church_id')) {
-                            <p class="mt-1.5 text-xs text-red-600">{{ serverError('church_id') || 'Select a church.' }}</p>
-                        } @else if (!loadingChurches() && churches().length === 0) {
-                            <div class="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                                <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                                </svg>
-                                All churches in your district already have a representative.
+            <div class="p-5 sm:p-6 lg:p-8">
+                <form [formGroup]="form" (ngSubmit)="save()" novalidate class="space-y-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        @if (error()) {
+                            <div role="alert" class="flex items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 sm:col-span-2">
+                                <span>{{ error() }}</span>
+                                @if (!loadingChurches() && churches().length === 0) {
+                                    <button type="button" (click)="loadChurches()" class="shrink-0 font-medium underline">Retry</button>
+                                }
                             </div>
                         }
-                    </div>
-                </section>
 
-                <!-- Personal information -->
-                <section>
-                    <h2 class="text-sm font-semibold text-slate-900">Personal information</h2>
-                    <div class="mt-3 grid gap-x-4 gap-y-5 sm:grid-cols-6">
-                        <!-- First name -->
-                        <div class="sm:col-span-3">
-                            <label for="first_name" class="mb-1.5 block text-sm font-medium text-slate-700">First name</label>
+                        <div class="sm:col-span-2">
+                            <label for="church_id" class="mb-1 block text-sm font-medium text-slate-800">Church <span class="text-red-600" aria-hidden="true">*</span></label>
+                            <select
+                                id="church_id"
+                                formControlName="church_id"
+                                required
+                                aria-required="true"
+                                [attr.aria-invalid]="invalid('church_id')"
+                                class="block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 aria-[invalid=true]:border-red-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                            >
+                                <option [ngValue]="0" disabled>{{ loadingChurches() ? 'Loading churches...' : 'Select a church' }}</option>
+                                @for (church of churches(); track church.church_id) {
+                                    <option [ngValue]="church.church_id">{{ church.name }}</option>
+                                }
+                            </select>
+                            @if (invalid('church_id')) {
+                                <p class="mt-1 text-xs text-red-600">{{ serverError('church_id') || 'Select a church.' }}</p>
+                            } @else if (!loadingChurches() && churches().length === 0) {
+                                <p class="mt-1 text-xs text-slate-500">All churches in your district already have a representative.</p>
+                            }
+                        </div>
+
+                        <div>
+                            <label for="first_name" class="mb-1 block text-sm font-medium text-slate-800">First name <span class="text-red-600" aria-hidden="true">*</span></label>
                             <input
-                                id="first_name" type="text" formControlName="first_name"
+                                id="first_name" formControlName="first_name" type="text" maxlength="255" autocomplete="given-name" required aria-required="true"
                                 [attr.aria-invalid]="invalid('first_name')"
-                                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
+                                class="block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 aria-[invalid=true]:border-red-500"
                             />
                             @if (invalid('first_name')) {
-                                <p class="mt-1.5 text-xs text-red-600">{{ serverError('first_name') || 'Enter a first name.' }}</p>
+                                <p class="mt-1 text-xs text-red-600">{{ serverError('first_name') || 'Enter a first name.' }}</p>
                             }
                         </div>
 
-                        <!-- Middle name -->
-                        <div class="sm:col-span-3">
-                            <label for="middle_name" class="mb-1.5 flex items-baseline gap-1.5 text-sm font-medium text-slate-700">
-                                Middle name
-                            </label>
+                        <div>
+                            <label for="last_name" class="mb-1 block text-sm font-medium text-slate-800">Last name <span class="text-red-600" aria-hidden="true">*</span></label>
                             <input
-                                id="middle_name" type="text" formControlName="middle_name"
-                                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20"
-                            />
-                        </div>
-
-                        <!-- Last name -->
-                        <div class="sm:col-span-4">
-                            <label for="last_name" class="mb-1.5 block text-sm font-medium text-slate-700">Last name</label>
-                            <input
-                                id="last_name" type="text" formControlName="last_name"
+                                id="last_name" formControlName="last_name" type="text" maxlength="255" autocomplete="family-name" required aria-required="true"
                                 [attr.aria-invalid]="invalid('last_name')"
-                                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
+                                class="block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 aria-[invalid=true]:border-red-500"
                             />
                             @if (invalid('last_name')) {
-                                <p class="mt-1.5 text-xs text-red-600">{{ serverError('last_name') || 'Enter a last name.' }}</p>
+                                <p class="mt-1 text-xs text-red-600">{{ serverError('last_name') || 'Enter a last name.' }}</p>
                             }
                         </div>
 
-                        <!-- Suffix -->
-                        <div class="sm:col-span-2">
-                            <label for="extension_name" class="mb-1.5 flex items-baseline gap-1.5 text-sm font-medium text-slate-700">
-                                Suffix <span class="text-xs font-normal text-slate-400">Jr., Sr., III</span>
-                            </label>
+                        <div>
+                            <label for="middle_name" class="mb-1 block text-sm font-medium text-slate-800">Middle name <span class="font-normal text-slate-500">(optional)</span></label>
                             <input
-                                id="extension_name" type="text" formControlName="extension_name"
-                                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20"
+                                id="middle_name" formControlName="middle_name" type="text" maxlength="255" autocomplete="additional-name"
+                                class="block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                             />
                         </div>
 
-                        <!-- Birthdate -->
-                        <div class="sm:col-span-3">
-                            <label for="birthdate" class="mb-1.5 block text-sm font-medium text-slate-700">Birthdate</label>
+                        <div>
+                            <label for="extension_name" class="mb-1 block text-sm font-medium text-slate-800">Suffix <span class="font-normal text-slate-500">(optional)</span></label>
                             <input
-                                id="birthdate" type="date" formControlName="birthdate" [max]="maxBirthdate"
+                                id="extension_name" formControlName="extension_name" type="text" maxlength="50" autocomplete="honorific-suffix" placeholder="Jr., Sr., III"
+                                class="block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="birthdate" class="mb-1 block text-sm font-medium text-slate-800">Birthdate <span class="text-red-600" aria-hidden="true">*</span></label>
+                            <input
+                                id="birthdate" formControlName="birthdate" type="date" [max]="maxBirthdate" required aria-required="true"
                                 [attr.aria-invalid]="invalid('birthdate')"
-                                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
+                                class="block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 aria-[invalid=true]:border-red-500"
                             />
                             @if (invalid('birthdate')) {
-                                <p class="mt-1.5 text-xs text-red-600">{{ serverError('birthdate') || 'Enter a birthdate.' }}</p>
+                                <p class="mt-1 text-xs text-red-600">{{ serverError('birthdate') || 'Enter a birthdate.' }}</p>
                             }
                         </div>
 
-                        <!-- Gender -->
-                        <div class="sm:col-span-3">
-                            <label for="gender" class="mb-1.5 block text-sm font-medium text-slate-700">Gender</label>
+                        <div>
+                            <label for="gender" class="mb-1 block text-sm font-medium text-slate-800">Gender <span class="text-red-600" aria-hidden="true">*</span></label>
                             <select
-                                id="gender" formControlName="gender"
+                                id="gender" formControlName="gender" required aria-required="true"
                                 [attr.aria-invalid]="invalid('gender')"
-                                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
+                                class="block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 aria-[invalid=true]:border-red-500"
                             >
                                 <option value="" disabled>Select gender</option>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
                             </select>
                             @if (invalid('gender')) {
-                                <p class="mt-1.5 text-xs text-red-600">{{ serverError('gender') || 'Select a gender.' }}</p>
+                                <p class="mt-1 text-xs text-red-600">{{ serverError('gender') || 'Select a gender.' }}</p>
                             }
                         </div>
-                    </div>
-                </section>
 
-                <!-- Account -->
-                <section>
-                    <h2 class="text-sm font-semibold text-slate-900">Account</h2>
-                    <p class="mt-0.5 text-xs text-slate-500">The representative uses these details to sign in.</p>
-                    <div class="mt-3 grid gap-x-4 gap-y-5 sm:grid-cols-2">
-                        <!-- Email -->
                         <div>
-                            <label for="email" class="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                            <label for="email" class="mb-1 block text-sm font-medium text-slate-800">Email <span class="text-red-600" aria-hidden="true">*</span></label>
                             <input
-                                id="email" type="email" formControlName="email" autocomplete="off"
+                                id="email" formControlName="email" type="email" maxlength="255" autocomplete="email" required aria-required="true" placeholder="name@example.com"
                                 [attr.aria-invalid]="invalid('email')"
-                                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
+                                class="block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 aria-[invalid=true]:border-red-500"
                             />
                             @if (invalid('email')) {
-                                <p class="mt-1.5 text-xs text-red-600">{{ serverError('email') || 'Enter a valid email address.' }}</p>
+                                <p class="mt-1 text-xs text-red-600">{{ serverError('email') || 'Enter a valid email address.' }}</p>
                             }
                         </div>
 
-                        <!-- Password -->
                         <div>
-                            <label for="password" class="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
+                            <label for="password" class="mb-1 block text-sm font-medium text-slate-800">Password <span class="text-red-600" aria-hidden="true">*</span></label>
                             <div class="relative">
                                 <input
-                                    id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="new-password"
+                                    id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="new-password" required aria-required="true" placeholder="At least 8 characters"
                                     [attr.aria-invalid]="invalid('password')"
-                                    class="h-10 w-full rounded-lg border border-slate-300 bg-white pl-3 pr-16 text-sm text-slate-900 outline-none transition focus:border-[#0F4A30] focus:ring-2 focus:ring-[#0F4A30]/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
+                                    class="block h-9 w-full rounded-md border border-slate-300 bg-white pl-3 pr-14 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 aria-[invalid=true]:border-red-500"
                                 />
                                 <button
                                     type="button"
                                     (click)="showPassword.set(!showPassword())"
                                     [attr.aria-pressed]="showPassword()"
-                                    class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40"
+                                    aria-controls="password"
+                                    class="absolute inset-y-1 right-1 rounded px-2 text-xs font-medium text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
                                 >
-                                    {{ showPassword() ? 'Hide' : 'Show' }}
+                                    <span class="sr-only">Show password</span>
+                                    <span aria-hidden="true">{{ showPassword() ? 'Hide' : 'Show' }}</span>
                                 </button>
                             </div>
                             @if (invalid('password')) {
-                                <p class="mt-1.5 text-xs text-red-600">{{ serverError('password') || 'Use at least 8 characters.' }}</p>
+                                <p class="mt-1 text-xs text-red-600">{{ serverError('password') || 'Use at least 8 characters.' }}</p>
                             } @else {
-                                <p class="mt-1.5 text-xs text-slate-400">At least 8 characters.</p>
+                                <p class="mt-1 text-xs text-slate-400">At least 8 characters.</p>
                             }
                         </div>
-                    </div>
-                </section>
-            </div>
 
-            <!-- Footer -->
-            <div class="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/80 px-5 py-3 sm:px-6">
-                <a
-                    routerLink="/pastor/view-representatives"
-                    class="inline-flex !no-underline h-9 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2"
-                >
-                    Cancel
-                </a>
-                <button
-                    type="submit"
-                    [disabled]="saving() || loadingChurches()"
-                    class="inline-flex h-9 items-center gap-2 !rounded-lg bg-[#0F4A30] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#0c3d27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                    @if (saving()) {
-                        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".3" stroke-width="3" />
-                            <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-                        </svg>
-                    }
-                    {{ saving() ? 'Adding...' : 'Add representative' }}
-                </button>
+                        <div class="flex flex-col-reverse gap-2 pt-3 sm:col-span-2 sm:flex-row sm:justify-end">
+                            <a routerLink="/pastor/view-representatives" class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium !no-underline text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200">
+                                Cancel
+                            </a>
+                            <button
+                                type="submit"
+                                [disabled]="saving() || loadingChurches() || churches().length === 0"
+                                [attr.aria-busy]="saving()"
+                                class="inline-flex h-9 items-center justify-center gap-2 !rounded-lg bg-emerald-700 px-5 text-sm font-semibold text-white transition hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-60 sm:min-w-36"
+                            >
+                                @if (saving()) {
+                                    <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                }
+                                {{ saving() ? 'Adding…' : 'Create representative' }}
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
-        </form>
-    </div>
+        </div>
+    </section>
 </div>

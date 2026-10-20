@@ -59,7 +59,8 @@ export class App implements OnInit{
 
     return !!this.currentUser()
       && !this.router.url.startsWith('/login')
-      && !this.router.url.startsWith('/assistant/new-user');
+      && !this.router.url.startsWith('/assistant/new-user')
+      && !this.router.url.startsWith('/pastor/new-representative');
 
   }
 

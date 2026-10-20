@@ -1,0 +1,13 @@
+:host-context(.app-main.sidebar-expanded) .assignment-modal-backdrop {
+	left: 235px;
+}
+
+:host-context(.app-main.sidebar-collapsed) .assignment-modal-backdrop {
+	left: 76px;
+}
+
+@media (max-width: 768px) {
+	:host-context(.app-main.sidebar-collapsed) .assignment-modal-backdrop {
+		left: 0;
+	}
+}
