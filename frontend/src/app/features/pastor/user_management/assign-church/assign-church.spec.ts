@@ -1,16 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { EditRepresentative } from './edit-representative';
+import { AssignChurch } from './assign-church';
 
-describe('EditRepresentative', () => {
-  let component: EditRepresentative;
-  let fixture: ComponentFixture<EditRepresentative>;
+describe('AssignChurch', () => {
+  let component: AssignChurch;
+  let fixture: ComponentFixture<AssignChurch>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [EditRepresentative],
+      imports: [AssignChurch],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(EditRepresentative);
+    fixture = TestBed.createComponent(AssignChurch);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
