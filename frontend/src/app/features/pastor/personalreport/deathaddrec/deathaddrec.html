@@ -1,3 +1,4 @@
+
 <div class="form-page">
 
   <div class="form-card">
@@ -18,48 +19,142 @@
 
         <div class="form-grid">
 
-          <!-- Baptized Member -->
+          <!-- Baptized Member: Searchable Dropdown -->
           <div class="form-group">
-            <label for="baptism_id">
-              Baptized Member
-            </label>
+            <label for="baptism_search">Baptized Member</label>
 
-            <select
-              id="baptism_id"
-              class="form-control"
+            <div
+              class="member-select-wrapper"
+              #memberDropdown
+              [class.open]="memberDropdownOpen">
+
+              <div class="member-search-control">
+
+                <!-- Search Icon -->
+                <svg
+                  class="member-search-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="m20 20-4-4"></path>
+                </svg>
+
+                <!-- Search Input -->
+                <input
+                  id="baptism_search"
+                  type="text"
+                  class="form-control member-search-input"
+                  [value]="
+                    memberDropdownOpen
+                      ? baptismSearch
+                      : getSelectedBaptismName()
+                  "
+                  (focus)="openBaptismDropdown()"
+                  (input)="onBaptismSearch($event)"
+                  [placeholder]="
+                    loadingBaptisms || loadingDeaths
+                      ? 'Loading records...'
+                      : deathLoadError
+                        ? 'Unable to verify death records'
+                        : availableBaptisms.length === 0
+                          ? 'No eligible members available'
+                          : 'Search or select baptized member'
+                  "
+                  autocomplete="off"
+                  [disabled]="
+                    loadingBaptisms ||
+                    loadingDeaths ||
+                    deathLoadError ||
+                    availableBaptisms.length === 0
+                  "
+                  aria-label="Search baptized members"
+                  aria-autocomplete="list"
+                  [attr.aria-expanded]="memberDropdownOpen"
+                  (keydown.escape)="closeBaptismDropdown()">
+
+                <!-- Dropdown Arrow -->
+                <button
+                  type="button"
+                  class="member-dropdown-toggle"
+                  (click)="toggleBaptismDropdown()"
+                  [disabled]="
+                    loadingBaptisms ||
+                    loadingDeaths ||
+                    deathLoadError ||
+                    availableBaptisms.length === 0
+                  "
+                  aria-label="Toggle baptized member dropdown">
+
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+
+                </button>
+              </div>
+
+              <!-- Member Options -->
+              <div
+                class="member-dropdown-menu"
+                *ngIf="memberDropdownOpen"
+                role="listbox">
+
+                <button
+                  type="button"
+                  class="member-option"
+                  role="option"
+                  *ngFor="let baptism of filteredAvailableBaptisms"
+                  [class.selected]="
+                    sameBaptism(
+                      baptism.baptism_id,
+                      death.baptism_id
+                    )
+                  "
+                  [attr.aria-selected]="
+                    sameBaptism(
+                      baptism.baptism_id,
+                      death.baptism_id
+                    )
+                  "
+                  (click)="chooseBaptism(baptism)">
+
+                  {{ getFullName(baptism) }}
+
+                </button>
+
+                <div
+                  class="member-dropdown-message"
+                  *ngIf="filteredAvailableBaptisms.length === 0">
+
+                  No matching baptized members found.
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- Keep baptism_id connected to Angular validation -->
+            <input
+              type="hidden"
               name="baptism_id"
               [(ngModel)]="death.baptism_id"
-              (ngModelChange)="selectBaptism($event)"
-              [disabled]="
-                loadingBaptisms ||
-                loadingDeaths ||
-                deathLoadError ||
-                availableBaptisms.length === 0
-              "
               required>
 
-              <option
-                [ngValue]="null"
-                disabled>
-                {{
-                  loadingBaptisms || loadingDeaths
-                    ? 'Loading records...'
-                    : deathLoadError
-                      ? 'Unable to verify death records'
-                      : availableBaptisms.length === 0
-                        ? 'No eligible members available'
-                        : 'Select baptized member'
-                }}
-              </option>
-
-              <option
-                *ngFor="let baptism of availableBaptisms"
-                [ngValue]="baptism.baptism_id">
-                {{ getFullName(baptism) }}
-              </option>
-
-            </select>
-
+            <!-- Existing Help Messages -->
             <small
               *ngIf="loadingBaptisms || loadingDeaths"
               class="form-help">
