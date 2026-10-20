@@ -57,19 +57,51 @@
       </div>
 
       <!-- District Filter -->
-      <div>
+      <div class="relative" (focusout)="onDistrictFilterFocusOut($event)">
         <label for="district-filter" class="mb-1 block text-xs font-medium text-slate-700">District</label>
-        <select
+        <input
           id="district-filter"
-          [value]="churchId()"
-          (change)="onDistrictChange($any($event.target).value)"
+          type="text"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-controls="district-filter-list"
+          [attr.aria-expanded]="districtFilterOpen()"
+          [attr.aria-activedescendant]="districtFilterOpen() && filteredDistrictFilterOptions().length ? 'district-filter-opt-' + districtFilterActiveIndex() : null"
+          [value]="districtFilterOpen() ? districtFilterQuery() : selectedDistrictLabel()"
+          (focus)="openDistrictFilter()"
+          (click)="openDistrictFilter()"
+          (input)="onDistrictFilterInput($any($event.target).value)"
+          (keydown)="onDistrictFilterKeydown($event)"
+          placeholder="All districts"
+          autocomplete="off"
           class="block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]"
-        >
-          <option value="">All districts</option>
-          @for (district of districts(); track district.church_id) {
-            <option [value]="district.church_id">{{ district.name }}</option>
-          }
-        </select>
+        />
+        @if (districtFilterOpen()) {
+          <ul
+            id="district-filter-list"
+            role="listbox"
+            aria-label="Districts"
+            (mousedown)="$event.preventDefault()"
+            class="absolute left-0 right-0 top-full z-20 mt-1 max-h-52 overflow-auto rounded-md border border-slate-200 bg-white py-1 text-xs shadow-lg"
+          >
+            @for (option of filteredDistrictFilterOptions(); track option.value; let i = $index) {
+              <li
+                role="option"
+                [id]="'district-filter-opt-' + i"
+                [attr.aria-selected]="option.value === churchId()"
+                (click)="onDistrictChange(option.value)"
+                (mouseenter)="districtFilterActiveIndex.set(i)"
+                class="cursor-pointer px-3 py-2 text-slate-800"
+                [class.bg-emerald-50]="i === districtFilterActiveIndex()"
+                [class.font-semibold]="option.value === churchId()"
+              >
+                {{ option.label }}
+              </li>
+            } @empty {
+              <li role="presentation" class="px-3 py-2 text-slate-500">No districts found.</li>
+            }
+          </ul>
+        }
       </div>
 
       <!-- Status Filter -->

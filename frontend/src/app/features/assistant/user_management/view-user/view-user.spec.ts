@@ -46,4 +46,28 @@ describe('ViewUser', () => {
     expect(pageText).not.toContain('Review Transfers');
     expect(fixture.nativeElement.querySelector('input[type="checkbox"]')).toBeNull();
   });
+
+  it('filters district options by typed name and applies the selected district', () => {
+    component.districts.set([
+      { church_id: 1, name: 'North District', address: null, parent_id: null },
+      { church_id: 2, name: 'South District', address: null, parent_id: null },
+    ]);
+    userService.getPastors.mockClear();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#district-filter') as HTMLInputElement;
+    input.value = 'north';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const options = fixture.nativeElement.querySelectorAll('[role="option"]');
+    expect(options).toHaveLength(1);
+    expect(options[0].textContent).toContain('North District');
+
+    (options[0] as HTMLElement).click();
+    fixture.detectChanges();
+
+    expect(component.churchId()).toBe('1');
+    expect(userService.getPastors).toHaveBeenCalledWith(expect.objectContaining({ church_id: '1' }));
+  });
 });
