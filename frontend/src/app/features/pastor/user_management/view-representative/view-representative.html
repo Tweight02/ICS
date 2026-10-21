@@ -58,7 +58,7 @@
                     (input)="onChurchFilterInput($any($event.target).value)" (keydown)="onChurchFilterKeydown($event)"
                     placeholder="All churches" autocomplete="off"
                     class="block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]" />
-                @if (churchFilterOpen()) {
+                @if (churchFilterOpen()) { 
                 <ul id="church-filter-list" role="listbox" aria-label="Churches" (mousedown)="$event.preventDefault()"
                     class="absolute left-0 right-0 top-full z-20 mt-1 max-h-52 overflow-auto rounded-md border border-slate-200 bg-white py-1 text-xs shadow-lg">
                     @for (option of filteredChurchFilterOptions(); track option.value; let i = $index) {
