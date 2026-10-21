@@ -903,6 +903,11 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   }
 
   backToPrograms(): void {
+    if (this.route.snapshot.queryParamMap.get('return_to') === 'monitoring') {
+      this.router.navigate([`${this.portalPrefix()}/reports`]);
+      return;
+    }
+
     if (this.districtId && this.churchId) {
       this.router.navigate([
         `${this.portalPrefix()}/reports/programs`,

@@ -1,87 +1,86 @@
 <ng-template #monitoringCell let-value>
   @if (value.approved) {
-    <span title="Complete" class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white shadow-sm">✓</span>
+    <span title="Complete" class="monitoring-status-check">✓</span>
   } @else if (value.progress > 0) {
-    <span class="text-sm font-semibold tabular-nums text-emerald-800">{{ value.progress }}%</span>
+    <span class="monitoring-status-percent">{{ value.progress }}%</span>
   } @else {
-    <span class="text-sm text-emerald-900/40">—</span>
+    <span class="monitoring-status-empty">—</span>
   }
 </ng-template>
 
-<div class="report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
-  <div class="mx-auto max-w-6xl">
-    <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+<div class="report-responsive-page monitoring-shell">
+  <div class="monitoring-content">
+    <header class="monitoring-header">
       <div>
-        <button type="button" (click)="backToDistricts()" style="border-radius: 9999px"
-          class="mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 text-sm font-medium tracking-widest text-white shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)] transition hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
+        <button type="button" (click)="backToDistricts()" class="monitoring-action" style="border-radius: 9999px; margin-bottom: 14px;">
           <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5l-5 5 5 5" /></svg>
           Back
         </button>
-        <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">Church Reports</p>
-        <h1 class="font-serif !m-0 !text-2xl !font-bold !tracking-tight !text-emerald-950 sm:!text-3xl">{{ district?.name || 'District Reports' }}</h1>
-        <p *ngIf="district?.address" class="mt-1 text-sm text-emerald-900/70">{{ district?.address }}</p>
+        <p class="monitoring-kicker">Church Reports</p>
+        <h1 class="monitoring-title">{{ district?.name || 'District Reports' }}</h1>
+        <p *ngIf="district?.address" class="monitoring-subtitle">{{ district?.address }}</p>
       </div>
 
-      <div class="min-w-36 rounded-xl border border-white/60 bg-white/60 px-3.5 py-2 text-center shadow-md shadow-emerald-950/5 backdrop-blur-xl">
-        <p class="text-lg font-bold text-emerald-950">{{ churches.length }}</p>
-        <p class="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/70">Churches / Companies</p>
+      <div class="monitoring-summary-card" style="min-width: 180px;">
+        <strong>{{ churches.length }}</strong>
+        <span>Churches</span>
       </div>
     </header>
 
-    <div *ngIf="errorMessage" role="alert" class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-700 backdrop-blur-md">
-      <span class="flex items-center gap-2"><span aria-hidden="true">⚠</span>{{ errorMessage }}</span>
-      <button type="button" (click)="loadChurches()" style="border-radius: 9999px" class="bg-gradient-to-b from-emerald-700 to-emerald-600 px-5 py-2 font-semibold text-white shadow-sm transition hover:from-emerald-900 hover:to-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">Retry</button>
+    <div *ngIf="errorMessage" role="alert" class="monitoring-alert">
+      <span>{{ errorMessage }}</span>
+      <button type="button" (click)="loadChurches()">Retry</button>
     </div>
 
-    <div *ngIf="loadingChurches" class="mx-auto flex w-fit items-center gap-3 rounded-2xl border border-white/60 bg-white/60 px-8 py-6 text-emerald-900 shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
-      <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700" aria-hidden="true"></span>
-      <span class="text-sm font-medium">Loading churches...</span>
+    <div *ngIf="loadingChurches" class="monitoring-loading">
+      <app-running-loader></app-running-loader>
+      <span>Loading churches...</span>
     </div>
 
-    <section *ngIf="!loadingChurches && !errorMessage && churches.length > 0"
-      class="overflow-hidden rounded-2xl border border-white/60 bg-white/60 shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
+    <section *ngIf="!loadingChurches && !errorMessage && churches.length > 0" class="monitoring-panel">
       <div class="overflow-x-auto">
-        <table class="w-full min-w-[680px] border-collapse text-sm">
+        <table class="monitoring-table">
           <thead>
-            <tr class="bg-emerald-900/10 text-xs font-bold uppercase tracking-wider text-emerald-950">
-              <th scope="col" class="w-[35%] min-w-[220px] px-5 py-3.5 text-left">Church</th>
-              <th scope="col" class="min-w-[110px] px-3 py-3.5 text-center">Q1</th>
-              <th scope="col" class="min-w-[110px] px-3 py-3.5 text-center">Q2</th>
-              <th scope="col" class="min-w-[110px] px-3 py-3.5 text-center">Q3</th>
-              <th scope="col" class="min-w-[110px] px-3 py-3.5 text-center">Q4</th>
+            <tr>
+              <th scope="col">Church</th>
+              <th scope="col">Q1</th>
+              <th scope="col">Q2</th>
+              <th scope="col">Q3</th>
+              <th scope="col">Q4</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let church of churches" role="button" tabindex="0"
-              (click)="openChurch(church)"
-              (keydown.enter)="openChurch(church)"
-              (keydown.space)="$event.preventDefault(); openChurch(church)"
-              class="group cursor-pointer border-t border-emerald-900/5 transition hover:bg-white/70 focus:outline-none focus-visible:bg-white/80 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600">
-              <th scope="row" class="px-5 py-4 text-left font-semibold text-emerald-950">
-                <span class="flex items-center gap-3">
-                  <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700/10 text-emerald-700 transition group-hover:bg-emerald-700 group-hover:text-white" aria-hidden="true">
+            <tr *ngFor="let church of churches" role="button" tabindex="0" (click)="openChurch(church)" (keydown.enter)="openChurch(church)" (keydown.space)="$event.preventDefault(); openChurch(church)" class="monitoring-row">
+              <th scope="row" class="monitoring-name-cell">
+                <span class="monitoring-name-wrap">
+                  <span class="monitoring-icon" aria-hidden="true">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
                       <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01" />
                     </svg>
                   </span>
                   <span>{{ church.name }}</span>
-                  <svg class="ml-auto h-4 w-4 -translate-x-1 text-emerald-700 opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5l5 5-5 5" /></svg>
+                  <svg class="monitoring-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5l5 5-5 5" /></svg>
                 </span>
               </th>
-              <td class="px-3 py-4 text-center"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q1 }"></ng-container></td>
-              <td class="px-3 py-4 text-center"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q2 }"></ng-container></td>
-              <td class="px-3 py-4 text-center"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q3 }"></ng-container></td>
-              <td class="px-3 py-4 text-center"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q4 }"></ng-container></td>
+              <td class="monitoring-cell"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q1 }"></ng-container></td>
+              <td class="monitoring-cell"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q2 }"></ng-container></td>
+              <td class="monitoring-cell"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q3 }"></ng-container></td>
+              <td class="monitoring-cell"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q4 }"></ng-container></td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <div *ngIf="!loadingChurches && !errorMessage && churches.length === 0" class="mx-auto mt-4 max-w-md rounded-2xl border border-white/60 bg-white/60 px-8 py-12 text-center shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
-      <h2 class="text-lg font-semibold text-emerald-950">No Churches Found</h2>
-      <p class="mt-1 text-sm text-emerald-900/70">No churches or companies were found for this district.</p>
+    <div *ngIf="!loadingChurches && !errorMessage && churches.length === 0" class="monitoring-empty">
+      <div class="monitoring-icon" aria-hidden="true">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+        </svg>
+      </div>
+      <h2>No Churches Found</h2>
+      <p>No churches or companies were found for this district.</p>
     </div>
   </div>
 </div>
