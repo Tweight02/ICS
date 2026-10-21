@@ -1,88 +1,58 @@
-<div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+<div class="report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
   <div class="mx-auto max-w-6xl">
+
+    <button type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="group mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
+     px-5 text-sm font-medium tracking-widest text-white
+     [text-shadow:0_0_10px_rgba(255,255,255,0.55)]
+     shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)]
+     transition duration-200 ease-out
+     hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700
+     hover:shadow-[0_16px_24px_-8px_rgba(6,78,59,0.5)]
+     active:translate-y-0 active:shadow-[0_6px_12px_-6px_rgba(6,78,59,0.4)]
+     focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
+      <svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 5l-5 5 5 5" />
+      </svg>
+      Back
+    </button>
 
     <!-- HEADER -->
     <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-4">
-        <button
-          type="button"
-          (click)="backToPrograms()"
-          class="group inline-flex items-center gap-2 rounded-full border border-white/70
-                 bg-white/70 py-1.5 pl-1.5 pr-4 text-sm font-semibold text-emerald-900
-                 shadow-sm backdrop-blur-md transition hover:bg-white
-                 hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-600/40">
-          <span
-            class="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-700
-                   text-white transition group-hover:bg-emerald-800">
-            <svg
-              class="h-4 w-4 transition-transform group-hover:-translate-x-0.5"
-              viewBox="0 0 20 20" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              aria-hidden="true">
-              <path d="M12 5l-5 5 5 5" />
-            </svg>
-          </span>
-          Back
-        </button>
-
         <div>
           <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
             Department Report
           </p>
-          <h1 class="text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
+          <h1 class="font-serif text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
             {{ report?.department?.department_name || 'Report Particulars' }}
           </h1>
         </div>
       </div>
-
-      <span
-        class="rounded-full border border-white/70 bg-white/70 px-4 py-1.5 text-sm
-               font-semibold text-emerald-900 shadow-sm backdrop-blur-md">
-        {{ selectedYear }}
-      </span>
     </header>
 
     <!-- MESSAGES -->
-    <div
-      *ngIf="loading"
-      class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2
+    <div *ngIf="loading" class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2
              text-sm text-emerald-900 backdrop-blur-md">
       <span class="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
       Loading...
     </div>
 
-    <div
-      *ngIf="errorMessage"
-      role="alert"
-      class="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50/90
+    <div *ngIf="errorMessage" role="alert" class="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50/90
              px-4 py-3 text-sm text-red-700 backdrop-blur-md">
       <span aria-hidden="true">⚠</span>
       <span>{{ errorMessage }}</span>
     </div>
 
-    <div
-      *ngIf="successMessage"
-      role="status"
-      class="mb-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/90
-             px-4 py-3 text-sm text-emerald-800 backdrop-blur-md">
-      <span aria-hidden="true">✓</span>
-      <span>{{ successMessage }}</span>
-    </div>
-
     <ng-container *ngIf="!loading && report">
 
       <!-- TOOLBAR: YEAR + QUARTERS -->
-      <div
-        class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl
+      <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl
                border border-white/60 bg-white/60 p-3 shadow-lg shadow-emerald-950/5
                backdrop-blur-xl">
 
         <div class="flex flex-wrap items-center gap-3">
-          <select
-            aria-label="Reporting year"
-            [ngModel]="selectedYear"
-            (ngModelChange)="selectYear($event)"
-            class="h-10 rounded-lg border border-emerald-900/10 bg-white/80 px-3 text-sm
+          <select aria-label="Reporting year" [ngModel]="selectedYear" (ngModelChange)="selectYear($event)" class="h-10 rounded-lg border border-emerald-900/10 bg-white/80 px-3 text-sm
                    font-semibold text-emerald-900 outline-none transition
                    focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20">
             <option *ngFor="let year of availableYears" [ngValue]="year">
@@ -92,108 +62,98 @@
 
           <!-- segmented control -->
           <div class="inline-flex flex-wrap gap-1 rounded-xl bg-emerald-900/10 p-1">
-            <button
-              *ngFor="let quarter of getQuartersForYear(); trackBy: trackQuarter"
-              type="button"
-              (click)="selectQuarter(quarter)"
-              [ngClass]="{
+            <button *ngFor="let quarter of getQuartersForYear(); trackBy: trackQuarter" type="button"
+              (click)="selectQuarter(quarter)" [ngClass]="{
                 'bg-emerald-700 text-white shadow-sm':
                   !isAnnualView && selectedQuarterId === quarter.quarter_id,
                 'text-emerald-900/80 hover:bg-white/60 hover:text-emerald-950':
                   isAnnualView || selectedQuarterId !== quarter.quarter_id
-              }"
-              class="h-8 min-w-12 rounded-lg px-4 text-sm font-semibold transition">
+              }" class="h-8 min-w-12 rounded-lg px-4 text-sm font-semibold transition">
               {{ quarter.quarter }}
             </button>
 
-            <button
-              type="button"
-              (click)="selectAnnual()"
-              [ngClass]="{
+            <button type="button" (click)="selectAnnual()" [ngClass]="{
                 'bg-emerald-700 text-white shadow-sm': isAnnualView,
                 'text-emerald-900/80 hover:bg-white/60 hover:text-emerald-950': !isAnnualView
-              }"
-              class="h-8 rounded-lg px-4 text-sm font-semibold transition">
+              }" class="h-8 rounded-lg px-4 text-sm font-semibold transition">
               Annual
             </button>
           </div>
         </div>
 
-        <!-- STATUS BADGES -->
-        <div class="flex items-center gap-2">
-          <span
-            *ngIf="getCommentStatus() === 'commented'"
-            class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1
-                   text-xs font-semibold text-amber-800">
-            <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-            Commented
-          </span>
 
-          <span
-            *ngIf="!isAnnualView &&
-                   selectedQuarterId !== null &&
-                   isQuarterApproved(selectedQuarterId)"
-            class="inline-flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1
-                   text-xs font-semibold text-white">
-            ✓ Approved
-          </span>
-        </div>
       </div>
 
       <!-- PROGRAM TABS -->
-      <div
-        *ngIf="(report.programs?.length ?? 0) > 1"
-        class="mb-5 flex flex-wrap gap-2 border-b border-white/50 pb-4">
+      <div *ngIf="(report.programs?.length ?? 0) > 1" class="mb-5 flex flex-wrap gap-2 border-b border-white/50 pb-4">
 
-        <button
-          *ngFor="let program of report.programs; trackBy: trackProgram"
-          type="button"
-          (click)="selectProgram(program.program_id)"
-          [ngClass]="{
+        <button *ngFor="let program of report.programs; trackBy: trackProgram" type="button"
+          (click)="selectProgram(program.program_id)" [ngClass]="{
             'border-emerald-700 bg-emerald-700 text-white shadow-md shadow-emerald-900/20':
               selectedProgramId === program.program_id,
             'border-white/70 bg-white/60 text-emerald-900 backdrop-blur-md hover:bg-white/90':
               selectedProgramId !== program.program_id
-          }"
-          class="rounded-full border px-5 py-2 text-sm font-semibold transition">
+          }" class="rounded-full border px-5 py-2 text-sm font-semibold transition">
           {{ program.program_name }}
         </button>
       </div>
 
       <!-- REPORT + COMMENTS (side by side) -->
-      <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      <div class="grid gap-6">
 
         <!-- LEFT: REPORT TABLES -->
         <div class="min-w-0">
           <ng-container *ngIf="getSelectedProgram() as program">
 
-            <section
-              *ngFor="let section of program.sections; trackBy: trackSection"
-              class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
+            <section *ngFor="let section of program.sections; trackBy: trackSection" class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
+
+              <details>
+                <summary class="relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
+                  <span class="block min-w-0 pr-32">
+                    {{ section.program_name || section.section_name || program.program_name || 'Particular' }}
+
+                    <span *ngIf="!isAnnualView" [ngClass]="{
+                      'text-emerald-700': isSectionDataComplete(section),
+                      'text-amber-700': !isSectionDataComplete(section)
+                    }" class="text-[11px] font-semibold normal-case">
+                      {{ isSectionDataComplete(section) ? 'Data complete' : 'Data incomplete' }}
+                    </span>
+                  </span>
+
+                  <span class="absolute right-5 top-2.5 flex items-center gap-2 whitespace-nowrap">
+                    <span *ngIf="!isAnnualView &&
+               selectedQuarterId !== null &&
+               isQuarterEndorsed(selectedQuarterId)" class="text-sm font-bold normal-case tracking-normal text-sky-800">
+                      Endorsed
+                    </span>
+
+                    <span *ngIf="!isAnnualView &&
+               selectedQuarterId !== null &&
+               isQuarterApproved(selectedQuarterId)" class="text-sm font-bold normal-case tracking-normal text-emerald-800">
+                      ✓ Approved
+                    </span>
+                  </span>
+                </summary>
 
               <div class="overflow-x-auto">
                 <table class="w-full border-collapse text-sm">
 
                   <thead>
                     <tr class="bg-emerald-900/10 text-emerald-950">
-                      <th
-                        class="min-w-[220px] px-5 py-3.5 text-left text-xs font-bold
+                      <th class="min-w-[220px] px-5 py-3.5 text-left text-xs font-bold
                                uppercase tracking-wider">
-                        {{ section.program_name || section.section_name || program.program_name || 'Particular' }}
                       </th>
 
                       <ng-container *ngIf="isAnnualView; else quarterHeader">
-                        <th
-                          *ngFor="let quarter of getQuartersForYear(); trackBy: trackQuarter"
+                        <th *ngFor="let quarter of getQuartersForYear(); trackBy: trackQuarter"
                           class="w-24 min-w-[90px] px-3 py-3.5 text-center text-xs font-bold">
                           {{ quarter.quarter }}
                         </th>
                       </ng-container>
 
                       <ng-template #quarterHeader>
-                        <th
-                          class="w-40 min-w-[150px] px-5 py-3.5 text-center text-xs font-bold">
+                        <th class="w-40 min-w-[150px] px-5 py-3.5 text-center text-xs font-bold">
                           {{ getSelectedQuarter()?.quarter || 'Amount' }}
                         </th>
                       </ng-template>
@@ -202,8 +162,7 @@
 
                   <tbody>
 
-                    <tr
-                      *ngFor="let particular of section.particulars; trackBy: trackParticular"
+                    <tr *ngFor="let particular of section.particulars; trackBy: trackParticular"
                       class="border-t border-emerald-900/5 transition hover:bg-white/60">
 
                       <td class="px-5 py-3.5 text-emerald-950/80">
@@ -213,12 +172,10 @@
                       <!-- ANNUAL VALUES -->
                       <ng-container *ngIf="isAnnualView; else quarterCell">
 
-                        <td
-                          *ngFor="let quarter of getQuartersForYear(); trackBy: trackQuarter"
+                        <td *ngFor="let quarter of getQuartersForYear(); trackBy: trackQuarter"
                           class="px-3 py-3.5 text-center tabular-nums text-emerald-950/80">
 
-                          <ng-container
-                            *ngIf="getParticularQuarterRecord(particular, quarter) as record;
+                          <ng-container *ngIf="getParticularQuarterRecord(particular, quarter) as record;
                                    else noAnnualValue">
 
                             <span>{{ record.value ?? '—' }}</span>
@@ -237,25 +194,19 @@
 
                           <ng-container *ngIf="getSelectedQuarter() as quarter">
 
-                            <ng-container
-                              *ngIf="{ record: getParticularQuarterRecord(particular, quarter) } as ctx">
+                            <ng-container *ngIf="{ record: getParticularQuarterRecord(particular, quarter) } as ctx">
 
                               <div class="flex justify-center">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="any"
-                                  [ngModel]="ctx.record?.value ?? null"
+                                <input type="number" min="0" step="any" [ngModel]="ctx.record?.value ?? null"
                                   (ngModelChange)="setQuarterValue(particular, quarter, $event)"
                                   [disabled]="saving || isQuarterApproved(quarter.quarter_id)"
-                                  [attr.aria-label]="particular.particular_name"
-                                  class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5
+                                  [attr.aria-label]="particular.particular_name" class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5
                                          text-center tabular-nums text-emerald-950 outline-none transition
                                          placeholder:text-emerald-900/30
                                          focus:border-emerald-600 focus:bg-white focus:ring-2
                                          focus:ring-emerald-600/20
                                          disabled:cursor-not-allowed disabled:bg-emerald-900/5
-                                         disabled:text-emerald-900/40" />
+                                         disabled:text-emerald-900/90" />
                               </div>
                             </ng-container>
 
@@ -266,8 +217,7 @@
                     </tr>
 
                     <tr *ngIf="!section.particulars?.length">
-                      <td
-                        [attr.colspan]="isAnnualView ? getQuartersForYear().length + 1 : 2"
+                      <td [attr.colspan]="isAnnualView ? getQuartersForYear().length + 1 : 2"
                         class="px-5 py-10 text-center text-sm text-emerald-900/60">
                         No particulars found.
                       </td>
@@ -276,111 +226,135 @@
                   </tbody>
                 </table>
               </div>
+              </details>
             </section>
 
           </ng-container>
 
-          <div
-            *ngIf="!getSelectedProgram()"
-            class="rounded-2xl border border-dashed border-emerald-900/20 bg-white/60 p-10
+          <div *ngIf="!getSelectedProgram()" class="rounded-2xl border border-dashed border-emerald-900/20 bg-white/60 p-10
                    text-center text-sm text-emerald-900/70 backdrop-blur-xl">
             No program data available.
           </div>
         </div>
 
         <!-- RIGHT: COMMENTS (District Pastor & Assistant) -->
-        <aside class="min-w-0 lg:sticky lg:top-6">
-          <section
+          <aside class="min-w-0">
+          <section [ngClass]="mobileCommentsOpen
+            ? 'fixed inset-x-3 bottom-3 z-50 flex h-[min(78vh,640px)] flex-col shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]'
+            : 'hidden'"
             class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                    shadow-lg shadow-emerald-950/5 backdrop-blur-xl lg:mb-0">
 
-            <div class="flex items-center justify-between gap-2 bg-emerald-900/10 px-5 py-3.5">
-              <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-950">Comments</h2>
-
-              <!-- COUNT -->
-              <span
-                *ngIf="getCommentStatus() === 'commented'"
-                class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1
-                       text-xs font-semibold text-amber-800">
-                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                {{ getVisibleComments().length }}
-              </span>
+            <div class="flex shrink-0 items-center justify-between gap-3 bg-emerald-900 px-4 py-3 text-white">
+              <div class="flex min-w-0 items-center gap-3">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
+                  </svg>
+                </span>
+                <div class="min-w-0">
+                  <h2 class="font-serif text-base font-semibold text-white">Comments</h2>
+                  <p class="text-xs text-white/70">Report conversation</p>
+                </div>
+              </div>
+              <button type="button" (click)="closeMobileComments()" aria-label="Close comments"
+                title="Close comments" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="m5 5 10 10M15 5 5 15" />
+                </svg>
+              </button>
             </div>
 
-            <div
-              *ngIf="commentsError"
-              role="alert"
+            <div *ngIf="commentsError" role="alert"
               class="border-t border-red-100 bg-red-50/90 px-5 py-2.5 text-sm text-red-700">
               {{ commentsError }}
             </div>
 
-            <div
-              *ngIf="commentsLoading"
-              class="flex items-center gap-2 px-5 py-6 text-sm text-emerald-900/70">
+            <div *ngIf="commentsLoading" class="flex items-center gap-2 px-5 py-6 text-sm text-emerald-900/70">
               <span class="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
               Loading comments...
             </div>
 
-            <ul
-              *ngIf="!commentsLoading && getVisibleComments().length > 0"
-              class="max-h-[60vh] divide-y divide-emerald-900/5 overflow-y-auto">
-              <li
-                *ngFor="let comment of getVisibleComments(); trackBy: trackComment"
-                class="flex items-start gap-3 px-5 py-4 transition hover:bg-white/50">
-
-                <span
-                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
-                         bg-emerald-700 text-xs font-bold text-white">
-                  {{ getInitials(comment.commenter_name) }}
-                </span>
-
-                <div class="min-w-0 flex-1">
-                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span class="text-sm font-semibold text-emerald-950">
-                      {{ comment.commenter_name || 'Pastor' }}
-                    </span>
-
-                    <span
-                      *ngIf="comment.commenter_role"
-                      class="rounded-full bg-emerald-900/10 px-2 py-0.5 text-[11px] font-semibold
-                             capitalize text-emerald-900">
-                      {{ comment.commenter_role }}
-                    </span>
-
-                    <span
-                      *ngIf="isAnnualView && getCommentQuarterLabel(comment)"
-                      class="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
-                      {{ getCommentQuarterLabel(comment) }}
-                    </span>
-
-                    <span class="text-xs text-emerald-900/60">
-                      {{ comment.date_commented | date: 'mediumDate' }}
-                    </span>
-                  </div>
-
-                  <p class="mt-1 whitespace-pre-line break-words text-sm text-emerald-950/80">
-                    {{ comment.details }}
-                  </p>
+            <ul *ngIf="!commentsLoading && getVisibleComments().length > 0"
+              #commentMessages (scroll)="onCommentMessagesScroll()"
+              class="flex min-h-0 max-h-[60vh] flex-1 flex-col gap-4 overflow-y-auto bg-emerald-50/70 px-4 py-4">
+              <li *ngFor="let comment of getVisibleComments(); trackBy: trackComment"
+                class="flex flex-col gap-1" [ngClass]="isOwnComment(comment) ? 'items-end' : 'items-start'">
+                <article [ngClass]="isOwnComment(comment)
+                    ? 'rounded-br-md bg-emerald-700 text-white'
+                    : 'rounded-bl-md border border-emerald-900/10 bg-white text-emerald-950'"
+                  class="max-w-[88%] rounded-2xl px-4 py-3 shadow-sm">
+                  <p class="whitespace-pre-line break-words text-sm">{{ comment.details }}</p>
+                </article>
+                <div class="flex max-w-[88%] flex-wrap items-center gap-x-2 px-2 text-[11px] text-emerald-900/60"
+                  [ngClass]="isOwnComment(comment) ? 'justify-end text-right' : 'justify-start'">
+                  <span class="font-semibold text-emerald-900/75">
+                    {{ comment.commenter_name || (isOwnComment(comment) ? 'You' : 'Pastor') }}
+                  </span>
+                  <span *ngIf="comment.commenter_role" class="capitalize">{{ comment.commenter_role }}</span>
+                  <span *ngIf="isAnnualView && getCommentQuarterLabel(comment)">{{ getCommentQuarterLabel(comment) }}</span>
+                  <time>{{ comment.date_commented | date: 'mediumDate' }}</time>
                 </div>
               </li>
             </ul>
 
-            <div
-              *ngIf="!commentsLoading && !commentsError && getVisibleComments().length === 0"
+            <div *ngIf="!commentsLoading && !commentsError && getVisibleComments().length === 0"
               class="px-5 py-8 text-center text-sm text-emerald-900/60">
               No comments yet.
             </div>
+
+            <form *ngIf="isRepresentative() && hasPreviousComment()" (ngSubmit)="submitComment()"
+              class="shrink-0 border-t border-emerald-900/10 bg-white/80 p-3">
+              <p *ngIf="!canReplyToComments()" class="mb-2 text-xs text-emerald-900/60">
+                Replies are unavailable for this quarter.
+              </p>
+              <div class="flex items-center gap-2">
+                <input id="representative-reply" type="text" name="reply" [(ngModel)]="commentDraft" maxlength="255"
+                [disabled]="!canReplyToComments() || commentSubmitting"
+                placeholder="Write a comment..." aria-label="Write a comment"
+                class="h-11 min-w-0 flex-1 rounded-full border-0 bg-emerald-900/5 px-4 text-sm text-emerald-950 outline-none transition placeholder:text-emerald-900/45 focus:bg-white focus:ring-2 focus:ring-emerald-600/25 disabled:cursor-not-allowed disabled:opacity-60">
+                <button type="submit" aria-label="Send comment" title="Send comment"
+                  [disabled]="!commentDraft.trim() || !canReplyToComments() || commentSubmitting"
+                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-emerald-900/30">
+                  <svg *ngIf="!commentSubmitting" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m4 4 17 8-17 8 3-8-3-8Z" />
+                    <path d="M7 12h14" />
+                  </svg>
+                  <span *ngIf="commentSubmitting" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                </button>
+              </div>
+            </form>
+
+            <div *ngIf="isRepresentative() && !commentsLoading && !commentsError && !hasPreviousComment()"
+              class="border-t border-emerald-900/10 px-4 py-3 text-xs text-emerald-900/60">
+              You can reply after a pastor or assistant starts this conversation.
+            </div>
           </section>
+
+          <button *ngIf="!mobileCommentsOpen" type="button" (click)="openMobileComments()"
+            aria-label="Open comments" title="Open comments" [attr.aria-expanded]="mobileCommentsOpen"
+            class="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-950/25 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
+              <path d="M8 11.5h8M8 8.5h5" />
+            </svg>
+            <span *ngIf="getUnreadCommentCount() > 0"
+              class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white">
+              {{ getUnreadCommentCount() }}
+            </span>
+          </button>
         </aside>
 
       </div>
 
       <!-- SUBMIT -->
       <div *ngIf="!isAnnualView" class="flex items-center justify-end gap-4 pb-6 pt-6">
-        <span
-          *ngIf="autoSaveStatus !== 'idle'"
-          class="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold backdrop-blur-md"
-          [ngClass]="{
+        <span *ngIf="autoSaveStatus !== 'idle'"
+          class="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold backdrop-blur-md" [ngClass]="{
             'text-emerald-900/70': autoSaveStatus === 'pending' || autoSaveStatus === 'saving',
             'text-emerald-700': autoSaveStatus === 'saved',
             'text-red-600': autoSaveStatus === 'error'
@@ -393,18 +367,19 @@
           </ng-container>
         </span>
 
-        <button
-          type="button"
-          (click)="saveReport()"
-          [disabled]="saving ||
-            selectedQuarterId === null ||
-            (selectedQuarterId !== null && isQuarterApproved(selectedQuarterId))"
-          class="rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-800 px-7 py-2.5
-                 text-sm font-semibold text-white shadow-lg shadow-emerald-900/25 transition
-                 hover:from-emerald-700 hover:to-emerald-900
-                 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:ring-offset-2
-                 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300
-                 disabled:shadow-none">
+        <button type="button" (click)="saveReport()" [disabled]="saving ||
+    selectedQuarterId === null ||
+    (selectedQuarterId !== null && isQuarterApproved(selectedQuarterId))" style="border-radius: 9999px" class="bg-gradient-to-b from-emerald-700 to-emerald-600 px-10 py-3
+         text-base font-medium tracking-widest text-white
+         [text-shadow:0_0_10px_rgba(255,255,255,0.55)]
+         shadow-[0_14px_22px_-8px_rgba(6,78,59,0.45)]
+         transition duration-200 ease-out
+         hover:-translate-y-0.5 hover:from-emerald-900 hover:to-emerald-700
+         hover:shadow-[0_18px_26px_-8px_rgba(6,78,59,0.5)]
+         active:translate-y-0 active:shadow-[0_8px_14px_-6px_rgba(6,78,59,0.4)]
+         focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2
+         disabled:translate-y-0 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300
+         disabled:text-slate-500 disabled:shadow-none disabled:[text-shadow:none]">
           {{ saving ? 'Submitting...' : 'Submit' }}
         </button>
       </div>

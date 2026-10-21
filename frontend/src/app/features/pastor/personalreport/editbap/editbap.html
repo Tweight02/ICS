@@ -1,0 +1,364 @@
+<div class="edit-page">
+  <div class="edit-card">
+
+    <!-- Header -->
+    <header class="edit-header">
+      <div>
+        <p class="eyebrow">BAPTISM RECORDS</p>
+        <h1>Edit Baptism Record</h1>
+        <p class="header-description">
+          Update the selected member's personal and baptism information.
+        </p>
+      </div>
+
+      <span
+        class="record-id"
+        *ngIf="baptism.baptism_id">
+        Record #{{ baptism.baptism_id }}
+      </span>
+    </header>
+
+    <div class="form-content">
+
+      <!-- Loading -->
+      <div
+        *ngIf="loading"
+        class="state-message"
+        role="status">
+        Loading baptism record...
+      </div>
+
+      <!-- Error -->
+      <div
+        *ngIf="!loading && errorMessage"
+        class="alert alert-error"
+        role="alert">
+
+        <span>{{ errorMessage }}</span>
+
+        <button
+          type="button"
+          class="error-back-btn"
+          (click)="cancelEdit()">
+          Back to Baptism Records
+        </button>
+      </div>
+
+      <!-- Success -->
+      <div
+        *ngIf="successMessage"
+        class="alert alert-success"
+        role="status">
+        {{ successMessage }}
+      </div>
+<form
+  *ngIf="!loading && baptism.baptism_id"
+  #baptismForm="ngForm"
+  (ngSubmit)="saveChanges(baptismForm.valid ?? false)">
+  
+        <!-- PERSONAL INFORMATION -->
+        <section class="form-section">
+
+          <div class="section-heading">
+            <span class="section-number">01</span>
+
+            <div>
+              <h2>Personal Information</h2>
+              <p>Update the member's personal details.</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+
+            <!-- First Name -->
+            <div class="form-field">
+              <label for="first_name">
+                First Name <span>*</span>
+              </label>
+
+              <input
+                id="first_name"
+                name="first_name"
+                type="text"
+                [(ngModel)]="baptism.first_name"
+                required
+                maxlength="100" />
+            </div>
+
+            <!-- Middle Name -->
+            <div class="form-field">
+              <label for="middle_name">
+                Middle Name
+              </label>
+
+              <input
+                id="middle_name"
+                name="middle_name"
+                type="text"
+                [(ngModel)]="baptism.middle_name"
+                maxlength="100" />
+            </div>
+
+            <!-- Last Name -->
+            <div class="form-field">
+              <label for="last_name">
+                Last Name <span>*</span>
+              </label>
+
+              <input
+                id="last_name"
+                name="last_name"
+                type="text"
+                [(ngModel)]="baptism.last_name"
+                required
+                maxlength="100" />
+            </div>
+
+            <!-- Extension Name -->
+            <div class="form-field">
+              <label for="extension_name">
+                Extension Name
+              </label>
+
+              <input
+                id="extension_name"
+                name="extension_name"
+                type="text"
+                [(ngModel)]="baptism.extension_name"
+                placeholder="Jr., Sr., III"
+                maxlength="30" />
+            </div>
+
+            <!-- Birthdate -->
+            <div class="form-field">
+              <label for="birthdate">
+                Birthdate <span>*</span>
+              </label>
+
+              <input
+                id="birthdate"
+                name="birthdate"
+                type="date"
+                [(ngModel)]="baptism.birthdate"
+                [max]="today"
+                required />
+            </div>
+
+            <!-- Gender -->
+            <div class="form-field">
+              <label for="gender">
+                Gender <span>*</span>
+              </label>
+
+              <select
+                id="gender"
+                name="gender"
+                [(ngModel)]="baptism.gender"
+                required>
+
+                <option value="" disabled>
+                  Select gender
+                </option>
+
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <!-- Marital Status -->
+            <div class="form-field">
+              <label for="marital_status">
+                Marital Status
+              </label>
+
+              <select
+                id="marital_status"
+                name="marital_status"
+                [(ngModel)]="baptism.marital_status">
+
+                <option value="">
+                  Select marital status
+                </option>
+
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Widowed">Widowed</option>
+                <option value="Divorced">Divorced</option>
+                <option value="Separated">Separated</option>
+              </select>
+            </div>
+
+            <!-- Address -->
+            <div class="form-field form-field-full">
+              <label for="address">Address</label>
+
+              <input
+                id="address"
+                name="address"
+                type="text"
+                [(ngModel)]="baptism.address"
+                maxlength="255" />
+            </div>
+
+          </div>
+        </section>
+
+        <!-- BAPTISM INFORMATION -->
+        <section class="form-section">
+
+          <div class="section-heading">
+            <span class="section-number">02</span>
+
+            <div>
+              <h2>Baptism Information</h2>
+              <p>
+                Update the details related to the baptism record.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+
+            <!-- Church -->
+            <div class="form-field">
+              <label for="church_id">
+                Church <span>*</span>
+              </label>
+
+              <select
+                id="church_id"
+                name="church_id"
+                [(ngModel)]="baptism.church_id"
+                required>
+
+                <option
+                  [ngValue]="null"
+                  disabled>
+                  Select church
+                </option>
+
+                <option
+                  *ngFor="let church of churches"
+                  [ngValue]="church.church_id">
+                  {{ church.name }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Quarter -->
+            <div class="form-field">
+              <label for="quarter">
+                Quarter <span>*</span>
+              </label>
+
+              <select
+                id="quarter"
+                name="quarter"
+                [(ngModel)]="baptism.quarter"
+                required>
+
+                <option value="Q1">Q1</option>
+                <option value="Q2">Q2</option>
+                <option value="Q3">Q3</option>
+                <option value="Q4">Q4</option>
+              </select>
+            </div>
+
+            <!-- Date of Baptism -->
+            <div class="form-field">
+              <label for="date_of_baptism">
+                Date of Baptism <span>*</span>
+              </label>
+
+              <input
+                id="date_of_baptism"
+                name="date_of_baptism"
+                type="date"
+                [(ngModel)]="baptism.date_of_baptism"
+                [max]="today"
+                [min]="baptism.birthdate || null"
+                required />
+            </div>
+
+            <!-- Officiating Minister -->
+            <div class="form-field">
+              <label for="officiating_minister">
+                Officiating Minister
+              </label>
+
+              <input
+                id="officiating_minister"
+                name="officiating_minister"
+                type="text"
+                [(ngModel)]="baptism.officiating_minister"
+                maxlength="150" />
+            </div>
+
+            <!-- Place of Baptism -->
+            <div class="form-field">
+              <label for="place_of_baptism">
+                Place of Baptism
+              </label>
+
+              <input
+                id="place_of_baptism"
+                name="place_of_baptism"
+                type="text"
+                [(ngModel)]="baptism.place_of_baptism"
+                maxlength="255" />
+            </div>
+
+            <!-- Baptism Status -->
+            <div class="form-field">
+              <label for="is_reclaimed">
+                Baptism Status
+              </label>
+
+              <select
+                id="is_reclaimed"
+                name="is_reclaimed"
+                [(ngModel)]="baptism.is_reclaimed">
+
+                <option [ngValue]="false">
+                  Newly Baptized
+                </option>
+
+                <option [ngValue]="true">
+                  Reclaimed Member
+                </option>
+              </select>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ACTION BUTTONS -->
+        <div class="form-actions">
+
+          <button
+            type="button"
+            class="btn-cancel"
+            [disabled]="saving"
+            (click)="cancelEdit()">
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="btn-save"
+            [disabled]="saving || baptismForm.invalid">
+
+            <span *ngIf="!saving">
+              Save Changes
+            </span>
+
+            <span *ngIf="saving">
+              Saving...
+            </span>
+          </button>
+
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

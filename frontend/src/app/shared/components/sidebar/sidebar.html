@@ -15,20 +15,6 @@
       </div>
     </div>
 
-    <button
-      type="button"
-      class="toggle-btn ms-auto"
-      (click)="toggleSidebar()"
-      [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-      [attr.aria-expanded]="!collapsed"
-    >
-      <i
-        class="bi"
-        [class.bi-chevron-double-left]="!collapsed"
-        [class.bi-chevron-double-right]="collapsed"
-      ></i>
-    </button>
-
   </div>
 
 
@@ -115,3 +101,14 @@
   </div>
 
 </aside>
+
+<button
+  type="button"
+  class="sidebar-floating-toggle"
+  [class.collapsed]="collapsed"
+  (click)="toggleSidebar()"
+  [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+  [attr.aria-expanded]="!collapsed"
+>
+  <i class="bi bi-list" aria-hidden="true"></i>
+</button>

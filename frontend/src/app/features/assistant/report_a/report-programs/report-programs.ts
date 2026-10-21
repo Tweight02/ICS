@@ -848,13 +848,14 @@ export class ReportPrograms implements OnInit {
   // =====================================================
 
   backToReportDetails(): void {
+    const portalPrefix = this.router.url.startsWith('/assistant')
+      ? '/assistant'
+      : '/director';
+    const route = this.districtId
+      ? [`${portalPrefix}/reports/details`, this.districtId]
+      : [`${portalPrefix}/reports`];
 
-    this.router.navigate(
-      [
-        '/pastor/reports/details',
-        this.districtId
-      ]
-    );
+    this.router.navigate(route);
 
   }
 

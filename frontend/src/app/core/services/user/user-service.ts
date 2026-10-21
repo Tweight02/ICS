@@ -5,6 +5,8 @@ import { User } from '../../models/user.model';
 import { Church } from '../../models/church.model';
 import { Department } from '../../models/department.model';
 import {
+    AssignablePastor,
+    DistrictPastorAssignment,
     Paginated,
     Pastor,
     PastorFilters
@@ -35,14 +37,13 @@ export class UserService {
     }
 
     getDistricts() {
-
         return this.http.get<{
             success: boolean;
             data: Church[];
         }>(
-            `${this.apiUrl}/assistant/districts`,
+            `${this.apiUrl}/assistant/district-options`,
             {
-                withCredentials: true
+                withCredentials: true,
             }
         );
     }
@@ -119,21 +120,20 @@ export class UserService {
         );
     }
 
-    /**
-     * Bulk transfer pastors to different districts.
-     */
-    bulkTransfer(
-        transfers: {
-            user_id: number;
-            church_id: number;
-        }[]
-    ) {
-        return this.http.post<{
-            message: string;
-            transferred_count: number;
+    getDistrictPastorAssignments() {
+        return this.http.get<{
+            assignments: DistrictPastorAssignment[];
+            pastors: AssignablePastor[];
         }>(
-            `${this.apiUrl}/assistant/pastors/bulk-transfer`,
-            { transfers },
+            `${this.apiUrl}/assistant/district-pastor-assignments`,
+            { withCredentials: true }
+        );
+    }
+
+    assignPastorToDistrict(districtId: number, userId: number) {
+        return this.http.put<{ message: string }>(
+            `${this.apiUrl}/assistant/district-pastor-assignments/${districtId}`,
+            { user_id: userId },
             { withCredentials: true }
         );
     }
@@ -169,78 +169,90 @@ export class UserService {
         );
     }
 
-getRepresentative(
-    id: number | string
-) {
+    getRepresentative(
+        id: number | string
+    ) {
 
-    return this.http.get<{
-        data: Representative;
-    }>(
-        `${this.apiUrl}/representatives/${id}`,
-        {
-            withCredentials: true
-        }
-    );
-}
-
-createRepresentative(
-    data: any
-) {
-
-    return this.http.post<{
-        message: string;
-        user: Representative;
-    }>(
-        `${this.apiUrl}/representatives`,
-        data,
-        {
-            withCredentials: true
-        }
-    );
-}
-
-updateRepresentative(
-    id: number | string,
-    data: any
-) {
-
-    return this.http.put<{
-        message: string;
-        user: Representative;
-    }>(
-        `${this.apiUrl}/representatives/${id}`,
-        data,
-        {
-            withCredentials: true
-        }
-    );
-}
-
-
-deletePastor(id: number | string) {
-  return this.http.delete<{
-    message: string;
-  }>(
-    `${this.apiUrl}/assistant/pastors/${id}`,
-    {
-      withCredentials: true,
+        return this.http.get<{
+            data: Representative;
+        }>(
+            `${this.apiUrl}/representatives/${id}`,
+            {
+                withCredentials: true
+            }
+        );
     }
-  );
-}
+
+    createRepresentative(
+        data: any
+    ) {
+
+        return this.http.post<{
+            message: string;
+            user: Representative;
+        }>(
+            `${this.apiUrl}/representatives`,
+            data,
+            {
+                withCredentials: true
+            }
+        );
+    }
+
+    updateRepresentative(
+        id: number | string,
+        data: any
+    ) {
+
+        return this.http.put<{
+            message: string;
+            user: Representative;
+        }>(
+            `${this.apiUrl}/representatives/${id}`,
+            data,
+            {
+                withCredentials: true
+            }
+        );
+    }
 
 
-checkDistrictPastor(churchId: number) {
-    return this.http.get<{
-        exists: boolean;
-        message?: string;
-        pastor?: {
-            user_id: number;
-            first_name: string;
-            last_name: string;
-        };
-    }>(
-        `${this.apiUrl}/assistant/districts/${churchId}/pastor`,
-        { withCredentials: true }
-    );
-}
+    activatePastor(id: number | string) {
+        return this.http.post<{
+            message: string;
+        }>(
+            `${this.apiUrl}/assistant/pastors/${id}/activate`,
+            {},
+            {
+                withCredentials: true,
+            }
+        );
+    }
+
+    deactivatePastor(id: number | string) {
+        return this.http.delete<{
+            message: string;
+        }>(
+            `${this.apiUrl}/assistant/pastors/${id}`,
+            {
+                withCredentials: true,
+            }
+        );
+    }
+
+
+    checkDistrictPastor(churchId: number) {
+        return this.http.get<{
+            exists: boolean;
+            message?: string;
+            pastor?: {
+                user_id: number;
+                first_name: string;
+                last_name: string;
+            };
+        }>(
+            `${this.apiUrl}/assistant/districts/${churchId}/pastor`,
+            { withCredentials: true }
+        );
+    }
 }

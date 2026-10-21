@@ -22,16 +22,23 @@ describe('ReportPrograms', () => {
       church_id: 1
     });
 
-    getDepartments = vi.fn().mockReturnValue(of([{
-      department_id: 4,
-      department_name: 'Youth',
-      q1_approved: false,
-      q1_data_progress: 50,
-      q2_approved: true,
-      q2_data_progress: 100,
-      q3_approved: false,
-      q3_data_progress: 0
-    }]));
+    getDepartments = vi.fn().mockReturnValue(of([
+      {
+        department_id: 4,
+        department_name: 'Youth',
+        q1_approved: false,
+        q1_data_progress: 50,
+        q2_approved: true,
+        q2_data_progress: 100,
+        q3_approved: true,
+        q3_data_progress: 0
+      },
+      { department_id: 16, department_name: 'Ministerial & Evangelism' },
+      { department_id: 20, department_name: 'Adventist Mission' },
+      { department_id: 22, department_name: 'Baptism Record' },
+      { department_id: 23, department_name: 'Death Record' },
+      { department_id: 30, department_name: 'Other Department' }
+    ]));
     const getAllChurches = vi.fn().mockReturnValue(of({
       success: true,
       data: [
@@ -73,13 +80,17 @@ describe('ReportPrograms', () => {
     expect(monitoring.q2).toEqual({ progress: 100, approved: true });
 
     const quarterCells = Array.from(
-      fixture.nativeElement.querySelectorAll('tbody tr td')
+      fixture.nativeElement.querySelectorAll('tbody tr')[0].querySelectorAll('td')
     ).slice(1) as HTMLTableCellElement[];
     expect(quarterCells.map(cell => cell.textContent.trim())).toEqual([
       '50%',
       '✓',
-      '—',
-      '—'
+      '-',
+      '-'
     ]);
+  });
+
+  it('shows all departments except pastor personal report departments', () => {
+    expect(component.representativeDepartments.map(department => department.department_id)).toEqual([4, 30]);
   });
 });

@@ -34,7 +34,8 @@ export class EditUser implements OnInit {
   loading = signal(true);
   loadError = signal<string | null>(null);
   saving = signal(false);
-  deleting = signal(false);
+  removing = signal(false);
+  activating = signal(false);
   editing = signal(false);
   submitErrors = signal<string[]>([]);
 
@@ -180,18 +181,18 @@ export class EditUser implements OnInit {
   }
 
 
-async onDelete(): Promise<void> {
-  if (this.deleting()) return;
+async onRemove(): Promise<void> {
+  if (this.removing()) return;
 
   const p = this.pastor();
   if (!p) return;
 
   const result = await Swal.fire({
-    title: 'Delete Pastor?',
-    text: `Are you sure you want to delete ${p.first_name} ${p.last_name}? This action cannot be undone.`,
+    title: 'Deactivate Pastor?',
+    text: `Deactivate ${p.first_name} ${p.last_name}? Their account and records will be kept, but they will no longer be able to sign in.`,
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonText: 'Yes, delete',
+    confirmButtonText: 'Yes, deactivate',
     cancelButtonText: 'Cancel',
     reverseButtons: true,
     focusCancel: true,
@@ -207,16 +208,16 @@ async onDelete(): Promise<void> {
   // Stop if the user cancels or closes the dialog.
   if (!result.isConfirmed) return;
 
-  this.deleting.set(true);
+  this.removing.set(true);
   this.submitErrors.set([]);
 
-  this.userService.deletePastor(this.id).subscribe({
+  this.userService.deactivatePastor(this.id).subscribe({
     next: async () => {
-      this.deleting.set(false);
+      this.removing.set(false);
 
       await Swal.fire({
-        title: 'Pastor Deleted',
-        text: `${p.first_name} ${p.last_name} was deleted successfully.`,
+        title: 'Pastor Deactivated',
+        text: `${p.first_name} ${p.last_name} was deactivated. Their account and records were kept.`,
         icon: 'success',
         confirmButtonText: 'OK',
         confirmButtonColor: '#065f46',
@@ -225,16 +226,16 @@ async onDelete(): Promise<void> {
       await this.router.navigateByUrl(this.backUrl);
     },
     error: async (err: HttpErrorResponse) => {
-      this.deleting.set(false);
+      this.removing.set(false);
 
       const message =
         err.error?.message ??
-        'Could not delete this pastor. Please try again.';
+        'Could not deactivate this pastor. Please try again.';
 
       this.submitErrors.set([message]);
 
       await Swal.fire({
-        title: 'Deletion Failed',
+        title: 'Deactivation Failed',
         text: message,
         icon: 'error',
         confirmButtonText: 'OK',
@@ -244,6 +245,70 @@ async onDelete(): Promise<void> {
   });
 }
 
+  async onActivate(): Promise<void> {
+    if (this.activating()) return;
+
+    const p = this.pastor();
+    if (!p) return;
+
+    const result = await Swal.fire({
+      title: 'Activate Pastor?',
+      text: `Activate ${p.first_name} ${p.last_name} and restore access to this district?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, activate',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      focusCancel: true,
+      confirmButtonColor: '#065f46',
+      cancelButtonColor: '#64748b',
+      customClass: {
+        popup: 'rounded-xl',
+        confirmButton: 'rounded-lg px-4 py-2',
+        cancelButton: 'rounded-lg px-4 py-2',
+      },
+    });
+
+    if (!result.isConfirmed) return;
+
+    this.activating.set(true);
+    this.submitErrors.set([]);
+
+    this.userService.activatePastor(this.id).subscribe({
+      next: async () => {
+        this.activating.set(false);
+        this.pastor.update((current) => current ? { ...current, status: 'active' } : current);
+
+        await Swal.fire({
+          title: 'Pastor Activated',
+          text: `${p.first_name} ${p.last_name} is now active again.`,
+          icon: 'success',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#065f46',
+        });
+
+        await this.router.navigateByUrl(this.backUrl);
+      },
+      error: async (err: HttpErrorResponse) => {
+        this.activating.set(false);
+
+        const message =
+          err.error?.message ??
+          err.error?.errors?.church_id?.[0] ??
+          'Could not activate this pastor. Please try again.';
+
+        this.submitErrors.set([message]);
+
+        await Swal.fire({
+          title: 'Activation Failed',
+          text: message,
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#065f46',
+        });
+      },
+    });
+  }
 
   initials(p: Pastor): string {
     return (

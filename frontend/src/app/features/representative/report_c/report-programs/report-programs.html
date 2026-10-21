@@ -2,10 +2,10 @@
 <ng-template #qcell let-v>
   <div class="flex items-center justify-center">
 
-    <span *ngIf="v.progress === null || v.progress === 0" class="text-sm text-emerald-900/40">—</span>
+    <span *ngIf="v.progress === null || v.progress === 0" class="text-sm text-emerald-900/40">-</span>
 
     <span
-      *ngIf="v.approved"
+      *ngIf="v.approved && v.progress !== 0 && v.progress !== null"
       title="Complete"
       class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700
              text-xs font-bold text-white shadow-sm">
@@ -23,12 +23,12 @@
 </ng-template>
 
 
-<div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+<div class="report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
   <div class="mx-auto max-w-6xl">
 
     <!-- HEADER -->
     <header class="mb-6">
-      <h1 class="text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
+      <h1 class="font-serif text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
         {{ churchName || 'Church Reports' }}
       </h1>
       <p class="mt-0.5 text-sm font-medium text-emerald-900/70">
@@ -62,15 +62,15 @@
              shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
       <div class="overflow-x-auto">
-        <table class="w-full border-collapse">
+        <table class="report-table w-full border-collapse">
 
           <thead>
             <tr class="bg-emerald-900/10 text-xs font-bold uppercase tracking-wider text-emerald-950">
-              <th class="w-[35%] min-w-[220px] px-5 py-3.5 text-left align-middle">Department</th>
-              <th class="min-w-[140px] px-3 py-3.5 text-center align-middle">Q1</th>
-              <th class="min-w-[140px] px-3 py-3.5 text-center align-middle">Q2</th>
-              <th class="min-w-[140px] px-3 py-3.5 text-center align-middle">Q3</th>
-              <th class="min-w-[140px] px-3 py-3.5 text-center align-middle">Q4</th>
+              <th scope="col" class="w-[35%] min-w-[220px] px-5 py-3.5 text-left align-middle">Department</th>
+              <th scope="col" class="min-w-[140px] px-3 py-3.5 text-center align-middle">Q1</th>
+              <th scope="col" class="min-w-[140px] px-3 py-3.5 text-center align-middle">Q2</th>
+              <th scope="col" class="min-w-[140px] px-3 py-3.5 text-center align-middle">Q3</th>
+              <th scope="col" class="min-w-[140px] px-3 py-3.5 text-center align-middle">Q4</th>
             </tr>
           </thead>
 
@@ -81,7 +81,7 @@
               (click)="openDepartment(department)">
 
               <!-- Icon + name -->
-              <td class="px-5 py-3.5">
+              <td data-label="Department" class="px-5 py-3.5">
                 <div class="flex items-center gap-3">
                   <span
                     class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700/10
@@ -107,25 +107,25 @@
                 </div>
               </td>
 
-              <td class="px-3 py-3.5 text-center">
+              <td data-label="Q1" class="px-3 py-3.5 text-center">
                 <ng-container
                   *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q1 }">
                 </ng-container>
               </td>
 
-              <td class="px-3 py-3.5 text-center">
+              <td data-label="Q2" class="px-3 py-3.5 text-center">
                 <ng-container
                   *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q2 }">
                 </ng-container>
               </td>
 
-              <td class="px-3 py-3.5 text-center">
+              <td data-label="Q3" class="px-3 py-3.5 text-center">
                 <ng-container
                   *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q3 }">
                 </ng-container>
               </td>
 
-              <td class="px-3 py-3.5 text-center">
+              <td data-label="Q4" class="px-3 py-3.5 text-center">
                 <ng-container
                   *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q4 }">
                 </ng-container>

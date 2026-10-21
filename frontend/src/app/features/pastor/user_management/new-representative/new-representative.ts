@@ -5,7 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 
-import { RepresentativeService } from '../../../core/services/representative/representative-service'; // adjust to your real path
+import { RepresentativeService } from '../../../../core/services/representative/representative-service'; // adjust to your real path
 
 @Component({
     selector: 'app-new-representative',

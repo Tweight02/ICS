@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 // Nothing is saved or loaded from a server yet.
 
 type Status = 'Draft' | 'Submitted' | 'Endorsed' | 'Approved';
+type Tab = 'activities' | 'offering';
 
 interface Particular {
   particular_id: number;
@@ -35,7 +36,18 @@ export class Stewardship {
 
   readonly quarters = [1, 2, 3, 4];
 
+  readonly years = (() => {
+    const y = new Date().getFullYear();
+    return [y - 2, y - 1, y];
+  })();
+
+  year = new Date().getFullYear();
+
+  /** 1-4 for a quarter, 0 for the read-only Annual view. */
   quarter = Math.ceil((new Date().getMonth() + 1) / 3);
+
+  /** Which section is shown: Stewardship activities or Offering and Tithes. */
+  activeTab: Tab = 'activities';
 
   status: Status = 'Draft';
   dateSubmitted = '';
@@ -88,18 +100,21 @@ export class Stewardship {
     return this.monthNumbers.map((m) => MONTH_NAMES[m - 1]);
   }
 
-  /** The report's year is the year it was submitted (the current year until then). */
-  get year(): number {
-    return this.dateSubmitted ? Number(this.dateSubmitted.slice(0, 4)) : new Date().getFullYear();
+  get isAnnual(): boolean {
+    return this.quarter === 0;
   }
 
-  /** The church can only edit while the report is a draft. */
+  get periodLabel(): string {
+    return this.isAnnual ? 'Annual' : `Q${this.quarter}`;
+  }
+
+  /** The church can only edit while the report is a draft, and never in the Annual view. */
   get isLocked(): boolean {
-    return this.status !== 'Draft';
+    return this.isAnnual || this.status !== 'Draft';
   }
 
   get showPercent(): boolean {
-    return this.membersId !== null && this.titheUnitsId !== null;
+    return !this.isAnnual && this.membersId !== null && this.titheUnitsId !== null;
   }
 
   /** % of members returning tithe = tithe giving units / church members * 100. */
@@ -144,7 +159,26 @@ export class Stewardship {
 
   /** Total of one monthly particular (Offering or Tithes) for the quarter. */
   monthlyTotal(particularId: number): number {
+    if (this.isAnnual) return this.annualTotal(particularId);
     return (this.monthly[particularId] ?? []).reduce<number>((sum, v) => sum + (v ?? 0), 0);
+  }
+
+  // ---- Annual view (read-only, adds up the four saved quarters) ----
+
+  /** Sum of a single-value particular across Q1-Q4. */
+  annualField(particularId: number): number {
+    return this.quarters.reduce((sum, q) => sum + (this.readStored(q)?.values?.[particularId] ?? 0), 0);
+  }
+
+  /** Offering or Tithes total for one quarter. */
+  annualQuarterTotal(particularId: number, q: number): number {
+    const months: (number | null)[] = this.readStored(q)?.monthly?.[particularId] ?? [];
+    return months.reduce<number>((sum, v) => sum + (v ?? 0), 0);
+  }
+
+  /** Offering or Tithes total for the whole year. */
+  annualTotal(particularId: number): number {
+    return this.quarters.reduce((sum, q) => sum + this.annualQuarterTotal(particularId, q), 0);
   }
 
   // ---- Actions (change local state only) ----
@@ -167,10 +201,7 @@ export class Stewardship {
   }
 
   submit(): void {
-    if (!this.hasData()) {
-      this.setMessage('Enter your report values before submitting.', true);
-      return;
-    }
+    this.fillEmptyWithZero();
     this.status = 'Submitted';
     this.dateSubmitted = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, local time
     this.persist();
@@ -190,8 +221,21 @@ export class Stewardship {
 
   // Stand-in for the backend: keeps the report in this browser so it survives a refresh.
   // Replace persist() and load() with API calls later.
+  private keyFor(q: number): string {
+    return `stewardship:${this.church.name}:${this.year}:q${q}`;
+  }
+
   private get storageKey(): string {
-    return `stewardship:${this.church.name}:q${this.quarter}`;
+    return this.keyFor(this.quarter);
+  }
+
+  private readStored(q: number): any {
+    try {
+      const raw = localStorage.getItem(this.keyFor(q));
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   }
 
   private persist(): void {
@@ -216,6 +260,7 @@ export class Stewardship {
     this.status = 'Draft';
     this.dateSubmitted = '';
     this.saved = false;
+    if (this.isAnnual) return;
     try {
       const raw = localStorage.getItem(this.storageKey);
       if (!raw) return;
@@ -229,11 +274,20 @@ export class Stewardship {
     }
   }
 
-  private hasData(): boolean {
-    return (
-      this.fields.some((f) => this.values[f.particular_id] != null) ||
-      this.monthlyFields.some((p) => this.monthly[p.particular_id]?.some((v) => v != null))
-    );
+  /** A box counts as filled once it has a number (0 is fine; empty is not). */
+  private isFilled(v: number | null | undefined): boolean {
+    return v !== null && v !== undefined && (v as unknown) !== '' && !Number.isNaN(v);
+  }
+
+  /** Any box left empty is submitted as 0. */
+  private fillEmptyWithZero(): void {
+    for (const f of this.fields) {
+      if (!this.isFilled(this.values[f.particular_id])) this.values[f.particular_id] = 0;
+    }
+    for (const p of this.monthlyFields) {
+      const months = this.monthly[p.particular_id] ?? [null, null, null];
+      this.monthly[p.particular_id] = months.map((v) => (this.isFilled(v) ? v : 0));
+    }
   }
 
   private setParticulars(list: Particular[]): void {

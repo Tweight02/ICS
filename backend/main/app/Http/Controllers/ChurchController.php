@@ -42,14 +42,33 @@ class ChurchController extends Controller
 
             foreach (range(1, 4) as $quarterNumber) {
                 $values = $churches
-                    ->map(fn (Church $church) => $monitoringByChurch[$church->church_id]['q' . $quarterNumber] ?? null)
+                    ->map(fn (Church $church) => $monitoringByChurch[$church->church_id]['q'.$quarterNumber] ?? null)
                     ->filter(fn ($value) => $value !== null);
 
-                $district->{'q' . $quarterNumber} = $values->isEmpty()
+                $district->{'q'.$quarterNumber} = $values->isEmpty()
                     ? null
                     : (int) round($values->avg());
             }
         });
+
+        return response()->json([
+            'success' => true,
+            'data' => $districts,
+        ]);
+    }
+
+    /**
+     * Get district options for dropdowns.
+     */
+    public function districtOptions(): JsonResponse
+    {
+        $districts = Church::query()
+            ->whereNull('parent_id')
+            ->orderBy('name')
+            ->get([
+                'church_id',
+                'name',
+            ]);
 
         return response()->json([
             'success' => true,
@@ -67,7 +86,7 @@ class ChurchController extends Controller
             ->whereNull('parent_id')
             ->first();
 
-        if (!$districtRecord) {
+        if (! $districtRecord) {
             return response()->json([
                 'success' => false,
                 'message' => 'District not found.',
@@ -110,7 +129,7 @@ class ChurchController extends Controller
     {
         $user = $request->user();
 
-        if (!$this->isPastor($user)) {
+        if (! $this->isPastor($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Pastor account required.',
@@ -119,7 +138,7 @@ class ChurchController extends Controller
 
         $district = $this->getAssignedDistrict($user->church_id);
 
-        if (!$district) {
+        if (! $district) {
             return response()->json([
                 'success' => false,
                 'message' => 'Assigned district not found.',
@@ -139,11 +158,10 @@ class ChurchController extends Controller
     public function myDistrictChurches(
         Request $request,
         ReportMonitoringService $monitoring
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $user = $request->user();
 
-        if (!$this->isPastor($user)) {
+        if (! $this->isPastor($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Pastor account required.',
@@ -152,7 +170,7 @@ class ChurchController extends Controller
 
         $district = $this->getAssignedDistrict($user->church_id);
 
-        if (!$district) {
+        if (! $district) {
             return response()->json([
                 'success' => false,
                 'message' => 'Assigned district not found.',
@@ -205,7 +223,7 @@ class ChurchController extends Controller
      */
     private function getAssignedDistrict($churchId): ?Church
     {
-        if (!$churchId) {
+        if (! $churchId) {
             return null;
         }
 
@@ -213,7 +231,7 @@ class ChurchController extends Controller
             ->where('church_id', $churchId)
             ->first();
 
-        if (!$assignedChurch) {
+        if (! $assignedChurch) {
             return null;
         }
 

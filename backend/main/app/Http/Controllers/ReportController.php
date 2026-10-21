@@ -2,18 +2,132 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Services\ReportMonitoringService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    private const PERSONAL_REPORT_DEPARTMENT_IDS = [16, 20, 22, 23];
+
+    public function createReportTemplate(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'You must log in to create a report template.',
+            ], 401);
+        }
+
+        if (! $this->isAssistantRole($this->normalizeRole($user->role ?? ''))) {
+            return response()->json([
+                'message' => 'Only the administrative assistant can create report templates.',
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'department_id' => ['required', 'integer', 'exists:departments,department_id'],
+            'program_name' => ['required', 'string', 'max:255'],
+            'section_name' => ['required', 'string', 'max:255'],
+            'particular_items' => ['required', 'array', 'min:1'],
+            'particular_items.*' => ['required', 'string', 'max:255', 'distinct:ignore_case'],
+        ]);
+
+        if ($denied = $this->departmentAccessDenied(
+            $request,
+            (int) $data['department_id']
+        )) {
+            return $denied;
+        }
+
+        $normalizedItems = array_map(
+            static fn (string $name) => mb_strtolower(trim($name)),
+            $data['particular_items']
+        );
+
+        if (count(array_unique($normalizedItems)) !== count($normalizedItems)) {
+            return response()->json([
+                'message' => 'Each particular item must have a unique name.',
+                'errors' => [
+                    'particular_items' => ['Duplicate report item names are not allowed.'],
+                ],
+            ], 422);
+        }
+
+        $created = DB::transaction(function () use ($data) {
+            $programId = DB::table('programs')->insertGetId([
+                'department_id' => $data['department_id'],
+                'program_name' => trim($data['program_name']),
+                'parent_id' => null,
+            ], 'program_id');
+
+            $sectionId = DB::table('programs')->insertGetId([
+                'department_id' => $data['department_id'],
+                'program_name' => trim($data['section_name']),
+                'parent_id' => $programId,
+            ], 'program_id');
+
+            $particulars = [];
+            foreach ($data['particular_items'] as $name) {
+                $particulars[] = [
+                    'particular_id' => DB::table('particulars')->insertGetId([
+                        'program_id' => $sectionId,
+                        'particular_name' => trim($name),
+                    ], 'particular_id'),
+                    'particular_name' => trim($name),
+                ];
+            }
+
+            $churchIds = DB::table('churches')
+                ->whereNotNull('parent_id')
+                ->pluck('church_id');
+            $quarters = [];
+            foreach ($churchIds as $churchId) {
+                foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarterName) {
+                    $quarters[] = [
+                        'program_id' => $programId,
+                        'church_id' => $churchId,
+                        'quarter' => $quarterName,
+                        'year' => (string) now()->year,
+                        'date_submitted' => null,
+                        'district_endorse' => null,
+                        'mission_approve' => null,
+                    ];
+                }
+            }
+
+            if ($quarters !== []) {
+                DB::table('quarters')->insert($quarters);
+            }
+
+            return [
+                'program_id' => $programId,
+                'section_id' => $sectionId,
+                'particulars' => $particulars,
+                'quarters_created' => count($quarters),
+            ];
+        });
+
+        return response()->json([
+            'message' => 'Report template created successfully.',
+            'data' => $created,
+        ], 201);
+    }
+
     /* =========================================================
        GET DEPARTMENTS
     ========================================================= */
 
-    public function getDepartments($churchId, ReportMonitoringService $monitoring)
-    {
+    public function getDepartments(
+        Request $request,
+        $churchId,
+        ReportMonitoringService $monitoring
+    ) {
+        $user = $request->user();
+
         $church = DB::table('churches')
             ->where('church_id', $churchId)
             ->first();
@@ -25,6 +139,31 @@ class ReportController extends Controller
         }
 
         $departments = DB::table('departments')
+            ->where(function ($query) use ($user) {
+                if ($this->isRepresentativeRole($user)) {
+                    $query->whereNotIn(
+                        'department_id',
+                        self::PERSONAL_REPORT_DEPARTMENT_IDS
+                    );
+
+                    return;
+                }
+
+                if ($this->isPastorRole(
+                    $this->normalizeRole((string) ($user->role ?? ''))
+                )) {
+                    return;
+                }
+
+                $query->where('department_id', $user->department_id);
+
+                if ($this->isDirectorOrAssistant($user)) {
+                    $query->orWhereIn(
+                        'department_id',
+                        self::PERSONAL_REPORT_DEPARTMENT_IDS
+                    );
+                }
+            })
             ->orderBy('department_name')
             ->get();
 
@@ -60,8 +199,18 @@ class ReportController extends Controller
        GET DEPARTMENT REPORT
     ========================================================= */
 
-    public function departmentReport($churchId, $departmentId)
-    {
+    public function departmentReport(
+        Request $request,
+        $churchId,
+        $departmentId
+    ) {
+        if ($denied = $this->departmentAccessDenied(
+            $request,
+            (int) $departmentId
+        )) {
+            return $denied;
+        }
+
         $church = DB::table('churches')
             ->where('church_id', $churchId)
             ->first();
@@ -187,6 +336,13 @@ class ReportController extends Controller
         $churchId,
         $departmentId
     ) {
+        if ($denied = $this->departmentAccessDenied(
+            $request,
+            (int) $departmentId
+        )) {
+            return $denied;
+        }
+
         $validated = $request->validate([
             'items' => ['required', 'array', 'min:1'],
             'items.*.particular_id' => ['required', 'integer'],
@@ -372,8 +528,39 @@ class ReportController extends Controller
        GET DEPARTMENT COMMENTS
     ========================================================= */
 
-    public function departmentComments(int $churchId, int $departmentId)
-    {
+    public function departmentComments(
+        Request $request,
+        int $churchId,
+        int $departmentId
+    ) {
+        $user = $request->user();
+        $pastorPersonalCommentAccess = false;
+
+        if (
+            $user &&
+            $this->isPastorRole($this->normalizeRole((string) ($user->role ?? ''))) &&
+            in_array($departmentId, [22, 23], true)
+        ) {
+            $assignedChurch = DB::table('churches')
+                ->where('church_id', $user->church_id)
+                ->first(['church_id', 'parent_id']);
+
+            if ($assignedChurch) {
+                $districtId = $assignedChurch->parent_id ?? $assignedChurch->church_id;
+                $pastorPersonalCommentAccess = DB::table('churches')
+                    ->where('church_id', $churchId)
+                    ->where('parent_id', $districtId)
+                    ->exists();
+            }
+        }
+
+        if (
+            ! $pastorPersonalCommentAccess &&
+            ($denied = $this->departmentAccessDenied($request, $departmentId))
+        ) {
+            return $denied;
+        }
+
         $church = DB::table('churches')
             ->where('church_id', $churchId)
             ->first(['church_id', 'parent_id']);
@@ -453,6 +640,7 @@ class ReportController extends Controller
             'district pastor',
             'administrative assistant',
             'assistant',
+            'representative',
         ];
 
         if (! in_array($role, $allowedRoles, true)) {
@@ -484,6 +672,13 @@ class ReportController extends Controller
             ],
         ]);
 
+        if ($denied = $this->departmentAccessDenied(
+            $request,
+            (int) $data['department_id']
+        )) {
+            return $denied;
+        }
+
         $quarter = DB::table('quarters')
             ->where('quarter_id', $data['quarter_id'])
             ->where('church_id', $data['church_id'])
@@ -511,6 +706,19 @@ class ReportController extends Controller
         if ($this->isApproved($quarter->mission_approve)) {
             return response()->json([
                 'message' => 'This report has been approved. Comments are closed.',
+            ], 422);
+        }
+
+        if (
+            $role === 'representative'
+            && ! DB::table('comments')
+                ->where('church_id', $data['church_id'])
+                ->where('department_id', $data['department_id'])
+                ->where('quarter_id', $data['quarter_id'])
+                ->exists()
+        ) {
+            return response()->json([
+                'message' => 'You can only reply to an existing conversation.',
             ], 422);
         }
 
@@ -560,8 +768,23 @@ class ReportController extends Controller
        GET COMMENTS BY QUARTER
     ========================================================= */
 
-    public function comments(int $quarterId)
+    public function comments(Request $request, int $quarterId)
     {
+        $departmentId = DB::table('quarters as q')
+            ->join('programs as p', 'p.program_id', '=', 'q.program_id')
+            ->where('q.quarter_id', $quarterId)
+            ->value('p.department_id');
+
+        if ($departmentId === null) {
+            return response()->json([
+                'message' => 'Quarter not found.',
+            ], 404);
+        }
+
+        if ($denied = $this->departmentAccessDenied($request, (int) $departmentId)) {
+            return $denied;
+        }
+
         $comments = DB::table('comments as c')
             ->join('users as u', 'u.user_id', '=', 'c.commented_by')
             ->leftJoin('quarters as q', 'q.quarter_id', '=', 'c.quarter_id')
@@ -616,6 +839,10 @@ class ReportController extends Controller
             return response()->json([
                 'message' => 'Only the district pastor can endorse this report.',
             ], 403);
+        }
+
+        if ($denied = $this->departmentAccessDenied($request, $departmentId)) {
+            return $denied;
         }
 
         $data = $request->validate([
@@ -709,6 +936,10 @@ class ReportController extends Controller
             return response()->json([
                 'message' => 'Only the administrative assistant can approve this report.',
             ], 403);
+        }
+
+        if ($denied = $this->departmentAccessDenied($request, $departmentId)) {
+            return $denied;
         }
 
         $data = $request->validate([
@@ -816,5 +1047,67 @@ class ReportController extends Controller
             'assistant',
             'administrative assistant',
         ], true);
+    }
+
+    private function departmentAccessDenied(
+        Request $request,
+        int $departmentId
+    ): ?JsonResponse {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'You must log in to access reports.',
+            ], 401);
+        }
+
+        if ($this->isRepresentativeRole($user)) {
+            if (in_array($departmentId, self::PERSONAL_REPORT_DEPARTMENT_IDS, true)) {
+                return response()->json([
+                    'message' => 'Representatives cannot access pastor personal report departments.',
+                ], 403);
+            }
+
+            return null;
+        }
+
+        if ($this->isPastorRole(
+            $this->normalizeRole((string) ($user->role ?? ''))
+        )) {
+            if (in_array($departmentId, [22, 23], true)) {
+                return response()->json([
+                    'message' => 'Baptism and death records must be accessed through the personal records page.',
+                ], 403);
+            }
+
+            return null;
+        }
+
+        if ((int) $user->department_id === $departmentId) {
+            return null;
+        }
+
+        if (
+            $this->isDirectorOrAssistant($user)
+            && in_array($departmentId, self::PERSONAL_REPORT_DEPARTMENT_IDS, true)
+        ) {
+            return null;
+        }
+
+        return response()->json([
+            'message' => 'You can only access reports for your own department.',
+        ], 403);
+    }
+
+    private function isDirectorOrAssistant(User $user): bool
+    {
+        $role = $this->normalizeRole((string) ($user->role ?? ''));
+
+        return $role === 'director' || $this->isAssistantRole($role);
+    }
+
+    private function isRepresentativeRole(User $user): bool
+    {
+        return $this->normalizeRole((string) ($user->role ?? '')) === 'representative';
     }
 }

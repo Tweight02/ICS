@@ -1,0 +1,165 @@
+<div class="report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+  <div class="mx-auto max-w-4xl">
+    <header class="mb-6">
+      <a
+        routerLink="/assistant/reports"
+             style="border-radius: 9999px"
+               class="mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
+                 px-5 text-sm font-medium tracking-widest text-white
+               shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)] transition
+               hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700
+               focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 5l-5 5 5 5" />
+        </svg>
+        Back
+      </a>
+    </header>
+
+    <div *ngIf="successMessage" role="status"
+      class="mb-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/90
+             px-4 py-3 text-sm text-emerald-800 backdrop-blur-md">
+      <span aria-hidden="true">✓</span>
+      <span>{{ successMessage }}</span>
+    </div>
+
+    <div *ngIf="errorMessage" role="alert"
+      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200
+             bg-red-50/90 px-4 py-3 text-sm text-red-700 backdrop-blur-md">
+      <span class="flex items-start gap-2"><span aria-hidden="true">⚠</span>{{ errorMessage }}</span>
+      <button *ngIf="departments.length === 0" type="button" (click)="loadDepartments()"
+        style="border-radius: 9999px"
+        class="bg-gradient-to-b from-emerald-700 to-emerald-600 px-4 py-2 font-semibold text-white
+               shadow-sm transition hover:from-emerald-900 hover:to-emerald-700
+               focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
+        Retry
+      </button>
+    </div>
+
+    <div *ngIf="loadingDepartments()"
+      class="mx-auto flex w-fit items-center gap-3 rounded-2xl border border-white/60 bg-white/60
+             px-8 py-6 text-emerald-900 shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
+      <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"
+        aria-hidden="true"></span>
+      <span class="text-sm font-medium">Loading departments...</span>
+    </div>
+
+    <form *ngIf="!loadingDepartments() && departments.length > 0" [formGroup]="form"
+      (ngSubmit)="saveReportTemplate()"
+      class="overflow-hidden rounded-2xl border border-white/60 bg-white/60
+             shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
+      <div class="border-b border-emerald-900/10 bg-emerald-900/10 px-5 py-4 sm:px-7">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-950">Report Structure</h2>
+      </div>
+
+      <div class="grid gap-5 px-5 py-6 sm:grid-cols-2 sm:px-7">
+        <div class="sm:col-span-2">
+          <label for="report-department" class="mb-1.5 block text-sm font-semibold text-emerald-950">Department</label>
+          <select id="report-department" formControlName="department_id"
+            class="h-11 w-full rounded-lg border border-emerald-900/10 bg-white/80 px-3 text-sm
+                   text-emerald-950 outline-none transition focus:border-emerald-600 focus:ring-2
+                   focus:ring-emerald-600/20">
+            <option [ngValue]="null" disabled>Select a department</option>
+            <option *ngFor="let department of departments; trackBy: trackIndex; let index = index"
+              [ngValue]="department.department_id">
+              {{ department.department_name }}
+            </option>
+          </select>
+          <p *ngIf="form.controls.department_id.touched && form.controls.department_id.invalid"
+            class="mt-1 text-xs text-red-700">Select a department.</p>
+        </div>
+
+        <div>
+          <label for="report-program" class="mb-1.5 block text-sm font-semibold text-emerald-950">Program / Report name</label>
+          <input id="report-program" type="text" maxlength="255" formControlName="program_name"
+            placeholder="e.g. Youth Ministries Quarterly Report"
+            class="h-11 w-full rounded-lg border border-emerald-900/10 bg-white/80 px-3 text-sm
+                   text-emerald-950 outline-none transition placeholder:text-emerald-900/40
+                   focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20">
+          <p *ngIf="form.controls.program_name.touched && form.controls.program_name.invalid"
+            class="mt-1 text-xs text-red-700">Enter a report name up to 255 characters.</p>
+        </div>
+
+        <div>
+          <label for="report-section" class="mb-1.5 block text-sm font-semibold text-emerald-950">Particular / Section</label>
+          <input id="report-section" type="text" maxlength="255" formControlName="section_name"
+            placeholder="e.g. Evangelism Activities"
+            class="h-11 w-full rounded-lg border border-emerald-900/10 bg-white/80 px-3 text-sm
+                   text-emerald-950 outline-none transition placeholder:text-emerald-900/40
+                   focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20">
+          <p *ngIf="form.controls.section_name.touched && form.controls.section_name.invalid"
+            class="mt-1 text-xs text-red-700">Enter a section name up to 255 characters.</p>
+        </div>
+
+        <div class="sm:col-span-2">
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-semibold text-emerald-950">Particular items</h3>
+              <p class="text-xs text-emerald-900/70">Each item becomes a row in the report table.</p>
+            </div>
+            <button type="button" (click)="addParticularItem()" style="border-radius: 9999px"
+              class="inline-flex items-center gap-2 border border-emerald-700/20 bg-white/70 px-4 py-2
+                     text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-white
+                     focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40">
+              <span aria-hidden="true">+</span>
+              Add item
+            </button>
+          </div>
+
+          <div formArrayName="particular_items" class="space-y-3">
+            <div *ngFor="let item of particularItems.controls; let index = index; trackBy: trackIndex"
+              class="flex items-start gap-2">
+              <div class="min-w-0 flex-1">
+                <label [for]="'particular-item-' + index"
+                  class="mb-1 block text-xs font-semibold uppercase tracking-wide text-emerald-900/70">
+                  Item {{ index + 1 }}
+                </label>
+                <input [id]="'particular-item-' + index" type="text" maxlength="255" [formControlName]="index"
+                  [placeholder]="'Report item name'"
+                  class="h-11 w-full rounded-lg border border-emerald-900/10 bg-white/80 px-3 text-sm
+                         text-emerald-950 outline-none transition placeholder:text-emerald-900/40
+                         focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20">
+                <p *ngIf="item.touched && item.invalid" class="mt-1 text-xs text-red-700">
+                  Enter a report item name up to 255 characters.
+                </p>
+              </div>
+              <button *ngIf="particularItems.length > 1" type="button" (click)="removeParticularItem(index)"
+                [attr.aria-label]="'Remove item ' + (index + 1)"
+                class="mt-6 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-red-700
+                       transition hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-3 border-t border-emerald-900/10 px-5 py-5 sm:px-7">
+        <a routerLink="/assistant/reports" style="border-radius: 9999px"
+          class="inline-flex items-center justify-center border border-emerald-900/15 bg-white/70 px-6 py-2.5
+                 text-sm font-semibold text-emerald-900 transition hover:bg-white
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40">
+          Cancel
+        </a>
+        <button type="submit" [disabled]="saving()" style="border-radius: 9999px"
+          class="bg-gradient-to-b from-emerald-700 to-emerald-600 px-8 py-2.5 text-sm font-medium
+                 tracking-widest text-white shadow-[0_14px_22px_-8px_rgba(6,78,59,0.35)] transition
+                 hover:-translate-y-0.5 hover:from-emerald-900 hover:to-emerald-700
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2
+                 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300
+                 disabled:text-slate-500 disabled:shadow-none">
+          {{ saving() ? 'Creating...' : 'Create report' }}
+        </button>
+      </div>
+    </form>
+
+    <div *ngIf="!loadingDepartments() && !errorMessage && departments.length === 0"
+      class="rounded-2xl border border-white/60 bg-white/60 px-8 py-12 text-center
+             shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
+      <h2 class="text-lg font-semibold text-emerald-950">No departments available</h2>
+      <p class="mt-1 text-sm text-emerald-900/70">A report template needs to belong to a department.</p>
+    </div>
+  </div>
+</div>

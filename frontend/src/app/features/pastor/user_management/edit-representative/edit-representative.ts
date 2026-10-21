@@ -5,8 +5,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 
-import { RepresentativeService } from '../../../core/services/representative/representative-service'; // adjust to your real path
-import { Representative } from '../../../core/models/representative.model';
+import { RepresentativeService } from '../../../../core/services/representative/representative-service'; // adjust to your real path
+import { Representative } from '../../../../core/models/representative.model';
+import { ChurchService } from '../../../../core/services/church/church-service';
 
 @Component({
     selector: 'app-edit-representative',
@@ -20,12 +21,18 @@ export class EditRepresentative implements OnInit {
     private route = inject(ActivatedRoute);
     private router = inject(Router);
     private rep = inject(RepresentativeService);
+    private churchService = inject(ChurchService);
 
     id = 0;
     churchName = signal('');
+    status = signal<'active' | 'inactive'>('active');
+    churches = signal<{ church_id: number; name: string }[]>([]);
+    loadingChurches = signal(true);
+    churchLoadError = signal('');
     loading = signal(true);
     saving = signal(false);
     deleting = signal(false);
+    activating = signal(false);
     editing = signal(false);
     loadFailed = signal(false);
     error = signal('');
@@ -34,6 +41,7 @@ export class EditRepresentative implements OnInit {
     form = this.fb.nonNullable.group({
         // Required by the API's update rules; sent back unchanged, not editable here
         department_id: [0, Validators.required],
+        church_id: [0, [Validators.required, Validators.min(1)]],
         first_name: ['', [Validators.required, Validators.maxLength(255)]],
         middle_name: [''],
         last_name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -46,10 +54,40 @@ export class EditRepresentative implements OnInit {
 
     /** Snapshot of the loaded values, used to restore the form on Cancel */
     private original: ReturnType<EditRepresentative['form']['getRawValue']> | null = null;
+    private currentChurch: { church_id: number; name: string } | null = null;
 
     ngOnInit(): void {
         this.id = Number(this.route.snapshot.paramMap.get('id'));
         this.loadRepresentative();
+        this.loadChurches();
+    }
+
+    loadChurches(): void {
+        this.loadingChurches.set(true);
+        this.churchLoadError.set('');
+
+        this.churchService.getMyDistrictChurches()
+            .pipe(finalize(() => this.loadingChurches.set(false)))
+            .subscribe({
+                next: (response) => {
+                    this.churches.set((response.data ?? []).map(({ church_id, name }) => ({ church_id, name })));
+                    this.includeCurrentChurch();
+                },
+                error: (err) => {
+                    console.error('Failed to load district churches:', err);
+                    this.churchLoadError.set(
+                        err?.error?.message ?? 'Unable to load churches in your district.'
+                    );
+                    this.includeCurrentChurch();
+                }
+            });
+    }
+
+    private includeCurrentChurch(): void {
+        const currentChurch = this.currentChurch;
+        if (currentChurch && !this.churches().some((church) => church.church_id === currentChurch.church_id)) {
+            this.churches.update((churches) => [...churches, currentChurch]);
+        }
     }
 
     loadRepresentative(): void {
@@ -64,8 +102,15 @@ export class EditRepresentative implements OnInit {
                     const r = response.data;
 
                     this.churchName.set(r.church?.name ?? '—');
+                    this.currentChurch = {
+                        church_id: r.church_id,
+                        name: r.church?.name ?? 'Current church'
+                    };
+                    this.status.set(r.status ?? 'active');
+                    this.includeCurrentChurch();
                     this.form.patchValue({
                         department_id: r.department_id,
+                        church_id: r.church_id,
                         first_name: r.first_name,
                         middle_name: r.middle_name ?? '',
                         last_name: r.last_name,
@@ -145,6 +190,7 @@ export class EditRepresentative implements OnInit {
         // Empty optional fields go as null; empty password is omitted (API keeps the old one)
         const payload: Record<string, unknown> = {
             ...value,
+            church_id: Number(value.church_id),
             middle_name: value.middle_name || null,
             extension_name: value.extension_name || null
         };
@@ -187,15 +233,19 @@ export class EditRepresentative implements OnInit {
             });
     }
 
-    async deleteRepresentative(): Promise<void> {
+    async removeRepresentative(): Promise<void> {
+        if (this.deleting()) {
+            return;
+        }
+
         const { first_name, last_name } = this.form.getRawValue();
 
         const result = await Swal.fire({
-            title: 'Delete representative?',
-            text: `${first_name} ${last_name} will be permanently removed. This can't be undone.`,
+            title: 'Deactivate representative?',
+            text: `${first_name} ${last_name} will be made inactive and signed out. Their account and records will be kept.`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, delete',
+            confirmButtonText: 'Yes, deactivate',
             cancelButtonText: 'Cancel',
             confirmButtonColor: '#dc2626',
             cancelButtonColor: '#64748b',
@@ -217,7 +267,7 @@ export class EditRepresentative implements OnInit {
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
-                        title: 'Representative deleted',
+                        title: 'Representative deactivated',
                         showConfirmButton: false,
                         timer: 2500,
                         timerProgressBar: true
@@ -225,13 +275,69 @@ export class EditRepresentative implements OnInit {
                     this.router.navigate(['/pastor/view-representatives']);
                 },
                 error: (err) => {
-                    console.error('Failed to delete representative:', err);
+                    console.error('Failed to deactivate representative:', err);
                     this.error.set(
-                        err?.error?.message ?? 'Unable to delete this representative. Please try again.'
+                        err?.error?.message ?? 'Unable to deactivate this representative. Please try again.'
                     );
                 }
             });
     }
+
+        async activateRepresentative(): Promise<void> {
+            if (this.activating() || this.status() === 'active') {
+                return;
+            }
+
+            const { first_name, last_name } = this.form.getRawValue();
+            const result = await Swal.fire({
+                title: 'Reactivate representative?',
+                text: `${first_name} ${last_name} will be able to sign in again.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Reactivate',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#0F4A30',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            this.activating.set(true);
+            this.error.set('');
+
+            this.rep.activateRepresentative(this.id)
+                .pipe(finalize(() => this.activating.set(false)))
+                .subscribe({
+                    next: async (response) => {
+                        this.status.set('active');
+
+                        await Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: response.message,
+                            showConfirmButton: false,
+                            timer: 2500,
+                            timerProgressBar: true
+                        });
+                    },
+                    error: async (err) => {
+                        const message = err?.error?.errors?.status?.[0]
+                            ?? err?.error?.message
+                            ?? 'Unable to reactivate this representative. Please try again.';
+
+                        await Swal.fire({
+                            icon: 'error',
+                            title: 'Reactivation Failed',
+                            text: message,
+                            confirmButtonColor: '#0F4A30'
+                        });
+                    }
+                });
+        }
 
     /** Server-side error for a field, or '' */
     serverError(field: string): string {
