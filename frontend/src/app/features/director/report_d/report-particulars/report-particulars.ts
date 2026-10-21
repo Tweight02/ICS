@@ -632,6 +632,11 @@ export class ReportParticulars implements OnInit {
   }
 
   backToPrograms(): void {
+    if (this.route.snapshot.queryParamMap.get('return_to') === 'monitoring') {
+      this.router.navigate([`${this.portalPrefix()}/reports`]);
+      return;
+    }
+
     this.router.navigate([`${this.portalPrefix()}/reports/programs`], {
       queryParams: {
         district_id: this.districtId || null,

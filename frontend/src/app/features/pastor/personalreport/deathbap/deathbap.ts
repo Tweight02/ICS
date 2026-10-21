@@ -440,6 +440,13 @@ export class DeathbapComponent implements OnInit {
       return;
     }
 
+    if (this.route.snapshot.queryParamMap.get('return_to') === 'monitoring') {
+      this.router.navigate([
+        this.router.url.startsWith('/assistant') ? '/assistant/reports' : '/director/reports'
+      ]);
+      return;
+    }
+
     this.router.navigate([
       `${this.router.url.startsWith('/assistant') ? '/assistant' : '/director'}/reports/programs`,
       this.districtId,
