@@ -128,7 +128,7 @@
         <div class="assignment-modal-backdrop fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-slate-900/50 p-3 sm:p-4" (click)="closeAssignment()">
             <div id="assignment-dialog" role="dialog" aria-modal="true" aria-labelledby="assignment-title" aria-describedby="assignment-description" tabindex="-1"
                 (click)="$event.stopPropagation()" (keydown)="onModalKeydown($event)"
-                class="my-auto flex max-h-[90dvh] w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none">
+                class="my-auto flex max-h-[90dvh] w-full max-w-3xl flex-col rounded-xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none">
                 <div class="flex items-start gap-3 border-b border-slate-200 p-4">
                     <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700" aria-hidden="true">
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18s6-4.8 6-9.5a6 6 0 10-12 0C4 13.2 10 18 10 18zm0-7a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" clip-rule="evenodd" /></svg>
@@ -151,36 +151,45 @@
                         [value]="representativeQuery()" (input)="onRepresentativeSearch($any($event.target).value)" [disabled]="saving()"
                         class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm placeholder:text-slate-400 focus:border-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/25 disabled:bg-slate-100" />
 
-                    <ul class="grid max-h-56 grid-cols-1 gap-1.5 overflow-y-auto sm:grid-cols-2" role="radiogroup" aria-label="Active representatives">
+                    <div class="max-h-56 overflow-auto rounded-lg border border-slate-200">
+                        <table class="w-full min-w-[32rem] divide-y divide-slate-200 text-left text-sm">
+                            <thead class="sticky top-0 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th scope="col" class="w-12 px-3 py-2 text-center">Select</th>
+                                    <th scope="col" class="px-3 py-2">Representative</th>
+                                    <th scope="col" class="px-3 py-2">Current church</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
                         @for (representative of filteredRepresentatives(); track representative.user_id) {
                             @let source = sourceFor(representative);
-                            <li>
-                                <label class="relative block cursor-pointer">
-                                    <input type="radio" name="assign-representative" class="peer sr-only" [disabled]="saving()"
-                                        [checked]="selectedRepresentativeId() === representative.user_id"
-                                        (change)="selectedRepresentativeId.set(representative.user_id)" />
-                                    <span class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 transition hover:border-emerald-300 peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-checked:ring-1 peer-checked:ring-emerald-600 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-600 peer-disabled:opacity-60">
-                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold uppercase text-slate-600" aria-hidden="true">{{ representative.first_name.charAt(0) }}{{ representative.last_name.charAt(0) }}</span>
-                                        <span class="min-w-0 flex-1">
-                                            <span class="block break-words text-sm font-medium text-slate-900">{{ fullName(representative) }}</span>
-                                            @if (source) {
-                                                <span class="block break-words text-xs text-amber-700">Currently at {{ source.name }}</span>
-                                            } @else {
-                                                <span class="block text-xs text-emerald-700">Unassigned</span>
-                                            }
-                                        </span>
-                                        @if (selectedRepresentativeId() === representative.user_id) {
-                                            <svg class="h-4 w-4 shrink-0 text-emerald-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 01-0.1 1.4l-7.5 7.5a1 1 0 01-1.4 0l-3.8-3.8a1 1 0 011.4-1.4l3.1 3.1 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd" /></svg>
-                                        }
-                                    </span>
-                                </label>
-                            </li>
+                            <tr class="cursor-pointer transition-colors hover:bg-emerald-50"
+                                [class.bg-emerald-50]="selectedRepresentativeId() === representative.user_id">
+                                <td class="px-3 py-2 text-center">
+                                    <input type="radio" name="assign-representative" [attr.aria-label]="'Select ' + fullName(representative)"
+                                        [disabled]="saving()" [checked]="selectedRepresentativeId() === representative.user_id"
+                                        (change)="selectedRepresentativeId.set(representative.user_id)"
+                                        class="h-4 w-4 accent-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2" />
+                                </td>
+                                <td class="px-3 py-2 font-medium text-slate-900">{{ fullName(representative) }}</td>
+                                <td class="px-3 py-2 text-slate-600">
+                                    @if (source) {
+                                        <span class="text-amber-700">{{ source.name }}</span>
+                                    } @else {
+                                        <span class="text-emerald-700">Unassigned</span>
+                                    }
+                                </td>
+                            </tr>
                         } @empty {
-                            <li class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-center text-sm text-slate-500 sm:col-span-2">
-                                {{ representatives().length === 0 ? 'There are no active representatives available.' : 'No representatives match your search.' }}
-                            </li>
+                            <tr>
+                                <td colspan="3" class="px-3 py-6 text-center text-sm text-slate-500">
+                                    {{ representatives().length === 0 ? 'There are no active representatives available.' : 'No representatives match your search.' }}
+                                </td>
+                            </tr>
                         }
-                    </ul>
+                            </tbody>
+                        </table>
+                    </div>
 
                     @if (selectedRepresentative(); as selected) {
                         <div class="rounded-lg border border-amber-200 bg-amber-50 p-3" aria-live="polite">
@@ -209,9 +218,9 @@
 
                 <div class="flex flex-col-reverse justify-end gap-2 border-t border-slate-200 p-4 sm:flex-row">
                     <button type="button" (click)="closeAssignment()" [disabled]="saving()"
-                        class="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">Cancel</button>
+                        class="inline-flex items-center justify-center !rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">Cancel</button>
                     <button type="button" (click)="submitAssignment()" [disabled]="!selectedRepresentative() || saving()"
-                        class="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                        class="inline-flex items-center justify-center gap-2 !rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
                         @if (saving()) {
                             <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".3" stroke-width="3" /><path d="M21 12a9 9 0 00-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
                         }

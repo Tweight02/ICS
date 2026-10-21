@@ -79,10 +79,8 @@ class RepresentativeController extends Controller
         }
 
         $query = User::query()
-            ->where(
-                'role',
-                'representative'
-            )
+            ->select('users.*')
+            ->where('users.role', 'representative')
             ->with([
                 'department:department_id,department_name',
                 'church:church_id,name,parent_id',
@@ -95,14 +93,9 @@ class RepresentativeController extends Controller
     */
 
         if ($authUser->role === 'pastor') {
-
-            $query->whereHas('church', function ($q) use ($authUser) {
-
-                $q->where(
-                    'parent_id',
-                    $authUser->church_id
-                );
-            });
+            $query
+                ->join('churches as representative_churches', 'representative_churches.church_id', '=', 'users.church_id')
+                ->where('representative_churches.parent_id', $authUser->church_id);
         }
 
         /*
@@ -113,10 +106,7 @@ class RepresentativeController extends Controller
 
         if ($authUser->role === 'representative') {
 
-            $query->where(
-                'church_id',
-                $authUser->church_id
-            );
+            $query->where('users.church_id', $authUser->church_id);
         }
 
         /*
@@ -157,24 +147,21 @@ class RepresentativeController extends Controller
 
         if ($request->filled('church_id')) {
 
-            $query->where(
-                'church_id',
-                $request->church_id
-            );
+            $query->where('users.church_id', $request->church_id);
         }
 
         if ($request->filled('status')) {
 
             $query->where(
-                'status',
+                'users.status',
                 $request->input('status')
             );
         }
 
         return response()->json(
             $query
-                ->orderBy('last_name')
-                ->orderBy('first_name')
+                ->orderBy('users.last_name')
+                ->orderBy('users.first_name')
                 ->paginate(
                     $request->integer('per_page', 15)
                 )

@@ -101,6 +101,22 @@ describe('AssignChurch', () => {
     expect(getRepresentatives).toHaveBeenCalledTimes(2);
   });
 
+  it('shows active representatives in a selectable table in the assignment modal', () => {
+    component.openAssignment(component.assignments()[1]);
+    fixture.detectChanges();
+
+    const table = fixture.nativeElement.querySelector('table');
+    expect(table.textContent).toContain('Representative');
+    expect(table.textContent).toContain('Current church');
+    expect(table.textContent).toContain('Amina Leader');
+    expect(table.textContent).toContain('North Church');
+
+    const radio = table.querySelector('input[type="radio"]') as HTMLInputElement;
+    radio.dispatchEvent(new Event('change'));
+
+    expect(component.selectedRepresentativeId()).toBe(5);
+  });
+
   it('swaps representatives when changing an occupied church', async () => {
     vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: false,
