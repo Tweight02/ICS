@@ -10,7 +10,8 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ChurchService } from '../../../../core/services/church/church-service';
 import Swal from 'sweetalert2';
 
 interface Church {
@@ -34,9 +35,12 @@ interface Church {
 export class BapaddrecComponent implements OnInit {
 
   private http = inject(HttpClient);
+  private churchService = inject(ChurchService);
+  private route = inject(ActivatedRoute);
   private router = inject(Router);
 
   churches: Church[] = [];
+  churchesLoading = false;
 
   age: number | null = null;
 
@@ -84,7 +88,29 @@ export class BapaddrecComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    const quarter = this.route.snapshot.queryParamMap.get('quarter');
+    if (quarter === 'Q1' || quarter === 'Q2' || quarter === 'Q3' || quarter === 'Q4') {
+      this.baptism.quarter = quarter;
+    }
+
     this.loadChurches();
+  }
+
+  private navigateBackToReport(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const year = Number(queryParams.get('year'));
+    const quarter = queryParams.get('quarter');
+
+    this.router.navigate(['/pastor/deathbap'], {
+      queryParams: {
+        record: 'baptism',
+        ...(Number.isInteger(year) && year > 0 ? { year } : {}),
+        ...(quarter === 'Q1' || quarter === 'Q2' || quarter === 'Q3' || quarter === 'Q4'
+          ? { quarter }
+          : {}),
+        ...(queryParams.get('annual') === 'true' ? { annual: true } : {})
+      }
+    });
   }
 
   /* =========================================
@@ -219,84 +245,56 @@ export class BapaddrecComponent implements OnInit {
   }
 
   /**
-   * Load all churches directly from Laravel.
+   * Load only churches assigned to the signed-in pastor's district.
    */
   loadChurches(): void {
-    const apiUrl = 'http://127.0.0.1:8000/api/churches';
-
-    console.log('Loading churches from:', apiUrl);
-
-    this.http
-      .get<any>(apiUrl)
+    this.churchesLoading = true;
+    this.churchService
+      .getMyDistrictChurches()
       .subscribe({
-
         next: (response) => {
-          console.log('Church API response:', response);
-
-          const data = response?.data ?? response;
-
-          if (!Array.isArray(data)) {
-            console.error(
-              'Church response is not an array:',
-              response
-            );
-
+          const districtId = Number(response.district?.church_id);
+          if (!Number.isInteger(districtId) || districtId <= 0) {
             this.churches = [];
+            this.churchesLoading = false;
+            Swal.fire({
+              icon: 'error',
+              title: 'Unable to Load District Churches',
+              text: 'Your assigned district could not be identified.',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#176b52',
+              customClass: this.swalCustomClass
+            });
             return;
           }
 
-          this.churches = data.map(
-            (church: any): Church => ({
+          this.churches = (response.data ?? [])
+            .filter(church => Number(church.parent_id) === districtId)
+            .map(church => ({
               church_id: Number(church.church_id),
               name: church.name ?? '',
               address: church.address ?? '',
-              parent_id:
-                church.parent_id !== null &&
-                church.parent_id !== undefined
-                  ? Number(church.parent_id)
-                  : null
-            })
-          );
-
-          console.log(
-            'Churches loaded successfully:',
-            this.churches
-          );
+              parent_id: church.parent_id === null
+                ? null
+                : Number(church.parent_id)
+            }));
+          this.churchesLoading = false;
         },
-
         error: (error) => {
-          console.error('Failed to load churches:', error);
+          console.error('Failed to load district churches:', error);
 
           this.churches = [];
+          this.churchesLoading = false;
 
-          if (error.status === 0) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Connection Failed',
-              text: 'Cannot connect to the Laravel server. Make sure php artisan serve is running.',
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#176b52',
-              customClass: this.swalCustomClass
-            });
-          } else if (error.error?.message) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Unable to Load Churches',
-              text: error.error.message,
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#176b52',
-              customClass: this.swalCustomClass
-            });
-          } else {
-            Swal.fire({
-              icon: 'error',
-              title: 'Unable to Load Churches',
-              text: 'Failed to load churches from the database.',
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#176b52',
-              customClass: this.swalCustomClass
-            });
-          }
+          Swal.fire({
+            icon: 'error',
+            title: 'Unable to Load District Churches',
+            text: error.error?.message ||
+              'Churches for your district could not be loaded.',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#176b52',
+            customClass: this.swalCustomClass
+          });
         }
       });
   }
@@ -450,7 +448,7 @@ export class BapaddrecComponent implements OnInit {
             customClass: this.swalCustomClass
           }).then((result) => {
             if (result.isConfirmed) {
-              this.router.navigate(['/pastor/deathbap']);
+              this.navigateBackToReport();
             }
           });
         },
@@ -524,7 +522,7 @@ export class BapaddrecComponent implements OnInit {
       customClass: this.swalCustomClass
     }).then((result) => {
       if (result.isConfirmed) {
-        this.router.navigate(['/pastor/deathbap']);
+        this.navigateBackToReport();
       }
     });
   }

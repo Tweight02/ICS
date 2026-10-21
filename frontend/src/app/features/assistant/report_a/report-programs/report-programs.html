@@ -67,8 +67,8 @@
           Back to departments
         </button>
         <div class="flex flex-wrap items-center gap-2">
-          <span *ngIf="hasCurrentQuarter() && isCurrentQuarterApproved()" class="rounded-full bg-emerald-700 px-3 py-1 text-xs font-semibold text-white">✓ Approved</span>
-          <span *ngIf="hasCurrentQuarter() && !isCurrentQuarterApproved() && currentQuarterReport?.district_endorse" class="rounded-full bg-sky-700 px-3 py-1 text-xs font-semibold text-white">Endorsed</span>
+          <span *ngIf="hasCurrentQuarter() && isCurrentQuarterApproved()" class="text-sm font-bold text-emerald-800">✓ Approved</span>
+          <span *ngIf="hasCurrentQuarter() && !isCurrentQuarterApproved() && currentQuarterReport?.district_endorse" class="text-sm font-bold text-sky-800">Endorsed</span>
           <span *ngIf="hasCurrentQuarter() && !isCurrentQuarterApproved() && !currentQuarterReport?.district_endorse && currentQuarterReport?.date_submitted" class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Submitted</span>
         </div>
       </div>
@@ -102,8 +102,8 @@
                     <td class="px-5 py-3.5 text-emerald-950">{{ particular.particular_name }}</td>
                     <td class="px-5 py-3.5 text-center tabular-nums text-emerald-950">{{ getQuarterValue(particular, currentQuarter) }}</td>
                     <td class="px-5 py-3.5 text-center">
-                      <span *ngIf="isApproved(particular, currentQuarter)" class="rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white">Approved</span>
-                      <span *ngIf="!isApproved(particular, currentQuarter) && isEndorsed(particular, currentQuarter)" class="rounded-full bg-sky-700 px-2.5 py-1 text-xs font-semibold text-white">Endorsed</span>
+                      <span *ngIf="isApproved(particular, currentQuarter)" class="text-sm font-bold text-emerald-800">Approved</span>
+                      <span *ngIf="!isApproved(particular, currentQuarter) && isEndorsed(particular, currentQuarter)" class="text-sm font-bold text-sky-800">Endorsed</span>
                       <span *ngIf="!isApproved(particular, currentQuarter) && !isEndorsed(particular, currentQuarter) && isSubmitted(particular, currentQuarter)" class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">Submitted</span>
                       <span *ngIf="!isApproved(particular, currentQuarter) && !isEndorsed(particular, currentQuarter) && !isSubmitted(particular, currentQuarter)" class="text-xs text-emerald-900/50">Not submitted</span>
                     </td>

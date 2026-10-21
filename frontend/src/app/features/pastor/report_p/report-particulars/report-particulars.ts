@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  Input,
+  OnChanges,
   OnInit,
   OnDestroy,
   ChangeDetectorRef,
@@ -8,6 +10,7 @@ import {
   inject,
   NgZone,
   signal,
+  SimpleChanges,
   ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -17,6 +20,7 @@ import { CommentReadStateService } from '../../../../core/services/report/commen
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { UserRole } from '../../../../core/models/user.model';
+import { SaveReportItem } from '../../../../core/models/report.model';
 import Swal from 'sweetalert2';
 
 interface QuarterRecord {
@@ -85,7 +89,7 @@ interface QuarterRef {
   templateUrl: './report-particulars.html',
   styleUrl: './report-particulars.css'
 })
-export class ReportParticulars implements OnInit, OnDestroy {
+export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   @ViewChild('commentMessages')
   private commentMessages?: ElementRef<HTMLUListElement>;
 
@@ -98,11 +102,12 @@ export class ReportParticulars implements OnInit, OnDestroy {
   private readonly ngZone = inject(NgZone);
   private readonly auth = inject(AuthService);
 
-  churchId = 0;
-  churchName = '';
-  districtId = 0;
-  districtName = '';
-  departmentId = 0;
+  @Input() embedded = false;
+  @Input() churchId = 0;
+  @Input() churchName = '';
+  @Input() districtId = 0;
+  @Input() districtName = '';
+  @Input() departmentId = 0;
   report: Report | null = null;
 
   availableQuarters: Quarter[] = [];
@@ -160,7 +165,22 @@ export class ReportParticulars implements OnInit, OnDestroy {
     this.currentUserRole = user?.role ?? null;
     this.currentUserId = Number(user?.user_id) || 0;
 
-    this.route.paramMap.subscribe(() => this.readRoute());
+    if (this.embedded) {
+      this.loadReport();
+    } else {
+      this.route.paramMap.subscribe(() => this.readRoute());
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (
+      this.embedded &&
+      !changes['departmentId']?.firstChange &&
+      this.departmentId > 0 &&
+      this.churchId > 0
+    ) {
+      this.loadReport();
+    }
   }
 
   ngOnDestroy(): void {
@@ -178,6 +198,12 @@ export class ReportParticulars implements OnInit, OnDestroy {
 
   get canApprove(): boolean {
     return ['assistant', 'administrative assistant'].includes(this.normalizedUserRole);
+  }
+
+  get canEditDepartmentReport(): boolean {
+    return this.embedded &&
+      [16, 20].includes(this.departmentId) &&
+      ['pastor', 'district pastor'].includes(this.normalizedUserRole);
   }
 
   private get normalizedUserRole(): string {
@@ -737,6 +763,65 @@ export class ReportParticulars implements OnInit, OnDestroy {
       });
   }
 
+  submitPersonalReport(): void {
+    const quarter = this.getSelectedQuarter();
+
+    if (!this.canEditDepartmentReport || this.isAnnualView || !quarter || this.savingAction) {
+      return;
+    }
+
+    if (this.isQuarterApproved(quarter)) {
+      this.errorMessage = 'This report has already been approved and cannot be edited.';
+      return;
+    }
+
+    const items: SaveReportItem[] = [];
+    for (const program of this.report?.programs ?? []) {
+      for (const section of program.sections ?? []) {
+        for (const particular of section.particulars ?? []) {
+          const record = this.getParticularQuarterRecord(particular, quarter);
+          if (!record) continue;
+
+          const value = record.value === null || record.value === ''
+            ? null
+            : Number(record.value);
+          if (value !== null && (!Number.isFinite(value) || value < 0)) {
+            this.errorMessage = `Enter a valid non-negative value for ${particular.particular_name}.`;
+            return;
+          }
+
+          items.push({
+            particular_id: particular.particular_id,
+            quarter_id: quarter.quarter_id,
+            value
+          });
+        }
+      }
+    }
+
+    if (items.length === 0) {
+      this.errorMessage = 'No report items are available to submit.';
+      return;
+    }
+
+    this.savingAction = true;
+    this.errorMessage = '';
+    this.reportService
+      .saveDepartmentReport(this.churchId, this.departmentId, items, true)
+      .subscribe({
+        next: response => {
+          this.savingAction = false;
+          this.showSuccess(response?.message || 'Report submitted.');
+          this.loadReport();
+        },
+        error: error => {
+          this.savingAction = false;
+          this.errorMessage = error?.error?.message || 'Unable to submit report.';
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
   endorseReport(): void {
     this.updateWorkflow('endorse');
   }
@@ -854,21 +939,6 @@ export class ReportParticulars implements OnInit, OnDestroy {
 
   trackSection(index: number, section: Section): number {
     return section.program_id ?? index;
-  }
-
-  onSectionToggle(event: Event): void {
-    const openedSection = event.currentTarget as HTMLDetailsElement;
-
-    if (!openedSection.open) return;
-
-    const sections = openedSection.parentElement?.parentElement
-      ?.querySelectorAll<HTMLDetailsElement>('details[name="report-section-accordions"]');
-
-    sections?.forEach(section => {
-      if (section !== openedSection) {
-        section.open = false;
-      }
-    });
   }
 
   trackParticular(_index: number, particular: Particular): number {

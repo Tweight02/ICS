@@ -149,6 +149,12 @@ class ReportController extends Controller
                     return;
                 }
 
+                if ($this->isPastorRole(
+                    $this->normalizeRole((string) ($user->role ?? ''))
+                )) {
+                    return;
+                }
+
                 $query->where('department_id', $user->department_id);
 
                 if ($this->isDirectorOrAssistant($user)) {
@@ -527,7 +533,31 @@ class ReportController extends Controller
         int $churchId,
         int $departmentId
     ) {
-        if ($denied = $this->departmentAccessDenied($request, $departmentId)) {
+        $user = $request->user();
+        $pastorPersonalCommentAccess = false;
+
+        if (
+            $user &&
+            $this->isPastorRole($this->normalizeRole((string) ($user->role ?? ''))) &&
+            in_array($departmentId, [22, 23], true)
+        ) {
+            $assignedChurch = DB::table('churches')
+                ->where('church_id', $user->church_id)
+                ->first(['church_id', 'parent_id']);
+
+            if ($assignedChurch) {
+                $districtId = $assignedChurch->parent_id ?? $assignedChurch->church_id;
+                $pastorPersonalCommentAccess = DB::table('churches')
+                    ->where('church_id', $churchId)
+                    ->where('parent_id', $districtId)
+                    ->exists();
+            }
+        }
+
+        if (
+            ! $pastorPersonalCommentAccess &&
+            ($denied = $this->departmentAccessDenied($request, $departmentId))
+        ) {
             return $denied;
         }
 
@@ -1035,6 +1065,18 @@ class ReportController extends Controller
             if (in_array($departmentId, self::PERSONAL_REPORT_DEPARTMENT_IDS, true)) {
                 return response()->json([
                     'message' => 'Representatives cannot access pastor personal report departments.',
+                ], 403);
+            }
+
+            return null;
+        }
+
+        if ($this->isPastorRole(
+            $this->normalizeRole((string) ($user->role ?? ''))
+        )) {
+            if (in_array($departmentId, [22, 23], true)) {
+                return response()->json([
+                    'message' => 'Baptism and death records must be accessed through the personal records page.',
                 ], 403);
             }
 

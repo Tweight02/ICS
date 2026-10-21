@@ -1,7 +1,7 @@
-<div class="report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
-  <div class="mx-auto max-w-6xl">
+<div [ngClass]="embedded ? 'text-emerald-950' : 'report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10'">
+  <div [ngClass]="embedded ? '' : 'mx-auto max-w-6xl'">
 
-        <button type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="group mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
+        <button *ngIf="!embedded" type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="group mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
           px-5 text-sm font-medium tracking-widest text-white
          [text-shadow:0_0_10px_rgba(255,255,255,0.55)]
          shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)]
@@ -17,7 +17,7 @@
       Back
     </button>
 
-    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <header *ngIf="!embedded" class="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-4">
         <div>
           <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
@@ -129,16 +129,16 @@
               class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
-              <details name="report-section-accordions" (toggle)="onSectionToggle($event)">
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-emerald-900/10 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-emerald-950">
-                  <span>{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
-                  <span class="ml-auto flex items-center gap-2">
+              <details>
+                <summary class="relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
+                  <span class="block min-w-0 pr-32">{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
+                  <span class="absolute right-5 top-2.5 flex items-center gap-2 whitespace-nowrap">
                     <span *ngIf="!isAnnualView && isQuarterEndorsed()"
-                      class="inline-flex items-center rounded-full bg-sky-700 px-2.5 py-1 text-[11px] font-semibold normal-case tracking-normal text-white">
+                      class="text-sm font-bold normal-case tracking-normal text-sky-800">
                       Endorsed
                     </span>
                     <span *ngIf="!isAnnualView && isQuarterApproved()"
-                      class="inline-flex items-center rounded-full bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold normal-case tracking-normal text-white">
+                      class="text-sm font-bold normal-case tracking-normal text-emerald-800">
                       ✓ Approved
                     </span>
                   </span>
@@ -205,7 +205,19 @@
                             <ng-container
                               *ngIf="getParticularQuarterRecord(particular, quarter) as record; else noValue">
 
-                              <span>{{ isRecordSubmitted(record) ? (record.value ?? '—') : '—' }}</span>
+                              <input
+                                *ngIf="canEditDepartmentReport; else quarterValue"
+                                type="number"
+                                min="0"
+                                step="any"
+                                [attr.aria-label]="particular.particular_name"
+                                [(ngModel)]="record.value"
+                                [ngModelOptions]="{ standalone: true }"
+                                [disabled]="savingAction || isQuarterApproved(quarter)"
+                                class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
+                              <ng-template #quarterValue>
+                                <span>{{ isRecordSubmitted(record) ? (record.value ?? '—') : '—' }}</span>
+                              </ng-template>
                             </ng-container>
 
                             <ng-template #noValue>
@@ -364,8 +376,13 @@
         </aside>
       </div>
 
-      <div *ngIf="!isAnnualView && (canEndorse || canApprove)" class="flex flex-wrap items-center justify-end gap-3 pb-6 pt-6">
-        <button *ngIf="canEndorse" type="button" (click)="endorseReport()"
+      <div *ngIf="!isAnnualView && (canEndorse || canApprove || canEditDepartmentReport)" class="flex flex-wrap items-center justify-end gap-3 pb-6 pt-6">
+        <button *ngIf="canEditDepartmentReport" type="button" (click)="submitPersonalReport()"
+          [disabled]="savingAction || isQuarterApproved() || !getSelectedQuarter()"
+          style="border-radius: 9999px" class="bg-emerald-700 px-8 py-3 text-base font-semibold text-white shadow-md transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500">
+          {{ savingAction ? 'Submitting...' : isQuarterSubmitted() ? 'Resubmit report' : 'Submit report' }}
+        </button>
+        <button *ngIf="canEndorse && !canEditDepartmentReport" type="button" (click)="endorseReport()"
           [disabled]="savingAction || !isQuarterSubmitted() || isQuarterEndorsed() || isQuarterApproved()"
           [attr.title]="!isQuarterSubmitted() ? 'The representative must submit all report data before endorsement.' : null"
           style="border-radius: 9999px" class="bg-gradient-to-b from-sky-700 to-sky-600 px-8 py-3 text-base font-medium tracking-widest text-white

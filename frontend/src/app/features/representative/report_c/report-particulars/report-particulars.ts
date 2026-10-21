@@ -405,21 +405,6 @@ ngOnInit(): void {
     this.clearMessages();
   }
 
-  onSectionToggle(event: Event): void {
-    const openedSection = event.currentTarget as HTMLDetailsElement;
-
-    if (!openedSection.open) return;
-
-    const sections = openedSection.parentElement?.parentElement
-      ?.querySelectorAll<HTMLDetailsElement>('details[name="representative-report-sections"]');
-
-    sections?.forEach(section => {
-      if (section !== openedSection) {
-        section.open = false;
-      }
-    });
-  }
-
   getSelectedProgram(): Program | null {
     return this.report?.programs?.find(
       p => p.program_id === this.selectedProgramId
@@ -486,15 +471,15 @@ ngOnInit(): void {
     const program = this.getSelectedProgram();
     if (!program) return false;
 
-    return program.sections.some(section =>
-      section.particulars.some(particular => {
+    const particulars = program.sections.flatMap(section => section.particulars);
+
+    return particulars.length > 0 && particulars.every(particular => {
         const record = particular.quarters.find(
           q => q.quarter_id === quarterId
         );
 
-        return this.isRecordApproved(record ?? null);
-      })
-    );
+      return this.isRecordApproved(record ?? null);
+    });
   }
 
   isQuarterEndorsed(quarterId: number): boolean {
@@ -510,6 +495,7 @@ ngOnInit(): void {
     );
 
     return records.length > 0 &&
+      !records.some(record => this.isRecordApproved(record)) &&
       records.every(record => String(record.district_endorse ?? '').trim() !== '');
   }
 
@@ -1080,10 +1066,10 @@ ngOnInit(): void {
   }
 
   private isProgramQuarterApproved(program: Program, quarter: Quarter): boolean {
-    return program.sections.some(section =>
-      section.particulars.some(particular =>
-        this.isRecordApproved(this.getParticularQuarterRecord(particular, quarter))
-      )
+    const particulars = program.sections.flatMap(section => section.particulars);
+
+    return particulars.length > 0 && particulars.every(particular =>
+      this.isRecordApproved(this.getParticularQuarterRecord(particular, quarter))
     );
   }
 
