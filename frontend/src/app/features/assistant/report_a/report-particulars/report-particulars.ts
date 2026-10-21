@@ -800,21 +800,6 @@ export class ReportParticulars implements OnInit, OnDestroy {
     return section.program_id ?? index;
   }
 
-  onSectionToggle(event: Event): void {
-    const openedSection = event.currentTarget as HTMLDetailsElement;
-
-    if (!openedSection.open) return;
-
-    const sections = openedSection.parentElement?.parentElement
-      ?.querySelectorAll<HTMLDetailsElement>('details[name="report-section-accordions"]');
-
-    sections?.forEach(section => {
-      if (section !== openedSection) {
-        section.open = false;
-      }
-    });
-  }
-
   trackParticular(_index: number, particular: Particular): number {
     return particular.particular_id;
   }

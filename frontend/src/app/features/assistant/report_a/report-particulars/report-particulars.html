@@ -125,15 +125,13 @@
 
           <span
             *ngIf="!isAnnualView && isQuarterEndorsed()"
-            class="inline-flex items-center gap-1 rounded-full bg-sky-700 px-3 py-1
-                   text-xs font-semibold text-white">
+            class="text-sm font-bold text-sky-800">
             Endorsed
           </span>
 
           <span
             *ngIf="!isAnnualView && isQuarterApproved()"
-            class="inline-flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1
-                   text-xs font-semibold text-white">
+            class="text-sm font-bold text-emerald-800">
             ✓ Approved
           </span>
         </div>
@@ -168,16 +166,16 @@
               class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
-              <details name="report-section-accordions" (toggle)="onSectionToggle($event)">
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-emerald-900/10 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-emerald-950">
-                  <span>{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
-                  <span class="ml-auto flex items-center gap-2">
+              <details>
+                <summary class="relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
+                  <span class="block min-w-0 pr-32">{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
+                  <span class="absolute right-5 top-2.5 flex items-center gap-2 whitespace-nowrap">
                     <span *ngIf="!isAnnualView && isQuarterEndorsed()"
-                      class="inline-flex items-center rounded-full bg-sky-700 px-2.5 py-1 text-[11px] font-semibold normal-case tracking-normal text-white">
+                      class="text-sm font-bold normal-case tracking-normal text-sky-800">
                       Endorsed
                     </span>
                     <span *ngIf="!isAnnualView && isQuarterApproved()"
-                      class="inline-flex items-center rounded-full bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold normal-case tracking-normal text-white">
+                      class="text-sm font-bold normal-case tracking-normal text-emerald-800">
                       ✓ Approved
                     </span>
                   </span>

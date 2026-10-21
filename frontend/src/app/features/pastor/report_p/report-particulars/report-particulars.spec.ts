@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { of } from 'rxjs';
+import Swal from 'sweetalert2';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { ReportService } from '../../../../core/services/report/report';
@@ -9,10 +10,42 @@ import { ReportParticulars } from './report-particulars';
 describe('ReportParticulars', () => {
   let component: ReportParticulars;
   let fixture: ComponentFixture<ReportParticulars>;
+  let saveDepartmentReport: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    vi.spyOn(Swal, 'fire').mockResolvedValue({
+      isConfirmed: false,
+      isDenied: false,
+      isDismissed: true
+    });
+
     const paramMap = convertToParamMap({ departmentId: '0' });
     const queryParamMap = convertToParamMap({});
+    const report = {
+      department: { department_id: 16, department_name: 'Ministerial & Evangelism' },
+      programs: [{
+        program_id: 1,
+        program_name: 'Quarterly Report',
+        sections: [{
+          program_id: 2,
+          program_name: 'Section',
+          particulars: [{
+            particular_id: 3,
+            particular_name: 'Members visited',
+            quarters: [{
+              quarter_id: 9,
+              quarter: 'Q1',
+              year: 2026,
+              value: 10,
+              date_submitted: null,
+              district_endorse: null,
+              mission_approve: null
+            }]
+          }]
+        }]
+      }]
+    };
+    saveDepartmentReport = vi.fn().mockReturnValue(of({ message: 'Report saved successfully.' }));
 
     await TestBed.configureTestingModule({
       imports: [ReportParticulars],
@@ -29,7 +62,11 @@ describe('ReportParticulars', () => {
         { provide: ChurchService, useValue: {} },
         {
           provide: ReportService,
-          useValue: { getDepartmentComments: () => of({ data: [] }) }
+          useValue: {
+            getDepartmentComments: () => of({ data: [] }),
+            getDepartmentReport: () => of(report),
+            saveDepartmentReport
+          }
         }
       ]
     }).compileComponents();
@@ -89,5 +126,67 @@ describe('ReportParticulars', () => {
       'Pastor message',
       'Representative reply'
     ]);
+  });
+
+  it('lets pastors edit and submit embedded Ministerial and Mission reports', () => {
+    fixture.componentRef.setInput('embedded', true);
+    fixture.componentRef.setInput('departmentId', 16);
+    fixture.componentRef.setInput('churchId', 2);
+    component.currentUserRole = 'pastor';
+    component.report = {
+      department: { department_name: 'Ministerial & Evangelism' },
+      programs: [{
+        program_id: 1,
+        program_name: 'Quarterly Report',
+        sections: [{
+          program_id: 2,
+          program_name: 'Section',
+          particulars: [{
+            particular_id: 3,
+            particular_name: 'Members visited',
+            quarters: [{
+              quarter_id: 9,
+              quarter: 'Q1',
+              year: 2026,
+              value: 45,
+              date_submitted: null,
+              district_endorse: null,
+              mission_approve: null
+            }]
+          }]
+        }]
+      }]
+    };
+    component.availableQuarters = [{ quarter_id: 9, quarter: 'Q1', year: 2026 }];
+    component.availableYears = [2026];
+    component.selectedYear = 2026;
+    component.selectedQuarterId = 9;
+    component.selectedProgramId = 1;
+    fixture.detectChanges();
+
+    expect(component.canEditDepartmentReport).toBe(true);
+    component.departmentId = 20;
+    expect(component.canEditDepartmentReport).toBe(true);
+    component.departmentId = 16;
+    expect(component.loading).toBe(false);
+    expect(component.getSelectedProgram()).not.toBeNull();
+    expect(component.getSelectedQuarter()).not.toBeNull();
+    const selectedProgram = component.getSelectedProgram()!;
+    const selectedQuarter = component.getSelectedQuarter()!;
+    expect(component.getParticularQuarterRecord(
+      selectedProgram.sections[0].particulars[0],
+      selectedQuarter
+    )).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('input[type="number"]')?.disabled).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Submit report');
+    expect(fixture.nativeElement.textContent).not.toContain('Endorse to assistant');
+
+    component.submitPersonalReport();
+
+    expect(saveDepartmentReport).toHaveBeenCalledWith(2, 16, [{
+      particular_id: 3,
+      quarter_id: 9,
+      value: 45
+    }], true);
   });
 });

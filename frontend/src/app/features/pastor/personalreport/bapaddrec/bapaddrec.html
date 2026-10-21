@@ -96,9 +96,13 @@
                   [value]="churchDropdownOpen ? churchSearch : getSelectedChurchName()"
                   (focus)="openChurchDropdown()"
                   (input)="onChurchSearch($event)"
-                  [placeholder]="churches.length === 0 ? 'Loading churches...' : 'Search or select church'"
+                  [placeholder]="churchesLoading
+                    ? 'Loading district churches...'
+                    : churches.length === 0
+                      ? 'No churches assigned to your district'
+                      : 'Search or select church'"
                   autocomplete="off"
-                  [disabled]="churches.length === 0"
+                  [disabled]="churchesLoading || churches.length === 0"
                   aria-label="Search churches"
                   aria-autocomplete="list"
                   [attr.aria-expanded]="churchDropdownOpen"
@@ -109,7 +113,7 @@
                   type="button"
                   class="church-dropdown-toggle"
                   (click)="toggleChurchDropdown()"
-                  [disabled]="churches.length === 0"
+                  [disabled]="churchesLoading || churches.length === 0"
                   aria-label="Toggle church dropdown">
 
                   <svg

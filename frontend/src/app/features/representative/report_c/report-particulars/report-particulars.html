@@ -108,9 +108,9 @@
             <section *ngFor="let section of program.sections; trackBy: trackSection" class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
-              <details name="representative-report-sections" (toggle)="onSectionToggle($event)">
-                <summary class="relative flex cursor-pointer list-none items-center justify-between gap-3 bg-emerald-900/10 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-emerald-950">
-                  <span class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 pr-36">
+              <details>
+                <summary class="relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
+                  <span class="block min-w-0 pr-32">
                     {{ section.program_name || section.section_name || program.program_name || 'Particular' }}
 
                     <span *ngIf="!isAnnualView" [ngClass]="{
@@ -121,18 +121,16 @@
                     </span>
                   </span>
 
-                  <span class="absolute right-5 top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap">
+                  <span class="absolute right-5 top-2.5 flex items-center gap-2 whitespace-nowrap">
                     <span *ngIf="!isAnnualView &&
                selectedQuarterId !== null &&
-               isQuarterEndorsed(selectedQuarterId)" class="inline-flex items-center gap-1 px-3 py-1
-               text-sm font-semibold text-emerald-950">
+               isQuarterEndorsed(selectedQuarterId)" class="text-sm font-bold normal-case tracking-normal text-sky-800">
                       Endorsed
                     </span>
 
                     <span *ngIf="!isAnnualView &&
                selectedQuarterId !== null &&
-               isQuarterApproved(selectedQuarterId)" class="inline-flex items-center gap-1 px-3 py-1
-               text-sm font-semibold text-emerald">
+               isQuarterApproved(selectedQuarterId)" class="text-sm font-bold normal-case tracking-normal text-emerald-800">
                       ✓ Approved
                     </span>
                   </span>

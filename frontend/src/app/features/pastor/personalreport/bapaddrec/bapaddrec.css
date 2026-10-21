@@ -82,10 +82,10 @@
   height: 42px;
   box-sizing: border-box;
   padding: 9px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 7px;
-  background-color: #fff;
-  color: #334155;
+  border: 1px solid rgba(22, 75, 60, 0.12);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #123f33;
   font-family: inherit;
   font-size: 14px;
   box-shadow: none;
@@ -95,9 +95,10 @@
 }
 
 .form-grid .form-group .form-control:focus {
-  border-color: #3b82f6;
+  border-color: #059669;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
 }
 
 /* =========================================
@@ -283,14 +284,14 @@
 }
 
 .save-button {
-  border: 1px solid #2563eb;
-  background: #2563eb;
+  border: 1px solid #047857;
+  background: #047857;
   color: #fff;
 }
 
 .save-button:hover:not(:disabled) {
-  border-color: #1d4ed8;
-  background: #1d4ed8;
+  border-color: #065f46;
+  background: #065f46;
 }
 
 .save-button:disabled {

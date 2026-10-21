@@ -52,6 +52,7 @@ function departmentReportAccessFixture(): array
         'departmentId' => $departmentId,
         'director' => departmentReportAccessUser($churchId, $departmentId, 'director', 'director'),
         'assistant' => departmentReportAccessUser($churchId, $departmentId, 'administrative assistant', 'assistant'),
+        'pastor' => departmentReportAccessUser($churchId, $departmentId, 'pastor', 'pastor'),
         'representative' => departmentReportAccessUser($churchId, $departmentId, 'representative', 'representative'),
     ];
 }
@@ -106,6 +107,46 @@ test('representatives can access all departments except pastor personal reports'
 
     $this->getJson("/api/churches/{$fixture['churchId']}/departments")
         ->assertUnauthorized();
+});
+
+test('pastors can access all department reports and see personal report departments', function () {
+    $fixture = departmentReportAccessFixture();
+
+    $departments = $this->actingAs($fixture['pastor'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments")
+        ->assertOk()
+        ->assertJsonCount(6);
+
+    $departments->assertJsonFragment(['department_id' => $fixture['departmentId']]);
+    $departments->assertJsonFragment(['department_id' => 30]);
+
+    foreach ([16, 20, 22, 23] as $departmentId) {
+        $departments->assertJsonFragment(['department_id' => $departmentId]);
+    }
+
+    $this->actingAs($fixture['pastor'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/30/report")
+        ->assertOk();
+
+    $this->actingAs($fixture['pastor'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/16/report")
+        ->assertOk();
+
+    $this->actingAs($fixture['pastor'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/20/report")
+        ->assertOk();
+});
+
+test('baptism and death department rows use the personal records page', function () {
+    $fixture = departmentReportAccessFixture();
+
+    $this->actingAs($fixture['pastor'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/22/report")
+        ->assertForbidden();
+
+    $this->actingAs($fixture['pastor'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/23/report")
+        ->assertForbidden();
 });
 
 test('representatives cannot access personal reports even when assigned to one', function () {

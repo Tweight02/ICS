@@ -172,7 +172,7 @@ describe('ReportParticulars', () => {
     });
   });
 
-  it('starts section accordions collapsed and opens them from their headings', () => {
+  it('starts section accordions collapsed and allows multiple sections to stay open', () => {
     const accordions = Array.from(
       fixture.nativeElement.querySelectorAll('details')
     ) as HTMLDetailsElement[];
@@ -189,10 +189,9 @@ describe('ReportParticulars', () => {
     expect(details.querySelectorAll('input[type="number"]')).toHaveLength(2);
 
     (nextDetails.querySelector('summary') as HTMLElement).click();
-    nextDetails.dispatchEvent(new Event('toggle'));
     fixture.detectChanges();
 
-    expect(details.open).toBe(false);
+    expect(details.open).toBe(true);
     expect(nextDetails.open).toBe(true);
   });
 
@@ -282,13 +281,27 @@ describe('ReportParticulars', () => {
   });
 
   it('prevents representative replies after the selected quarter is approved', () => {
-    component.report!.programs[0].sections[0].particulars[0].quarters[0].mission_approve = '2026-10-21';
+    const particulars = component.report!.programs[0].sections[0].particulars;
+    particulars.forEach(particular => {
+      particular.quarters[0].mission_approve = '2026-10-21';
+    });
     component.commentDraft = 'This reply should not send.';
 
     expect(component.canReplyToComments()).toBe(false);
     component.submitComment();
 
     expect(addComment).not.toHaveBeenCalled();
+  });
+
+  it('does not mark a quarter approved until every particular is approved', () => {
+    const particulars = component.report!.programs[0].sections[0].particulars;
+    particulars[0].quarters[0].mission_approve = '2026-10-21';
+
+    expect(component.isQuarterApproved(9)).toBe(false);
+
+    particulars[1].quarters[0].mission_approve = '2026-10-21';
+
+    expect(component.isQuarterApproved(9)).toBe(true);
   });
 
   it('keeps approved quarter values visible in disabled inputs', async () => {
