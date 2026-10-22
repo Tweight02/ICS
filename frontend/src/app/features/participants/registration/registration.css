@@ -1,0 +1,100 @@
+:host {
+  display: block;
+}
+
+.registration-shell {
+  background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2));
+}
+
+.field {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #d1d5db;
+  background-color: #fff;
+  padding: 0.625rem 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1rem;
+  backdrop-filter: blur(2px);
+}
+
+.btn-primary {
+  flex: 1;
+  border-radius: 0.75rem;
+  background-color: #15803d;
+  padding: 0.625rem 1rem;
+  text-align: center;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #166534;
+}
+
+.btn-secondary {
+  flex: 1;
+  border-radius: 0.75rem;
+  border: 1px solid #d1d5db;
+  padding: 0.625rem 1rem;
+  font-weight: 600;
+  color: #374151;
+  transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #f3f4f6;
+}
+
+@media (min-width: 1024px) {
+  :host,
+  .registration-shell {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  main {
+    height: calc(100vh - 156px);
+  }
+
+  main > div {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 1023px) {
+  .registration-shell {
+    overflow: auto;
+  }
+
+  main,
+  main > div {
+    height: auto;
+    overflow: visible;
+  }
+}

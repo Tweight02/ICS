@@ -1,488 +1,182 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Registration</title>
-    <link rel="icon" type="image/png" href="nelmlogo.png">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Shared styles -->
-    <style type="text/tailwindcss">
-        @layer components {
-            .field {
-                @apply w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none transition
-                       focus:border-green-600 focus:ring-2 focus:ring-green-200;
-            }
-            .label {
-                @apply mb-2 block text-sm font-medium text-gray-700;
-            }
-            .modal {
-                @apply fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4 backdrop-blur-sm;
-            }
-            .btn-primary {
-                @apply flex-1 rounded-lg bg-green-700 px-4 py-2.5 text-center font-semibold text-white shadow-sm
-                       transition hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-200;
-            }
-            .btn-secondary {
-                @apply flex-1 rounded-lg border border-gray-300 px-4 py-2.5 font-semibold text-gray-700
-                       transition hover:bg-gray-100;
-            }
-        }
-    </style>
-
-    <style>
-        @media (min-width: 1024px) {
-            html, body {
-                height: 100%;
-                overflow: hidden;
-            }
-
-            main {
-                height: calc(100vh - 156px);
-            }
-
-            main > div {
-                min-height: 0;
-            }
-
-            body {
-                background:
-                    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
-                    url('mountain.png') center / cover no-repeat fixed;
-            }
-        }
-
-        @media (max-width: 1023px) {
-            body {
-                overflow: auto;
-            }
-
-            main,
-            main > div {
-                height: auto;
-                overflow: visible;
-            }
-        }
-    </style>
-</head>
-
-<body class="h-screen overflow-hidden bg-green-50">
-
-    <!-- Header -->
-    <header class="bg-green-800 text-white shadow-lg">
-        <div class="mx-auto max-w-7xl px-6 py-3">
-            <div class="flex items-center gap-4">
-                <img src="nelmlogo.png" alt="Northeast Luzon Mission logo" class="h-12 w-12 shrink-0 object-contain">
-                <h1 class="text-2xl font-bold">Event Registration</h1>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="mx-auto h-[calc(100vh-156px)] max-w-7xl overflow-hidden px-4 py-4 sm:px-6 lg:px-8">
-        <div class="grid h-full grid-cols-1 items-start gap-5 lg:grid-cols-3">
-
-            <!-- Event Details -->
-            <section class="min-h-0 lg:col-span-1">
-                <div class="flex h-full flex-col overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg">
-
-                    <!-- Banner (gradient is set per event by the script below) -->
-                    <div id="event-banner" class="bg-gradient-to-br from-green-700 to-green-900 p-5 text-white">
-                        <h2 id="event-title" class="text-xl font-bold leading-snug">Loading event...</h2>
-                    </div>
-
-                    <!-- Details -->
-                    <div class="flex flex-1 flex-col p-5">
-                        <div class="space-y-3 rounded-xl border border-green-100 bg-green-50 p-4 text-sm">
-
-                            <!-- Date -->
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" /><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18" />
-                            </svg>
-                                <span id="event-date" class="font-semibold text-gray-800">Loading date...</span>
-                            </div>
-
-                            <!-- Time -->
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
-                            </svg>
-                                <span id="event-time" class="font-semibold text-gray-800">Loading time...</span>
-                            </div>
-
-                            <!-- Location -->
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-7-5.5-7-11a7 7 0 0114 0c0 5.5-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" />
-                            </svg>
-                                <span id="event-venue" class="font-semibold text-gray-800">Loading venue...</span>
-                            </div>
-
-                            <!-- Church -->
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v5M10 4.5h4M5 21V12l7-5 7 5v9M3 21h18M10 21v-5h4v5" />
-                            </svg>
-                                <span id="event-church" class="font-semibold text-gray-800">Loading church...</span>
-                            </div>
-                        </div>
-
-                        <!-- Description -->
-                        <p id="event-description" class="mt-4 text-sm leading-relaxed text-gray-600">
-                            Loading event description...
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Back Button -->
-                <a href="events.html"
-                    class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-700 bg-white px-5 py-3 font-semibold text-green-800 shadow-sm transition duration-200 hover:bg-green-50 focus:outline-none focus:ring-4 focus:ring-green-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7M8 12h13" />
-                    </svg>
-                    Back
-                </a>
-            </section>
-
-            <!-- Registration Form -->
-            <section class="min-h-0 lg:col-span-2">
-                <div class="h-full overflow-hidden rounded-2xl bg-white p-5 shadow-md sm:p-6">
-
-                    <h2 class="mb-4 text-2xl font-bold text-gray-800">Participant Registration</h2>
-
-                    <form id="registrationForm" class="space-y-5">
-                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-
-                            <div>
-                                <label for="first_name" class="label">
-                                    First Name <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" id="first_name" name="first_name" placeholder="Enter first name"
-                                    required class="field">
-                            </div>
-
-                            <div>
-                                <label for="last_name" class="label">
-                                    Last Name <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" id="last_name" name="last_name" placeholder="Enter last name"
-                                    required class="field">
-                            </div>
-
-                            <div>
-                                <label for="middle_name" class="label">
-                                    Middle Name <span class="font-normal text-gray-400">(Optional)</span>
-                                </label>
-                                <input type="text" id="middle_name" name="middle_name"
-                                    placeholder="Enter middle name" class="field">
-                            </div>
-
-                            <div>
-                                <label for="extension_name" class="label">
-                                    Extension Name <span class="font-normal text-gray-400">(Optional)</span>
-                                </label>
-                                <input type="text" id="extension_name" name="extension_name"
-                                    placeholder="e.g., Jr., Sr., III" class="field">
-                            </div>
-
-                            <div>
-                                <label for="age" class="label">
-                                    Age <span class="text-red-500">*</span>
-                                </label>
-                                <input type="number" id="age" name="age" placeholder="Enter your age" min="1"
-                                    max="120" required class="field">
-                            </div>
-
-                            <div>
-                                <label for="gender" class="label">Gender</label>
-                                <select id="gender" name="gender" class="field">
-                                    <option value="">Select gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                </select>
-                            </div>
-
-                        </div>
-
-                        <div class="border-t pt-4">
-                            <button type="submit"
-                                class="w-full rounded-lg bg-green-700 px-6 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-200">
-                                Submit Registration
-                            </button>
-                        </div>
-                    </form>
-
-                </div>
-            </section>
-
-        </div>
-    </main>
-
-    <!-- Confirmation Popup -->
-    <div id="confirmModal" class="modal">
-        <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-
-            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-700" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M9 12l2 2 4-4m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-
-            <h2 class="mt-4 text-center text-xl font-bold text-gray-800">Confirm Registration</h2>
-
-            <p class="mt-2 text-center text-sm leading-relaxed text-gray-500">
-                Are you sure you want to submit your registration for
-                <span id="confirmEventName" class="font-semibold text-green-700">this event</span>?
-            </p>
-
-            <div class="mt-6 flex gap-3">
-                <button type="button" id="cancelSubmit" class="btn-secondary">Cancel</button>
-                <button type="button" id="confirmSubmit" class="btn-primary">Submit</button>
-            </div>
-
-        </div>
+﻿<div class="registration-shell h-screen overflow-hidden bg-green-50">
+  <header class="bg-green-800 text-white shadow-lg">
+    <div class="mx-auto max-w-7xl px-6 py-3">
+      <div class="flex items-center gap-4">
+        <img src="nelmlogo.png" alt="Northeast Luzon Mission logo" class="h-12 w-12 shrink-0 object-contain" />
+        <h1 class="text-2xl font-bold">Event Registration</h1>
+      </div>
     </div>
+  </header>
 
-    <!-- Success Popup -->
-    <div id="successModal" class="modal">
-        <div class="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
+  <main class="mx-auto h-[calc(100vh-156px)] max-w-7xl overflow-hidden px-4 py-4 sm:px-6 lg:px-8">
+    <div class="grid h-full grid-cols-1 items-start gap-5 lg:grid-cols-3">
+      <section class="min-h-0 lg:col-span-1">
+        <div class="flex h-full flex-col overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg">
+          <div [ngClass]="selectedEvent ? ['bg-gradient-to-br', selectedEvent.banner, 'p-5', 'text-white'] : ['bg-gradient-to-br', 'from-green-700', 'to-green-900', 'p-5', 'text-white']">
+            <h2 class="text-xl font-bold leading-snug">
+              {{ selectedEvent?.title || 'No Event Selected' }}
+            </h2>
+          </div>
 
-            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-700" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          <div class="flex flex-1 flex-col p-5">
+            <div class="space-y-3 rounded-xl border border-green-100 bg-green-50 p-4 text-sm">
+              <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" /><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18" />
                 </svg>
+                <span class="font-semibold text-gray-800">{{ selectedEvent?.date || 'Not available' }}</span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
+                </svg>
+                <span class="font-semibold text-gray-800">{{ eventTimeLabel }}</span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-7-5.5-7-11a7 7 0 0114 0c0 5.5-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" />
+                </svg>
+                <span class="font-semibold text-gray-800">{{ selectedEvent?.venue || 'Not available' }}</span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v5M10 4.5h4M5 21V12l7-5 7 5v9M3 21h18M10 21v-5h4v5" />
+                </svg>
+                <span class="font-semibold text-gray-800">{{ selectedEvent?.church || 'Not available' }}</span>
+              </div>
             </div>
 
-            <h2 class="mt-4 text-xl font-bold text-gray-800">Registration Successful!</h2>
-
-            <p class="mt-2 text-sm leading-relaxed text-gray-500">
-                <span id="successName" class="font-semibold text-gray-800">Participant</span>
-                has been registered for
-                <span id="successEventName" class="font-semibold text-green-700">this event</span>.
+            <p class="mt-4 text-sm leading-relaxed text-gray-600">
+              {{ selectedEvent?.description || 'Please return to the events page and select an event to register.' }}
             </p>
-
-            <!-- Saved indicator -->
-            <p class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-800">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                Saved &middot; Ref <span id="savedRef"></span> &middot; <span id="savedTime"></span>
-            </p>
-
-            <div class="mt-6 flex gap-3">
-                <button type="button" id="registerAnother" class="btn-secondary">Register Another</button>
-                <a href="events.html" class="btn-primary">Done</a>
-            </div>
-
+          </div>
         </div>
+
+        <a href="events.html" class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-700 bg-white px-5 py-3 font-semibold text-green-800 shadow-sm transition duration-200 hover:bg-green-50 focus:outline-none focus:ring-4 focus:ring-green-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7M8 12h13" />
+          </svg>
+          Back
+        </a>
+      </section>
+
+      <section class="min-h-0 lg:col-span-2">
+        <div class="h-full overflow-hidden rounded-2xl bg-white p-5 shadow-md sm:p-6">
+          <h2 class="mb-4 text-2xl font-bold text-gray-800">Participant Registration</h2>
+
+          <form #registrationForm="ngForm" (ngSubmit)="onSubmit(registrationForm)" class="space-y-5" novalidate>
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <label for="first_name" class="label">First Name <span class="text-red-500">*</span></label>
+                <input id="first_name" name="first_name" type="text" [(ngModel)]="formData.first_name" placeholder="Enter first name" required class="field" />
+              </div>
+
+              <div>
+                <label for="last_name" class="label">Last Name <span class="text-red-500">*</span></label>
+                <input id="last_name" name="last_name" type="text" [(ngModel)]="formData.last_name" placeholder="Enter last name" required class="field" />
+              </div>
+
+              <div>
+                <label for="middle_name" class="label">Middle Name <span class="font-normal text-gray-400">(Optional)</span></label>
+                <input id="middle_name" name="middle_name" type="text" [(ngModel)]="formData.middle_name" placeholder="Enter middle name" class="field" />
+              </div>
+
+              <div>
+                <label for="extension_name" class="label">Extension Name <span class="font-normal text-gray-400">(Optional)</span></label>
+                <input id="extension_name" name="extension_name" type="text" [(ngModel)]="formData.extension_name" placeholder="e.g., Jr., Sr., III" class="field" />
+              </div>
+
+              <div>
+                <label for="age" class="label">Age <span class="text-red-500">*</span></label>
+                <input id="age" name="age" type="number" [(ngModel)]="formData.age" placeholder="Enter your age" min="1" max="120" required class="field" />
+              </div>
+
+              <div>
+                <label for="gender" class="label">Gender</label>
+                <select id="gender" name="gender" [(ngModel)]="formData.gender" class="field">
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="border-t pt-4">
+              <button type="submit" class="w-full rounded-lg bg-green-700 px-6 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-200">
+                Submit Registration
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
     </div>
+  </main>
 
-    <!-- Error message -->
-    <div id="errorToast" role="alert"
-        class="fixed bottom-5 left-1/2 z-[60] hidden -translate-x-1/2 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-lg">
-        Could not save your registration. Please try again.
-    </div>
+  <div *ngIf="confirmModalVisible" class="modal flex">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
 
-    <script>
-        // ---------- Event data ----------
-        // "banner" holds the same gradient colors used on the events page cards.
-        const events = {
-            "leadership-communication-2026": {
-                title: "Deaconry Quarterly Meeting",
-                banner: "from-green-700 to-green-900",
-                church: "Your Church Name",
-                date: "October 22, 2026",
-                time: "8:00 AM",
-                end: "11:30 AM",
-                venue: "Central Church",
-                description: "A quarterly gathering for deacons to discuss church ministries, strengthen leadership, and coordinate plans for church activities."
-            },
-            "digital-skills-2026": {
-                title: "Youth Delegation Assembly",
-                banner: "from-emerald-600 to-green-800",
-                church: "Your Church Name",
-                date: "October 18, 2026",
-                time: "9:00 AM",
-                end: "3:00 PM",
-                venue: "North District Chapel",
-                description: "An assembly for youth delegates to build fellowship, share ideas, and participate in meaningful discussions and activities."
-            },
-            "community-outreach-2026": {
-                title: "Pastoral Leadership Seminar",
-                banner: "from-teal-600 to-emerald-800",
-                church: "Your Church Name",
-                date: "October 15, 2026",
-                time: "8:30 AM",
-                end: "12:00 PM",
-                venue: "Central Church",
-                description: "A seminar designed to strengthen pastoral leadership, develop ministry skills, and encourage effective church service."
-            }
-        };
+      <h2 class="mt-4 text-center text-xl font-bold text-gray-800">Confirm Registration</h2>
 
-        // ---------- Helpers ----------
-        const $ = (id) => document.getElementById(id);
+      <p class="mt-2 text-center text-sm leading-relaxed text-gray-500">
+        Are you sure you want to submit your registration for
+        <span class="font-semibold text-green-700">{{ eventTitle }}</span>?
+      </p>
 
-        const openModal = (modal) => {
-            modal.classList.remove("hidden");
-            modal.classList.add("flex");
-        };
-
-        const closeModal = (modal) => {
-            modal.classList.add("hidden");
-            modal.classList.remove("flex");
-        };
-
-        // ---------- Show selected event ----------
-        const eventId = new URLSearchParams(window.location.search).get("event");
-        const selectedEvent = events[eventId];
-        const eventTitle = selectedEvent ? selectedEvent.title : "this event";
-
-        if (selectedEvent) {
-            $("event-title").textContent = selectedEvent.title;
-            $("event-date").textContent = selectedEvent.date;
-            $("event-venue").textContent = selectedEvent.venue;
-            $("event-church").textContent = selectedEvent.church;
-            $("event-time").textContent =
-                selectedEvent.time + (selectedEvent.end ? " – " + selectedEvent.end : "");
-            $("event-description").textContent = selectedEvent.description;
-
-            // Match the banner color to the event's card on the events page
-            $("event-banner").className =
-                "bg-gradient-to-br " + selectedEvent.banner + " p-5 text-white";
-        } else {
-            $("event-title").textContent = "No Event Selected";
-            $("event-date").textContent = "Not available";
-            $("event-venue").textContent = "Not available";
-            $("event-church").textContent = "Not available";
-            $("event-time").textContent = "Time not available";
-            $("event-description").textContent =
-                "Please return to the events page and select an event to register.";
-        }
-
-        // ---------- Popups ----------
-        const registrationForm = $("registrationForm");
-        const confirmModal = $("confirmModal");
-        const successModal = $("successModal");
-        const confirmBtn = $("confirmSubmit");
-        const cancelBtn = $("cancelSubmit");
-
-        const spinner = `<span class="inline-flex items-center justify-center gap-2">
+      <div class="mt-6 flex gap-3">
+        <button type="button" (click)="cancelSubmit()" class="btn-secondary" [disabled]="saving">Cancel</button>
+        <button type="button" (click)="confirmSubmit()" class="btn-primary" [disabled]="saving">
+          <span *ngIf="!saving">Submit</span>
+          <span *ngIf="saving" class="inline-flex items-center justify-center gap-2">
             <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25" />
-                <path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>Saving...</span>`;
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25" />
+              <path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+            Saving...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
 
-        function setSaving(saving) {
-            confirmBtn.disabled = saving;
-            cancelBtn.disabled = saving;
-            confirmBtn.classList.toggle("opacity-70", saving);
-            confirmBtn.innerHTML = saving ? spinner : "Submit";
-        }
+  <div *ngIf="successModalVisible" class="modal flex">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
 
-        function showError() {
-            const toast = $("errorToast");
-            toast.classList.remove("hidden");
-            setTimeout(() => toast.classList.add("hidden"), 4000);
-        }
+      <h2 class="mt-4 text-xl font-bold text-gray-800">Registration Successful!</h2>
 
-        // Placeholder save: stores in this browser only. Swap for your backend call.
-        async function saveRegistration(data) {
-            await new Promise((r) => setTimeout(r, 600));
+      <p class="mt-2 text-sm leading-relaxed text-gray-500">
+        <span class="font-semibold text-gray-800">{{ fullName }}</span>
+        has been registered for
+        <span class="font-semibold text-green-700">{{ eventTitle }}</span>.
+      </p>
 
-            // Real backend version:
-            // const res = await fetch("/your-endpoint", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify({ event: eventId, ...data })
-            // });
-            // if (!res.ok) throw new Error("Save failed");
-            // return await res.json();
+      <p class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-800">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Saved &middot; Ref <span>{{ savedRef }}</span> &middot; <span>{{ savedTime }}</span>
+      </p>
 
-            const all = JSON.parse(localStorage.getItem("registrations") || "[]");
-            const record = {
-                id: "REG-" + Date.now().toString(36).toUpperCase(),
-                event: eventId,
-                ...data,
-                savedAt: new Date().toISOString()
-            };
-            all.push(record);
-            localStorage.setItem("registrations", JSON.stringify(all));
-            return record;
-        }
+      <div class="mt-6 flex gap-3">
+        <button type="button" (click)="resetForm(registrationForm)" class="btn-secondary">Register Another</button>
+        <a href="events.html" class="btn-primary">Done</a>
+      </div>
+    </div>
+  </div>
 
-        // Step 1: validate, then ask for confirmation
-        registrationForm.addEventListener("submit", (e) => {
-            e.preventDefault();
-
-            if (!registrationForm.checkValidity()) {
-                registrationForm.reportValidity();
-                return;
-            }
-
-            $("confirmEventName").textContent = eventTitle;
-            openModal(confirmModal);
-        });
-
-        // Step 2: confirmed, save, and show success only when the save works
-        confirmBtn.addEventListener("click", async () => {
-            setSaving(true);
-            try {
-                const data = Object.fromEntries(new FormData(registrationForm));
-                const record = await saveRegistration(data);
-
-                const fullName = ["first_name", "middle_name", "last_name", "extension_name"]
-                    .map((id) => $(id).value.trim())
-                    .filter(Boolean)
-                    .join(" ");
-
-                closeModal(confirmModal);
-                $("successName").textContent = fullName;
-                $("successEventName").textContent = eventTitle;
-                $("savedRef").textContent = record.id;
-                $("savedTime").textContent = new Date(record.savedAt)
-                    .toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-                openModal(successModal);
-            } catch (err) {
-                showError(); // confirmation popup stays open so they can retry
-            } finally {
-                setSaving(false);
-            }
-        });
-
-        cancelBtn.addEventListener("click", () => closeModal(confirmModal));
-
-        $("registerAnother").addEventListener("click", () => {
-            registrationForm.reset();
-            closeModal(successModal);
-        });
-
-        // Click outside the confirmation popup to close it (not while saving)
-        confirmModal.addEventListener("click", (e) => {
-            if (confirmBtn.disabled) return;
-            if (e.target === confirmModal) closeModal(confirmModal);
-        });
-
-        // Escape closes the confirmation popup (not while saving)
-        document.addEventListener("keydown", (e) => {
-            if (confirmBtn.disabled) return;
-            if (e.key === "Escape" && !confirmModal.classList.contains("hidden")) {
-                closeModal(confirmModal);
-            }
-        });
-    </script>
-</body>
-
-</html>
+  <div *ngIf="errorVisible" role="alert" class="fixed bottom-5 left-1/2 z-[60] -translate-x-1/2 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-lg">
+    Could not save your registration. Please try again.
+  </div>
+</div>
