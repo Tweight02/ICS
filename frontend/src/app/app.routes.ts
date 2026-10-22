@@ -5,17 +5,13 @@ export const routes: Routes = [
   /* ==============================
      HOME
   ============================== */
-  // {
-  //   path: 'login',
-  //   loadComponent: () =>
-  //     import('./features/login/login')
-  //       .then(m => m.Login)
-  // },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/login/login')
+        .then(m => m.Login)
+  },
 
-  // {
-  //   path: '',
-  //   redirectTo: 'representative/reports',
-  // },
 
 
   /* ==============================
@@ -68,7 +64,7 @@ export const routes: Routes = [
 
   {
     path: '',
-    redirectTo: 'assistant',
+    redirectTo: 'login',
     pathMatch: 'full'
   }
 

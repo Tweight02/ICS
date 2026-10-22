@@ -1,7 +1,7 @@
-<app-page-shell [crumbs]="[{ label: 'Mission workspace' }, { label: config.crumb }]">
   <!-- Header -->
   <div class="shrink-0 flex items-start justify-between gap-4">
     <div>
+      <br>
       <h1 class="text-[26px] leading-8 font-bold text-gray-900 tracking-tight">{{ config.title }}</h1>
       <p class="text-sm text-gray-500">{{ fill(config.subtitle) }}</p>
     </div>
@@ -15,13 +15,15 @@
   </div>
 
   <!-- Banner (hidden on short screens so nothing has to scroll) -->
-  <div class="shrink-0 [@media(max-height:719px)]:hidden relative bg-[#143c30] rounded-2xl px-6 py-5 text-white shadow-md overflow-hidden bg-cover bg-center" style="background-image: linear-gradient(to right, rgba(20, 60, 48, 0.95), rgba(27, 77, 62, 0.75)), url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200&auto=format&fit=crop');">
+  <div class="shrink-0 [@media(max-height:719px)]:hidden relative bg-[#143c30] rounded-2xl px-6 py-5 text-white shadow-md overflow-hidden bg-cover bg-center" style="background-image: linear-gradient(to right, rgba(20, 60, 48, 0.95), rgba(27, 77, 62, 0.75)), url('/images/mission-bg.png');">
     <div class="relative z-10 space-y-1.5">
       <span class="text-[10px] uppercase tracking-wider font-bold bg-[#265c4b] px-2.5 py-1 rounded">TOGETHER IN MISSION</span>
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight">{{ config.bannerTitle }}</h2>
       <p class="text-emerald-100 text-sm">{{ fill(config.bannerSubtitle) }} • Your {{ today | date: 'MMMM' }} event workspace</p>
     </div>
   </div>
+
+  <br>
 
   <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[252px_1fr] gap-4">
     <!-- Left: small calendar + workspace -->
@@ -187,4 +189,4 @@
       <app-pagination class="shrink-0" [page]="currentPage" [pageSize]="pageSize" [total]="filteredEvents.length" label="events" (pageChange)="page = $event"></app-pagination>
     </div>
   </div>
-</app-page-shell>
+

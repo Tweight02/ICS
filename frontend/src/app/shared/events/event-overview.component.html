@@ -1,9 +1,8 @@
-<app-page-shell [footer]="true"
-                [crumbs]="[{ label: 'Mission workspace' }, { label: config.crumbRoot, link: [config.basePath] }, { label: 'Event details' }]">
-  <!-- Header -->
+ <!-- Header -->
   <div class="shrink-0 flex items-start justify-between gap-4">
     <div>
-      <p class="text-[11px] font-bold tracking-wide uppercase text-[#1b4d3e]">{{ config.eyebrow }}</p>
+      <br>
+      <!-- <p class="text-[11px] font-bold tracking-wide uppercase text-[#1b4d3e]">{{ config.eyebrow }}</p> -->
       <h1 class="text-[26px] leading-8 font-bold text-gray-900 tracking-tight">Event overview</h1>
       <p class="text-sm text-gray-500">{{ config.subtitle }}</p>
     </div>
@@ -129,7 +128,8 @@
       </a>
     </div>
   </div>
-</app-page-shell>
+
+   <br>
 
 <!-- Delete confirmation -->
 <div *ngIf="confirmDelete" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" (click)="cancelDelete()">

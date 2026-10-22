@@ -1,9 +1,32 @@
-<app-page-shell [footer]="true"
-                [crumbs]="[{ label: 'Mission workspace' }, { label: config.crumbRoot, link: [config.basePath] }, { label: isEdit ? 'Edit event' : 'Create event' }]">
+  <!-- ===================== FOOTER 1: Apenas Cancel / Back ===================== -->
+<div shellFooter class="flex items-center justify-between gap-4">
+  <ng-container *ngIf="step === 1">
+    <a [routerLink]="cancelLink"
+       class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition no-underline">
+      <i class="bi bi-arrow-left"></i> {{ isEdit ? 'Back to event' : 'Cancel' }}
+    </a>
+  </ng-container>
+  <ng-container *ngIf="step === 2">
+    <a *ngIf="isEdit" [routerLink]="cancelLink"
+       class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition no-underline">
+      <i class="bi bi-arrow-left"></i> Back to event
+    </a>
+    <button *ngIf="!isEdit" type="button" (click)="step = 1"
+            class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition">
+      <i class="bi bi-arrow-left"></i> Back
+    </button>
+  </ng-container>
+
+  <p class="flex-1 text-center text-xs" [ngClass]="hintIsError ? 'text-red-600 font-semibold' : 'text-gray-500'" aria-live="polite">{{ hint }}</p>
+</div>
+
+  <br>
+
   <!-- Header: title on the left, progress + extra action on the right -->
   <div class="shrink-0 flex items-start justify-between gap-4">
     <div>
-      <p class="text-[11px] font-bold tracking-wide uppercase text-[#1b4d3e]">{{ eyebrow }}</p>
+      <!-- <p class="text-[11px] font-bold tracking-wide uppercase text-[#1b4d3e]">{{ eyebrow }}</p> -->
+       <br>
       <h1 class="text-[26px] leading-8 font-bold text-gray-900 tracking-tight">{{ title }}</h1>
       <p class="text-sm text-gray-500">{{ subtitle }}</p>
     </div>
@@ -37,6 +60,24 @@
       </div>
     </div>
   </div>
+
+  <br>
+      <!-- ===================== FOOTER 2: Apenas Next / Create ===================== -->
+    <div shellFooter class="flex items-center justify-between gap-4">
+      <p class="flex-1 text-center text-xs" [ngClass]="hintIsError ? 'text-red-600 font-semibold' : 'text-gray-500'" aria-live="polite">{{ hint }}</p>
+
+      <button *ngIf="step === 1" type="button" (click)="next()"
+              class="inline-flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold text-white bg-[#1b4d3e] hover:bg-[#143c30] transition shadow-sm">
+        Next <i class="bi bi-arrow-right"></i>
+      </button>
+      <button *ngIf="step === 2" type="button" (click)="submit()" [disabled]="saving"
+              class="inline-flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold text-white bg-[#1b4d3e] hover:bg-[#143c30] disabled:opacity-60 transition shadow-sm">
+        <i class="bi" [ngClass]="saving ? 'bi-hourglass-split' : 'bi-check-lg'"></i>
+        {{ saving ? 'Saving…' : (isEdit ? 'Update event' : 'Create event') }}
+      </button>
+    </div>
+
+  <br>
 
   <!-- Loading / error while opening an event to edit -->
   <div *ngIf="loadingExisting" class="flex-1 min-h-0 bg-white border border-gray-200 rounded-xl animate-pulse"></div>
@@ -319,35 +360,6 @@
     </div>
   </div>
 
-  <!-- ===================== FOOTER: same buttons, same places on every form ===================== -->
-  <div shellFooter class="flex items-center justify-between gap-4">
-    <ng-container *ngIf="step === 1">
-      <a [routerLink]="cancelLink"
-         class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition no-underline">
-        <i class="bi bi-arrow-left"></i> {{ isEdit ? 'Back to event' : 'Cancel' }}
-      </a>
-    </ng-container>
-    <ng-container *ngIf="step === 2">
-      <a *ngIf="isEdit" [routerLink]="cancelLink"
-         class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition no-underline">
-        <i class="bi bi-arrow-left"></i> Back to event
-      </a>
-      <button *ngIf="!isEdit" type="button" (click)="step = 1"
-              class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition">
-        <i class="bi bi-arrow-left"></i> Back
-      </button>
-    </ng-container>
 
-    <p class="flex-1 text-center text-xs" [ngClass]="hintIsError ? 'text-red-600 font-semibold' : 'text-gray-500'" aria-live="polite">{{ hint }}</p>
 
-    <button *ngIf="step === 1" type="button" (click)="next()"
-            class="inline-flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold text-white bg-[#1b4d3e] hover:bg-[#143c30] transition shadow-sm">
-      Next <i class="bi bi-arrow-right"></i>
-    </button>
-    <button *ngIf="step === 2" type="button" (click)="submit()" [disabled]="saving"
-            class="inline-flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold text-white bg-[#1b4d3e] hover:bg-[#143c30] disabled:opacity-60 transition shadow-sm">
-      <i class="bi" [ngClass]="saving ? 'bi-hourglass-split' : 'bi-check-lg'"></i>
-      {{ saving ? 'Saving…' : (isEdit ? 'Update event' : 'Create event') }}
-    </button>
-  </div>
-</app-page-shell>
+
