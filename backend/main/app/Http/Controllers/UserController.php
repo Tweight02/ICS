@@ -330,7 +330,6 @@ class UserController extends Controller
     public function assignPastorToDistrict(Request $request, int $districtId): JsonResponse
     {
         $this->authorizeAssistant($request);
-
         $data = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,user_id'],
         ]);
@@ -454,6 +453,29 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Pastor deactivated successfully.',
+
+        return response()->json([
+        'data' => [
+            'has_pastor'  => (bool) $pastor,
+            'pastor_name' => $pastor
+                ? trim("{$pastor->first_name} {$pastor->last_name}")
+                : null,
+        ],
+    ]);
+}
+    // GET /api/users/{id}
+    public function show($id)
+    {
+        $user = User::select([
+            'user_id', 'department_id', 'church_id',
+            'first_name', 'middle_name', 'last_name', 'extension_name',
+            'email', 'role',
+        ])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $user,
+>>>>>>> 42118ae (Update director and representative features and routes)
         ]);
     }
 }

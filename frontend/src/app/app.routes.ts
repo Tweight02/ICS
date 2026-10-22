@@ -5,12 +5,12 @@ export const routes: Routes = [
   /* ==============================
      HOME
   ============================== */
-  {
-    path: 'login',
-    loadComponent: () =>
-      import('./features/login/login')
-        .then(m => m.Login)
-  },
+  // {
+  //   path: 'login',
+  //   loadComponent: () =>
+  //     import('./features/login/login')
+  //       .then(m => m.Login)
+  // },
 
   // {
   //   path: '',
@@ -59,25 +59,19 @@ export const routes: Routes = [
      REPRESENTATIVE
   ============================== */
 
-  {
+    {
     path: 'representative',
-    children: [
-      {
-        path: '',
-        loadChildren: () =>
-          import('./features/representative/representative.routes')
-            .then(m => m.RepresentativeRoute)
-      }
-    ]
+    loadChildren: () =>
+      import('./features/representative/representative.routes')
+        .then(m => m.RepresentativeRoute)
   },
-
 
   {
     path: '',
-    redirectTo:'login',
-    pathMatch:'full'
-
+    redirectTo: 'assistant',
+    pathMatch: 'full'
   }
+
 
 
 ];

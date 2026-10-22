@@ -1,0 +1,150 @@
+<app-page-shell [footer]="true"
+                [crumbs]="[{ label: 'Mission workspace' }, { label: config.crumbRoot, link: [config.basePath] }, { label: 'Event details' }]">
+  <!-- Header -->
+  <div class="shrink-0 flex items-start justify-between gap-4">
+    <div>
+      <p class="text-[11px] font-bold tracking-wide uppercase text-[#1b4d3e]">{{ config.eyebrow }}</p>
+      <h1 class="text-[26px] leading-8 font-bold text-gray-900 tracking-tight">Event overview</h1>
+      <p class="text-sm text-gray-500">{{ config.subtitle }}</p>
+    </div>
+    <span *ngIf="config.badge" class="shrink-0 bg-emerald-50 text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full">{{ config.badge }}</span>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex-1 min-h-0 space-y-3">
+    <div class="h-[110px] bg-white border border-gray-200 rounded-xl animate-pulse"></div>
+    <div class="h-[240px] bg-white border border-gray-200 rounded-xl animate-pulse"></div>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="!loading && errorMsg" class="shrink-0 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex items-center justify-between gap-3">
+    <span class="flex items-center gap-2"><i class="bi bi-exclamation-triangle"></i> {{ errorMsg }}</span>
+    <button type="button" (click)="load()" class="font-semibold underline shrink-0">Try again</button>
+  </div>
+
+  <ng-container *ngIf="event">
+    <!-- Title card: what, where, when -->
+    <div class="shrink-0 bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-semibold px-3 py-0.5 rounded-full" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
+        <span *ngIf="departmentName" class="bg-emerald-50 text-emerald-900 text-xs font-semibold px-3 py-0.5 rounded-full">{{ departmentName }}</span>
+        <span *ngIf="periodLabel" class="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-0.5 rounded-full">{{ periodLabel }}</span>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mt-2 truncate">{{ event.title }}</h2>
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-gray-700 mt-2">
+        <span class="flex items-center gap-2"><i class="bi bi-geo-alt text-[#1b4d3e]"></i> {{ event.location }}</span>
+        <span *ngIf="dateRange" class="flex items-center gap-2"><i class="bi bi-calendar3 text-[#1b4d3e]"></i> {{ dateRange }}</span>
+        <span *ngIf="timeRange" class="flex items-center gap-2"><i class="bi bi-clock text-[#1b4d3e]"></i> {{ timeRange }}</span>
+      </div>
+    </div>
+
+    <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-3">
+      <!-- Left: programs (accordion) + notes -->
+      <div class="flex flex-col gap-3 min-h-0">
+        <div class="flex-1 min-h-0 flex flex-col bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
+            <i class="bi bi-list-check text-[#1b4d3e]"></i> Programs &amp; particulars
+          </h3>
+          <p class="text-xs text-gray-500 mt-1.5 mb-3">
+            <ng-container *ngIf="departmentName">{{ departmentName }} · </ng-container>
+            {{ selectedGroupCount }} program group{{ selectedGroupCount === 1 ? '' : 's' }}
+            and {{ particularCount }} selected particular{{ particularCount === 1 ? '' : 's' }}
+          </p>
+
+          <div class="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] space-y-2 pr-1">
+            <div *ngFor="let g of groups" class="border border-gray-200 rounded-lg overflow-hidden">
+              <button type="button" (click)="toggleGroup(g)" [attr.aria-expanded]="g.expanded"
+                      class="w-full bg-gray-50 px-4 py-2.5 flex items-center justify-between text-left">
+                <span class="flex items-center gap-3 text-xs font-bold text-gray-900 uppercase">
+                  <i class="bi" [ngClass]="g.expanded ? 'bi-chevron-down' : 'bi-chevron-right'"></i> {{ g.name }}
+                </span>
+                <span class="text-[11px]" [ngClass]="g.items.length ? 'text-emerald-800 font-semibold' : 'text-gray-500'">{{ g.items.length }} selected</span>
+              </button>
+              <div *ngIf="g.expanded" class="px-4 py-2.5 space-y-2 bg-white">
+                <p *ngFor="let item of g.items" class="flex items-start gap-3 text-sm text-gray-700">
+                  <i class="bi bi-check-circle text-[#1b4d3e] mt-0.5"></i> {{ item }}
+                </p>
+                <p *ngIf="g.items.length === 0" class="text-xs text-gray-400">Nothing selected in this group.</p>
+              </div>
+            </div>
+            <p *ngIf="groups.length === 0" class="text-sm text-gray-400">No particulars were selected for this event.</p>
+          </div>
+        </div>
+
+        <div class="shrink-0 bg-white border border-gray-200 rounded-xl px-5 py-3.5 shadow-sm">
+          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
+            <i class="bi bi-journal-text text-[#1b4d3e]"></i> Notes
+          </h3>
+          <p class="text-sm text-gray-600 mt-1.5 line-clamp-2">{{ event.notes || 'No notes were added for this event.' }}</p>
+        </div>
+      </div>
+
+      <!-- Right: scope, participants -->
+      <div class="flex flex-col gap-3 min-h-0 overflow-y-auto [scrollbar-width:thin]">
+        <div class="shrink-0 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
+            <i class="bi bi-building text-[#1b4d3e]"></i> Event scope
+          </h3>
+          <p class="text-[11px] uppercase text-gray-500 mt-3">{{ coverage.title }}</p>
+          <p class="text-sm font-bold text-gray-900 mt-1">{{ coverage.text }}</p>
+          <hr class="my-3 border-gray-200" />
+          <p class="text-[11px] uppercase text-gray-500">Organized by</p>
+          <p class="text-sm font-semibold text-gray-800 mt-1">{{ organizer }}</p>
+          <p class="text-[11px] text-gray-500 mt-1">The East Luzon Mission</p>
+        </div>
+
+        <div class="shrink-0 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
+            <i class="bi bi-people text-[#1b4d3e]"></i> Participants
+          </h3>
+          <p class="text-xs text-gray-500 mt-3">{{ stats.total }} listed · {{ stats.confirmed }} confirmed · {{ stats.pending }} pending</p>
+          <a [routerLink]="[config.basePath, eventId, 'participants']"
+             class="mt-3 inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-50 transition no-underline">
+            <i class="bi bi-arrow-right"></i> View participants
+          </a>
+        </div>
+
+        <div *ngIf="config.readOnlyNote" class="shrink-0 bg-emerald-50 rounded-xl p-3.5 text-xs text-emerald-900 flex items-start gap-3">
+          <i class="bi bi-lock text-base"></i>
+          <p>{{ config.readOnlyNote }}</p>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Footer: Back on the left, main actions on the right (same on every page) -->
+  <div shellFooter class="flex items-center justify-between gap-3">
+    <a [routerLink]="[config.basePath]"
+       class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition no-underline">
+      <i class="bi bi-arrow-left"></i> {{ config.backLabel }}
+    </a>
+    <div *ngIf="config.canManage && event" class="flex items-center gap-2">
+      <button type="button" (click)="askDelete()"
+              class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-red-700 bg-white hover:bg-red-50 transition">
+        <i class="bi bi-trash"></i> Delete event
+      </button>
+      <a [routerLink]="[config.basePath, eventId, 'edit']"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#1b4d3e] hover:bg-[#143c30] transition no-underline">
+        <i class="bi bi-pencil"></i> Edit event
+      </a>
+    </div>
+  </div>
+</app-page-shell>
+
+<!-- Delete confirmation -->
+<div *ngIf="confirmDelete" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" (click)="cancelDelete()">
+  <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-5" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <div class="flex items-start gap-3">
+      <span class="w-9 h-9 rounded-full bg-red-50 text-red-600 flex items-center justify-center shrink-0"><i class="bi bi-trash"></i></span>
+      <div>
+        <h3 class="font-bold text-gray-900">Delete this event?</h3>
+        <p class="text-sm text-gray-600 mt-1">“{{ event?.title }}” and its participant list will be removed. This cannot be undone.</p>
+        <p *ngIf="deleteError" class="text-xs text-red-600 mt-2">{{ deleteError }}</p>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-5">
+      <button type="button" (click)="cancelDelete()" [disabled]="deleting" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50">Keep event</button>
+      <button type="button" (click)="doDelete()" [disabled]="deleting" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60">{{ deleting ? 'Deleting…' : 'Yes, delete' }}</button>
+    </div>
+  </div>
+</div>

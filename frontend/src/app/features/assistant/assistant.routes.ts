@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { EVENTS1_ROUTES } from './events/events.routes';
 
 export const AssistantRoute: Routes = [
     {
@@ -65,4 +66,15 @@ export const AssistantRoute: Routes = [
             import('../pastor/report_p/report-particulars/report-particulars')
                 .then(m => m.ReportParticulars)
     },
+     // ==============================
+      // EVENTS (Adicionados aqui diretamente)
+      // ==============================
+     {
+        path: 'events',
+        children: EVENTS1_ROUTES
+      }
+
+
+
+
 ];

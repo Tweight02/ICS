@@ -1,14 +1,14 @@
 import { Routes } from '@angular/router';
-
 import { BapaddrecComponent } from './personalreport/bapaddrec/bapaddrec';
 import { DeathaddrecComponent } from './personalreport/deathaddrec/deathaddrec';
 import { EditbapComponent } from './personalreport/editbap/editbap';
+import { EVENTS2_ROUTES } from './events/events.routes';
 
 export const PASTOR_ROUTES: Routes = [
   // Default route
   {
     path: '',
-    redirectTo: 'reports',
+    redirectTo: '',
     pathMatch: 'full'
   },
 
@@ -50,14 +50,14 @@ export const PASTOR_ROUTES: Routes = [
   },
 
   // Events
-  {
-    path: 'events',
-    loadComponent: () =>
-      import('./events/events')
-        .then(m => m.Events)
-  },
+  // {
+  //   path: 'events',
+  //   loadComponent: () =>
+  //     import('./events/events')
+  //       .then(m => m.Events)
+  // },
 
-  // Baptism Records - Existing route
+  // Baptism Records
   {
     path: 'baptism',
     loadComponent: () =>
@@ -130,6 +130,15 @@ export const PASTOR_ROUTES: Routes = [
       import('./user_management/assign-church/assign-church')
         .then(m => m.AssignChurch)
   },
+
+
+       // ==============================
+        // EVENTS (Adicionados aqui diretamente)
+        // ==============================
+       {
+          path: 'events',
+          children: EVENTS2_ROUTES
+        },
 
 
   // Fallback route — keep this last

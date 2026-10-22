@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
+import { EVENTS_ROUTES } from './events/events.routes';
+
 
 export const RepresentativeRoute: Routes = [
   // Default route
   {
     path: '',
-    redirectTo: 'reports/programs',
+    redirectTo: '',
     pathMatch: 'full'
   },
 
@@ -28,5 +30,16 @@ export const RepresentativeRoute: Routes = [
     loadComponent: () =>
       import('../representative/stewardship/stewardship')
         .then(m => m.Stewardship)
+  },
+
+  // ==============================
+  // EVENTS (Adicionados aqui diretamente)
+  // ==============================
+ {
+    path: 'events',
+    children: EVENTS_ROUTES
   }
+
+
+
 ];
