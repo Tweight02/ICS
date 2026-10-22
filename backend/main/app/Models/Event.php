@@ -1,81 +1,158 @@
 <?php
 
-namespace App\Modules\Events\Models;
+namespace App\Models;
 
-use App\Modules\Events\Support\EventsOrg;
-use App\Modules\Events\Support\EventUser;
+use App\Support\EventsOrg;
+use App\Support\EventUser;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\DB;
 
 class Event extends Model
 {
-    protected $table = 'church_events';
+    protected $table = 'events';
+    protected $primaryKey = 'event_id';
+    public $timestamps = false;
 
     protected $fillable = [
-        'title', 'location', 'department_id', 'year', 'quarter',
-        'start_date', 'end_date', 'start_time', 'end_time',
-        'all_districts', 'notes', 'organizer_role', 'scope_label', 'created_by',
+        'quarter_id', 'church_id', 'title', 'start_date', 'end_date',
+        'start_time', 'end_time', 'notes', 'status', 'location',
     ];
 
     protected function casts(): array
     {
-        return ['start_date' => 'date:Y-m-d', 'end_date' => 'date:Y-m-d', 'all_districts' => 'boolean'];
+        return ['date_start' => 'date:Y-m-d', 'date_end' => 'date:Y-m-d'];
     }
 
-    public function participants(): HasMany { return $this->hasMany(EventParticipant::class, 'event_id'); }
-
-    /** upcoming | ongoing | completed, computed from the dates (Philippine time). */
-    public function getStatusAttribute(): string
+    public function getIdAttribute(): int
     {
-        $today = now('Asia/Manila')->startOfDay();
-
-        return match (true) {
-            $this->start_date->gt($today) => 'upcoming',
-            $this->end_date->lt($today) => 'completed',
-            default => 'ongoing',
-        };
+        return (int) $this->event_id;
     }
 
-    // ---- links to your tables (plain id columns, no foreign keys) ----
-    public function ids(string $table, string $column): array
+    public function getStartDateAttribute(): ?Carbon
     {
-        return DB::table($table)->where('event_id', $this->id)->pluck($column)->map(fn ($v) => (int) $v)->all();
+        return isset($this->attributes['date_start']) ? Carbon::parse($this->attributes['date_start']) : null;
     }
 
-    public function syncIds(string $table, string $column, array $ids): void
+    public function setStartDateAttribute(string $value): void
     {
-        DB::table($table)->where('event_id', $this->id)->delete();
-        DB::table($table)->insert(array_map(
-            fn ($id) => ['event_id' => $this->id, $column => (int) $id],
-            array_values(array_unique($ids))
-        ));
+        $this->attributes['date_start'] = $value;
     }
 
-    /** Only the events a user is allowed to see. */
-    public function scopeVisibleTo(Builder $query, EventUser $u): Builder
+    public function getEndDateAttribute(): ?Carbon
     {
-        $withChurch = fn (array $ids) => DB::table('church_event_church')->whereIn('church_id', $ids)->select('event_id');
-        $withDistrict = fn (?int $id) => DB::table('church_event_district')->where('district_id', $id)->select('event_id');
+        return isset($this->attributes['date_end']) ? Carbon::parse($this->attributes['date_end']) : null;
+    }
 
-        return match ($u->role) {
+    public function setEndDateAttribute(string $value): void
+    {
+        $this->attributes['date_end'] = $value;
+    }
+
+    public function getStartTimeAttribute(): ?string
+    {
+        return $this->attributes['time_start'] ?? null;
+    }
+
+    public function setStartTimeAttribute(string $value): void
+    {
+        $this->attributes['time_start'] = $value;
+    }
+
+    public function getEndTimeAttribute(): ?string
+    {
+        return $this->attributes['time_end'] ?? null;
+    }
+
+    public function setEndTimeAttribute(string $value): void
+    {
+        $this->attributes['time_end'] = $value;
+    }
+
+    public function getNotesAttribute(): string
+    {
+        return (string) ($this->attributes['details'] ?? '');
+    }
+
+    public function setNotesAttribute(?string $value): void
+    {
+        $this->attributes['details'] = mb_substr($value ?? '', 0, 255);
+    }
+
+    public function participants(): HasMany
+    {
+        return $this->hasMany(EventParticipant::class, 'event_id', 'event_id');
+    }
+
+    public function particulars(): BelongsToMany
+    {
+        return $this->belongsToMany(Particular::class, 'event_particular', 'event_id', 'particular_id');
+    }
+
+    public function districts(): BelongsToMany
+    {
+        return $this->belongsToMany(Church::class, 'event_district', 'event_id', 'district_id');
+    }
+
+    public function createdBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'event_creator', 'event_id', 'user_id', 'event_id', 'user_id');
+    }
+
+    public function scopeVisibleTo(Builder $query, EventUser $user): Builder
+    {
+        if ($user->role === 'district_pastor') {
+            $districtChurchIds = array_merge(
+                [$user->districtId],
+                EventsOrg::churchIdsOfDistrict($user->districtId)
+            );
+
+            return $query->where(function (Builder $scope) use ($districtChurchIds, $user) {
+                $scope->whereIn('church_id', $districtChurchIds)
+                    ->orWhereHas('districts', fn (Builder $districts) => $districts
+                        ->where('churches.church_id', $user->districtId));
+            });
+        }
+
+        return match ($user->role) {
             'director', 'assistant' => $query,
-            'district_pastor' => $query->where(fn ($w) => $w
-                ->where('all_districts', true)
-                ->orWhere('created_by', $u->id)
-                ->orWhereIn('id', $withDistrict($u->districtId))
-                ->orWhereIn('id', $withChurch(EventsOrg::churchIdsOfDistrict($u->districtId)))),
-            default => $query->where(fn ($w) => $w // church_representative
-                ->where('all_districts', true)
-                ->orWhere('created_by', $u->id)
-                ->orWhereIn('id', $withChurch([$u->churchId ?? 0]))
-                ->orWhereIn('id', $withDistrict($u->districtId))),
+            default => $query->where('church_id', $user->churchId ?? 0),
         };
     }
 
-    public static function canChange(EventUser $u, self $event): bool
+    public static function canChange(EventUser $user, self $event): bool
     {
-        return $u->canWrite() && $event->created_by === $u->id;
+        if (! $user->canWrite() || ! $event->createdBy()->where('users.user_id', $user->id)->exists()) {
+            return false;
+        }
+
+        return match ($user->role) {
+            'assistant' => true,
+            'district_pastor' => in_array(
+                (int) $event->church_id,
+                array_merge([$user->districtId], EventsOrg::churchIdsOfDistrict($user->districtId)),
+                true
+            ),
+            default => (int) $event->church_id === $user->churchId,
+        };
+    }
+
+    public function quarterDetails(): ?object
+    {
+        return DB::table('quarters')
+            ->join('programs', 'programs.program_id', '=', 'quarters.program_id')
+            ->join('departments', 'departments.department_id', '=', 'programs.department_id')
+            ->where('quarters.quarter_id', $this->quarter_id)
+            ->select([
+                'quarters.year',
+                'quarters.quarter',
+                'programs.program_id',
+                'programs.program_name',
+                'departments.department_id',
+                'departments.department_name',
+            ])->first();
     }
 }

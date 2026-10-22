@@ -453,16 +453,9 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Pastor deactivated successfully.',
+        ]);
+    }
 
-        return response()->json([
-        'data' => [
-            'has_pastor'  => (bool) $pastor,
-            'pastor_name' => $pastor
-                ? trim("{$pastor->first_name} {$pastor->last_name}")
-                : null,
-        ],
-    ]);
-}
     // GET /api/users/{id}
     public function show($id)
     {
@@ -475,7 +468,6 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $user,
->>>>>>> 42118ae (Update director and representative features and routes)
         ]);
     }
 }

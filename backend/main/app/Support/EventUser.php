@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Events\Support;
+namespace App\Support;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
@@ -40,8 +40,7 @@ final class EventUser
         $name = trim(implode(' ', array_filter([$u->first_name ?? null, $u->last_name ?? null]))) ?: (string) ($u->name ?? 'User');
         $churchId = ! empty($u->church_id) ? (int) $u->church_id : null;
         $districtId = match ($role) {
-            'district_pastor' => EventsOrg::districtOfPastor($id),
-            'church_representative' => $churchId ? ($c = EventsOrg::church($churchId)) ? (int) $c->district_id : null : null,
+            'district_pastor', 'church_representative' => EventsOrg::districtOfChurch($churchId),
             default => null,
         };
 

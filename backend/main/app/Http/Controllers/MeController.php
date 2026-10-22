@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Modules\Events\Http\Controllers;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Events\Support\EventsOrg;
-use App\Modules\Events\Support\EventUser;
+use App\Support\EventsOrg;
+use App\Support\EventUser;
 use Illuminate\Http\Request;
 
 /** GET /api/me : the logged-in user in the shape the Angular events screens expect. */

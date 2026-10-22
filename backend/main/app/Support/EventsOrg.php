@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Events\Support;
+namespace App\Support;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +56,11 @@ final class EventsOrg
 
     public static function districts(): Collection
     {
-        return self::q('districts', ['id' => 'id', 'name' => 'name'])->orderBy(self::t('districts')['id'])->get();
+        $table = self::t('districts');
+
+        return self::q('districts', ['id' => 'id', 'name' => 'name'])
+            ->whereNull($table['parent_id'])
+            ->orderBy($table['id'])->get();
     }
 
     public static function district(?int $id): ?object
@@ -64,13 +68,12 @@ final class EventsOrg
         return $id ? self::q('districts', ['id' => 'id', 'name' => 'name'])->where(self::t('districts')['id'], $id)->first() : null;
     }
 
-    /** District where this user is the pastor. */
-    public static function districtOfPastor(int $userId): ?int
+    /** Resolve an assignment to either a district church or one of its local churches. */
+    public static function districtOfChurch(?int $churchId): ?int
     {
-        $d = self::t('districts');
-        $id = DB::table($d['table'])->where($d['pastor_id'], $userId)->value($d['id']);
+        $church = self::church($churchId);
 
-        return $id ? (int) $id : null;
+        return $church ? (int) ($church->district_id ?: $church->id) : null;
     }
 
     public static function churchNames(array $ids): array
