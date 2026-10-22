@@ -507,12 +507,12 @@ export class EventFormComponent implements OnInit {
 
   get hint(): string {
     if (this.saveError) return this.saveError;
-    if (this.step === 1) return this.tried1 && this.step1Error ? this.step1Error : 'Required fields are marked *';
+    if (this.step === 1) return this.tried1 && this.step1Error ? this.step1Error : '';
     if (this.tried2 && this.missingCount > 0) {
       const n = this.missingCount;
       return `${n} required field${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} your attention.`;
     }
-    return this.isEdit ? 'Existing values are preserved until you save.' : 'Required fields are marked *';
+    return this.isEdit ? 'Existing values are preserved until you save.' : '';
   }
 
   get hintIsError(): boolean {

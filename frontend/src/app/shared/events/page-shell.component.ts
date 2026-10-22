@@ -3,14 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Crumb } from './events.config';
 
-/**
- * The frame every events page uses: the same top bar, the same spacing and an optional
- * footer bar for the main buttons. On desktop the frame is exactly as tall as the screen,
- * so the page itself never scrolls. On phones it scrolls normally.
- *
- * If your app already has its own header above the page, set once in styles.css:
- *   :root { --shell-offset: 64px; }   (the height of that header)
- */
 @Component({
   selector: 'app-page-shell',
   standalone: true,
