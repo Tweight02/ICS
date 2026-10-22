@@ -20,13 +20,21 @@ import {
     providedIn: 'root'
 })
 export class UserService {
-
     private http = inject(HttpClient);
 
     private apiUrl = 'http://localhost:8000/api';
 
-    createUser(data: any) {
+    bulkTransfer(transfers: { user_id: number; church_id: number; }[]) {
+        return this.http.post<{ message: string }>(
+            `${this.apiUrl}/assistant/bulk-transfer`,
+            { transfers },
+            {
+                withCredentials: true
+            }
+        );
+    }
 
+    createUser(data: any) {
         return this.http.post(
             `${this.apiUrl}/assistant/users`,
             data,
@@ -49,7 +57,6 @@ export class UserService {
     }
 
     getDepartments() {
-
         return this.http.get<{
             message: string;
             data: Department[];
@@ -62,24 +69,19 @@ export class UserService {
     }
 
     getPastors(filters: PastorFilters = {}) {
-
         let params = new HttpParams();
 
         Object.entries(filters).forEach(([key, value]) => {
-
             if (
                 value !== undefined &&
                 value !== null &&
                 value !== ''
             ) {
-
                 params = params.set(
                     key,
                     String(value)
                 );
-
             }
-
         });
 
         return this.http.get<Paginated<Pastor>>(
@@ -92,7 +94,6 @@ export class UserService {
     }
 
     getPastor(id: number | string) {
-
         return this.http.get<{
             data: Pastor;
         }>(
@@ -107,7 +108,6 @@ export class UserService {
         id: number | string,
         data: any
     ) {
-
         return this.http.put<{
             message: string;
             user: Pastor;
@@ -142,11 +142,9 @@ export class UserService {
     getRepresentatives(
         filters: RepresentativeFilters = {}
     ) {
-
         let params = new HttpParams();
 
         Object.entries(filters).forEach(([key, value]) => {
-
             if (
                 value !== undefined &&
                 value !== null &&
@@ -157,7 +155,6 @@ export class UserService {
                     String(value)
                 );
             }
-
         });
 
         return this.http.get<Paginated<Representative>>(
@@ -172,7 +169,6 @@ export class UserService {
     getRepresentative(
         id: number | string
     ) {
-
         return this.http.get<{
             data: Representative;
         }>(
@@ -186,7 +182,6 @@ export class UserService {
     createRepresentative(
         data: any
     ) {
-
         return this.http.post<{
             message: string;
             user: Representative;
@@ -203,7 +198,6 @@ export class UserService {
         id: number | string,
         data: any
     ) {
-
         return this.http.put<{
             message: string;
             user: Representative;
@@ -215,7 +209,6 @@ export class UserService {
             }
         );
     }
-
 
     activatePastor(id: number | string) {
         return this.http.post<{
@@ -239,7 +232,6 @@ export class UserService {
             }
         );
     }
-
 
     checkDistrictPastor(churchId: number) {
         return this.http.get<{
