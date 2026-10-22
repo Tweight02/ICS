@@ -58,6 +58,6 @@ export class Home {
   ];
 
   registrationUrl(eventId: string): string {
-    return `registration.html?event=${eventId}`;
+    return `/participants/registration?event=${encodeURIComponent(eventId)}`;
   }
 }
