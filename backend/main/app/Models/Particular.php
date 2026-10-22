@@ -14,4 +14,9 @@ class Particular extends Model
         'program_id',
         'particular_name',
     ];
+
+    public function program()
+    {
+        return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
 }

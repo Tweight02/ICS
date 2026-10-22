@@ -2,25 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Http\Requests\EventRequest;
+use App\Http\Resources\EventResource;
 use App\Models\Event;
-use App\Models\Department;
-use App\Models\Program;
-use App\Modules\Events\Http\Requests\EventRequest;
-use App\Modules\Events\Http\Resources\EventResource;
-use App\Modules\Events\Support\EventsOrg;
-use App\Modules\Events\Support\EventUser;
+use App\Support\EventParticulars;
+use App\Support\EventUser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
-    private const FIELDS = [
-        'title', 'location', 'year', 'quarter', 'department_id',
-        'start_date', 'end_date', 'start_time', 'end_time', 'notes',
-    ];
-
     public function index(Request $request)
     {
         $request->validate([
@@ -28,35 +20,30 @@ class EventController extends Controller
             'status' => ['nullable', 'in:upcoming,ongoing,completed,all'],
         ]);
 
-        $user = EventUser::fromRequest($request);
         $today = now('Asia/Manila')->toDateString();
-
-        $query = Event::visibleTo($user)->withCount([
+        $query = Event::visibleTo(EventUser::fromRequest($request))->withCount([
             'participants',
-            'participants as confirmed_count' => fn ($q) => $q->where('status', 'confirmed'),
+            'participants as confirmed_count' => fn ($q) => $q->whereRaw('LOWER(registration_status) = ?', ['confirmed']),
         ]);
 
-        if ($request->boolean('mine')) {
-            $query->where('created_by', $user->id);
-        }
         if ($search = $request->query('search')) {
             $query->where('title', 'like', '%'.$search.'%');
         }
         if ($month = $request->query('month')) {
             [$start, $end] = $this->monthRange($month);
-            $query->where('start_date', '<=', $end)->where('end_date', '>=', $start);
+            $query->where('date_start', '<=', $end)->where('date_end', '>=', $start);
         }
 
         match ($request->query('status', 'upcoming')) {
-            'upcoming' => $query->where('start_date', '>', $today),
-            'ongoing' => $query->where('start_date', '<=', $today)->where('end_date', '>=', $today),
-            'completed' => $query->where('end_date', '<', $today),
+            'upcoming' => $query->where('date_start', '>', $today),
+            'ongoing' => $query->where('date_start', '<=', $today)->where('date_end', '>=', $today),
+            'completed' => $query->where('date_end', '<', $today),
             default => null,
         };
 
         $perPage = min(max((int) $request->query('per_page', 5), 1), 50);
 
-        return EventResource::collection($query->orderBy('start_date')->orderBy('start_time')->paginate($perPage));
+        return EventResource::collection($query->orderBy('date_start')->orderBy('time_start')->paginate($perPage));
     }
 
     public function calendar(Request $request)
@@ -65,12 +52,14 @@ class EventController extends Controller
         [$start, $end] = $this->monthRange($request->query('month'));
 
         $rows = Event::visibleTo(EventUser::fromRequest($request))
-            ->where('start_date', '<=', $end)->where('end_date', '>=', $start)
-            ->orderBy('start_date')->get(['id', 'title', 'start_date', 'end_date']);
+            ->where('date_start', '<=', $end)->where('date_end', '>=', $start)
+            ->orderBy('date_start')->get(['event_id', 'title', 'date_start', 'date_end']);
 
-        return response()->json(['data' => $rows->map(fn ($e) => [
-            'id' => $e->id, 'title' => $e->title,
-            'start_date' => $e->start_date->toDateString(), 'end_date' => $e->end_date->toDateString(),
+        return response()->json(['data' => $rows->map(fn ($event) => [
+            'id' => $event->event_id,
+            'title' => $event->title,
+            'start_date' => $event->start_date->toDateString(),
+            'end_date' => $event->end_date->toDateString(),
         ])]);
     }
 
@@ -81,20 +70,16 @@ class EventController extends Controller
 
     public function store(EventRequest $request)
     {
-        $user = EventUser::fromRequest($request);
-
-        $event = DB::transaction(function () use ($request, $user) {
-            $event = Event::create($request->safe()->only(self::FIELDS) + [
-                'organizer_role' => $user->role,
-                'created_by' => $user->id,
-                'all_districts' => $user->role === 'assistant' && $request->boolean('all_districts'),
-                'scope_label' => $this->scopeLabel($user),
-            ]);
-            $this->syncRelations($event, $request, $user);
+        $event = DB::transaction(function () use ($request) {
+            $event = Event::create($this->eventData($request));
+            $event->createdBy()->attach(EventUser::fromRequest($request)->id);
+            $event->particulars()->sync($request->validated('particular_ids'));
+            if (EventUser::fromRequest($request)->role === 'assistant') {
+                $event->districts()->sync($request->validated('district_ids'));
+            }
 
             return $event;
         });
-
         return (new EventResource($event))->response()->setStatusCode(201);
     }
 
@@ -103,15 +88,13 @@ class EventController extends Controller
         $user = EventUser::fromRequest($request);
         $event = $this->find($request, $event);
         abort_unless(Event::canChange($user, $event), 403);
-
-        DB::transaction(function () use ($request, $event, $user) {
-            $event->fill($request->safe()->only(self::FIELDS));
-            $event->all_districts = $user->role === 'assistant' && $request->boolean('all_districts');
-            $event->scope_label = $this->scopeLabel($user);
-            $event->save();
-            $this->syncRelations($event, $request, $user);
+        DB::transaction(function () use ($event, $request) {
+            $event->fill($this->eventData($request))->save();
+            $event->particulars()->sync($request->validated('particular_ids'));
+            if (EventUser::fromRequest($request)->role === 'assistant') {
+                $event->districts()->sync($request->validated('district_ids'));
+            }
         });
-
         return new EventResource($event->refresh());
     }
 
@@ -119,16 +102,51 @@ class EventController extends Controller
     {
         $event = $this->find($request, $event);
         abort_unless(Event::canChange(EventUser::fromRequest($request), $event), 403);
-
         DB::transaction(function () use ($event) {
-            foreach (['church_event_particular', 'church_event_church', 'church_event_district'] as $table) {
-                DB::table($table)->where('event_id', $event->id)->delete();
-            }
             $event->participants()->delete();
             $event->delete();
         });
-
         return response()->noContent();
+    }
+
+    private function eventData(EventRequest $request): array
+    {
+        $user = EventUser::fromRequest($request);
+        $churchId = match ($user->role) {
+            'church_representative' => $user->churchId,
+            'district_pastor' => (int) $request->validated('church_ids')[0],
+            'assistant' => (int) $request->validated('district_ids')[0],
+            default => null,
+        };
+
+        $programId = EventParticulars::rootProgramId(
+            $request->validated('particular_ids'),
+            $request->validated('department_id')
+        );
+        abort_unless($programId, 422, 'Choose particulars from one program in the selected department.');
+        $eventDate = Carbon::createFromFormat('!Y-m-d', $request->validated('start_date'));
+
+        $quarterId = DB::table('quarters')
+            ->where('church_id', $churchId)
+            ->where('program_id', $programId)
+            ->where('year', (string) $eventDate->year)
+            ->where('quarter', 'Q'.(int) ceil($eventDate->month / 3))
+            ->value('quarter_id');
+
+        abort_unless($churchId && $quarterId, 422, 'A matching church and reporting quarter are required.');
+
+        return [
+            'church_id' => $churchId,
+            'quarter_id' => $quarterId,
+            'title' => $request->validated('title'),
+            'location' => $request->validated('location'),
+            'start_date' => $request->validated('start_date'),
+            'end_date' => $request->validated('end_date'),
+            'start_time' => $request->validated('start_time'),
+            'end_time' => $request->validated('end_time'),
+            'notes' => $request->validated('notes'),
+            'status' => $this->eventStatus($request->validated('start_date'), $request->validated('end_date')),
+        ];
     }
 
     private function find(Request $request, int $id): Event
@@ -136,25 +154,14 @@ class EventController extends Controller
         return Event::visibleTo(EventUser::fromRequest($request))->findOrFail($id);
     }
 
-    private function syncRelations(Event $event, EventRequest $request, EventUser $user): void
+    private function eventStatus(string $startDate, string $endDate): string
     {
-        $event->syncIds('church_event_particular', 'particular_id', $request->validated('particular_ids'));
+        $today = now('Asia/Manila')->toDateString();
 
-        match ($user->role) {
-            'church_representative' => $event->syncIds('church_event_church', 'church_id', array_filter([$user->churchId])),
-            'district_pastor' => $event->syncIds('church_event_church', 'church_id', $request->validated('church_ids')),
-            'assistant' => $event->syncIds('church_event_district', 'district_id',
-                $event->all_districts ? [] : $request->validated('district_ids')),
-            default => null,
-        };
-    }
-
-    private function scopeLabel(EventUser $user): string
-    {
-        return match ($user->role) {
-            'church_representative' => EventsOrg::church($user->churchId)?->name ?? 'Church',
-            'district_pastor' => EventsOrg::district($user->districtId)?->name ?? 'District',
-            default => 'Mission-wide',
+        return match (true) {
+            $startDate > $today => 'upcoming',
+            $endDate < $today => 'completed',
+            default => 'ongoing',
         };
     }
 

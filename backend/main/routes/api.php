@@ -6,6 +6,8 @@ use App\Http\Controllers\ChurchController;
 use App\Http\Controllers\DeathController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\ParticipantController;
+use App\Http\Controllers\PublicEventController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\SampleController;
@@ -200,45 +202,22 @@ Route::get('/departments/{departmentId}/programs', [
 |--------------------------------------------------------------------------
 */
 
-Route::get('/events', [
-    EventController::class,
-    'index',
-]);
+Route::get('/public/events', [PublicEventController::class, 'index']);
+Route::get('/public/events/{event}', [PublicEventController::class, 'show'])->whereNumber('event');
+Route::post('/public/events/{event}/participants', [PublicEventController::class, 'register'])->whereNumber('event');
 
-Route::post('/events', [
-    EventController::class,
-    'store',
-]);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/events', [EventController::class, 'index']);
+    Route::post('/events', [EventController::class, 'store']);
+    Route::get('/events/{event}', [EventController::class, 'show'])->whereNumber('event');
+    Route::put('/events/{event}', [EventController::class, 'update'])->whereNumber('event');
+    Route::delete('/events/{event}', [EventController::class, 'destroy'])->whereNumber('event');
 
-Route::get('/events/{id}', [
-    EventController::class,
-    'show',
-])->whereNumber('id');
-
-Route::put('/events/{id}', [
-    EventController::class,
-    'update',
-])->whereNumber('id');
-
-Route::delete('/events/{id}', [
-    EventController::class,
-    'destroy',
-])->whereNumber('id');
-
-Route::get('/events/{eventId}/participants', [
-    EventController::class,
-    'participants',
-])->whereNumber('eventId');
-
-Route::post('/events/{eventId}/participants', [
-    EventController::class,
-    'addParticipant',
-])->whereNumber('eventId');
-
-Route::patch('/participants/{participantId}', [
-    EventController::class,
-    'updateParticipantStatus',
-])->whereNumber('participantId');
+    Route::get('/events/{event}/participants', [ParticipantController::class, 'index'])->whereNumber('event');
+    Route::post('/events/{event}/participants', [ParticipantController::class, 'store'])->whereNumber('event');
+    Route::patch('/participants/{participant}', [ParticipantController::class, 'update'])->whereNumber('participant');
+    Route::delete('/participants/{participant}', [ParticipantController::class, 'destroy'])->whereNumber('participant');
+});
 
 /*
 |--------------------------------------------------------------------------

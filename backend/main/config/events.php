@@ -7,16 +7,13 @@
  */
 return [
     'tables' => [
-        // CHECK: churches table (id, name, address, district link)
-        'churches' => ['table' => 'churches', 'id' => 'id', 'name' => 'church_name', 'location' => 'address', 'district_id' => 'district_id'],
+        'churches' => ['table' => 'churches', 'id' => 'church_id', 'name' => 'name', 'location' => 'address', 'district_id' => 'parent_id'],
 
-        // CHECK: districts table. "pastor_id" = column holding the user_id of the district pastor.
-        'districts' => ['table' => 'districts', 'id' => 'id', 'name' => 'district_name', 'pastor_id' => 'user_id'],
+        'districts' => ['table' => 'churches', 'id' => 'church_id', 'name' => 'name', 'parent_id' => 'parent_id'],
 
-        // CHECK: departments -> programs (program groups) -> particulars
-        'departments' => ['table' => 'departments', 'id' => 'id', 'name' => 'department_name'],
-        'programs' => ['table' => 'programs', 'id' => 'id', 'name' => 'program_name', 'department_id' => 'department_id'],
-        'particulars' => ['table' => 'particulars', 'id' => 'id', 'name' => 'particular_name', 'program_id' => 'program_id'],
+        'departments' => ['table' => 'departments', 'id' => 'department_id', 'name' => 'department_name'],
+        'programs' => ['table' => 'programs', 'id' => 'program_id', 'name' => 'program_name', 'department_id' => 'department_id'],
+        'particulars' => ['table' => 'particulars', 'id' => 'particular_id', 'name' => 'particular_name', 'program_id' => 'program_id'],
     ],
 
     // Auth middleware used by your other protected routes (see routes/events.php).
