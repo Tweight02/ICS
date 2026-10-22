@@ -62,6 +62,13 @@ export const routes: Routes = [
         .then(m => m.RepresentativeRoute)
   },
 
+    {
+      path: 'participants',
+      loadChildren: () =>
+        import('./features/participants/participant.routes')
+          .then(m => m.PARTICIPANT_ROUTES)
+    },
+
   {
     path: '',
     redirectTo: 'login',

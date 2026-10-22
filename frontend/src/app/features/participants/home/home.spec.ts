@@ -24,4 +24,9 @@ describe('Home', () => {
     expect(component.events.length).toBeGreaterThan(0);
     expect(component.events[0].id).toBeTruthy();
   });
+
+  it('should build a registration route with the selected event id', () => {
+    expect(component.registrationUrl('leadership-communication-2026'))
+      .toBe('/participants/registration?event=leadership-communication-2026');
+  });
 });

@@ -2,16 +2,16 @@
   <header class="bg-green-800 text-white shadow-lg">
     <div class="mx-auto max-w-7xl px-6 py-3">
       <div class="flex items-center gap-4">
-        <img src="nelmlogo.png" alt="Northeast Luzon Mission logo" class="h-12 w-12 shrink-0 object-contain" />
+        <img src="logo.png" alt="Northeast Luzon Mission logo" class="h-12 w-12 shrink-0 object-contain" />
         <h1 class="text-2xl font-bold">Event Registration</h1>
       </div>
     </div>
   </header>
 
-  <main class="mx-auto h-[calc(100vh-156px)] max-w-7xl overflow-hidden px-4 py-4 sm:px-6 lg:px-8">
-    <div class="grid h-full grid-cols-1 items-start gap-5 lg:grid-cols-3">
-      <section class="min-h-0 lg:col-span-1">
-        <div class="flex h-full flex-col overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg">
+  <main class="registration-main mx-auto max-w-7xl px-3 py-3 sm:px-6 lg:px-8">
+    <div class="registration-layout grid h-full grid-cols-1 items-stretch gap-3 lg:grid-cols-3 lg:gap-5">
+      <section class="event-summary min-h-0 lg:col-span-1">
+        <div class="event-summary-panel flex h-full flex-col overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg">
           <div [ngClass]="selectedEvent ? ['bg-gradient-to-br', selectedEvent.banner, 'p-5', 'text-white'] : ['bg-gradient-to-br', 'from-green-700', 'to-green-900', 'p-5', 'text-white']">
             <h2 class="text-xl font-bold leading-snug">
               {{ selectedEvent?.title || 'No Event Selected' }}
@@ -49,13 +49,13 @@
               </div>
             </div>
 
-            <p class="mt-4 text-sm leading-relaxed text-gray-600">
+            <p class="event-description mt-4 text-sm leading-relaxed text-gray-600">
               {{ selectedEvent?.description || 'Please return to the events page and select an event to register.' }}
             </p>
           </div>
         </div>
 
-        <a href="events.html" class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-700 bg-white px-5 py-3 font-semibold text-green-800 shadow-sm transition duration-200 hover:bg-green-50 focus:outline-none focus:ring-4 focus:ring-green-200">
+        <a href="/participants" class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-700 bg-white px-5 py-3 font-semibold text-green-800 shadow-sm transition duration-200 hover:bg-green-50 focus:outline-none focus:ring-4 focus:ring-green-200">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7M8 12h13" />
           </svg>
@@ -63,12 +63,12 @@
         </a>
       </section>
 
-      <section class="min-h-0 lg:col-span-2">
-        <div class="h-full overflow-hidden rounded-2xl bg-white p-5 shadow-md sm:p-6">
-          <h2 class="mb-4 text-2xl font-bold text-gray-800">Participant Registration</h2>
+      <section class="registration-panel min-h-0 lg:col-span-2">
+        <div class="registration-card h-full overflow-hidden rounded-2xl bg-white p-4 shadow-md sm:p-6">
+          <h2 class="registration-heading mb-3 text-xl font-bold text-gray-800 sm:mb-4 sm:text-2xl">Participant Registration</h2>
 
-          <form #registrationForm="ngForm" (ngSubmit)="onSubmit(registrationForm)" class="space-y-5" novalidate>
-            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <form #registrationForm="ngForm" (ngSubmit)="onSubmit(registrationForm)" class="registration-form space-y-3 sm:space-y-5" novalidate>
+            <div class="registration-fields grid grid-cols-2 gap-2 sm:gap-3">
               <div>
                 <label for="first_name" class="label">First Name <span class="text-red-500">*</span></label>
                 <input id="first_name" name="first_name" type="text" [(ngModel)]="formData.first_name" placeholder="Enter first name" required class="field" />
@@ -106,7 +106,7 @@
 
             <div class="border-t pt-4">
               <button type="submit" class="w-full rounded-lg bg-green-700 px-6 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-200">
-                Submit Registration
+                Submit
               </button>
             </div>
           </form>
@@ -171,7 +171,7 @@
 
       <div class="mt-6 flex gap-3">
         <button type="button" (click)="resetForm(registrationForm)" class="btn-secondary">Register Another</button>
-        <a href="events.html" class="btn-primary">Done</a>
+        <a href="/participants" class="btn-primary">Done</a>
       </div>
     </div>
   </div>
