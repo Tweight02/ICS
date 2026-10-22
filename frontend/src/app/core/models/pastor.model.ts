@@ -10,7 +10,7 @@ export interface Pastor {
     role: 'pastor';
     status?: 'active' | 'inactive';
     department_id: number;
-    church_id: number;
+    church_id: number | null;
     department?: {
         department_id: number;
         department_name: string;
@@ -18,7 +18,7 @@ export interface Pastor {
     church?: {
         church_id: number;
         name: string;
-    };
+    } | null;
 }
 
 export interface Paginated<T> {

@@ -129,7 +129,7 @@ test('assignment writes require an authenticated assistant', function () {
     ]);
 });
 
-test('assignment rejects a district that already has an active pastor', function () {
+test('assistant swaps pastors when assigning to an occupied district', function () {
     $fixture = districtPastorAssignmentFixture();
     $movingPastor = districtPastorAssignmentUser(
         $fixture['firstDistrictId'],
@@ -138,7 +138,7 @@ test('assignment rejects a district that already has an active pastor', function
         'active',
         'assignment-moving-pastor@example.com'
     );
-    districtPastorAssignmentUser(
+    $currentPastor = districtPastorAssignmentUser(
         $fixture['secondDistrictId'],
         $fixture['departmentId'],
         'pastor',
@@ -150,11 +150,15 @@ test('assignment rejects a district that already has an active pastor', function
         ->putJson("/api/assistant/district-pastor-assignments/{$fixture['secondDistrictId']}", [
             'user_id' => $movingPastor->user_id,
         ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors('district_id');
+        ->assertOk()
+        ->assertJsonPath('message', 'Pastor assigned to the district successfully.');
 
     $this->assertDatabaseHas('users', [
         'user_id' => $movingPastor->user_id,
+        'church_id' => $fixture['secondDistrictId'],
+    ]);
+    $this->assertDatabaseHas('users', [
+        'user_id' => $currentPastor->user_id,
         'church_id' => $fixture['firstDistrictId'],
     ]);
 });
