@@ -114,10 +114,10 @@ openChurch(church: Church): void {
     )?.monitoring;
 
     return {
-      q1: { progress: monitoring?.q1_submitted_data_progress ?? null, approved: !!monitoring?.q1_approved },
-      q2: { progress: monitoring?.q2_submitted_data_progress ?? null, approved: !!monitoring?.q2_approved },
-      q3: { progress: monitoring?.q3_submitted_data_progress ?? null, approved: !!monitoring?.q3_approved },
-      q4: { progress: monitoring?.q4_submitted_data_progress ?? null, approved: !!monitoring?.q4_approved }
+      q1: { progress: monitoring?.q1 ?? null, approved: !!monitoring?.q1_approved },
+      q2: { progress: monitoring?.q2 ?? null, approved: !!monitoring?.q2_approved },
+      q3: { progress: monitoring?.q3 ?? null, approved: !!monitoring?.q3_approved },
+      q4: { progress: monitoring?.q4 ?? null, approved: !!monitoring?.q4_approved }
     };
   }
 

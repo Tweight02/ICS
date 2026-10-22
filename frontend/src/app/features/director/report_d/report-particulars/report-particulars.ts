@@ -11,6 +11,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ReportService } from '../../../../core/services/report/report';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { UserRole } from '../../../../core/models/user.model';
+import Swal from 'sweetalert2';
 
 interface QuarterRecord {
   quarter_id: number;
@@ -596,11 +597,20 @@ export class ReportParticulars implements OnInit {
 
     request.subscribe({
       next: response => {
-        this.successMessage =
-          response?.message ||
+        const message = response?.message ||
           (action === 'endorse'
             ? 'Report endorsed for the administrative assistant.'
             : 'Report approved.');
+        if (action === 'approve') {
+          void Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: message,
+            confirmButtonColor: '#047857'
+          });
+        } else {
+          this.successMessage = message;
+        }
         this.savingAction = false;
         this.loadReport();
       },
@@ -622,6 +632,11 @@ export class ReportParticulars implements OnInit {
   }
 
   backToPrograms(): void {
+    if (this.route.snapshot.queryParamMap.get('return_to') === 'monitoring') {
+      this.router.navigate([`${this.portalPrefix()}/reports`]);
+      return;
+    }
+
     this.router.navigate([`${this.portalPrefix()}/reports/programs`], {
       queryParams: {
         district_id: this.districtId || null,

@@ -1,0 +1,54 @@
+@media (max-width: 40rem) {
+  .report-table,
+  .report-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .report-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .report-table tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .report-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid rgb(6 78 59 / 12%);
+    border-radius: 0.875rem;
+    background: rgb(255 255 255 / 78%);
+  }
+
+  .report-table tbody td {
+    min-width: 0;
+    padding: 0.75rem 0.375rem;
+  }
+
+  .report-table tbody td:first-child {
+    grid-column: 1 / -1;
+    padding: 0.875rem;
+    border-bottom: 1px solid rgb(6 78 59 / 10%);
+    background: rgb(6 78 59 / 4%);
+  }
+
+  .report-table tbody td:not(:first-child)::before {
+    display: block;
+    margin-bottom: 0.375rem;
+    color: rgb(6 78 59 / 70%);
+    content: attr(data-label);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}

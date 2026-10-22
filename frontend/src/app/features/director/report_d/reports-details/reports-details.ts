@@ -10,11 +10,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
+import { RunningLoader } from '../../../../shared/components/running-loader/running-loader';
 
 @Component({
   selector: 'app-reports-details',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RunningLoader],
   templateUrl: './reports-details.html',
   styleUrl: './reports-details.css'
 })
@@ -30,6 +31,7 @@ export class ReportsDetails implements OnInit {
 
   district: Church | null = null;
   churches: Church[] = [];
+  loadingChurches = false;
 
   errorMessage = '';
 
@@ -48,10 +50,13 @@ export class ReportsDetails implements OnInit {
   }
 
   loadChurches(): void {
+    this.loadingChurches = true;
+    this.errorMessage = '';
 
     this.churchService.getChurches(this.districtId).subscribe({
 
       next: (response) => {
+        this.loadingChurches = false;
 
         this.district = response.district;
 
@@ -77,6 +82,7 @@ export class ReportsDetails implements OnInit {
       },
 
       error: (error) => {
+        this.loadingChurches = false;
 
         console.error(
           '[REPORT DETAILS] API error:',

@@ -1,9 +1,6 @@
 
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BaptismController;
 use App\Http\Controllers\ChurchController;
@@ -13,6 +10,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RepresentativeController;
 use App\Http\Controllers\SampleController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -90,6 +89,11 @@ Route::prefix('assistant')->group(function () {
         'districts',
     ]);
 
+    Route::get(
+        '/district-options',
+        [ChurchController::class, 'districtOptions']
+    );
+
     Route::get('/districts/{churchId}/pastor', [
         UserController::class,
         'districtPastor',
@@ -120,16 +124,27 @@ Route::prefix('assistant')->group(function () {
         'update_pastor',
     ]);
 
+    Route::post('/pastors/{id}/activate', [
+        UserController::class,
+        'activate_pastor',
+    ]);
+
     Route::delete(
-        '/assistant/pastors/{id}',
-        [UserController::class, 'delete_pastor']
+        '/pastors/{id}',
+        [UserController::class, 'deactivate_pastor']
     );
 
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/district-pastor-assignments', [
+            UserController::class,
+            'districtPastorAssignments',
+        ]);
 
-    Route::post('/pastors/bulk-transfer', [
-        UserController::class,
-        'bulk_transfer',
-    ]);
+        Route::put('/district-pastor-assignments/{districtId}', [
+            UserController::class,
+            'assignPastorToDistrict',
+        ])->whereNumber('districtId');
+    });
 });
 
 /*
@@ -138,7 +153,7 @@ Route::prefix('assistant')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('churches/{churchId}')->group(function () {
+Route::middleware('auth:sanctum')->prefix('churches/{churchId}')->group(function () {
     Route::get('/departments', [
         ReportController::class,
         'getDepartments',
@@ -169,7 +184,7 @@ Route::prefix('churches/{churchId}')->group(function () {
 Route::get('/quarters/{quarterId}/comments', [
     ReportController::class,
     'comments',
-]);
+])->middleware('auth:sanctum');
 
 Route::post('/comments', [
     ReportController::class,
@@ -182,9 +197,10 @@ Route::post('/comments', [
 |--------------------------------------------------------------------------
 */
 
-Route::apiResource('baptisms', BaptismController::class);
-
-Route::apiResource('deaths', DeathController::class);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('baptisms', BaptismController::class);
+    Route::apiResource('deaths', DeathController::class);
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -198,9 +214,12 @@ Route::middleware('auth:sanctum')->group(function () {
     | Representatives
     */
     Route::get('/pastor/representatives/churches', [RepresentativeController::class, 'available_churches']); // must be first
+    Route::get('/pastor/representatives/transfer-churches', [RepresentativeController::class, 'transfer_churches']);
     Route::get('/pastor/representatives', [RepresentativeController::class, 'index']);
     Route::get('/pastor/representatives/{id}', [RepresentativeController::class, 'show']);
     Route::post('/pastor/representatives', [RepresentativeController::class, 'store']);
+    Route::post('/pastor/representatives/bulk-transfer', [RepresentativeController::class, 'bulk_transfer']);
+    Route::post('/pastor/representatives/{id}/activate', [RepresentativeController::class, 'activate'])->whereNumber('id');
     Route::put('/pastor/representatives/{id}', [RepresentativeController::class, 'update']);
     Route::delete('/pastor/representatives/{id}', [RepresentativeController::class, 'destroy']);
 
@@ -231,6 +250,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/churches/{churchId}/departments/{departmentId}/report/approve', [
         ReportController::class,
         'approveDepartmentReport',
+    ]);
+
+    Route::post('/assistant/report-templates', [
+        ReportController::class,
+        'createReportTemplate',
     ]);
 
     /*

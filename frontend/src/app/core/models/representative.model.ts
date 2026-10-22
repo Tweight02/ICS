@@ -24,6 +24,7 @@ export interface Representative {
     role: 'church_representative';
 
     email: string;
+    status?: 'active' | 'inactive';
 
     church_id: number;
     department_id: number;
@@ -35,6 +36,7 @@ export interface Representative {
 export interface RepresentativeFilters {
     search?: string;
     church_id?: number;
+    status?: 'active' | 'inactive' | '';
     per_page?: number;
     page?: number;
 }

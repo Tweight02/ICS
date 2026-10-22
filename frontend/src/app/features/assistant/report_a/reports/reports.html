@@ -1,225 +1,190 @@
-<ng-template #monitoringCell let-value>
-  @if (value === 100) {
-    <span class="check">✓</span>
-  } @else if (value > 0) {
-    <div class="progress-container">
-      <span class="percentage">{{ value }}%</span>
-      <div class="progress">
-        <div class="progress-bar" [style.width.%]="value"></div>
-      </div>
-    </div>
-  } @else {
-    <span class="empty-quarter">–</span>
-  }
-</ng-template>
-
-<div class="reports-container">
-
-  <!-- HEADER -->
-  <div class="reports-header">
-
-    <div class="title-section">
-      <h1>Report Monitoring</h1>
-    </div>
-
-    <!-- STATISTICS -->
-    <div class="statistics">
-
-      <div class="stat-card">
-        <div class="stat-number">
-          {{ districtCount }}
-        </div>
-
-        <div class="stat-label">
-          Districts
-        </div>
+<div class="report-responsive-page monitoring-shell monitoring-list-shell">
+  <div class="monitoring-content">
+    <header class="monitoring-header">
+      <div>
+        <p class="monitoring-kicker">Report Management</p>
+        <h1 class="monitoring-title">Report Monitoring</h1>
+        <p class="monitoring-subtitle">Quarterly submissions by district</p>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-number">
-          {{ churchCount }}
+      <div class="monitoring-summary">
+        <button *ngIf="isAssistantPortal" type="button" (click)="createReportTemplate()" class="monitoring-action">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M10 3v14M3 10h14" />
+          </svg>
+          New Field Report
+        </button>
+        <div class="monitoring-summary-card">
+          <strong>{{ districtCount() }}</strong>
+          <span>Districts</span>
         </div>
-
-        <div class="stat-label">
-          Churches / Companies
+        <div class="monitoring-summary-card">
+          <strong>{{ churchCount() }}</strong>
+          <span>Churches</span>
         </div>
       </div>
+    </header>
 
+    <div *ngIf="errorMessage()" role="alert" class="monitoring-alert">
+      <span>{{ errorMessage() }}</span>
+      <button type="button" (click)="loadDistricts()">Retry</button>
     </div>
 
-  </div>
+    <div *ngIf="loadingDistricts()" class="monitoring-loading">
+      <app-running-loader></app-running-loader>
+      <span>Loading districts...</span>
+    </div>
 
-
-  <!-- ERROR -->
-  @if (errorMessage) {
-
-    <div class="error-message" role="alert">
-
-      <div class="error-text">
-        <span class="error-icon">!</span>
-
-        <span>
-          {{ errorMessage }}
-        </span>
-      </div>
-
-      <button
-        type="button"
-        class="retry-button"
-        (click)="loadDistricts()"
-      >
-        Retry
+    <div *ngIf="!loadingDistricts() && districts().length > 0" class="monitoring-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <circle cx="10.8" cy="10.8" r="6.8" />
+        <path d="m16 16 4.2 4.2" />
+      </svg>
+      <input
+        type="search"
+        aria-label="Search districts"
+        placeholder="Search districts..."
+        autocomplete="off"
+        [value]="searchTerm()"
+        (input)="updateSearch($event)"
+      />
+      <button *ngIf="searchTerm()" type="button" aria-label="Clear search" (click)="clearSearch()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="m5 5 10 10M15 5 5 15" />
+        </svg>
       </button>
-
     </div>
 
-  }
+    <section *ngIf="!loadingDistricts() && filteredDistricts().length > 0" class="monitoring-accordion">
+      <div *ngFor="let district of filteredDistricts()" class="monitoring-accordion-item">
+        <button
+          type="button"
+          class="monitoring-accordion-header"
+          [class.is-open]="isDistrictOpen(district.church_id)"
+          (click)="toggleDistrict(district.church_id)"
+          [attr.aria-expanded]="isDistrictOpen(district.church_id)"
+        >
+          <span class="monitoring-accordion-header-label">
+            <span class="monitoring-accordion-badge" aria-hidden="true" [class.is-open]="isDistrictOpen(district.church_id)"></span>
+            <span>{{ district.name }}</span>
+          </span>
 
+          <svg class="monitoring-accordion-chevron" [class.is-open]="isDistrictOpen(district.church_id)" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M5 7.5l5 5 5-5" />
+          </svg>
+        </button>
 
-  <!-- REPORT TABLE -->
-  <div class="reports-table-wrapper">
+        <div *ngIf="isDistrictOpen(district.church_id)" class="monitoring-accordion-body">
+          <div *ngIf="loadingDistrictChurches()[district.church_id]" class="monitoring-accordion-loading">
+            <app-running-loader size="small"></app-running-loader>
+            <span>Loading churches...</span>
+          </div>
 
-    <table class="reports-table">
+          <div *ngIf="!loadingDistrictChurches()[district.church_id] && districtChurches()[district.church_id]?.length" class="monitoring-accordion-list">
+            <article *ngFor="let church of districtChurches()[district.church_id]" class="monitoring-church-item">
+              <button
+                type="button"
+                class="monitoring-accordion-child-button monitoring-church-header"
+                [class.is-open]="isChurchOpen(church.church_id)"
+                (click)="toggleChurch(church.church_id)"
+                [attr.aria-expanded]="isChurchOpen(church.church_id)"
+              >
+                <span class="monitoring-accordion-child-label">{{ church.name }}</span>
+                <svg class="monitoring-accordion-chevron" [class.is-open]="isChurchOpen(church.church_id)" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M5 7.5l5 5 5-5" />
+                </svg>
+              </button>
 
-      <thead>
-        <tr>
+              <div *ngIf="isChurchOpen(church.church_id)" class="monitoring-department-list">
+                <div *ngIf="loadingDepartments()[church.church_id]" class="monitoring-accordion-loading">
+                  <app-running-loader size="small"></app-running-loader>
+                  <span>Loading departments...</span>
+                </div>
 
-          <th class="district-column">
-            District
-          </th>
+                <ng-container *ngIf="!loadingDepartments()[church.church_id]">
+                  <button
+                    *ngFor="let department of getReportDepartments(church.church_id)"
+                    type="button"
+                    class="monitoring-department-row"
+                    (click)="openDepartment(department, district.church_id, church.church_id)"
+                  >
+                    <span class="monitoring-department-name">{{ department.department_name }}</span>
+                    <span class="monitoring-accordion-quarter-group" aria-label="Quarter status">
+                      <span *ngFor="let quarterKey of quarterKeys" class="monitoring-accordion-quarter-pill" [attr.title]="quarterKey.toUpperCase()">
+                        <span class="monitoring-quarter-label">{{ quarterKey.toUpperCase() }}</span>
+                        <span *ngIf="isDepartmentApproved(department, quarterKey); else departmentProgress" class="monitoring-status-check">✓</span>
+                        <ng-template #departmentProgress>
+                          <span *ngIf="getDepartmentProgress(department, quarterKey) as value; else departmentEmpty" class="monitoring-status-percent">{{ value }}%</span>
+                        </ng-template>
+                        <ng-template #departmentEmpty><span class="monitoring-status-empty">—</span></ng-template>
+                      </span>
+                    </span>
+                  </button>
 
-          <th>
-            Q1
-          </th>
+                  <div *ngIf="getPersonalReportDepartments(church.church_id).length" class="monitoring-personal-reports">
+                    <button
+                      type="button"
+                      class="monitoring-personal-reports-toggle"
+                      [attr.aria-expanded]="isPersonalReportsOpen(church.church_id)"
+                      (click)="togglePersonalReports(church.church_id)"
+                    >
+                      <span>Personal Report</span>
+                      <svg class="monitoring-accordion-chevron" [class.is-open]="isPersonalReportsOpen(church.church_id)" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M5 7.5l5 5 5-5" />
+                      </svg>
+                    </button>
 
-          <th>
-            Q2
-          </th>
+                    <div *ngIf="isPersonalReportsOpen(church.church_id)" class="monitoring-personal-report-list">
+                      <button
+                        *ngFor="let department of getPersonalReportDepartments(church.church_id)"
+                        type="button"
+                        class="monitoring-department-row"
+                        (click)="openDepartment(department, district.church_id, church.church_id)"
+                      >
+                        <span class="monitoring-department-name">{{ department.department_name }}</span>
+                        <span class="monitoring-accordion-quarter-group" aria-label="Quarter status">
+                          <span *ngFor="let quarterKey of quarterKeys" class="monitoring-accordion-quarter-pill" [attr.title]="quarterKey.toUpperCase()">
+                            <span class="monitoring-quarter-label">{{ quarterKey.toUpperCase() }}</span>
+                            <span *ngIf="isDepartmentApproved(department, quarterKey); else personalProgress" class="monitoring-status-check">✓</span>
+                            <ng-template #personalProgress>
+                              <span *ngIf="getDepartmentProgress(department, quarterKey) as value; else personalEmpty" class="monitoring-status-percent">{{ value }}%</span>
+                            </ng-template>
+                            <ng-template #personalEmpty><span class="monitoring-status-empty">—</span></ng-template>
+                          </span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
 
-          <th>
-            Q3
-          </th>
-
-          <th>
-            Q4
-          </th>
-
-        </tr>
-      </thead>
-
-
-      <tbody>
-
-        <!-- LOADING -->
-        @if (loadingDistricts) {
-
-          <tr>
-
-            <td
-              colspan="5"
-              class="loading-cell"
-            >
-
-              <div class="loading-content">
-
-                <div
-                  class="spinner"
-                  aria-hidden="true"
-                ></div>
-
-                <span>
-                  Loading districts...
-                </span>
-
+                  <div *ngIf="departmentsByChurch()[church.church_id]?.length === 0" class="monitoring-accordion-empty">
+                    No departments found for this church.
+                  </div>
+                </ng-container>
               </div>
+            </article>
+          </div>
 
-            </td>
+          <div *ngIf="!loadingDistrictChurches()[district.church_id] && (!districtChurches()[district.church_id] || districtChurches()[district.church_id].length === 0)" class="monitoring-accordion-empty">
+            No churches found for this district.
+          </div>
+        </div>
+      </div>
+    </section>
 
-          </tr>
+    <div *ngIf="!loadingDistricts() && !errorMessage() && districts().length === 0" class="monitoring-empty">
+      <div class="monitoring-icon" aria-hidden="true">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+        </svg>
+      </div>
+      <h2>No Districts Available</h2>
+      <p>There are currently no districts to report.</p>
+    </div>
 
-        }
-
-
-        <!-- DISTRICTS -->
-        @else if (districts.length > 0) {
-
-          @for (
-            district of districts;
-            track district.church_id
-          ) {
-
-            <tr
-              class="district-row"
-              role="button"
-              tabindex="0"
-
-              (click)="openDistrict(district.church_id)"
-
-              (keydown.enter)="
-                openDistrict(district.church_id)
-              "
-            >
-
-              <!-- DISTRICT -->
-              <td class="district-name">
-
-                <span>
-                  {{ district.name }}
-                </span>
-
-              </td>
-
-
-              <td class="quarter-cell">
-                <ng-container
-                  *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(district).q1 }">
-                </ng-container>
-              </td>
-              <td class="quarter-cell">
-                <ng-container
-                  *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(district).q2 }">
-                </ng-container>
-              </td>
-              <td class="q3-cell">
-                <ng-container
-                  *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(district).q3 }">
-                </ng-container>
-              </td>
-              <td class="quarter-cell">
-                <ng-container
-                  *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(district).q4 }">
-                </ng-container>
-              </td>
-
-            </tr>
-
-          }
-
-        }
-
-
-        <!-- EMPTY -->
-        @else {
-
-          <tr>
-
-            <td
-              colspan="5"
-              class="empty-cell"
-            >
-
-              No districts found.
-
-            </td>
-
-          </tr>
-
-        }
-
-      </tbody>
-
-    </table>
-
+    <div *ngIf="!loadingDistricts() && districts().length > 0 && filteredDistricts().length === 0" class="monitoring-empty monitoring-no-results">
+      <h2>No matching districts</h2>
+      <p>Try a different district name.</p>
+      <button type="button" class="monitoring-search-clear" (click)="clearSearch()">Clear search</button>
+    </div>
   </div>
-
 </div>

@@ -1,16 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ViewUser } from './view-user';
+import { Editbap } from './editbap';
 
-describe('ViewUser', () => {
-  let component: ViewUser;
-  let fixture: ComponentFixture<ViewUser>;
+describe('Editbap', () => {
+  let component: Editbap;
+  let fixture: ComponentFixture<Editbap>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ViewUser],
+      imports: [Editbap],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(ViewUser);
+    fixture = TestBed.createComponent(Editbap);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
