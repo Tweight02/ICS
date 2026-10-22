@@ -451,12 +451,6 @@ class UserController extends Controller
         });
 
         return response()->json([
-<<<<<<< Updated upstream
-            'message' => 'Pastor deactivated successfully.',
-        ]);
-    }
-
-=======
             'data' => [
                 'has_pastor'  => (bool) $pastor,
                 'pastor_name' => $pastor
@@ -464,8 +458,8 @@ class UserController extends Controller
                     : null,
             ],
         ]);
-}
->>>>>>> Stashed changes
+    }
+    
     // GET /api/users/{id}
     public function show($id)
     {
