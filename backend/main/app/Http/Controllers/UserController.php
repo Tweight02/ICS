@@ -358,17 +358,16 @@ class UserController extends Controller
                 ]);
             }
 
-            $occupied = User::query()
+            $assignedPastor = User::query()
                 ->where('role', 'pastor')
                 ->where('status', 'active')
                 ->where('church_id', $district->church_id)
                 ->where('user_id', '!=', $pastor->user_id)
-                ->exists();
+                ->lockForUpdate()
+                ->first();
 
-            if ($occupied) {
-                throw ValidationException::withMessages([
-                    'district_id' => 'This district already has an active pastor assigned.',
-                ]);
+            if ($assignedPastor) {
+                $assignedPastor->update(['church_id' => $pastor->church_id]);
             }
 
             $pastor->update(['church_id' => $district->church_id]);
@@ -452,10 +451,21 @@ class UserController extends Controller
         });
 
         return response()->json([
+<<<<<<< Updated upstream
             'message' => 'Pastor deactivated successfully.',
         ]);
     }
 
+=======
+            'data' => [
+                'has_pastor'  => (bool) $pastor,
+                'pastor_name' => $pastor
+                    ? trim("{$pastor->first_name} {$pastor->last_name}")
+                    : null,
+            ],
+        ]);
+}
+>>>>>>> Stashed changes
     // GET /api/users/{id}
     public function show($id)
     {

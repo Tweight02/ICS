@@ -7,8 +7,20 @@ import { AssignablePastor, DistrictPastorAssignment } from '../../../../core/mod
 import { UserService } from '../../../../core/services/user/user-service';
 
 interface FilterOption {
-  value: string; // church_id as string, '' = all districts
+  value: string;
   label: string;
+}
+
+interface TransferMove {
+  pastor: string;
+  from: string | null;
+  to: string | null;
+}
+
+interface TransferPreview {
+  title: string;
+  moves: TransferMove[];
+  note: string | null;
 }
 
 @Component({
@@ -89,6 +101,46 @@ export class AssignUser implements OnInit {
     const pastor = this.selectedPastor();
     return pastor ? (this.pastorDistricts().get(pastor.user_id) ?? null) : null;
   });
+
+  /** Balanced before/after summary: one entry per pastor affected by the change. */
+  readonly preview = computed<TransferPreview | null>(() => {
+    const target = this.transferTarget();
+    const pastor = this.selectedPastor();
+    if (!target || !pastor) {
+      return null;
+    }
+
+    const from = this.selectedPastorFrom();
+    const hasOccupant = target.pastor_user_id !== null;
+
+    const moves: TransferMove[] = [
+      { pastor: pastor.full_name, from: from?.district_name ?? null, to: target.district_name },
+    ];
+
+    if (hasOccupant) {
+      moves.push({
+        pastor: target.pastor_name ?? 'Current pastor',
+        from: target.district_name,
+        to: from?.district_name ?? null, // swaps into the other pastor's district, or becomes unassigned
+      });
+    }
+
+    let title: string;
+    let note: string | null = null;
+    if (hasOccupant && from) {
+      title = 'These two pastors will swap districts';
+    } else if (hasOccupant) {
+      title = 'Replace pastor';
+    } else if (from) {
+      title = 'Transfer pastor';
+      note = `${from.district_name} will have no pastor after this transfer.`;
+    } else {
+      title = 'Assign pastor';
+    }
+
+    return { title, moves, note };
+  });
+
 
   constructor() {
     // Never leave the page scroll-locked if the component is destroyed while the modal is open.
@@ -233,6 +285,14 @@ export class AssignUser implements OnInit {
     this.selectedPastorId.set(pastor.user_id);
   }
 
+  clearPastor(): void {
+    if (this.saving()) {
+      return;
+    }
+    this.selectedPastorId.set(null);
+    setTimeout(() => document.getElementById('pastor-search')?.focus());
+  }
+
   onPastorSearch(value: string): void {
     this.pastorQuery.set(value);
   }
@@ -271,7 +331,7 @@ export class AssignUser implements OnInit {
     }
   }
 
-  submitTransfer(): void {
+  async submitTransfer(): Promise<void> {
     const target = this.transferTarget();
     const pastor = this.selectedPastor();
     if (!target || !pastor || this.saving()) {
@@ -283,11 +343,33 @@ export class AssignUser implements OnInit {
       return;
     }
 
-    const from = this.selectedPastorFrom(); // where the pastor is coming from (if anywhere)
+    const from = this.selectedPastorFrom();
     const isChange = target.pastor_user_id !== null; // the target district already has a pastor
     const replaced = isChange ? target.pastor_name : null;
 
+    const confirmationText = replaced && from
+      ? `${pastor.full_name} will move from ${from.district_name} to ${target.district_name}, and ${replaced} will move to ${from.district_name}.`
+      : replaced
+        ? `${pastor.full_name} will replace ${replaced} in ${target.district_name}; ${replaced} will be unassigned.`
+        : from
+          ? `${pastor.full_name} will move from ${from.district_name} to ${target.district_name}, leaving ${from.district_name} without a pastor.`
+          : `${pastor.full_name} will be assigned to ${target.district_name}.`;
+
     this.saving.set(true);
+    const confirmation = await Swal.fire({
+      icon: 'warning',
+      title: 'Confirm pastor transfer',
+      text: confirmationText,
+      showCancelButton: true,
+      reverseButtons: true,
+      cancelButtonText: 'Cancel',
+      confirmButtonText: 'Approve transfer',
+      confirmButtonColor: this.brandColor,
+    });
+    if (!confirmation.isConfirmed) {
+      this.saving.set(false);
+      return;
+    }
 
     this.userService.assignPastorToDistrict(target.church_id, pastor.user_id)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -324,7 +406,7 @@ export class AssignUser implements OnInit {
   private successText(pastor: string, to: string, from: string | null, replaced: string | null): string {
     if (replaced) {
       return from
-        ? `${pastor} moved from ${from} to ${to}, replacing ${replaced}.`
+        ? `${pastor} moved to ${to}, and ${replaced} moved to ${from}.`
         : `${pastor} now serves ${to}, replacing ${replaced}.`;
     }
     return from ? `${pastor} moved from ${from} to ${to}.` : `${pastor} is now assigned to ${to}.`;
