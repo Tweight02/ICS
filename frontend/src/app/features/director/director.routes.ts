@@ -1,9 +1,8 @@
 import { Routes } from '@angular/router';
-
 export const DIRECTOR_ROUTES: Routes = [
   {
     path: '',
-    redirectTo: 'reports',
+    redirectTo: 'events',
     pathMatch: 'full'
   },
 
@@ -55,18 +54,13 @@ export const DIRECTOR_ROUTES: Routes = [
       import('../pastor/report_p/report-particulars/report-particulars')
         .then(m => m.ReportParticulars)
   },
-
-//   {
-//     path: 'events',
-//     loadComponent: () =>
-//       import('./events/events')
-//         .then(m => m.Events)
-//   },
-
-
-
+  // director.routes.ts
   {
-    path: '**',
-    redirectTo: 'reports'
-  }
+  path: 'events',
+  loadComponent: () =>
+    import('./events/events.routes')
+      .then(m => m.DirectorEventsComponent)
+}
+
+
 ];

@@ -1,0 +1,103 @@
+<app-page-shell [footer]="true"
+                [crumbs]="[{ label: 'Mission workspace' }, { label: config.crumbRoot, link: [config.basePath] }, { label: 'Participants' }]">
+  <!-- Header -->
+  <div class="shrink-0">
+    <p class="text-[11px] font-bold tracking-wide uppercase text-[#1b4d3e]">{{ config.eyebrow }}</p>
+    <h1 class="text-[26px] leading-8 font-bold text-gray-900 tracking-tight">Event Participants</h1>
+    <p class="text-sm text-gray-500">Review the people listed for this event and their confirmation status.</p>
+  </div>
+
+  <!-- Event summary -->
+  <div class="shrink-0 bg-white border border-gray-200 rounded-xl px-5 py-3.5 shadow-sm">
+    <ng-container *ngIf="event; else summarySkeleton">
+      <h2 class="text-lg font-bold text-gray-900 truncate">{{ event.title }}</h2>
+      <p class="text-sm text-gray-500 mt-0.5">
+        <i class="bi bi-geo-alt"></i> {{ event.location }}
+        <span class="mx-1.5">·</span> <i class="bi bi-calendar3"></i> {{ dateRange }}
+        <ng-container *ngIf="timeRange"><span class="mx-1.5">·</span> <i class="bi bi-clock"></i> {{ timeRange }}</ng-container>
+      </p>
+      <div class="flex gap-2 mt-2" *ngIf="departmentName || churchName">
+        <span *ngIf="departmentName" class="bg-emerald-50 text-emerald-900 text-xs font-semibold px-3 py-0.5 rounded-full">{{ departmentName }}</span>
+        <span *ngIf="churchName" class="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-0.5 rounded-full">{{ churchName }}</span>
+      </div>
+    </ng-container>
+    <ng-template #summarySkeleton>
+      <div class="h-14 animate-pulse bg-gray-100 rounded-lg"></div>
+    </ng-template>
+  </div>
+
+  <!-- Directory -->
+  <div class="flex-1 min-h-0 flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="shrink-0 px-5 pt-4 pb-3">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-gray-900 flex items-center gap-2"><i class="bi bi-people text-[#1b4d3e]"></i> Participant directory</h3>
+        <div class="flex items-center gap-2 text-[11px] font-semibold">
+          <span class="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">{{ participants.length }} participant{{ participants.length === 1 ? '' : 's' }}</span>
+          <span class="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full">{{ confirmedCount }} confirmed</span>
+          <span class="bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full">{{ pendingCount }} pending</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-3 mt-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-800 mb-1">Search participants</label>
+          <div class="relative">
+            <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="resetPage()" placeholder="Search by name or role"
+                   class="w-full text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 pr-9 focus:ring-2 focus:ring-[#1b4d3e] focus:outline-none" />
+            <i class="bi bi-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-800 mb-1">Confirmation status</label>
+          <select [(ngModel)]="statusFilter" (ngModelChange)="resetPage()" class="w-full text-sm bg-white border border-gray-300 rounded-lg px-3 py-2">
+            <option value="all">All statuses</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table header -->
+    <div class="shrink-0 grid grid-cols-[1.4fr_1fr_140px] bg-gray-50 border-y border-gray-200 px-5 py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+      <span>Participant</span><span>Role</span><span>Status</span>
+    </div>
+
+    <!-- Rows: exactly as many as fit -->
+    <div #rowsArea class="flex-1 min-h-0 overflow-hidden">
+      <ng-container *ngIf="loading">
+        <div *ngFor="let s of skeletons" class="h-[56px] border-b border-gray-100 px-5 flex items-center"><div class="h-4 w-1/3 bg-gray-100 rounded animate-pulse"></div></div>
+      </ng-container>
+
+      <div *ngIf="errorMsg" class="m-4 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex items-center justify-between gap-3">
+        <span class="flex items-center gap-2"><i class="bi bi-exclamation-triangle"></i> {{ errorMsg }}</span>
+        <button type="button" (click)="load()" class="font-semibold underline shrink-0">Try again</button>
+      </div>
+
+      <div *ngIf="!loading && !errorMsg && filtered.length === 0" class="p-6 text-center">
+        <i class="bi bi-person-x text-2xl text-gray-400"></i>
+        <p class="text-sm font-semibold text-gray-700 mt-2">{{ participants.length ? 'No one matches your search' : 'No participants listed yet' }}</p>
+      </div>
+
+      <div *ngFor="let p of paged" class="h-[56px] grid grid-cols-[1.4fr_1fr_140px] items-center px-5 border-b border-gray-100 text-sm">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0">{{ initials(p.name) }}</span>
+          <strong class="font-semibold text-gray-900 truncate">{{ p.name }}</strong>
+        </div>
+        <span class="text-gray-600 truncate">{{ p.role }}</span>
+        <span><span class="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full" [ngClass]="statusClass(p.status)">{{ p.status }}</span></span>
+      </div>
+    </div>
+
+    <div class="shrink-0 px-5 py-2.5 border-t border-gray-200">
+      <app-pagination [page]="currentPage" [pageSize]="pageSize" [total]="filtered.length" label="participants" (pageChange)="page = $event"></app-pagination>
+    </div>
+  </div>
+
+  <div shellFooter>
+    <a [routerLink]="[config.basePath, eventId]"
+       class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition no-underline">
+      <i class="bi bi-arrow-left"></i> Back to event
+    </a>
+  </div>
+</app-page-shell>

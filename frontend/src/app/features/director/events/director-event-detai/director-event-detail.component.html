@@ -1,0 +1,150 @@
+<div class="min-h-screen bg-[#F4F6F5] text-gray-800 font-sans">
+  <!-- Top bar -->
+  <div class="bg-white border-b border-gray-200 px-6 md:px-8 py-5">
+    <nav class="text-xs text-gray-500">
+      Mission workspace <span class="mx-1">/</span>
+      <a routerLink="/director/events" class="hover:text-gray-800">All Events</a>
+    </nav>
+  </div>
+
+  <div class="max-w-[1320px] mx-auto px-6 md:px-8 py-8 space-y-6">
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="bg-white border border-gray-200 rounded-xl p-5 text-sm text-gray-500 flex items-center gap-2">
+      <i class="bi bi-hourglass-split"></i> Loading event...
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!loading && errorMsg" class="space-y-4">
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-xs text-red-700 flex items-center gap-2">
+        <i class="bi bi-exclamation-triangle"></i> {{ errorMsg }}
+      </div>
+      <a routerLink="/director/events"
+         class="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition">
+        <i class="bi bi-arrow-left"></i> Back to all events
+      </a>
+    </div>
+
+    <ng-container *ngIf="event">
+      <!-- Header -->
+      <div class="flex justify-between items-start">
+        <div>
+          <p class="text-[11px] font-bold tracking-wide uppercase text-[#1b4d3e]">All Events / Event details</p>
+          <h1 class="text-3xl font-bold text-gray-900 tracking-tight mt-1">Event overview</h1>
+          <p class="text-sm text-gray-500 mt-1">View event information, programs, and participant context.</p>
+        </div>
+        <span class="bg-emerald-50 text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full">Read-only</span>
+      </div>
+
+      <!-- Title card -->
+      <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="bg-emerald-50 text-emerald-900 text-xs font-semibold px-3 py-1 rounded-full">{{ status }}</span>
+          <span *ngIf="departmentName" class="bg-emerald-50 text-emerald-900 text-xs font-semibold px-3 py-1 rounded-full">{{ departmentName }}</span>
+          <span *ngIf="event.year" class="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">
+            {{ event.year }}<ng-container *ngIf="event.quarter"> · {{ event.quarter }}</ng-container>
+          </span>
+        </div>
+        <h2 class="text-3xl font-bold text-gray-900 mt-5">{{ event.title }}</h2>
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-700 mt-5">
+          <span class="flex items-center gap-2"><i class="bi bi-geo-alt text-[#1b4d3e]"></i> {{ event.location }}</span>
+          <span *ngIf="dateRange" class="flex items-center gap-2"><i class="bi bi-calendar3 text-[#1b4d3e]"></i> {{ dateRange }}</span>
+          <span *ngIf="timeRange" class="flex items-center gap-2"><i class="bi bi-clock text-[#1b4d3e]"></i> {{ timeRange }}</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_307px] gap-6 items-start">
+        <!-- Left column -->
+        <div class="space-y-5">
+          <!-- Programs & particulars -->
+          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h3 class="font-bold text-base text-gray-900 flex items-center gap-2.5">
+              <i class="bi bi-list-check text-[#1b4d3e]"></i> Programs &amp; particulars
+            </h3>
+            <p class="text-sm text-gray-500 mt-4">
+              <ng-container *ngIf="departmentName">{{ departmentName }} · </ng-container>
+              {{ selectedGroupCount }} program group{{ selectedGroupCount === 1 ? '' : 's' }}
+              and {{ particularCount }} selected particular{{ particularCount === 1 ? '' : 's' }}
+            </p>
+
+            <div class="mt-4 space-y-2.5">
+              <div *ngFor="let g of programGroups" class="border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" (click)="toggleGroup(g)"
+                        class="w-full bg-gray-50 px-4 py-3 flex items-center justify-between text-left">
+                  <span class="flex items-center gap-3 text-xs font-bold text-gray-900 uppercase">
+                    <i class="bi" [ngClass]="g.expanded ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                    {{ g.name }}
+                  </span>
+                  <span class="text-[11px]" [ngClass]="g.items.length ? 'text-emerald-800 font-semibold' : 'text-gray-500'">
+                    {{ g.items.length }} selected
+                  </span>
+                </button>
+
+                <div *ngIf="g.expanded" class="px-4 py-3 space-y-3 bg-white">
+                  <p *ngFor="let item of g.items" class="flex items-center gap-3 text-sm text-gray-700">
+                    <i class="bi bi-check-circle text-[#1b4d3e]"></i> {{ item }}
+                  </p>
+                  <p *ngIf="g.items.length === 0" class="text-xs text-gray-400">No particulars selected in this group.</p>
+                </div>
+              </div>
+
+              <p *ngIf="programGroups.length === 0" class="text-xs text-gray-400">
+                No particulars were selected for this event.
+              </p>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h3 class="font-bold text-base text-gray-900 flex items-center gap-2.5">
+              <i class="bi bi-journal-text text-[#1b4d3e]"></i> Notes
+            </h3>
+            <p class="text-sm text-gray-600 mt-4">{{ event.notes || 'No notes were added for this event.' }}</p>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="space-y-5">
+          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h3 class="font-bold text-base text-gray-900 flex items-center gap-2.5">
+              <i class="bi bi-building text-[#1b4d3e]"></i> Event scope
+            </h3>
+            <p class="text-[11px] uppercase text-gray-500 mt-4">Church</p>
+            <p class="text-sm font-bold text-gray-900 mt-2">{{ churchName || '—' }}</p>
+            <hr class="my-4 border-gray-200" />
+            <p class="text-[11px] uppercase text-gray-500">Organized by</p>
+            <p class="text-sm font-semibold text-gray-800 mt-2">{{ organizerName }}</p>
+            <p class="text-[11px] text-gray-500 mt-3">The East Luzon Mission</p>
+          </div>
+
+          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h3 class="font-bold text-base text-gray-900 flex items-center gap-2.5">
+              <i class="bi bi-people text-[#1b4d3e]"></i> Participants
+            </h3>
+            <p class="text-xs text-gray-500 mt-4">
+              {{ participantStats.total }} listed · {{ participantStats.confirmed }} confirmed · {{ participantStats.pending }} pending
+            </p>
+            <a [routerLink]="['/director/events', eventId, 'participants']"
+               class="mt-4 inline-flex items-center gap-2.5 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-50 transition">
+              <i class="bi bi-arrow-right"></i> View participants
+            </a>
+          </div>
+
+          <div class="bg-emerald-50 rounded-xl p-4 text-xs text-emerald-900 flex items-start gap-3">
+            <i class="bi bi-lock text-base"></i>
+            <p>Director access is read-only. Event details and program selections cannot be changed.</p>
+          </div>
+        </div>
+      </div>
+
+      <hr class="border-gray-300" />
+
+      <div>
+        <a routerLink="/director/events"
+           class="inline-flex items-center gap-2.5 px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition">
+          <i class="bi bi-arrow-left"></i> Back to all events
+        </a>
+      </div>
+    </ng-container>
+  </div>
+</div>
