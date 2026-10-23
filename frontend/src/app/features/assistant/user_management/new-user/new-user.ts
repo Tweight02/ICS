@@ -191,9 +191,14 @@ export class NewUser implements OnInit {
           const name = res.pastor
             ? `${res.pastor.first_name} ${res.pastor.last_name}`
             : null;
-          this.serverErrors['church_id'] = name
-            ? `${name} is already assigned to this district.`
-            : 'This district already has an assigned pastor.';
+          Swal.fire({
+            icon: 'warning',
+            title: 'District already has a pastor',
+            text: name
+              ? `${name} is already assigned to this district.`
+              : 'This district already has an assigned pastor.',
+            confirmButtonColor: '#166534',
+          });
           return;
         }
 
@@ -244,9 +249,18 @@ export class NewUser implements OnInit {
         this.isSubmitting = false;
         console.error('Failed to create user:', error);
         const errors = error.error?.errors as Record<string, string[]> | undefined;
+        const emailAlreadyUsed = errors?.['email']?.some((message) => /already been taken/i.test(message));
         this.serverErrors = errors
           ? Object.fromEntries(Object.entries(errors).map(([field, messages]) => [field, messages[0]]))
           : {};
+        if (emailAlreadyUsed) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Email already in use',
+            text: 'An account with this email address already exists.',
+            confirmButtonColor: '#166534',
+          });
+        }
         this.formError = errors
           ? ''
           : error.error?.message ?? 'The pastor account could not be created. Please try again.';
