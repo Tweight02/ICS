@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 
 interface Baptism {
@@ -55,7 +55,6 @@ interface DeathRecord {
 export class DeathaddrecComponent implements OnInit {
 
   private http = inject(HttpClient);
-  private route = inject(ActivatedRoute);
   private router = inject(Router);
 
   baptisms: Baptism[] = [];
@@ -122,31 +121,9 @@ export class DeathaddrecComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    const quarter = this.route.snapshot.queryParamMap.get('quarter');
-    if (quarter === 'Q1' || quarter === 'Q2' || quarter === 'Q3' || quarter === 'Q4') {
-      this.death.quarter = quarter;
-    }
-
     this.loadBaptisms();
     this.loadChurches();
     this.loadDeaths();
-  }
-
-  private navigateBackToReport(): void {
-    const queryParams = this.route.snapshot.queryParamMap;
-    const year = Number(queryParams.get('year'));
-    const quarter = queryParams.get('quarter');
-
-    this.router.navigate(['/pastor/deathbap'], {
-      queryParams: {
-        record: 'death',
-        ...(Number.isInteger(year) && year > 0 ? { year } : {}),
-        ...(quarter === 'Q1' || quarter === 'Q2' || quarter === 'Q3' || quarter === 'Q4'
-          ? { quarter }
-          : {}),
-        ...(queryParams.get('annual') === 'true' ? { annual: true } : {})
-      }
-    });
   }
 
   /**
@@ -731,7 +708,7 @@ export class DeathaddrecComponent implements OnInit {
             customClass: this.swalCustomClass
           }).then((result) => {
             if (result.isConfirmed) {
-              this.navigateBackToReport();
+              this.router.navigate(['/pastor/deathbap']);
             }
           });
         },
@@ -781,7 +758,7 @@ export class DeathaddrecComponent implements OnInit {
       icon: 'warning',
       iconColor: '#dc3545',
       title: 'Cancel Adding Record?',
-      text: 'Your unsaved death information will be discarded.',
+      text: 'Your unsaved baptism information will be discarded.',
       showCancelButton: true,
       confirmButtonText: 'Yes, Cancel',
       cancelButtonText: 'Continue Editing',
@@ -791,7 +768,7 @@ export class DeathaddrecComponent implements OnInit {
       customClass: this.swalCustomClass
     }).then((result) => {
       if (result.isConfirmed) {
-        this.navigateBackToReport();
+        this.router.navigate(['/pastor/deathbap']);
       }
     });
   }
