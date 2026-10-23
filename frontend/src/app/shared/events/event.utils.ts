@@ -2,7 +2,7 @@ export type EventStatus = 'Upcoming' | 'Ongoing' | 'Past';
 
 export interface ProgramGroup {
   name: string;
-  items: string[]; // only the particulars selected for the event
+  items: string[];
   expanded: boolean;
 }
 
@@ -78,30 +78,4 @@ export function initialsOf(name?: string | null): string {
     .join('')
     .substring(0, 2)
     .toUpperCase();
-}
-
-/** Selected particulars of an event, grouped by program. Works with event.programs[] or a flat event.particulars[]. */
-export function selectedGroupsOf(e: any): ProgramGroup[] {
-  if (!e) return [];
-
-  if (Array.isArray(e.programs)) {
-    return e.programs
-      .filter((p: any) => p.particulars?.length)
-      .map((p: any) => ({
-        name: p.program_name,
-        items: p.particulars.map((x: any) => x.particular_name),
-        expanded: true,
-      }));
-  }
-
-  if (Array.isArray(e.particulars)) {
-    const map = new Map<string, string[]>();
-    for (const x of e.particulars) {
-      const key = x.group_name ?? x.program_name ?? x.program?.program_name ?? 'Particulars';
-      map.set(key, [...(map.get(key) ?? []), x.particular_name]);
-    }
-    return [...map.entries()].map(([name, items]) => ({ name, items, expanded: true }));
-  }
-
-  return [];
 }

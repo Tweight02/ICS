@@ -1,63 +1,97 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { EventService } from '../../../core/services/events/events-api';
 
-type EventCard = {
-  id: string;
+interface PublicEvent {
+  id: number;
   title: string;
-  banner: string;
-  date: string;
-  time: string;
-  end: string;
-  venue: string;
-  church: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  start_time: string;
+  end_time: string;
   description: string;
-};
+  church_name: string | null;
+  scope: string[];
+  banner: string;
+}
+
+const BANNERS = [
+  'from-green-700 to-green-900',
+  'from-emerald-600 to-green-800',
+  'from-teal-600 to-emerald-800',
+];
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home {
-  events: EventCard[] = [
-    {
-      id: 'leadership-communication-2026',
-      title: 'Deaconry Quarterly Meeting',
-      banner: 'from-green-700 to-green-900',
-      date: 'October 22, 2026',
-      time: '8:00 AM',
-      end: '11:30 AM',
-      venue: 'Central Church',
-      church: 'Your Church Name',
-      description: 'A quarterly gathering for deacons to discuss church ministries, strengthen leadership, and coordinate church activities.',
-    },
-    {
-      id: 'digital-skills-2026',
-      title: 'Youth Delegation Assembly',
-      banner: 'from-emerald-600 to-green-800',
-      date: 'October 18, 2026',
-      time: '9:00 AM',
-      end: '3:00 PM',
-      venue: 'North District Chapel',
-      church: 'Your Church Name',
-      description: 'An assembly for youth delegates to build fellowship, share ideas, and participate in meaningful discussions and activities.',
-    },
-    {
-      id: 'community-outreach-2026',
-      title: 'Pastoral Leadership Seminar',
-      banner: 'from-teal-600 to-emerald-800',
-      date: 'October 15, 2026',
-      time: '8:30 AM',
-      end: '12:00 PM',
-      venue: 'Central Church',
-      church: 'Your Church Name',
-      description: 'A seminar focused on strengthening pastoral leadership, developing ministry skills, and encouraging effective church service.',
-    },
-  ];
+export class Home implements OnInit, OnDestroy {
+  readonly events = signal<PublicEvent[]>([]);
+  readonly loading = signal(true);
+  readonly errorMessage = signal('');
+  readonly refreshMessage = signal('');
+  private refreshTimer?: ReturnType<typeof setInterval>;
+  private loadingRequest = false;
+  private readonly refreshOnFocus = (): void => {
+    if (!document.hidden) this.loadEvents(false);
+  };
 
-  registrationUrl(eventId: string): string {
-    return `/participants/registration?event=${encodeURIComponent(eventId)}`;
+  constructor(
+    private eventService: EventService,
+    private zone: NgZone,
+  ) {}
+
+  ngOnInit(): void {
+    this.loadEvents();
+    this.refreshTimer = this.zone.runOutsideAngular(() => setInterval(() => {
+      if (!document.hidden) this.zone.run(() => this.loadEvents(false));
+    }, 5000));
+    window.addEventListener('focus', this.refreshOnFocus);
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+    window.removeEventListener('focus', this.refreshOnFocus);
+  }
+
+  loadEvents(showLoading = true): void {
+    if (this.loadingRequest) return;
+    this.loadingRequest = true;
+    if (showLoading && this.events().length === 0) this.loading.set(true);
+    this.eventService.getPublicEvents().subscribe({
+      next: (events) => {
+        this.events.set(events.map((event, index) => ({
+          ...event,
+          banner: BANNERS[index % BANNERS.length],
+        })));
+        this.errorMessage.set('');
+        this.refreshMessage.set('');
+        this.loading.set(false);
+        this.loadingRequest = false;
+      },
+      error: (error) => {
+        console.error('Failed to load public events', error);
+        if (this.events().length === 0) {
+          this.errorMessage.set('Events could not be loaded. Please try again.');
+        } else {
+          this.refreshMessage.set('Could not refresh events. Showing the latest events already loaded.');
+        }
+        this.loading.set(false);
+        this.loadingRequest = false;
+      },
+    });
+  }
+
+  registrationUrl(eventId: number): string {
+    return `/participants/registration?event=${eventId}`;
+  }
+
+  scopeLabel(event: PublicEvent): string {
+    return event.scope.length ? event.scope.join(', ') : event.church_name || 'Location not specified';
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { EventModel, ProgramNode, Department, Participant, User } from '../../models/event.model';
@@ -26,6 +26,31 @@ export class EventService {
   // ==========================================
   getEvents(): Observable<EventModel[]> {
     return this.http.get<any>(`${this.apiUrl}/events`).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  getPublicEvents(): Observable<any[]> {
+    return this.http.get<any>(`${this.apiUrl}/public/events`).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  getPublicEventById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/public/events/${id}`).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  registerPublicParticipant(eventId: number, participant: {
+    first_name: string;
+    middle_name?: string;
+    last_name: string;
+    extension_name?: string;
+    age: number;
+    gender: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/public/events/${eventId}/participants`, participant).pipe(
       map(response => response.data ?? response)
     );
   }
@@ -58,23 +83,22 @@ export class EventService {
   getDepartments(): Observable<Department[]> {
     return this.http.get<any>(`${this.apiUrl}/departments`).pipe(
       map(response => {
-        console.log('RESPOSTA BRUTA DA API DE DEPARTAMENTOS:', response);
+        const list = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.departments)
+              ? response.departments
+              : null;
 
-        let list: any[] = [];
-        if (Array.isArray(response)) {
-          list = response;
-        } else if (response && Array.isArray(response.data)) {
-          list = response.data;
-        } else if (response && Array.isArray(response.departments)) {
-          list = response.departments;
-        } else if (typeof response === 'object' && response !== null) {
-          list = Object.values(response).find(val => Array.isArray(val)) as any[] || [];
-        }
+        if (!list) throw new Error('The departments API returned an invalid response.');
 
-        return list.map((item: any) => ({
-          department_id: item.department_id ?? item.id,
-          department_name: item.department_name ?? item.name ?? item.title
-        }));
+        return list
+          .map((item: any) => ({
+            department_id: Number(item.department_id ?? item.id),
+            department_name: String(item.department_name ?? item.name ?? item.title ?? '').trim()
+          }))
+          .filter((item: Department) => Number.isInteger(item.department_id) && item.department_id > 0 && item.department_name);
       })
     );
   }
@@ -92,6 +116,27 @@ export class EventService {
     return this.http.get<any>(`${this.apiUrl}/events/${eventId}/participants`).pipe(
       map(response => Array.isArray(response) ? response : (response.data ?? []))
     );
+  }
+
+  getParticipantsPage(
+    eventId: number,
+    page: number,
+    search: string,
+    status: string,
+  ): Observable<{
+    data: Participant[];
+    meta: { current_page: number; last_page: number; per_page: number; total: number };
+    summary?: { total: number; confirmed: number; pending: number };
+  }> {
+    let params = new HttpParams().set('page', page);
+    if (search.trim()) params = params.set('search', search.trim());
+    if (status !== 'all') params = params.set('status', status);
+
+    return this.http.get<{
+      data: Participant[];
+      meta: { current_page: number; last_page: number; per_page: number; total: number };
+      summary?: { total: number; confirmed: number; pending: number };
+    }>(`${this.apiUrl}/events/${eventId}/participants`, { params });
   }
 
   addParticipant(eventId: number, participant: Participant): Observable<Participant> {

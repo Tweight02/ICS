@@ -6,7 +6,7 @@ export interface Crumb {
   link?: any[];
 }
 
-/** Who the event is aimed at: one church, several districts, or churches inside one district. */
+/** The event's church, district audience, or selected churches. */
 export type Coverage = 'church' | 'districts' | 'churches';
 
 export interface EventsHomeConfig {

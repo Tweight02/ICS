@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { EventService } from '../../../core/services/events/events-api';
 
 type RegistrationEvent = {
-  id: string;
+  id: number;
   title: string;
   banner: string;
   church: string;
@@ -26,56 +29,55 @@ type RegistrationFormData = {
 @Component({
   selector: 'app-registration',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './registration.html',
   styleUrl: './registration.css',
 })
 export class Registration implements OnInit {
-  events: Record<string, RegistrationEvent> = {
-    'leadership-communication-2026': {
-      id: 'leadership-communication-2026',
-      title: 'Deaconry Quarterly Meeting',
-      banner: 'from-green-700 to-green-900',
-      church: 'Your Church Name',
-      date: 'October 22, 2026',
-      time: '8:00 AM',
-      end: '11:30 AM',
-      venue: 'Central Church',
-      description: 'A quarterly gathering for deacons to discuss church ministries, strengthen leadership, and coordinate plans for church activities.',
-    },
-    'digital-skills-2026': {
-      id: 'digital-skills-2026',
-      title: 'Youth Delegation Assembly',
-      banner: 'from-emerald-600 to-green-800',
-      church: 'Your Church Name',
-      date: 'October 18, 2026',
-      time: '9:00 AM',
-      end: '3:00 PM',
-      venue: 'North District Chapel',
-      description: 'An assembly for youth delegates to build fellowship, share ideas, and participate in meaningful discussions and activities.',
-    },
-    'community-outreach-2026': {
-      id: 'community-outreach-2026',
-      title: 'Pastoral Leadership Seminar',
-      banner: 'from-teal-600 to-emerald-800',
-      church: 'Your Church Name',
-      date: 'October 15, 2026',
-      time: '8:30 AM',
-      end: '12:00 PM',
-      venue: 'Central Church',
-      description: 'A seminar designed to strengthen pastoral leadership, develop ministry skills, and encourage effective church service.',
-    },
-  };
+  eventId: number | null = null;
+  private readonly selectedEventState = signal<RegistrationEvent | null>(null);
+  get selectedEvent(): RegistrationEvent | null { return this.selectedEventState(); }
+  set selectedEvent(value: RegistrationEvent | null) { this.selectedEventState.set(value); }
 
-  eventId: string | null = null;
-  selectedEvent: RegistrationEvent | null = null;
-  confirmModalVisible = false;
-  successModalVisible = false;
-  saving = false;
-  errorVisible = false;
-  savedRef = '';
-  savedTime = '';
-  fullName = 'Participant';
+  private readonly loadingEventState = signal(true);
+  get loadingEvent(): boolean { return this.loadingEventState(); }
+  set loadingEvent(value: boolean) { this.loadingEventState.set(value); }
+
+  private readonly eventErrorState = signal('');
+  get eventError(): string { return this.eventErrorState(); }
+  set eventError(value: string) { this.eventErrorState.set(value); }
+
+  private readonly confirmModalVisibleState = signal(false);
+  get confirmModalVisible(): boolean { return this.confirmModalVisibleState(); }
+  set confirmModalVisible(value: boolean) { this.confirmModalVisibleState.set(value); }
+
+  private readonly successModalVisibleState = signal(false);
+  get successModalVisible(): boolean { return this.successModalVisibleState(); }
+  set successModalVisible(value: boolean) { this.successModalVisibleState.set(value); }
+
+  private readonly savingState = signal(false);
+  get saving(): boolean { return this.savingState(); }
+  set saving(value: boolean) { this.savingState.set(value); }
+
+  private readonly errorVisibleState = signal(false);
+  get errorVisible(): boolean { return this.errorVisibleState(); }
+  set errorVisible(value: boolean) { this.errorVisibleState.set(value); }
+
+  private readonly errorMessageState = signal('Could not save your registration. Please try again.');
+  get errorMessage(): string { return this.errorMessageState(); }
+  set errorMessage(value: string) { this.errorMessageState.set(value); }
+
+  private readonly savedRefState = signal('');
+  get savedRef(): string { return this.savedRefState(); }
+  set savedRef(value: string) { this.savedRefState.set(value); }
+
+  private readonly savedTimeState = signal('');
+  get savedTime(): string { return this.savedTimeState(); }
+  set savedTime(value: string) { this.savedTimeState.set(value); }
+
+  private readonly fullNameState = signal('Participant');
+  get fullName(): string { return this.fullNameState(); }
+  set fullName(value: string) { this.fullNameState.set(value); }
 
   formData: RegistrationFormData = {
     first_name: '',
@@ -86,14 +88,54 @@ export class Registration implements OnInit {
     gender: '',
   };
 
+  constructor(
+    private route: ActivatedRoute,
+    private eventService: EventService,
+  ) {}
+
   ngOnInit(): void {
-    this.selectedEvent = this.resolveSelectedEvent();
+    const rawId = this.route.snapshot.queryParamMap.get('event')
+      ?? this.route.snapshot.queryParamMap.get('eventId')
+      ?? this.route.snapshot.queryParamMap.get('id');
+    const id = Number(rawId);
+    if (!Number.isInteger(id) || id < 1) {
+      this.loadingEvent = false;
+      this.eventError = 'Choose an upcoming event before registering.';
+      return;
+    }
+
+    this.eventId = id;
+    this.eventService.getPublicEventById(id).subscribe({
+      next: (event) => {
+        this.selectedEvent = {
+          id: event.id,
+          title: event.title,
+          banner: 'from-green-700 to-green-900',
+          church: (event.scope ?? []).join(', ') || event.church_name || 'Not specified',
+          date: this.formatDate(event.start_date, event.end_date),
+          time: event.start_time,
+          end: event.end_time,
+          venue: event.location,
+          description: event.description || 'Register to participate in this event.',
+        };
+        this.loadingEvent = false;
+      },
+      error: (error) => {
+        console.error('Failed to load event for registration', error);
+        this.eventError = error?.status === 404
+          ? 'This event is no longer open for registration.'
+          : 'Could not load this event. Please return to the events page and try again.';
+        this.loadingEvent = false;
+      },
+    });
   }
 
-  resolveSelectedEvent(search: string = window.location.search): RegistrationEvent | null {
-    const params = new URLSearchParams(search);
-    this.eventId = params.get('event') ?? params.get('eventId') ?? params.get('id');
-    return this.eventId ? this.events[this.eventId] ?? null : null;
+  private formatDate(start: string, end: string): string {
+    const startDate = new Date(`${start}T00:00:00`);
+    const startLabel = new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(startDate);
+    if (start === end) return startLabel;
+    const endDate = new Date(`${end}T00:00:00`);
+    return `${startLabel} – ${new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(endDate)}`;
   }
 
   get eventTitle(): string {
@@ -101,15 +143,12 @@ export class Registration implements OnInit {
   }
 
   get eventTimeLabel(): string {
-    if (!this.selectedEvent) {
-      return 'Time not available';
-    }
-
+    if (!this.selectedEvent) return 'Time not available';
     return `${this.selectedEvent.time}${this.selectedEvent.end ? ` – ${this.selectedEvent.end}` : ''}`;
   }
 
   onSubmit(form: NgForm): void {
-    if (form.invalid) {
+    if (form.invalid || !this.selectedEvent) {
       form.form.markAllAsTouched();
       return;
     }
@@ -122,41 +161,44 @@ export class Registration implements OnInit {
   }
 
   async confirmSubmit(): Promise<void> {
+    if (!this.eventId) return;
     this.saving = true;
+    this.errorVisible = false;
 
     try {
-      const record = await this.saveRegistration();
+      const record = await firstValueFrom(this.eventService.registerPublicParticipant(this.eventId, {
+        ...this.formData,
+        age: Number(this.formData.age),
+      }));
       const fullName = [
         this.formData.first_name,
         this.formData.middle_name,
         this.formData.last_name,
         this.formData.extension_name,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
+      ].filter(Boolean).join(' ').trim();
 
       this.fullName = fullName || 'Participant';
-      this.savedRef = record.id;
-      this.savedTime = new Date(record.savedAt).toLocaleTimeString([], {
+      this.savedRef = record.reference ?? `REG-${record.id}`;
+      this.savedTime = new Date(record.saved_at).toLocaleTimeString([], {
         hour: 'numeric',
         minute: '2-digit',
       });
-
       this.confirmModalVisible = false;
       this.successModalVisible = true;
-    } catch {
+    } catch (error: any) {
+      console.error('Failed to save participant registration', error);
+      this.errorMessage = error?.status === 422 && error?.error?.errors
+        ? Object.values(error.error.errors).flat().join(' ')
+        : 'Could not save your registration. Please try again.';
       this.errorVisible = true;
-      window.setTimeout(() => {
-        this.errorVisible = false;
-      }, 4000);
+      this.confirmModalVisible = false;
     } finally {
       this.saving = false;
     }
   }
 
   resetForm(form: NgForm): void {
-    form.reset();
+    form.resetForm();
     this.formData = {
       first_name: '',
       last_name: '',
@@ -166,22 +208,5 @@ export class Registration implements OnInit {
       gender: '',
     };
     this.successModalVisible = false;
-  }
-
-  private async saveRegistration(): Promise<{ id: string; savedAt: string }> {
-    await new Promise((resolve) => window.setTimeout(resolve, 600));
-
-    const all = JSON.parse(localStorage.getItem('registrations') || '[]');
-    const record = {
-      id: 'REG-' + Date.now().toString(36).toUpperCase(),
-      event: this.eventId,
-      ...this.formData,
-      savedAt: new Date().toISOString(),
-    };
-
-    all.push(record);
-    localStorage.setItem('registrations', JSON.stringify(all));
-
-    return record;
   }
 }

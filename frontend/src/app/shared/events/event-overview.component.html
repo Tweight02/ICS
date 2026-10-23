@@ -10,7 +10,8 @@
   </div>
 
   <!-- Loading -->
-  <div *ngIf="loading" class="flex-1 min-h-0 space-y-3">
+  <div *ngIf="loading" class="flex-1 min-h-0 space-y-3" role="status" aria-live="polite">
+    <p class="text-sm text-gray-600">Loading event details…</p>
     <div class="h-[110px] bg-white border border-gray-200 rounded-xl animate-pulse"></div>
     <div class="h-[240px] bg-white border border-gray-200 rounded-xl animate-pulse"></div>
   </div>
@@ -38,16 +39,15 @@
     </div>
 
     <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-3">
-      <!-- Left: programs (accordion) + notes -->
+      <!-- Left: reporting program + notes -->
       <div class="flex flex-col gap-3 min-h-0">
         <div class="flex-1 min-h-0 flex flex-col bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
           <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
-            <i class="bi bi-list-check text-[#1b4d3e]"></i> Programs &amp; particulars
+            <i class="bi bi-list-check text-[#1b4d3e]"></i> Selected particulars
           </h3>
           <p class="text-xs text-gray-500 mt-1.5 mb-3">
             <ng-container *ngIf="departmentName">{{ departmentName }} · </ng-container>
-            {{ selectedGroupCount }} program group{{ selectedGroupCount === 1 ? '' : 's' }}
-            and {{ particularCount }} selected particular{{ particularCount === 1 ? '' : 's' }}
+            {{ particularCount }} particular{{ particularCount === 1 ? '' : 's' }} selected
           </p>
 
           <div class="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] space-y-2 pr-1">
@@ -57,16 +57,16 @@
                 <span class="flex items-center gap-3 text-xs font-bold text-gray-900 uppercase">
                   <i class="bi" [ngClass]="g.expanded ? 'bi-chevron-down' : 'bi-chevron-right'"></i> {{ g.name }}
                 </span>
-                <span class="text-[11px]" [ngClass]="g.items.length ? 'text-emerald-800 font-semibold' : 'text-gray-500'">{{ g.items.length }} selected</span>
+                <span class="text-[11px] text-emerald-800 font-semibold">{{ g.items.length }} selected</span>
               </button>
               <div *ngIf="g.expanded" class="px-4 py-2.5 space-y-2 bg-white">
                 <p *ngFor="let item of g.items" class="flex items-start gap-3 text-sm text-gray-700">
                   <i class="bi bi-check-circle text-[#1b4d3e] mt-0.5"></i> {{ item }}
                 </p>
-                <p *ngIf="g.items.length === 0" class="text-xs text-gray-400">Nothing selected in this group.</p>
+                <p *ngIf="g.items.length === 0" class="text-xs text-gray-500">No particulars were selected for this group.</p>
               </div>
             </div>
-            <p *ngIf="groups.length === 0" class="text-sm text-gray-400">No particulars were selected for this event.</p>
+            <p *ngIf="groups.length === 0" class="text-sm text-gray-400">No program group is available for this event.</p>
           </div>
         </div>
 
@@ -117,7 +117,7 @@
        class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 bg-white hover:bg-gray-50 transition no-underline">
       <i class="bi bi-arrow-left"></i> {{ config.backLabel }}
     </a>
-    <div *ngIf="config.canManage && event" class="flex items-center gap-2">
+    <div *ngIf="config.canManage && event && canManageEvent" class="flex items-center gap-2">
       <button type="button" (click)="askDelete()"
               class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-red-700 bg-white hover:bg-red-50 transition">
         <i class="bi bi-trash"></i> Delete event

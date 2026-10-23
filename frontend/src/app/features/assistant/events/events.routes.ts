@@ -45,7 +45,7 @@ const FORM: EventFormConfig = {
   basePath: BASE,
   crumbRoot: 'My Events',
   coverage: 'districts',
-  subtitleCreate: 'Create a mission event and choose exactly which districts are included.',
+  subtitleCreate: 'Create a mission event and choose which districts are included.',
 };
 
 @Component({

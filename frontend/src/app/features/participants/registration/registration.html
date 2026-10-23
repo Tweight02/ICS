@@ -19,6 +19,12 @@
           </div>
 
           <div class="flex flex-1 flex-col p-5">
+            <p *ngIf="loadingEvent" class="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800" role="status">
+              Loading event details…
+            </p>
+            <p *ngIf="eventError" class="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
+              {{ eventError }}
+            </p>
             <div class="space-y-3 rounded-xl border border-green-100 bg-green-50 p-4 text-sm">
               <div class="flex items-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -55,7 +61,7 @@
           </div>
         </div>
 
-        <a href="/participants" class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-700 bg-white px-5 py-3 font-semibold text-green-800 shadow-sm transition duration-200 hover:bg-green-50 focus:outline-none focus:ring-4 focus:ring-green-200">
+        <a routerLink="/participants" class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-700 bg-white px-5 py-3 font-semibold text-green-800 no-underline shadow-sm transition duration-200 hover:bg-green-50 focus:outline-none focus:ring-4 focus:ring-green-200">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7M8 12h13" />
           </svg>
@@ -68,6 +74,9 @@
           <h2 class="registration-heading mb-3 text-xl font-bold text-gray-800 sm:mb-4 sm:text-2xl">Participant Registration</h2>
 
           <form #registrationForm="ngForm" (ngSubmit)="onSubmit(registrationForm)" class="registration-form space-y-3 sm:space-y-5" novalidate>
+            <p *ngIf="errorVisible" role="alert" class="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              {{ errorMessage }}
+            </p>
             <div class="registration-fields grid grid-cols-2 gap-2 sm:gap-3">
               <div>
                 <label for="first_name" class="label">First Name <span class="text-red-500">*</span></label>
@@ -96,17 +105,18 @@
 
               <div>
                 <label for="gender" class="label">Gender</label>
-                <select id="gender" name="gender" [(ngModel)]="formData.gender" class="field">
-                  <option value="">Select gender</option>
+                <select id="gender" name="gender" [(ngModel)]="formData.gender" required class="field">
+                  <option value="" disabled>Select gender</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
 
             <div class="border-t pt-4">
-              <button type="submit" class="w-full rounded-lg bg-green-700 px-6 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-200">
-                Submit
+              <button type="submit" [disabled]="!selectedEvent || loadingEvent || saving" class="w-full rounded-lg bg-green-700 px-6 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-200 disabled:cursor-not-allowed disabled:opacity-50">
+                {{ loadingEvent ? 'Loading event…' : 'Submit registration' }}
               </button>
             </div>
           </form>
@@ -171,12 +181,9 @@
 
       <div class="mt-6 flex gap-3">
         <button type="button" (click)="resetForm(registrationForm)" class="btn-secondary">Register Another</button>
-        <a href="/participants" class="btn-primary">Done</a>
+        <a routerLink="/participants" class="btn-primary no-underline">Done</a>
       </div>
     </div>
   </div>
 
-  <div *ngIf="errorVisible" role="alert" class="fixed bottom-5 left-1/2 z-[60] -translate-x-1/2 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-lg">
-    Could not save your registration. Please try again.
-  </div>
 </div>
