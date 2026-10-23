@@ -18,14 +18,13 @@
     <div class="row g-4">
 
       <!-- Records -->
-      <div class="records-column col-12">
-        <div class="report-page-heading">
-          <h1>Personal Report</h1>
-        </div>
+      <div
+        class="records-column"
+        [ngClass]="isReadOnly ? 'col-12' : 'col-lg-9'">
 
         <div class="records-toolbar d-flex align-items-center justify-content-between">
 
-          <div class="record-selector">
+          <div class="d-flex align-items-center pb-2">
             <span class="selector-label">
               SELECT RECORD:
             </span>
@@ -33,7 +32,7 @@
             <button
               type="button"
               class="record-btn"
-              [attr.aria-pressed]="selectedRecord === 'baptism'"
+              style="padding: 6px 12px; font-size: 13px; min-width: 120px; height: 34px;"
               [class.active]="selectedRecord === 'baptism'"
               (click)="selectRecord('baptism')">
               Baptism Record
@@ -42,44 +41,33 @@
             <button
               type="button"
               class="record-btn"
-              [attr.aria-pressed]="selectedRecord === 'death'"
+              style="padding: 6px 12px; font-size: 13px; min-width: 120px; height: 34px;"
               [class.active]="selectedRecord === 'death'"
               (click)="selectRecord('death')">
               Death Record
             </button>
-
-            <button
-              *ngIf="!isReadOnly"
-              type="button"
-              class="record-btn"
-              [attr.aria-pressed]="selectedRecord === 'ministerial'"
-              [class.active]="selectedRecord === 'ministerial'"
-              (click)="selectRecord('ministerial')">
-              Ministerial &amp; Evangelism
-            </button>
-
-            <button
-              *ngIf="!isReadOnly"
-              type="button"
-              class="record-btn"
-              [attr.aria-pressed]="selectedRecord === 'mission'"
-              [class.active]="selectedRecord === 'mission'"
-              (click)="selectRecord('mission')">
-              Adventist Mission
-            </button>
           </div>
 
+          <!-- Add Record -->
+          <a
+            *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
+            [routerLink]="selectedRecord === 'baptism'
+              ? '/pastor/bapaddrec'
+              : '/pastor/deathaddrec'"
+            class="add-record-btn">
+            + Add Record
+          </a>
         </div>
 
         <!-- ================================================= -->
         <!-- YEAR AND QUARTER SELECTOR -->
         <!-- ================================================= -->
-        <div *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'" class="quarter-filter-toolbar mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/60 bg-white/60 p-3 shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
-          <div class="flex flex-wrap items-center gap-3">
+        <div class="quarter-filter-toolbar">
 
           <!-- Year Selector -->
           <select
-            class="year-selector h-10 min-w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 text-sm font-semibold text-emerald-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+            class="year-selector"
+            style="padding: 5px 10px; font-size: 13px; height: 34px; min-width: 90px;"
             [value]="selectedYear"
             (change)="onYearChange($event)"
             aria-label="Select year">
@@ -92,56 +80,25 @@
           </select>
 
           <!-- Quarter Selector -->
-          <div class="quarter-selector inline-flex flex-wrap gap-1 rounded-xl bg-emerald-900/10 p-1">
+          <div
+            class="quarter-selector"
+            style="display: flex; gap: 5px;">
 
             <button
               *ngFor="let quarter of quarterOptions"
               type="button"
-              class="quarter-tab h-8 min-w-12 rounded-lg px-4 text-sm font-semibold transition"
-              [ngClass]="{
-                'bg-emerald-700 text-white shadow-sm': !isAnnualView && selectedQuarter === quarter,
-                'text-emerald-900/80 hover:bg-white/60 hover:text-emerald-950': isAnnualView || selectedQuarter !== quarter
-              }"
-              [attr.aria-pressed]="!isAnnualView && selectedQuarter === quarter"
+              class="quarter-tab"
+              style="padding: 5px 12px; font-size: 12px; min-width: 75px; height: 34px;"
+              [class.active]="selectedQuarter === quarter"
+              [attr.aria-pressed]="selectedQuarter === quarter"
               (click)="selectQuarter(quarter)">
               {{ quarter }}
             </button>
 
-            <button
-              type="button"
-              class="quarter-tab h-8 rounded-lg px-4 text-sm font-semibold transition"
-              [ngClass]="{
-                'bg-emerald-700 text-white shadow-sm': isAnnualView,
-                'text-emerald-900/80 hover:bg-white/60 hover:text-emerald-950': !isAnnualView
-              }"
-              [attr.aria-pressed]="isAnnualView"
-              (click)="selectAnnual()">
-              Annual
-            </button>
-
-          </div>
           </div>
         </div>
 
-        <div
-          *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
-          class="record-actions">
-          <a
-            [routerLink]="selectedRecord === 'baptism'
-              ? '/pastor/bapaddrec'
-              : '/pastor/deathaddrec'"
-            [queryParams]="{
-              record: selectedRecord,
-              year: selectedYear,
-              quarter: selectedQuarter,
-              annual: isAnnualView
-            }"
-            class="add-record-btn">
-            + Add Record
-          </a>
-        </div>
-
-        <div *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'; else departmentReportView" class="table-responsive records-table-panel">
+        <div class="table-responsive">
 
           <!-- ================================================= -->
           <!-- BAPTISM RECORD TABLE -->
@@ -182,8 +139,9 @@
                   !baptismError &&
                   displayedBaptisms.length === 0
                 ">
-                <td colspan="7" class="text-center empty-records-cell">
-                  No baptism records found for {{ isAnnualView ? 'all quarters' : selectedQuarter }} of {{ selectedYear }}.
+                <td colspan="7" class="text-center">
+                  No baptism records found for
+                  {{ selectedQuarter }} of {{ selectedYear }}.
                 </td>
               </tr>
 
@@ -274,8 +232,9 @@
                   !deathError &&
                   displayedDeaths.length === 0
                 ">
-                <td colspan="8" class="text-center empty-records-cell">
-                  No death records found for {{ isAnnualView ? 'all quarters' : selectedQuarter }} of {{ selectedYear }}.
+                <td colspan="8" class="text-center">
+                  No death records found for
+                  {{ selectedQuarter }} of {{ selectedYear }}.
                 </td>
               </tr>
 
@@ -336,95 +295,48 @@
           </table>
 
         </div>
+      </div>
 
-        <ng-template #departmentReportView>
-          <section class="district-report-list" aria-label="District department reports">
-            <div *ngIf="churchesLoading" class="picker-message">Loading district churches...</div>
-            <div *ngIf="!churchesLoading && reportChurches.length === 0" class="picker-message">
-              No churches are available in your district.
+      <!-- ================================================= -->
+      <!-- COMMENTS -->
+      <!-- ================================================= -->
+      <div
+        *ngIf="!isReadOnly"
+        class="col-lg-3 comments-column">
+
+        <h2>
+          Comments
+        </h2>
+
+        <div class="comments-subtitle">
+          Administrative Assistant
+        </div>
+
+        <div class="comment-card">
+          <div class="comment-top">
+            <div>
+              <div class="comment-role">
+                Sep 15, 2026, 3:00 PM
+              </div>
             </div>
 
-            <section
-              *ngFor="let church of reportChurches"
-              class="district-report-section">
-              <app-report-particulars
-                [embedded]="true"
-                [departmentId]="selectedDepartmentId || 16"
-                [churchId]="church.church_id"
-                [churchName]="church.name"
-                [districtId]="church.parent_id || districtId">
-              </app-report-particulars>
-            </section>
-          </section>
-        </ng-template>
+            <div class="comment-date">
+            </div>
+          </div>
+
+          <p class="comment-text">
+            The report has been reviewed by the Administrative Assistant.
+            Please ensure the entries are complete and any supporting notes
+            are included before final submission.
+          </p>
+        </div>
+
+        <div class="comment-line"></div>
       </div>
 
     </div>
   </main>
 </div>
-
-<aside
-  *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
-  class="comments-chathead">
-  <section
-    *ngIf="commentsOpen"
-    class="fixed inset-x-3 bottom-3 z-50 flex max-h-[min(78vh,640px)] flex-col overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-2xl shadow-emerald-950/20 sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]"
-    role="dialog"
-    aria-label="Latest report comment">
-    <header class="flex shrink-0 items-center justify-between gap-3 bg-emerald-900 px-4 py-3 text-white">
-      <div class="flex min-w-0 items-center gap-3">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
-          </svg>
-        </span>
-        <div class="min-w-0">
-          <h2 class="font-serif text-base font-semibold text-white">Comments</h2>
-          <p class="text-xs text-white/70">Latest district feedback</p>
-        </div>
-      </div>
-      <button type="button" (click)="closeComments()" aria-label="Close comments" title="Close comments"
-        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <path d="m5 5 10 10M15 5 5 15" />
-        </svg>
-      </button>
-    </header>
-
-    <div class="min-h-0 flex-1 overflow-y-auto bg-emerald-50/70 px-4 py-4">
-      <div *ngIf="commentsLoading" class="flex items-center gap-2 py-3 text-sm text-emerald-900/70">
-        <span class="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
-        Loading latest comment...
-      </div>
-
-      <article *ngIf="!commentsLoading && latestComment" class="flex flex-col items-start gap-1">
-        <div class="max-w-[92%] rounded-2xl rounded-bl-md border border-emerald-900/10 bg-white px-4 py-3 text-emerald-950 shadow-sm">
-          <p class="whitespace-pre-line break-words text-sm leading-5">{{ latestComment.details }}</p>
-        </div>
-        <div class="flex max-w-[92%] flex-wrap items-center gap-x-2 px-2 text-[11px] text-emerald-900/60">
-          <span class="font-semibold text-emerald-900/75">{{ latestComment.commenter_name || latestComment.commenter_role || 'Report comment' }}</span>
-          <time>{{ latestComment.date_commented | date: 'mediumDate' }}</time>
-        </div>
-      </article>
-
-      <div *ngIf="!commentsLoading && !latestComment" class="py-8 text-center text-sm text-emerald-900/60">
-        No comments yet.
-      </div>
-    </div>
-  </section>
-
-  <button *ngIf="!commentsOpen" type="button" (click)="openComments()"
-    aria-label="Open comments" title="Open comments" [attr.aria-expanded]="commentsOpen"
-    class="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-950/25 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
-    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
-      <path d="M8 11.5h8M8 8.5h5" />
-    </svg>
-  </button>
-</aside>
 
 <!-- ================================================= -->
 <!-- BAPTISM DETAILS MODAL -->
