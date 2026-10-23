@@ -228,7 +228,7 @@
           type="button"
           (click)="prevPage()"
           [disabled]="page() <= 1 || loading()"
-          class="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          class="inline-flex h-8 items-center justify-center !rounded-md border border-slate-300 bg-white px-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
         </button>
@@ -239,7 +239,7 @@
           type="button"
           (click)="nextPage()"
           [disabled]="page() >= lastPage() || loading()"
-          class="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          class="inline-flex h-8 items-center justify-center !rounded-md border border-slate-300 bg-white px-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
         </button>
