@@ -1,50 +1,77 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { timeout } from 'rxjs';
 import { EventService } from '../../core/services/events/events-api';
-import { API_URL, EventOverviewConfig } from './events.config';
+import { EventOverviewConfig } from './events.config';
 import {
   EventStatus,
   ProgramGroup,
   formatDateRange,
   formatTime,
-  selectedGroupsOf,
   statusClass,
   statusLabel,
   statusOf,
 } from './event.utils';
-import { PageShellComponent } from './page-shell.component';
 
 @Component({
   selector: 'app-event-overview',
   standalone: true,
-  imports: [CommonModule, RouterLink, PageShellComponent],
+  imports: [CommonModule, RouterLink],
   templateUrl: './event-overview.component.html',
 })
 export class EventOverviewComponent implements OnInit {
   @Input({ required: true }) config!: EventOverviewConfig;
 
-  event: any = null;
-  eventId = 0;
-  loading = true;
-  errorMsg = '';
+  private readonly eventState = signal<any>(null);
+  get event(): any { return this.eventState(); }
+  set event(value: any) { this.eventState.set(value); }
 
-  groups: ProgramGroup[] = [];
-  participants: any[] = [];
+  private readonly eventIdState = signal(0);
+  get eventId(): number { return this.eventIdState(); }
+  set eventId(value: number) { this.eventIdState.set(value); }
 
-  confirmDelete = false;
-  deleting = false;
-  deleteError = '';
+  private readonly loadingState = signal(true);
+  get loading(): boolean { return this.loadingState(); }
+  set loading(value: boolean) { this.loadingState.set(value); }
+
+  private readonly errorMsgState = signal('');
+  get errorMsg(): string { return this.errorMsgState(); }
+  set errorMsg(value: string) { this.errorMsgState.set(value); }
+
+  private readonly groupsState = signal<ProgramGroup[]>([]);
+  get groups(): ProgramGroup[] { return this.groupsState(); }
+  set groups(value: ProgramGroup[]) { this.groupsState.set(value); }
+
+  private readonly participantsState = signal<any[]>([]);
+  get participants(): any[] { return this.participantsState(); }
+  set participants(value: any[]) { this.participantsState.set(value); }
+
+  private readonly confirmDeleteState = signal(false);
+  get confirmDelete(): boolean { return this.confirmDeleteState(); }
+  set confirmDelete(value: boolean) { this.confirmDeleteState.set(value); }
+
+  private readonly deletingState = signal(false);
+  get deleting(): boolean { return this.deletingState(); }
+  set deleting(value: boolean) { this.deletingState.set(value); }
+
+  private readonly deleteErrorState = signal('');
+  get deleteError(): string { return this.deleteErrorState(); }
+  set deleteError(value: string) { this.deleteErrorState.set(value); }
 
   readonly statusClass = statusClass;
   readonly statusLabel = statusLabel;
+
+  get canManageEvent(): boolean {
+    return this.event?.abilities?.update === true
+      && this.event?.abilities?.delete === true
+      && this.event?.abilities?.manage_participants === true;
+  }
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private eventService: EventService,
-    private http: HttpClient,
   ) {}
 
   ngOnInit(): void {
@@ -55,7 +82,13 @@ export class EventOverviewComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.errorMsg = '';
-    this.eventService.getEventById(this.eventId).subscribe({
+    if (!Number.isInteger(this.eventId) || this.eventId < 1) {
+      this.errorMsg = 'This event link is invalid.';
+      this.loading = false;
+      return;
+    }
+
+    this.eventService.getEventById(this.eventId).pipe(timeout({ first: 8000 })).subscribe({
       next: (res: any) => {
         this.event = res?.data ?? res;
         this.loading = false;
@@ -64,10 +97,30 @@ export class EventOverviewComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load the event:', err);
-        this.errorMsg = 'We could not load this event. It may have been removed, or the server is not answering.';
+        this.errorMsg = this.eventLoadError(err);
         this.loading = false;
       },
     });
+  }
+
+  private eventLoadError(err: any): string {
+    if (err?.name === 'TimeoutError') {
+      return 'Loading this event timed out. Check your connection and try again.';
+    }
+    if (err?.status === 401) {
+      return 'Your session has expired. Sign in again to view this event.';
+    }
+    if (err?.status === 403) {
+      return 'You do not have permission to view this event.';
+    }
+    if (err?.status === 404) {
+      return 'This event could not be found. It may have been removed.';
+    }
+    if (err?.status === 0) {
+      return 'The event server could not be reached. Check that the server is running and try again.';
+    }
+
+    return 'We could not load this event. Please try again.';
   }
 
   private loadParticipants(): void {
@@ -79,34 +132,18 @@ export class EventOverviewComponent implements OnInit {
     });
   }
 
-  /** Selected groups first; the department's other groups are added collapsed with "0 selected". */
   private buildGroups(): void {
-    const selected = selectedGroupsOf(this.event);
-    this.groups = selected;
-
-    const deptId = this.event?.department_id ?? this.event?.department?.department_id;
-    if (!deptId) return;
-
-    this.http.get<any>(`${API_URL}/departments/${deptId}/programs`).subscribe({
-      next: (res) => {
-        const all: any[] = (res?.data ?? []).filter((p: any) => p.particulars?.length);
-        const byName = new Map(selected.map((g) => [g.name, g]));
-        const merged: ProgramGroup[] = all.map(
-          (p) => byName.get(p.program_name) ?? { name: p.program_name, items: [], expanded: false },
-        );
-        selected.forEach((g) => {
-          if (!merged.includes(g)) merged.push(g);
-        });
-        this.groups = merged;
-      },
-      error: () => {
-        /* keep the selected-only groups */
-      },
-    });
+    this.groups = (this.event?.programs ?? []).map((item: any) => ({
+      name: item.name ?? item.program_name ?? 'Program',
+      items: item.selected ?? item.particulars?.map((particular: any) => particular.particular_name) ?? [],
+      expanded: true,
+    }));
   }
 
   toggleGroup(g: ProgramGroup): void {
-    g.expanded = !g.expanded;
+    this.groups = this.groups.map((group) =>
+      group === g ? { ...group, expanded: !group.expanded } : group,
+    );
   }
 
   // ---------- Display helpers ----------
@@ -125,19 +162,26 @@ export class EventOverviewComponent implements OnInit {
   }
 
   get departmentName(): string {
-    return this.event?.department?.department_name ?? this.event?.department_name ?? '';
+    return this.event?.department?.department_name
+      ?? this.event?.department?.name
+      ?? this.event?.department_name
+      ?? '';
   }
 
   get periodLabel(): string {
     const e = this.event;
     if (e?.reporting_period) return e.reporting_period;
-    return e?.year ? `${e.year}${e.quarter ? ' · ' + e.quarter : ''}` : '';
+    return e?.year
+      ? `${e.year}${e.quarter ? ' · Q' + String(e.quarter).replace(/^Q/, '') : ''}`
+      : '';
   }
 
   get organizer(): string {
     const u = this.event?.user ?? this.event?.creator;
     const full = u ? [u.first_name, u.last_name].filter(Boolean).join(' ') : '';
-    return this.event?.organized_by || full || this.config.organizerFallback;
+    const organizedBy = this.event?.organized_by;
+    const role = typeof organizedBy === 'string' ? organizedBy : organizedBy?.role;
+    return role || full || this.config.organizerFallback;
   }
 
   /** What the event covers: a church, a list of districts or churches, or the whole mission. */
@@ -146,23 +190,23 @@ export class EventOverviewComponent implements OnInit {
     const names = (list: any): string[] =>
       Array.isArray(list) ? list.map((x: any) => x?.name ?? x?.church_name ?? '').filter(Boolean) : [];
 
-    if (e?.church_name || e?.church?.name) return { title: 'Church', text: e.church_name ?? e.church.name };
-    if (e?.all_districts) return { title: 'Coverage', text: 'All districts' };
-
-    const list = names(e?.districts).length ? names(e.districts) : names(e?.churches);
-    if (list.length) {
-      const shown = list.slice(0, 2).join(', ');
-      return { title: 'Coverage', text: list.length > 2 ? `${shown} +${list.length - 2} more` : shown };
+    const districts = names(e?.scope?.districts ?? e?.districts);
+    const churches = names(e?.scope?.churches ?? e?.churches);
+    if (districts.length) {
+      return {
+        title: districts.length === 1 ? 'District' : 'Districts',
+        text: districts.join(', '),
+      };
+    }
+    if (churches.length) return { title: 'Church', text: churches[0] };
+    if (e?.church_name || e?.church?.name) {
+      return { title: 'Church', text: e.church_name ?? e.church.name };
     }
     return { title: 'Coverage', text: 'Mission-wide' };
   }
 
-  get selectedGroupCount(): number {
-    return this.groups.filter((g) => g.items.length > 0).length;
-  }
-
   get particularCount(): number {
-    return this.groups.reduce((sum, g) => sum + g.items.length, 0);
+    return this.groups.reduce((total, group) => total + group.items.length, 0);
   }
 
   get stats(): { total: number; confirmed: number; pending: number } {
@@ -172,11 +216,18 @@ export class EventOverviewComponent implements OnInit {
         ? this.event.participants
         : [];
     const is = (p: any, s: string) => String(p?.status ?? '').toLowerCase() === s;
-    return {
-      total: list.length || (this.event?.participants_count ?? 0),
-      confirmed: list.filter((p: any) => is(p, 'confirmed')).length,
-      pending: list.filter((p: any) => is(p, 'pending')).length,
-    };
+    const summary = this.event?.participants ?? {};
+    return list.length
+      ? {
+          total: list.length,
+          confirmed: list.filter((p: any) => is(p, 'confirmed')).length,
+          pending: list.filter((p: any) => is(p, 'pending')).length,
+        }
+      : {
+          total: summary.total ?? this.event?.participants_count ?? 0,
+          confirmed: summary.confirmed ?? 0,
+          pending: summary.pending ?? 0,
+        };
   }
 
   // ---------- Delete (a friendly confirmation instead of a browser popup) ----------

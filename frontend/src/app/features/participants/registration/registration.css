@@ -9,8 +9,10 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: auto;
+  overflow-y: auto;
   background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2));
 }
 
@@ -23,7 +25,7 @@
   flex: 1 1 auto;
   width: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .registration-layout {
@@ -128,8 +130,12 @@
 }
 
 @media (max-width: 1023px) {
+  .registration-main {
+    flex: 0 0 auto;
+  }
+
   .registration-layout {
-    grid-template-rows: min-content minmax(0, 1fr);
+    grid-template-rows: min-content minmax(30rem, auto);
   }
 
   .event-summary-panel > div:first-child {

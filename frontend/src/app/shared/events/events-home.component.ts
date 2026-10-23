@@ -7,6 +7,7 @@ import {
   OnDestroy,
   OnInit,
   ViewChild,
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -23,7 +24,6 @@ import {
   statusOf,
   toDate,
 } from './event.utils';
-import { PageShellComponent } from './page-shell.component';
 import { PaginationComponent } from './pagination.component';
 
 interface CalendarCell {
@@ -41,27 +41,56 @@ const CARD_GAP = 8;
 @Component({
   selector: 'app-events-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PageShellComponent, PaginationComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent],
   templateUrl: './events-home.component.html',
 })
 export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input({ required: true }) config!: EventsHomeConfig;
   @ViewChild('listArea') listArea?: ElementRef<HTMLElement>;
 
-  searchTerm = '';
-  selectedMonth = 'all';
-  selectedStatus: 'all' | EventStatus = 'Upcoming';
-  selectedDay: Date | null = null; // set by clicking a green day in the calendar
-  page = 1;
-  pageSize = 4; // adjusted automatically to the space available
+  private readonly searchTermState = signal('');
+  get searchTerm(): string { return this.searchTermState(); }
+  set searchTerm(value: string) { this.searchTermState.set(value); }
 
-  events: any[] = []; // any[]: API field names (id vs event_id, department_name...) may vary
-  loading = true;
-  errorMsg = '';
+  private readonly selectedMonthState = signal('all');
+  get selectedMonth(): string { return this.selectedMonthState(); }
+  set selectedMonth(value: string) { this.selectedMonthState.set(value); }
 
-  workspaceName = '';
+  private readonly selectedStatusState = signal<'all' | EventStatus>('Upcoming');
+  get selectedStatus(): 'all' | EventStatus { return this.selectedStatusState(); }
+  set selectedStatus(value: 'all' | EventStatus) { this.selectedStatusState.set(value); }
 
-  calendarDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  private readonly selectedDayState = signal<Date | null>(null);
+  get selectedDay(): Date | null { return this.selectedDayState(); }
+  set selectedDay(value: Date | null) { this.selectedDayState.set(value); }
+
+  private readonly pageState = signal(1);
+  get page(): number { return this.pageState(); }
+  set page(value: number) { this.pageState.set(value); }
+
+  private readonly pageSizeState = signal(4);
+  get pageSize(): number { return this.pageSizeState(); }
+  set pageSize(value: number) { this.pageSizeState.set(value); }
+
+  private readonly eventsState = signal<any[]>([]);
+  get events(): any[] { return this.eventsState(); }
+  set events(value: any[]) { this.eventsState.set(value); }
+
+  private readonly loadingState = signal(true);
+  get loading(): boolean { return this.loadingState(); }
+  set loading(value: boolean) { this.loadingState.set(value); }
+
+  private readonly errorMsgState = signal('');
+  get errorMsg(): string { return this.errorMsgState(); }
+  set errorMsg(value: string) { this.errorMsgState.set(value); }
+
+  private readonly workspaceNameState = signal('');
+  get workspaceName(): string { return this.workspaceNameState(); }
+  set workspaceName(value: string) { this.workspaceNameState.set(value); }
+
+  private readonly calendarDateState = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  get calendarDate(): Date { return this.calendarDateState(); }
+  set calendarDate(value: Date) { this.calendarDateState.set(value); }
   readonly weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   readonly today = new Date();
 
