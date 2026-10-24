@@ -80,9 +80,7 @@
         <!-- ================================================= -->
         <!-- YEAR AND QUARTER SELECTOR -->
         <!-- ================================================= -->
-        <div
-          *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
-          class="quarter-filter-toolbar">
+        <div class="quarter-filter-toolbar">
 
           <!-- Year Selector -->
           <select
@@ -118,9 +116,7 @@
           </div>
         </div>
 
-        <div
-          *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
-          class="table-responsive">
+        <div class="table-responsive">
 
           <!-- ================================================= -->
           <!-- BAPTISM RECORD TABLE -->
@@ -317,26 +313,6 @@
           </table>
 
         </div>
-
-        <ng-container *ngIf="selectedDepartmentId as departmentId">
-          <section
-            *ngFor="let church of reportChurches"
-            class="mb-6">
-            <app-report-particulars
-              [embedded]="true"
-              [churchId]="church.church_id"
-              [churchName]="church.name"
-              [districtId]="districtId"
-              [districtName]="getChurchName(districtId)"
-              [departmentId]="departmentId">
-            </app-report-particulars>
-          </section>
-          <p
-            *ngIf="!churchesLoading && reportChurches.length === 0"
-            class="py-8 text-center text-sm text-emerald-900/60">
-            No churches found for this report.
-          </p>
-        </ng-container>
       </div>
 
       <!-- ================================================= -->
@@ -372,15 +348,6 @@
             {{ selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record' }} · {{ selectedQuarter }} {{ selectedYear }}
           </p>
         </div>
-      </div>
-      <button
-        type="button"
-        (click)="closeComments()"
-        aria-label="Close comments"
-        class="rounded-full p-2 text-white/80 transition hover:bg-white/10 hover:text-white">
-        <span aria-hidden="true">×</span>
-      </button>
-    </header>
 
     <div
       *ngIf="commentsError"
@@ -417,7 +384,7 @@
     </div>
 
     <div *ngIf="canComment" class="shrink-0 border-t border-emerald-900/10 p-4">
-      <ng-container *ngIf="commentQuarterApproved; else commentForm">
+      <ng-container *ngIf="commentQuarterApproved && !isAnnualView; else commentForm">
         <p class="text-sm text-emerald-900/70">This report has been approved. Comments are closed.</p>
       </ng-container>
 
@@ -427,7 +394,7 @@
             type="text"
             name="reportComment"
             [(ngModel)]="newComment"
-            [disabled]="savingComment || !churchId"
+            [disabled]="savingComment || isAnnualView || !churchId"
             maxlength="255"
             placeholder="Write a comment..."
             aria-label="Write a comment"
@@ -436,7 +403,7 @@
             type="submit"
             aria-label="Send comment"
             title="Send comment"
-            [disabled]="savingComment || !newComment.trim() || !churchId"
+            [disabled]="savingComment || !newComment.trim() || isAnnualView || !churchId"
             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-900/30">
             <span *ngIf="savingComment; else sendIcon" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
             <ng-template #sendIcon>
@@ -444,6 +411,9 @@
             </ng-template>
           </button>
         </form>
+        <p *ngIf="isAnnualView" class="mt-2 text-xs text-emerald-900/60">
+          Select a quarter to add a comment.
+        </p>
       </ng-template>
     </div>
 
