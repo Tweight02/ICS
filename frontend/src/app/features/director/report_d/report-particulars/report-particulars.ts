@@ -128,6 +128,7 @@ export class ReportParticulars implements OnInit {
     this.commentsLoadingState.set(value);
   }
   commentsError = '';
+  mobileCommentsOpen = false;
   newComment = '';
   private readonly savingCommentState = signal(false);
   get savingComment(): boolean {
@@ -150,6 +151,14 @@ export class ReportParticulars implements OnInit {
   get canComment(): boolean {
     return ['pastor', 'district pastor', 'assistant', 'administrative assistant']
       .includes(this.normalizedUserRole);
+  }
+
+  openComments(): void {
+    this.mobileCommentsOpen = true;
+  }
+
+  closeComments(): void {
+    this.mobileCommentsOpen = false;
   }
 
   get canEndorse(): boolean {

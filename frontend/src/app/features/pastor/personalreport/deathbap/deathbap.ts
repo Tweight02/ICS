@@ -80,6 +80,7 @@ export class DeathbapComponent implements OnInit {
 
   // Year and quarter selector
   selectedYear = new Date().getFullYear();
+  isAnnualView = false;
 
   selectedQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q1';
 
@@ -99,6 +100,7 @@ export class DeathbapComponent implements OnInit {
   deaths: Death[] = [];
   churches: Church[] = [];
   churchesLoading = false;
+  churchesError = '';
   comments: ReportComment[] = [];
   commentsLoading = false;
   commentsOpen = false;
@@ -150,7 +152,11 @@ export class DeathbapComponent implements OnInit {
       this.router.url.startsWith('/assistant')
       || this.router.url.startsWith('/director');
 
-    if (this.departmentId === 23) {
+    if (this.departmentId === 16) {
+      this.selectedRecord = 'ministerial';
+    } else if (this.departmentId === 20) {
+      this.selectedRecord = 'mission';
+    } else if (this.departmentId === 23) {
       this.selectedRecord = 'death';
     }
 
@@ -290,7 +296,13 @@ export class DeathbapComponent implements OnInit {
   selectQuarter(
     quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'
   ): void {
+    this.isAnnualView = false;
     this.selectedQuarter = quarter;
+    this.updateCommentQuarter();
+  }
+
+  selectAnnual(): void {
+    this.isAnnualView = true;
     this.updateCommentQuarter();
   }
 
@@ -406,7 +418,8 @@ export class DeathbapComponent implements OnInit {
     return records
       .filter(record => {
         return (
-          this.normalizeQuarter(record.quarter) === this.selectedQuarter &&
+          (this.isAnnualView ||
+            this.normalizeQuarter(record.quarter) === this.selectedQuarter) &&
           this.getYearFromDate(record.date_of_baptism) === this.selectedYear
         );
       })
@@ -432,7 +445,8 @@ export class DeathbapComponent implements OnInit {
     return records.filter(record => {
 
       return (
-        this.normalizeQuarter(record.quarter) === this.selectedQuarter &&
+        (this.isAnnualView ||
+          this.normalizeQuarter(record.quarter) === this.selectedQuarter) &&
         this.getYearFromDate(record.date_of_death) === this.selectedYear
       );
 
@@ -826,6 +840,7 @@ export class DeathbapComponent implements OnInit {
   loadChurches(): void {
 
     this.churchesLoading = true;
+    this.churchesError = '';
 
     if (!this.isReadOnly) {
       this.churchService.getMyDistrictChurches().subscribe({
@@ -849,6 +864,8 @@ export class DeathbapComponent implements OnInit {
           console.error('Failed to load district churches:', error);
           this.churches = [];
           this.churchesLoading = false;
+          this.churchesError =
+            error?.error?.message || 'Unable to load churches for this report.';
           this.comments = [];
           this.cdr.detectChanges();
         }
@@ -903,6 +920,7 @@ export class DeathbapComponent implements OnInit {
 
           console.log('Churches loaded:', this.churches);
 
+          this.churchesLoading = false;
           this.cdr.detectChanges();
 
         },
@@ -915,6 +933,10 @@ export class DeathbapComponent implements OnInit {
           );
 
           this.churches = [];
+          this.churchesLoading = false;
+          this.churchesError =
+            error?.error?.message || 'Unable to load churches for this report.';
+          this.cdr.detectChanges();
 
         }
 
