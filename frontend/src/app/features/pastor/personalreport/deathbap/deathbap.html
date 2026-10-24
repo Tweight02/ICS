@@ -77,27 +77,6 @@
           </a>
         </div>
 
-        <!-- ================================================= -->
-        <!-- YEAR AND QUARTER SELECTOR -->
-        <!-- ================================================= -->
-        <div class="quarter-filter-toolbar">
-
-          <!-- Year Selector -->
-          <select
-            class="year-selector"
-            style="padding: 5px 10px; font-size: 13px; height: 34px; min-width: 90px;"
-            [value]="selectedYear"
-            (change)="onYearChange($event)"
-            aria-label="Select year">
-
-            <option
-              *ngFor="let year of availableYears"
-              [value]="year">
-              {{ year }}
-            </option>
-          </select>
-
-          <!-- Quarter Selector -->
           <div
             class="quarter-selector"
             style="display: flex; gap: 5px;">
@@ -116,7 +95,9 @@
           </div>
         </div>
 
-        <div class="table-responsive">
+          <div
+            *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
+            class="table-responsive records-table-wrap">
 
           <!-- ================================================= -->
           <!-- BAPTISM RECORD TABLE -->
@@ -312,7 +293,43 @@
             </tbody>
           </table>
 
-        </div>
+          </div>
+
+          <ng-container *ngIf="selectedDepartmentId as departmentId">
+            <p
+              *ngIf="churchesError"
+              class="report-error"
+              role="alert">
+              {{ churchesError }}
+            </p>
+            <div
+              *ngIf="churchesLoading"
+              class="report-loading"
+              role="status">
+              <span class="report-loading-spinner" aria-hidden="true"></span>
+              Loading church reports...
+            </div>
+
+            <section
+              *ngFor="let church of reportChurches"
+              class="church-report-section">
+              <app-report-particulars
+                [embedded]="true"
+                [churchId]="church.church_id"
+                [churchName]="church.name"
+                [districtId]="districtId"
+                [districtName]="getChurchName(districtId)"
+                [departmentId]="departmentId">
+              </app-report-particulars>
+            </section>
+
+            <p
+              *ngIf="!churchesLoading && !churchesError && reportChurches.length === 0"
+              class="report-empty-state">
+              No churches are available for this report.
+            </p>
+          </ng-container>
+        </section>
       </div>
 
       <!-- ================================================= -->
@@ -348,6 +365,15 @@
             {{ selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record' }} · {{ selectedQuarter }} {{ selectedYear }}
           </p>
         </div>
+      </div>
+      <button
+        type="button"
+        (click)="closeComments()"
+        aria-label="Close comments"
+        class="rounded-full p-2 text-white/80 transition hover:bg-white/10 hover:text-white">
+        <span aria-hidden="true">×</span>
+      </button>
+    </header>
 
     <div
       *ngIf="commentsError"
@@ -394,7 +420,7 @@
             type="text"
             name="reportComment"
             [(ngModel)]="newComment"
-            [disabled]="savingComment || isAnnualView || !churchId"
+            [disabled]="savingComment || !churchId || isAnnualView"
             maxlength="255"
             placeholder="Write a comment..."
             aria-label="Write a comment"
@@ -403,7 +429,7 @@
             type="submit"
             aria-label="Send comment"
             title="Send comment"
-            [disabled]="savingComment || !newComment.trim() || isAnnualView || !churchId"
+            [disabled]="savingComment || !newComment.trim() || !churchId || isAnnualView"
             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-900/30">
             <span *ngIf="savingComment; else sendIcon" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
             <ng-template #sendIcon>
