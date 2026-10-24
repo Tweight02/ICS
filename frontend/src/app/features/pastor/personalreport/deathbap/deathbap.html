@@ -18,14 +18,13 @@
     <div class="row g-4">
 
       <!-- Records -->
-      <div class="records-column col-12">
-        <div class="report-page-heading">
-          <h1>Personal Report</h1>
-        </div>
+      <div
+        class="records-column"
+        [ngClass]="isReadOnly ? 'col-12' : 'col-lg-9'">
 
         <div class="records-toolbar d-flex align-items-center justify-content-between">
 
-          <div class="record-selector">
+          <div class="d-flex align-items-center pb-2">
             <span class="selector-label">
               SELECT RECORD:
             </span>
@@ -33,7 +32,7 @@
             <button
               type="button"
               class="record-btn"
-              [attr.aria-pressed]="selectedRecord === 'baptism'"
+              style="padding: 6px 12px; font-size: 13px; min-width: 120px; height: 34px;"
               [class.active]="selectedRecord === 'baptism'"
               (click)="selectRecord('baptism')">
               Baptism Record
@@ -42,7 +41,7 @@
             <button
               type="button"
               class="record-btn"
-              [attr.aria-pressed]="selectedRecord === 'death'"
+              style="padding: 6px 12px; font-size: 13px; min-width: 120px; height: 34px;"
               [class.active]="selectedRecord === 'death'"
               (click)="selectRecord('death')">
               Death Record
@@ -67,17 +66,26 @@
             </button>
           </div>
 
+          <!-- Add Record -->
+          <a
+            *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
+            [routerLink]="selectedRecord === 'baptism'
+              ? '/pastor/bapaddrec'
+              : '/pastor/deathaddrec'"
+            class="add-record-btn">
+            + Add Record
+          </a>
         </div>
 
         <!-- ================================================= -->
         <!-- YEAR AND QUARTER SELECTOR -->
         <!-- ================================================= -->
-        <div *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'" class="quarter-filter-toolbar mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/60 bg-white/60 p-3 shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
-          <div class="flex flex-wrap items-center gap-3">
+        <div class="quarter-filter-toolbar">
 
           <!-- Year Selector -->
           <select
-            class="year-selector h-10 min-w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 text-sm font-semibold text-emerald-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+            class="year-selector"
+            style="padding: 5px 10px; font-size: 13px; height: 34px; min-width: 90px;"
             [value]="selectedYear"
             (change)="onYearChange($event)"
             aria-label="Select year">
@@ -90,56 +98,25 @@
           </select>
 
           <!-- Quarter Selector -->
-          <div class="quarter-selector inline-flex flex-wrap gap-1 rounded-xl bg-emerald-900/10 p-1">
+          <div
+            class="quarter-selector"
+            style="display: flex; gap: 5px;">
 
             <button
               *ngFor="let quarter of quarterOptions"
               type="button"
-              class="quarter-tab h-8 min-w-12 rounded-lg px-4 text-sm font-semibold transition"
-              [ngClass]="{
-                'bg-emerald-700 text-white shadow-sm': !isAnnualView && selectedQuarter === quarter,
-                'text-emerald-900/80 hover:bg-white/60 hover:text-emerald-950': isAnnualView || selectedQuarter !== quarter
-              }"
-              [attr.aria-pressed]="!isAnnualView && selectedQuarter === quarter"
+              class="quarter-tab"
+              style="padding: 5px 12px; font-size: 12px; min-width: 75px; height: 34px;"
+              [class.active]="selectedQuarter === quarter"
+              [attr.aria-pressed]="selectedQuarter === quarter"
               (click)="selectQuarter(quarter)">
               {{ quarter }}
             </button>
 
-            <button
-              type="button"
-              class="quarter-tab h-8 rounded-lg px-4 text-sm font-semibold transition"
-              [ngClass]="{
-                'bg-emerald-700 text-white shadow-sm': isAnnualView,
-                'text-emerald-900/80 hover:bg-white/60 hover:text-emerald-950': !isAnnualView
-              }"
-              [attr.aria-pressed]="isAnnualView"
-              (click)="selectAnnual()">
-              Annual
-            </button>
-
-          </div>
           </div>
         </div>
 
-        <div
-          *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
-          class="record-actions">
-          <a
-            [routerLink]="selectedRecord === 'baptism'
-              ? '/pastor/bapaddrec'
-              : '/pastor/deathaddrec'"
-            [queryParams]="{
-              record: selectedRecord,
-              year: selectedYear,
-              quarter: selectedQuarter,
-              annual: isAnnualView
-            }"
-            class="add-record-btn">
-            + Add Record
-          </a>
-        </div>
-
-        <div *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'; else departmentReportView" class="table-responsive records-table-panel">
+        <div class="table-responsive">
 
           <!-- ================================================= -->
           <!-- BAPTISM RECORD TABLE -->
@@ -180,8 +157,9 @@
                   !baptismError &&
                   displayedBaptisms.length === 0
                 ">
-                <td colspan="7" class="text-center empty-records-cell">
-                  No baptism records found for {{ isAnnualView ? 'all quarters' : selectedQuarter }} of {{ selectedYear }}.
+                <td colspan="7" class="text-center">
+                  No baptism records found for
+                  {{ selectedQuarter }} of {{ selectedYear }}.
                 </td>
               </tr>
 
@@ -272,8 +250,9 @@
                   !deathError &&
                   displayedDeaths.length === 0
                 ">
-                <td colspan="8" class="text-center empty-records-cell">
-                  No death records found for {{ isAnnualView ? 'all quarters' : selectedQuarter }} of {{ selectedYear }}.
+                <td colspan="8" class="text-center">
+                  No death records found for
+                  {{ selectedQuarter }} of {{ selectedYear }}.
                 </td>
               </tr>
 
@@ -334,32 +313,18 @@
           </table>
 
         </div>
-
-        <ng-template #departmentReportView>
-          <section class="district-report-list" aria-label="District department reports">
-            <div *ngIf="churchesLoading" class="picker-message">Loading district churches...</div>
-            <div *ngIf="!churchesLoading && reportChurches.length === 0" class="picker-message">
-              No churches are available in your district.
-            </div>
-
-            <section
-              *ngFor="let church of reportChurches"
-              class="district-report-section">
-              <app-report-particulars
-                [embedded]="true"
-                [departmentId]="selectedDepartmentId || 16"
-                [churchId]="church.church_id"
-                [churchName]="church.name"
-                [districtId]="church.parent_id || districtId">
-              </app-report-particulars>
-            </section>
-          </section>
-        </ng-template>
       </div>
 
-    </div>
-  </main>
-</div>
+      <!-- ================================================= -->
+      <!-- COMMENTS -->
+      <!-- ================================================= -->
+      <div
+        *ngIf="!isReadOnly"
+        class="col-lg-3 comments-column">
+
+        <h2>
+          Comments
+        </h2>
 
 <aside
   *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
@@ -383,15 +348,6 @@
             {{ selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record' }} · {{ selectedQuarter }} {{ selectedYear }}
           </p>
         </div>
-      </div>
-      <button type="button" (click)="closeComments()" aria-label="Close comments" title="Close comments"
-        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <path d="m5 5 10 10M15 5 5 15" />
-        </svg>
-      </button>
-    </header>
 
     <div
       *ngIf="commentsError"
@@ -424,6 +380,7 @@
       <div *ngIf="!commentsLoading && visibleComments.length === 0" class="py-8 text-center text-sm text-emerald-900/60">
         No comments yet.
       </div>
+
     </div>
 
     <div *ngIf="canComment" class="shrink-0 border-t border-emerald-900/10 p-4">

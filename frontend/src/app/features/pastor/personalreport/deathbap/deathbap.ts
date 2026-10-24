@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import { finalize, timeout } from 'rxjs/operators';
 import { ReportParticulars } from '../../report_p/report-particulars/report-particulars';
 import { ChurchService } from '../../../../core/services/church/church-service';
@@ -76,11 +75,10 @@ export class DeathbapComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  selectedRecord: 'baptism' | 'death' | 'ministerial' | 'mission' = 'baptism';
+  selectedRecord: 'baptism' | 'death' = 'baptism';
 
   // Year and quarter selector
   selectedYear = new Date().getFullYear();
-  isAnnualView = false;
 
   selectedQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q1';
 
@@ -150,25 +148,6 @@ export class DeathbapComponent implements OnInit {
     this.isReadOnly =
       this.router.url.startsWith('/assistant')
       || this.router.url.startsWith('/director');
-
-    const queryParams = this.route.snapshot.queryParamMap;
-    const record = queryParams.get('record');
-    const year = Number(queryParams.get('year'));
-    const quarter = queryParams.get('quarter');
-
-    if (record === 'baptism' || record === 'death') {
-      this.selectedRecord = record;
-    }
-
-    if (Number.isInteger(year) && year > 0) {
-      this.selectedYear = year;
-    }
-
-    if (quarter === 'Q1' || quarter === 'Q2' || quarter === 'Q3' || quarter === 'Q4') {
-      this.selectedQuarter = quarter;
-    }
-
-    this.isAnnualView = queryParams.get('annual') === 'true';
 
     if (this.departmentId === 23) {
       this.selectedRecord = 'death';
@@ -309,13 +288,8 @@ export class DeathbapComponent implements OnInit {
   selectQuarter(
     quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'
   ): void {
-    this.isAnnualView = false;
     this.selectedQuarter = quarter;
     this.updateCommentQuarter();
-  }
-
-  selectAnnual(): void {
-    this.isAnnualView = true;
   }
 
   onYearChange(event: Event): void {
@@ -430,7 +404,7 @@ export class DeathbapComponent implements OnInit {
     return records
       .filter(record => {
         return (
-          (this.isAnnualView || this.normalizeQuarter(record.quarter) === this.selectedQuarter) &&
+          this.normalizeQuarter(record.quarter) === this.selectedQuarter &&
           this.getYearFromDate(record.date_of_baptism) === this.selectedYear
         );
       })
@@ -456,7 +430,7 @@ export class DeathbapComponent implements OnInit {
     return records.filter(record => {
 
       return (
-        (this.isAnnualView || this.normalizeQuarter(record.quarter) === this.selectedQuarter) &&
+        this.normalizeQuarter(record.quarter) === this.selectedQuarter &&
         this.getYearFromDate(record.date_of_death) === this.selectedYear
       );
 
@@ -485,13 +459,6 @@ export class DeathbapComponent implements OnInit {
       return;
     }
 
-    if (this.route.snapshot.queryParamMap.get('return_to') === 'monitoring') {
-      this.router.navigate([
-        this.router.url.startsWith('/assistant') ? '/assistant/reports' : '/director/reports'
-      ]);
-      return;
-    }
-
     this.router.navigate([
       `${this.router.url.startsWith('/assistant') ? '/assistant' : '/director'}/reports/programs`,
       this.districtId,
@@ -503,7 +470,7 @@ export class DeathbapComponent implements OnInit {
    * Select Baptism or Death record.
    */
   selectRecord(
-    record: 'baptism' | 'death' | 'ministerial' | 'mission'
+    record: 'baptism' | 'death'
   ): void {
 
     this.selectedRecord = record;
@@ -513,12 +480,6 @@ export class DeathbapComponent implements OnInit {
 
     if (record === 'baptism') {
       this.loadBaptisms();
-    } else if (record === 'death') {
-      this.loadDeaths();
-    }
-
-    if (record === 'baptism' || record === 'death') {
-      this.loadLatestComment();
     } else {
       this.comments = [];
       this.commentQuarterApproved = false;
@@ -937,8 +898,6 @@ export class DeathbapComponent implements OnInit {
 
           }
 
-          this.churchesLoading = false;
-
           console.log('Churches loaded:', this.churches);
 
           this.cdr.detectChanges();
@@ -953,7 +912,6 @@ export class DeathbapComponent implements OnInit {
           );
 
           this.churches = [];
-          this.churchesLoading = false;
 
         }
 
