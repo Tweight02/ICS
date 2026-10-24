@@ -8,7 +8,7 @@ export const PASTOR_ROUTES: Routes = [
   // Default route
   {
     path: '',
-    redirectTo: '',
+    redirectTo: 'view-representatives',
     pathMatch: 'full'
   },
 

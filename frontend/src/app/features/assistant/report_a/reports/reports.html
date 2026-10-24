@@ -127,35 +127,10 @@
                     <button
                       type="button"
                       class="monitoring-personal-reports-toggle"
-                      [attr.aria-expanded]="isPersonalReportsOpen(church.church_id)"
-                      (click)="togglePersonalReports(church.church_id)"
+                      (click)="openPersonalReport(district.church_id, church.church_id)"
                     >
                       <span>Personal Report</span>
-                      <svg class="monitoring-accordion-chevron" [class.is-open]="isPersonalReportsOpen(church.church_id)" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M5 7.5l5 5 5-5" />
-                      </svg>
                     </button>
-
-                    <div *ngIf="isPersonalReportsOpen(church.church_id)" class="monitoring-personal-report-list">
-                      <button
-                        *ngFor="let department of getPersonalReportDepartments(church.church_id)"
-                        type="button"
-                        class="monitoring-department-row"
-                        (click)="openDepartment(department, district.church_id, church.church_id)"
-                      >
-                        <span class="monitoring-department-name">{{ department.department_name }}</span>
-                        <span class="monitoring-accordion-quarter-group" aria-label="Quarter status">
-                          <span *ngFor="let quarterKey of quarterKeys" class="monitoring-accordion-quarter-pill" [attr.title]="quarterKey.toUpperCase()">
-                            <span class="monitoring-quarter-label">{{ quarterKey.toUpperCase() }}</span>
-                            <span *ngIf="isDepartmentApproved(department, quarterKey); else personalProgress" class="monitoring-status-check">✓</span>
-                            <ng-template #personalProgress>
-                              <span *ngIf="getDepartmentProgress(department, quarterKey) as value; else personalEmpty" class="monitoring-status-percent">{{ value }}%</span>
-                            </ng-template>
-                            <ng-template #personalEmpty><span class="monitoring-status-empty">—</span></ng-template>
-                          </span>
-                        </span>
-                      </button>
-                    </div>
                   </div>
 
                   <div *ngIf="departmentsByChurch()[church.church_id]?.length === 0" class="monitoring-accordion-empty">

@@ -533,29 +533,8 @@ class ReportController extends Controller
         int $churchId,
         int $departmentId
     ) {
-        $user = $request->user();
-        $pastorPersonalCommentAccess = false;
-
         if (
-            $user &&
-            $this->isPastorRole($this->normalizeRole((string) ($user->role ?? ''))) &&
-            in_array($departmentId, [22, 23], true)
-        ) {
-            $assignedChurch = DB::table('churches')
-                ->where('church_id', $user->church_id)
-                ->first(['church_id', 'parent_id']);
-
-            if ($assignedChurch) {
-                $districtId = $assignedChurch->parent_id ?? $assignedChurch->church_id;
-                $pastorPersonalCommentAccess = DB::table('churches')
-                    ->where('church_id', $churchId)
-                    ->where('parent_id', $districtId)
-                    ->exists();
-            }
-        }
-
-        if (
-            ! $pastorPersonalCommentAccess &&
+            ! $this->pastorPersonalCommentAccess($request, $churchId, $departmentId) &&
             ($denied = $this->departmentAccessDenied($request, $departmentId))
         ) {
             return $denied;
@@ -651,9 +630,21 @@ class ReportController extends Controller
 
         $data = $request->validate([
             'quarter_id' => [
-                'required',
+                'sometimes',
+                'nullable',
                 'integer',
                 'exists:quarters,quarter_id',
+            ],
+            'year' => [
+                'required_without:quarter_id',
+                'integer',
+                'min:2000',
+                'max:2100',
+            ],
+            'quarter' => [
+                'required_without:quarter_id',
+                'string',
+                'in:Q1,Q2,Q3,Q4',
             ],
             'church_id' => [
                 'required',
@@ -672,11 +663,61 @@ class ReportController extends Controller
             ],
         ]);
 
-        if ($denied = $this->departmentAccessDenied(
+        $pastorPersonalCommentAccess = $this->pastorPersonalCommentAccess(
             $request,
+            (int) $data['church_id'],
             (int) $data['department_id']
-        )) {
+        );
+
+        if (
+            ! $pastorPersonalCommentAccess &&
+            ($denied = $this->departmentAccessDenied(
+                $request,
+                (int) $data['department_id']
+            ))
+        ) {
             return $denied;
+        }
+
+        if (empty($data['quarter_id'])) {
+            if (! in_array((int) $data['department_id'], [22, 23], true)) {
+                return response()->json([
+                    'message' => 'A report quarter is required to add this comment.',
+                ], 422);
+            }
+
+            $programId = DB::table('programs')
+                ->where('department_id', $data['department_id'])
+                ->whereNull('parent_id')
+                ->orderBy('program_id')
+                ->value('program_id');
+
+            if (! $programId) {
+                return response()->json([
+                    'message' => 'No report program is available for this department.',
+                ], 422);
+            }
+
+            $quarter = DB::table('quarters')
+                ->where('church_id', $data['church_id'])
+                ->where('program_id', $programId)
+                ->where('year', (string) $data['year'])
+                ->where('quarter', $data['quarter'])
+                ->first();
+
+            if (! $quarter) {
+                $data['quarter_id'] = DB::table('quarters')->insertGetId([
+                    'church_id' => $data['church_id'],
+                    'program_id' => $programId,
+                    'year' => (string) $data['year'],
+                    'quarter' => $data['quarter'],
+                    'date_submitted' => null,
+                    'district_endorse' => null,
+                    'mission_approve' => null,
+                ]);
+            } else {
+                $data['quarter_id'] = (int) $quarter->quarter_id;
+            }
         }
 
         $quarter = DB::table('quarters')
@@ -1104,6 +1145,37 @@ class ReportController extends Controller
         $role = $this->normalizeRole((string) ($user->role ?? ''));
 
         return $role === 'director' || $this->isAssistantRole($role);
+    }
+
+    private function pastorPersonalCommentAccess(
+        Request $request,
+        int $churchId,
+        int $departmentId
+    ): bool {
+        $user = $request->user();
+
+        if (
+            ! $user ||
+            ! $this->isPastorRole($this->normalizeRole((string) ($user->role ?? ''))) ||
+            ! in_array($departmentId, [22, 23], true)
+        ) {
+            return false;
+        }
+
+        $assignedChurch = DB::table('churches')
+            ->where('church_id', $user->church_id)
+            ->first(['church_id', 'parent_id']);
+
+        if (! $assignedChurch) {
+            return false;
+        }
+
+        $districtId = $assignedChurch->parent_id ?? $assignedChurch->church_id;
+
+        return DB::table('churches')
+            ->where('church_id', $churchId)
+            ->where('parent_id', $districtId)
+            ->exists();
     }
 
     private function isRepresentativeRole(User $user): bool

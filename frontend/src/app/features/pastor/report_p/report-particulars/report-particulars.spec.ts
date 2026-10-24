@@ -19,30 +19,40 @@ describe('ReportParticulars', () => {
       isDismissed: true
     });
 
-    const paramMap = convertToParamMap({ departmentId: '0' });
-    const queryParamMap = convertToParamMap({});
+    const paramMap = convertToParamMap({
+      departmentId: '16',
+      churchId: '2',
+      districtId: '1'
+    });
+    const queryParamMap = convertToParamMap({
+      church_name: 'Test Church',
+      district_name: 'Test District'
+    });
     const report = {
       department: { department_id: 16, department_name: 'Ministerial & Evangelism' },
       programs: [{
         program_id: 1,
         program_name: 'Quarterly Report',
-        sections: [{
-          program_id: 2,
-          program_name: 'Section',
-          particulars: [{
-            particular_id: 3,
-            particular_name: 'Members visited',
-            quarters: [{
-              quarter_id: 9,
-              quarter: 'Q1',
-              year: 2026,
-              value: 10,
-              date_submitted: null,
-              district_endorse: null,
-              mission_approve: null
+        sections: [
+          {
+            program_id: 2,
+            program_name: 'First Section',
+            particulars: [{
+              particular_id: 3,
+              particular_name: 'Members visited',
+              quarters: [{
+                quarter_id: 9,
+                quarter: 'Q1',
+                year: 2026,
+                value: 10,
+                date_submitted: null,
+                district_endorse: null,
+                mission_approve: null
+              }]
             }]
-          }]
-        }]
+          },
+          { program_id: 4, program_name: 'Second Section', particulars: [] }
+        ]
       }]
     };
     saveDepartmentReport = vi.fn().mockReturnValue(of({ message: 'Report saved successfully.' }));
@@ -78,6 +88,13 @@ describe('ReportParticulars', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('opens the first report section by default', () => {
+    const accordions = fixture.nativeElement.querySelectorAll('details');
+    expect(accordions.length).toBe(2);
+    expect(accordions[0].open).toBe(true);
+    expect(accordions[1].open).toBe(false);
   });
 
   it('opens and closes the comments chathead panel', () => {

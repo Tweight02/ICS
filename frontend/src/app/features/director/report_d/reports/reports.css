@@ -457,18 +457,13 @@
   transition: background-color 0.16s ease;
 }
 
-:host .monitoring-personal-reports-toggle:hover,
-:host .monitoring-personal-reports-toggle[aria-expanded="true"] {
+:host .monitoring-personal-reports-toggle:hover {
   background: #eaf4ee;
 }
 
 :host .monitoring-personal-reports-toggle:focus-visible {
   outline: 2px solid rgba(49, 117, 91, 0.7);
   outline-offset: -2px;
-}
-
-:host .monitoring-personal-report-list .monitoring-department-row {
-  background: #ffffff;
 }
 
 :host .monitoring-accordion-quarter-pill {

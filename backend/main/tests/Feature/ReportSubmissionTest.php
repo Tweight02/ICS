@@ -67,6 +67,7 @@ function createDistrictPastor(int $churchId, int $departmentId): User
         'role' => 'pastor',
         'email' => 'pastor@example.com',
         'password' => Hash::make('password'),
+        'status' => 'active',
     ]);
 }
 
@@ -83,8 +84,72 @@ function createRepresentative(int $churchId, int $departmentId): User
         'role' => 'representative',
         'email' => 'representative-comments@example.com',
         'password' => Hash::make('password'),
+        'status' => 'active',
     ]);
 }
+
+test('assistant can comment on baptism and death reports when no quarter exists yet', function () {
+    $churchId = DB::table('churches')->insertGetId([
+        'name' => 'Personal Report Church',
+        'address' => 'Personal Report District',
+        'parent_id' => null,
+    ]);
+
+    foreach ([22 => 'Baptism Record', 23 => 'Death Record'] as $departmentId => $name) {
+        DB::table('departments')->insert([
+            'department_id' => $departmentId,
+            'department_name' => $name,
+        ]);
+        DB::table('programs')->insert([
+            'department_id' => $departmentId,
+            'program_name' => $name,
+            'parent_id' => null,
+        ]);
+    }
+
+    $assistant = User::query()->create([
+        'department_id' => 22,
+        'church_id' => $churchId,
+        'first_name' => 'Report',
+        'middle_name' => '',
+        'last_name' => 'Assistant',
+        'birthdate' => '1980-01-01',
+        'gender' => 'other',
+        'role' => 'assistant',
+        'email' => 'personal-report-assistant@example.com',
+        'password' => Hash::make('password'),
+        'status' => 'active',
+    ]);
+
+    foreach ([22 => 'Baptism Record', 23 => 'Death Record'] as $departmentId => $name) {
+        $response = $this->actingAs($assistant, 'sanctum')
+            ->postJson('/api/comments', [
+                'church_id' => $churchId,
+                'department_id' => $departmentId,
+                'year' => 2026,
+                'quarter' => 'Q1',
+                'details' => "Comment for {$name}.",
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.details', "Comment for {$name}.");
+
+        $quarterId = $response->json('data.quarter_id');
+
+        $this->assertDatabaseHas('quarters', [
+            'quarter_id' => $quarterId,
+            'church_id' => $churchId,
+            'quarter' => 'Q1',
+            'year' => '2026',
+        ]);
+
+        $this->assertDatabaseHas('comments', [
+            'quarter_id' => $quarterId,
+            'church_id' => $churchId,
+            'department_id' => $departmentId,
+            'details' => "Comment for {$name}.",
+        ]);
+    }
+});
 
 test('representative can reply to an existing unapproved report conversation', function () {
     $fixture = reportSubmissionFixture();

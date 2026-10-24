@@ -130,4 +130,23 @@ export class ReportService {
     );
   }
 
+  addPersonalReportComment(
+    churchId: number,
+    departmentId: number,
+    year: number,
+    quarter: string,
+    details: string
+  ): Observable<{ message: string; data: ReportComment }> {
+    return this.http.post<{ message: string; data: ReportComment }>(
+      `${this.apiUrl}/comments`,
+      {
+        church_id: churchId,
+        department_id: departmentId,
+        year,
+        quarter,
+        details: details.trim()
+      }
+    );
+  }
+
 }

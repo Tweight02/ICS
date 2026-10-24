@@ -99,6 +99,10 @@ loadChurches(): void {
 
   }
 
+  openPersonalReport(): void {
+    this.router.navigate(['/pastor/baptism']);
+  }
+
 
 openChurch(church: Church): void {
   this.router.navigate([

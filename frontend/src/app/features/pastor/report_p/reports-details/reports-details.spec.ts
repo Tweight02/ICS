@@ -7,8 +7,11 @@ import { ReportsDetails } from './reports-details';
 describe('ReportsDetails', () => {
   let component: ReportsDetails;
   let fixture: ComponentFixture<ReportsDetails>;
+  let navigate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    navigate = vi.fn();
+
     await TestBed.configureTestingModule({
       imports: [ReportsDetails],
       providers: [
@@ -44,7 +47,7 @@ describe('ReportsDetails', () => {
             })
           }
         },
-        { provide: Router, useValue: { url: '/pastor/reports/details', navigate: () => undefined } }
+        { provide: Router, useValue: { url: '/pastor/reports/details', navigate } }
       ]
     }).compileComponents();
 
@@ -62,5 +65,11 @@ describe('ReportsDetails', () => {
       progress: 50,
       approved: false
     });
+  });
+
+  it('opens the personal report from the reports page button', () => {
+    component.openPersonalReport();
+
+    expect(navigate).toHaveBeenCalledWith(['/pastor/baptism']);
   });
 });
