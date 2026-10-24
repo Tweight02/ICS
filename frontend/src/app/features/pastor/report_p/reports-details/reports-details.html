@@ -19,9 +19,22 @@
         <p *ngIf="district?.address" class="mt-1 text-sm text-emerald-900/70">{{ district?.address }}</p>
       </div>
 
-      <div class="min-w-36 rounded-xl border border-white/60 bg-white/60 px-3.5 py-2 text-center shadow-md shadow-emerald-950/5 backdrop-blur-xl">
-        <p class="text-lg font-bold text-emerald-950">{{ churches.length }}</p>
-        <p class="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/70">Churches / Companies</p>
+      <div class="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          (click)="openPersonalReport()"
+          class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-950/10 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4.5 8-12a8 8 0 1 0-16 0c0 7.5 8 12 8 12Z" />
+            <path d="M12 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+          </svg>
+          Personal Report
+        </button>
+
+        <div class="min-w-36 rounded-xl border border-white/60 bg-white/60 px-3.5 py-2 text-center shadow-md shadow-emerald-950/5 backdrop-blur-xl">
+          <p class="text-lg font-bold text-emerald-950">{{ churches.length }}</p>
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/70">Churches / Companies</p>
+        </div>
       </div>
     </header>
 

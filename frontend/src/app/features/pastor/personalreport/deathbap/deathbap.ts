@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   ChangeDetectorRef,
   Component,
@@ -9,6 +10,15 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs/operators';
+import { ReportParticulars } from '../../report_p/report-particulars/report-particulars';
+import { ChurchService } from '../../../../core/services/church/church-service';
+import { ReportService } from '../../../../core/services/report/report';
+import {
+  DepartmentReport,
+  ReportComment,
+  ReportQuarter
+} from '../../../../core/models/report.model';
+import { AuthService } from '../../../../core/services/auth/auth-service';
 
 interface Baptism {
   baptism_id: number;
@@ -48,7 +58,9 @@ interface Death {
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink
+    FormsModule,
+    RouterLink,
+    ReportParticulars
   ],
   templateUrl: './deathbap.html',
   styleUrls: ['./deathbap.css']
@@ -56,6 +68,9 @@ interface Death {
 export class DeathbapComponent implements OnInit {
 
   private http = inject(HttpClient);
+  private churchService = inject(ChurchService);
+  private reportService = inject(ReportService);
+  private auth = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -82,6 +97,15 @@ export class DeathbapComponent implements OnInit {
   baptisms: Baptism[] = [];
   deaths: Death[] = [];
   churches: Church[] = [];
+  churchesLoading = false;
+  comments: ReportComment[] = [];
+  commentsLoading = false;
+  commentsOpen = false;
+  commentsError = '';
+  newComment = '';
+  savingComment = false;
+  commentQuarterApproved = false;
+  private readonly personalReports = new Map<number, DepartmentReport>();
 
   // Selected records for the details modals
   selectedBaptism: Baptism | null = null;
@@ -132,6 +156,54 @@ export class DeathbapComponent implements OnInit {
     this.loadChurches();
     this.loadBaptisms();
     this.loadDeaths();
+    if (this.selectedRecord === 'baptism' || this.selectedRecord === 'death') {
+      this.loadLatestComment();
+    }
+  }
+
+  get reportChurches(): Church[] {
+    if (this.isReadOnly && this.churchId > 0) {
+      return this.churches.filter(
+        church => Number(church.church_id) === this.churchId
+      );
+    }
+
+    return this.churches.filter(church => church.parent_id !== null);
+  }
+
+  get selectedDepartmentId(): 16 | 20 | null {
+    if (this.selectedRecord === 'ministerial') return 16;
+    if (this.selectedRecord === 'mission') return 20;
+    return null;
+  }
+
+  get canComment(): boolean {
+    const role = String(this.auth.getCurrentUser()?.role ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]/g, ' ');
+
+    return ['pastor', 'district pastor', 'assistant', 'administrative assistant']
+      .includes(role);
+  }
+
+  get visibleComments(): ReportComment[] {
+    return this.comments.filter(comment =>
+      Number(comment.year) === this.selectedYear &&
+      (this.isAnnualView || this.normalizeQuarter(comment.quarter) === this.selectedQuarter)
+    );
+  }
+
+  isOwnComment(comment: ReportComment): boolean {
+    return Number(comment.commented_by) === Number(this.auth.getCurrentUser()?.user_id);
+  }
+
+  openComments(): void {
+    this.commentsOpen = true;
+  }
+
+  closeComments(): void {
+    this.commentsOpen = false;
   }
 
   // =================================================
@@ -217,6 +289,7 @@ export class DeathbapComponent implements OnInit {
     quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'
   ): void {
     this.selectedQuarter = quarter;
+    this.updateCommentQuarter();
   }
 
   onYearChange(event: Event): void {
@@ -227,6 +300,7 @@ export class DeathbapComponent implements OnInit {
 
     if (Number.isInteger(value) && value > 0) {
       this.selectedYear = value;
+      this.updateCommentQuarter();
     }
   }
 
@@ -407,8 +481,139 @@ export class DeathbapComponent implements OnInit {
     if (record === 'baptism') {
       this.loadBaptisms();
     } else {
-      this.loadDeaths();
+      this.comments = [];
+      this.commentQuarterApproved = false;
     }
+  }
+
+  private loadLatestComment(): void {
+    if (this.selectedRecord !== 'baptism' && this.selectedRecord !== 'death') {
+      return;
+    }
+
+    const departmentId = this.selectedRecord === 'baptism' ? 22 : 23;
+    const churchIds = this.churchId
+      ? [this.churchId]
+      : this.reportChurches.map(church => church.church_id);
+
+    this.comments = [];
+    this.commentsError = '';
+    this.commentQuarterApproved = false;
+
+    if (churchIds.length === 0) {
+      this.commentsLoading = false;
+      return;
+    }
+
+    this.commentsLoading = true;
+    forkJoin(churchIds.map(churchId =>
+      this.reportService.getDepartmentComments(churchId, departmentId)
+    )).subscribe({
+      next: responses => {
+        this.comments = responses.flatMap(response =>
+          Array.isArray(response) ? response : response.data ?? []
+        );
+        this.commentsLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: error => {
+        this.commentsError = error?.error?.message || 'Unable to load comments.';
+        this.commentsLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+
+    if (this.churchId > 0) {
+      const cachedReport = this.personalReports.get(departmentId);
+      if (cachedReport) {
+        this.updateCommentQuarter(cachedReport);
+        return;
+      }
+
+      this.reportService.getDepartmentReport(this.churchId, departmentId).subscribe({
+        next: report => {
+          this.personalReports.set(departmentId, report);
+          this.updateCommentQuarter(report);
+          this.cdr.detectChanges();
+        },
+        error: error => {
+          this.commentsError = error?.error?.message || 'Unable to load report quarter for comments.';
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  private updateCommentQuarter(report = this.personalReports.get(
+    this.selectedRecord === 'baptism' ? 22 : 23
+  )): void {
+    this.commentQuarterApproved = false;
+
+    if (!report) {
+      return;
+    }
+
+    const quarters: ReportQuarter[] = report.programs.flatMap(program =>
+      program.sections.flatMap(section =>
+        section.particulars.flatMap(particular => particular.quarters)
+      )
+    ).filter(quarter =>
+      Number(quarter.year) === this.selectedYear &&
+      this.normalizeQuarter(quarter.quarter) === this.selectedQuarter
+    );
+
+    this.commentQuarterApproved =
+      quarters.length > 0 &&
+      quarters.every(quarter => Boolean(quarter.mission_approve));
+  }
+
+  publishComment(): void {
+    const details = this.newComment.trim();
+    const departmentId = this.selectedRecord === 'baptism' ? 22 : 23;
+
+    if (!details || this.savingComment || !this.canComment || !this.churchId) {
+      return;
+    }
+
+    if (details.length > 255) {
+      this.commentsError = 'Comments must not exceed 255 characters.';
+      return;
+    }
+
+    if (this.isAnnualView) {
+      this.commentsError = 'Select a quarter to add a comment.';
+      return;
+    }
+
+    if (this.commentQuarterApproved) {
+      this.commentsError = 'This report has been approved. Comments are closed.';
+      return;
+    }
+
+    this.savingComment = true;
+    this.commentsError = '';
+
+    this.reportService
+      .addPersonalReportComment(
+        this.churchId,
+        departmentId,
+        this.selectedYear,
+        this.selectedQuarter,
+        details
+      )
+      .subscribe({
+        next: response => {
+          this.comments.unshift(response.data);
+          this.newComment = '';
+          this.savingComment = false;
+          this.cdr.detectChanges();
+        },
+        error: error => {
+          this.savingComment = false;
+          this.commentsError = error?.error?.message || 'Unable to save comment.';
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   // =================================================
@@ -616,6 +821,37 @@ export class DeathbapComponent implements OnInit {
   // =================================================
 
   loadChurches(): void {
+
+    this.churchesLoading = true;
+
+    if (!this.isReadOnly) {
+      this.churchService.getMyDistrictChurches().subscribe({
+        next: response => {
+          this.districtId = Number(response.district?.church_id) || this.districtId;
+          this.churches = (response.data || []).map(church => ({
+            church_id: Number(church.church_id),
+            name: church.name || '',
+            address: church.address || '',
+            parent_id: church.parent_id == null
+              ? null
+              : Number(church.parent_id)
+          }));
+          this.churchesLoading = false;
+          if (this.selectedRecord === 'baptism' || this.selectedRecord === 'death') {
+            this.loadLatestComment();
+          }
+          this.cdr.detectChanges();
+        },
+        error: error => {
+          console.error('Failed to load district churches:', error);
+          this.churches = [];
+          this.churchesLoading = false;
+          this.comments = [];
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    }
 
     console.log('Loading churches...');
 

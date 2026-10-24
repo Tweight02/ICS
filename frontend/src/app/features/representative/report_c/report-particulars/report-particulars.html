@@ -105,10 +105,10 @@
         <div class="min-w-0">
           <ng-container *ngIf="getSelectedProgram() as program">
 
-            <section *ngFor="let section of program.sections; trackBy: trackSection" class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
+            <section *ngFor="let section of program.sections; let first = first; trackBy: trackSection" class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
-              <details>
+              <details [attr.open]="first ? '' : null">
                 <summary class="relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
                   <span class="block min-w-0 pr-32">
                     {{ section.program_name || section.section_name || program.program_name || 'Particular' }}

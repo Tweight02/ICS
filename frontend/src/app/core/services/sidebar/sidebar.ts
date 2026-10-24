@@ -31,17 +31,10 @@ export class SidebarService {
             icon: 'bi-calendar-event'
           },
           {
-             label: 'Reports',
-             route: '/pastor/reports/details',
+              label: 'Reports',
+              route: '/pastor/reports/details',
              icon: 'bi-bar-chart'
-          },
-
-          {
-            label: 'Personal Report',
-            route: '/pastor/baptism',
-            icon: 'bi-droplet'
           }
-          
         ];
 
       // CHURCH REPRESENTATIVE

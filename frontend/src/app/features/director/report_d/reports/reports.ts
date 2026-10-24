@@ -46,7 +46,6 @@ export class Reports implements OnInit {
   readonly loadingDepartments = signal<Record<number, boolean>>({});
   readonly expandedDistrictId = signal<number | null>(null);
   readonly expandedChurchId = signal<number | null>(null);
-  readonly expandedPersonalReportsChurchId = signal<number | null>(null);
   readonly loadingDistricts = signal(false);
   readonly errorMessage = signal('');
   readonly searchTerm = signal('');
@@ -154,7 +153,6 @@ export class Reports implements OnInit {
 
   toggleChurch(churchId: number): void {
     this.expandedChurchId.set(this.expandedChurchId() === churchId ? null : churchId);
-    this.expandedPersonalReportsChurchId.set(null);
 
     if (this.expandedChurchId() !== churchId || Object.hasOwn(this.departmentsByChurch(), churchId)) {
       return;
@@ -178,16 +176,6 @@ export class Reports implements OnInit {
     return this.expandedChurchId() === churchId;
   }
 
-  togglePersonalReports(churchId: number): void {
-    this.expandedPersonalReportsChurchId.set(
-      this.expandedPersonalReportsChurchId() === churchId ? null : churchId
-    );
-  }
-
-  isPersonalReportsOpen(churchId: number): boolean {
-    return this.expandedPersonalReportsChurchId() === churchId;
-  }
-
   getReportDepartments(churchId: number): Department[] {
     return (this.departmentsByChurch()[churchId] ?? []).filter(
       department => !this.isPersonalReportDepartment(department)
@@ -198,6 +186,21 @@ export class Reports implements OnInit {
     return (this.departmentsByChurch()[churchId] ?? []).filter(
       department => this.isPersonalReportDepartment(department)
     );
+  }
+
+  openPersonalReport(districtId: number, churchId: number): void {
+    const portalPrefix = this.router.url.startsWith('/assistant')
+      ? '/assistant'
+      : '/director';
+
+    this.router.navigate([
+      `${portalPrefix}/reports/records`,
+      22,
+      districtId,
+      churchId
+    ], {
+      queryParams: { return_to: 'monitoring' }
+    });
   }
 
   private isPersonalReportDepartment(department: Department): boolean {

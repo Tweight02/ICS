@@ -58,7 +58,7 @@ export class Login {
         // Navigate according to the authenticated user's role.
         switch (response.user.role) {
           case 'pastor':
-            this.router.navigate(['/pastor/reports/details']);
+            this.router.navigate(['/pastor/view-representatives']);
             break;
 
           case 'representative':

@@ -46,6 +46,24 @@
               (click)="selectRecord('death')">
               Death Record
             </button>
+
+            <button
+              type="button"
+              class="record-btn"
+              [attr.aria-pressed]="selectedRecord === 'ministerial'"
+              [class.active]="selectedRecord === 'ministerial'"
+              (click)="selectRecord('ministerial')">
+              Ministerial &amp; Evangelism
+            </button>
+
+            <button
+              type="button"
+              class="record-btn"
+              [attr.aria-pressed]="selectedRecord === 'mission'"
+              [class.active]="selectedRecord === 'mission'"
+              (click)="selectRecord('mission')">
+              Adventist Mission
+            </button>
           </div>
 
           <!-- Add Record -->
@@ -308,35 +326,112 @@
           Comments
         </h2>
 
-        <div class="comments-subtitle">
-          Administrative Assistant
-        </div>
-
-        <div class="comment-card">
-          <div class="comment-top">
-            <div>
-              <div class="comment-role">
-                Sep 15, 2026, 3:00 PM
-              </div>
-            </div>
-
-            <div class="comment-date">
-            </div>
-          </div>
-
-          <p class="comment-text">
-            The report has been reviewed by the Administrative Assistant.
-            Please ensure the entries are complete and any supporting notes
-            are included before final submission.
+<aside
+  *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
+  class="comments-chathead">
+  <section
+    *ngIf="commentsOpen"
+    class="fixed inset-x-3 bottom-3 z-50 flex max-h-[min(78vh,640px)] flex-col overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-2xl shadow-emerald-950/20 sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]"
+    role="dialog"
+    aria-label="Report comments">
+    <header class="flex shrink-0 items-center justify-between gap-3 bg-emerald-900 px-4 py-3 text-white">
+      <div class="flex min-w-0 items-center gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
+          </svg>
+        </span>
+        <div class="min-w-0">
+          <h2 class="font-serif text-base font-semibold text-white">Comments</h2>
+          <p class="text-xs text-white/70">
+            {{ selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record' }} · {{ selectedQuarter }} {{ selectedYear }}
           </p>
         </div>
 
-        <div class="comment-line"></div>
+    <div
+      *ngIf="commentsError"
+      role="alert"
+      class="border-t border-red-100 bg-red-50/90 px-4 py-2.5 text-sm text-red-700">
+      {{ commentsError }}
+    </div>
+
+    <div class="min-h-0 flex-1 overflow-y-auto bg-emerald-50/70 px-4 py-4">
+      <div *ngIf="commentsLoading" class="flex items-center gap-2 py-3 text-sm text-emerald-900/70">
+        <span class="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
+        Loading comments...
+      </div>
+
+      <ng-container *ngIf="!commentsLoading">
+        <article
+          *ngFor="let comment of visibleComments"
+          class="mb-4 flex flex-col items-start gap-1"
+          [class.items-end]="isOwnComment(comment)">
+          <div class="max-w-[92%] rounded-2xl border border-emerald-900/10 bg-white px-4 py-3 text-emerald-950 shadow-sm">
+            <p class="whitespace-pre-line break-words text-sm leading-5">{{ comment.details }}</p>
+          </div>
+          <div class="flex max-w-[92%] flex-wrap items-center gap-x-2 px-2 text-[11px] text-emerald-900/60">
+            <span class="font-semibold text-emerald-900/75">{{ comment.commenter_name || comment.commenter_role || 'Report comment' }}</span>
+            <time>{{ comment.date_commented | date: 'mediumDate' }}</time>
+          </div>
+        </article>
+      </ng-container>
+
+      <div *ngIf="!commentsLoading && visibleComments.length === 0" class="py-8 text-center text-sm text-emerald-900/60">
+        No comments yet.
       </div>
 
     </div>
-  </main>
-</div>
+
+    <div *ngIf="canComment" class="shrink-0 border-t border-emerald-900/10 p-4">
+      <ng-container *ngIf="commentQuarterApproved && !isAnnualView; else commentForm">
+        <p class="text-sm text-emerald-900/70">This report has been approved. Comments are closed.</p>
+      </ng-container>
+
+      <ng-template #commentForm>
+        <form (ngSubmit)="publishComment()" class="flex items-center gap-2">
+          <input
+            type="text"
+            name="reportComment"
+            [(ngModel)]="newComment"
+            [disabled]="savingComment || isAnnualView || !churchId"
+            maxlength="255"
+            placeholder="Write a comment..."
+            aria-label="Write a comment"
+            class="h-11 min-w-0 flex-1 rounded-full border-0 bg-emerald-900/5 px-4 text-sm text-emerald-950 outline-none transition placeholder:text-emerald-900/45 focus:bg-white focus:ring-2 focus:ring-emerald-600/25 disabled:cursor-not-allowed disabled:opacity-60">
+          <button
+            type="submit"
+            aria-label="Send comment"
+            title="Send comment"
+            [disabled]="savingComment || !newComment.trim() || isAnnualView || !churchId"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-900/30">
+            <span *ngIf="savingComment; else sendIcon" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+            <ng-template #sendIcon>
+              <span aria-hidden="true">➤</span>
+            </ng-template>
+          </button>
+        </form>
+        <p *ngIf="isAnnualView" class="mt-2 text-xs text-emerald-900/60">
+          Select a quarter to add a comment.
+        </p>
+      </ng-template>
+    </div>
+
+    <div *ngIf="!canComment" class="border-t border-emerald-900/10 px-4 py-3 text-sm text-emerald-900/70">
+      View only. Comments cannot be added from this account.
+    </div>
+  </section>
+
+  <button *ngIf="!commentsOpen" type="button" (click)="openComments()"
+    aria-label="Open comments" title="Open comments" [attr.aria-expanded]="commentsOpen"
+    class="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-950/25 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
+      <path d="M8 11.5h8M8 8.5h5" />
+    </svg>
+  </button>
+</aside>
 
 <!-- ================================================= -->
 <!-- BAPTISM DETAILS MODAL -->
