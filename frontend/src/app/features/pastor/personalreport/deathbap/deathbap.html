@@ -18,73 +18,64 @@
     <div class="row g-4">
 
       <!-- Records -->
-      <div class="records-column col-12">
-        <section class="records-panel">
-          <header class="records-heading">
-            <div>
-              <p class="section-label">PERSONAL REPORTS</p>
-              <h2>
-                {{ selectedRecord === 'baptism'
-                  ? 'Baptism Record'
-                  : selectedRecord === 'death'
-                    ? 'Death Record'
-                    : selectedRecord === 'ministerial'
-                      ? 'Ministerial & Evangelism'
-                      : 'Adventist Mission' }}
-              </h2>
-            </div>
+      <div
+        class="records-column"
+        [ngClass]="isReadOnly ? 'col-12' : 'col-lg-9'">
 
-            <a
-              *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
-              [routerLink]="selectedRecord === 'baptism'
-                ? '/pastor/bapaddrec'
-                : '/pastor/deathaddrec'"
-              class="add-record-btn">
-              <span aria-hidden="true">+</span>
-              Add {{ selectedRecord === 'baptism' ? 'Baptism' : 'Death' }} Record
-            </a>
-          </header>
+        <div class="records-toolbar d-flex align-items-center justify-content-between">
 
-          <div class="records-toolbar">
-            <span class="selector-label">REPORT TYPE</span>
-            <div class="record-selector" role="group" aria-label="Select report type">
-              <button
-                type="button"
-                class="record-btn"
-                [class.active]="selectedRecord === 'baptism'"
-                [attr.aria-pressed]="selectedRecord === 'baptism'"
-                (click)="selectRecord('baptism')">
-                Baptism Record
-              </button>
+          <div class="d-flex align-items-center pb-2">
+            <span class="selector-label">
+              SELECT RECORD:
+            </span>
 
-              <button
-                type="button"
-                class="record-btn"
-                [class.active]="selectedRecord === 'death'"
-                [attr.aria-pressed]="selectedRecord === 'death'"
-                (click)="selectRecord('death')">
-                Death Record
-              </button>
+            <button
+              type="button"
+              class="record-btn"
+              style="padding: 6px 12px; font-size: 13px; min-width: 120px; height: 34px;"
+              [class.active]="selectedRecord === 'baptism'"
+              (click)="selectRecord('baptism')">
+              Baptism Record
+            </button>
 
-              <button
-                type="button"
-                class="record-btn"
-                [attr.aria-pressed]="selectedRecord === 'ministerial'"
-                [class.active]="selectedRecord === 'ministerial'"
-                (click)="selectRecord('ministerial')">
-                Ministerial &amp; Evangelism
-              </button>
+            <button
+              type="button"
+              class="record-btn"
+              style="padding: 6px 12px; font-size: 13px; min-width: 120px; height: 34px;"
+              [class.active]="selectedRecord === 'death'"
+              (click)="selectRecord('death')">
+              Death Record
+            </button>
 
-              <button
-                type="button"
-                class="record-btn"
-                [attr.aria-pressed]="selectedRecord === 'mission'"
-                [class.active]="selectedRecord === 'mission'"
-                (click)="selectRecord('mission')">
-                Adventist Mission
-              </button>
-            </div>
+            <button
+              type="button"
+              class="record-btn"
+              [attr.aria-pressed]="selectedRecord === 'ministerial'"
+              [class.active]="selectedRecord === 'ministerial'"
+              (click)="selectRecord('ministerial')">
+              Ministerial &amp; Evangelism
+            </button>
+
+            <button
+              type="button"
+              class="record-btn"
+              [attr.aria-pressed]="selectedRecord === 'mission'"
+              [class.active]="selectedRecord === 'mission'"
+              (click)="selectRecord('mission')">
+              Adventist Mission
+            </button>
           </div>
+
+          <!-- Add Record -->
+          <a
+            *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
+            [routerLink]="selectedRecord === 'baptism'
+              ? '/pastor/bapaddrec'
+              : '/pastor/deathaddrec'"
+            class="add-record-btn">
+            + Add Record
+          </a>
+        </div>
 
         <!-- ================================================= -->
         <!-- YEAR AND QUARTER SELECTOR -->
@@ -108,46 +99,22 @@
 
           <!-- Quarter Selector -->
           <div
-            *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
-            class="quarter-filter-toolbar">
-            <label class="year-filter">
-              <span class="filter-label">YEAR</span>
-              <select
-                class="year-selector"
-                [value]="selectedYear"
-                (change)="onYearChange($event)"
-                aria-label="Select year">
-                <option
-                  *ngFor="let year of availableYears"
-                  [value]="year">
-                  {{ year }}
-                </option>
-              </select>
-            </label>
+            class="quarter-selector"
+            style="display: flex; gap: 5px;">
 
-            <div class="quarter-filter">
-              <span class="filter-label">QUARTER</span>
-              <div class="quarter-selector" role="group" aria-label="Select quarter">
-                <button
-                  *ngFor="let quarter of quarterOptions"
-                  type="button"
-                  class="quarter-tab"
-                  [class.active]="!isAnnualView && selectedQuarter === quarter"
-                  [attr.aria-pressed]="!isAnnualView && selectedQuarter === quarter"
-                  (click)="selectQuarter(quarter)">
-                  {{ quarter }}
-                </button>
-                <button
-                  type="button"
-                  class="quarter-tab"
-                  [class.active]="isAnnualView"
-                  [attr.aria-pressed]="isAnnualView"
-                  (click)="selectAnnual()">
-                  Annual
-                </button>
-              </div>
-            </div>
+            <button
+              *ngFor="let quarter of quarterOptions"
+              type="button"
+              class="quarter-tab"
+              style="padding: 5px 12px; font-size: 12px; min-width: 75px; height: 34px;"
+              [class.active]="selectedQuarter === quarter"
+              [attr.aria-pressed]="selectedQuarter === quarter"
+              (click)="selectQuarter(quarter)">
+              {{ quarter }}
+            </button>
+
           </div>
+        </div>
 
         <div class="table-responsive">
 
@@ -155,7 +122,7 @@
           <!-- BAPTISM RECORD TABLE -->
           <!-- ================================================= -->
           <table
-            class="table records-table record-hover-table baptism-record-table"
+            class="table records-table record-hover-table"
             *ngIf="selectedRecord === 'baptism'">
 
             <thead>
@@ -192,7 +159,7 @@
                 ">
                 <td colspan="7" class="text-center">
                   No baptism records found for
-                  {{ isAnnualView ? 'the year' : selectedQuarter }} of {{ selectedYear }}.
+                  {{ selectedQuarter }} of {{ selectedYear }}.
                 </td>
               </tr>
 
@@ -247,7 +214,7 @@
           <!-- DEATH RECORD TABLE -->
           <!-- ================================================= -->
           <table
-            class="table records-table record-hover-table death-record-table"
+            class="table records-table record-hover-table"
             *ngIf="selectedRecord === 'death'">
 
             <thead>
@@ -285,7 +252,7 @@
                 ">
                 <td colspan="8" class="text-center">
                   No death records found for
-                  {{ isAnnualView ? 'the year' : selectedQuarter }} of {{ selectedYear }}.
+                  {{ selectedQuarter }} of {{ selectedYear }}.
                 </td>
               </tr>
 
@@ -351,9 +318,13 @@
       <!-- ================================================= -->
       <!-- COMMENTS -->
       <!-- ================================================= -->
-      <ng-container
+      <div
         *ngIf="!isReadOnly"
-        >
+        class="col-lg-3 comments-column">
+
+        <h2>
+          Comments
+        </h2>
 
 <aside
   *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
@@ -374,8 +345,7 @@
         <div class="min-w-0">
           <h2 class="font-serif text-base font-semibold text-white">Comments</h2>
           <p class="text-xs text-white/70">
-            {{ selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record' }}
-            · {{ isAnnualView ? 'Annual' : selectedQuarter }} {{ selectedYear }}
+            {{ selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record' }} · {{ selectedQuarter }} {{ selectedYear }}
           </p>
         </div>
 
@@ -462,7 +432,6 @@
     </svg>
   </button>
 </aside>
-      </ng-container>
 
 <!-- ================================================= -->
 <!-- BAPTISM DETAILS MODAL -->
