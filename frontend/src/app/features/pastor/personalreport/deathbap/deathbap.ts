@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { finalize, timeout } from 'rxjs/operators';
 import { ReportParticulars } from '../../report_p/report-particulars/report-particulars';
 import { ChurchService } from '../../../../core/services/church/church-service';
@@ -75,7 +76,7 @@ export class DeathbapComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  selectedRecord: 'baptism' | 'death' = 'baptism';
+  selectedRecord: 'baptism' | 'death' | 'ministerial' | 'mission' = 'baptism';
 
   // Year and quarter selector
   selectedYear = new Date().getFullYear();
@@ -190,7 +191,7 @@ export class DeathbapComponent implements OnInit {
   get visibleComments(): ReportComment[] {
     return this.comments.filter(comment =>
       Number(comment.year) === this.selectedYear &&
-      (this.isAnnualView || this.normalizeQuarter(comment.quarter) === this.selectedQuarter)
+      this.normalizeQuarter(comment.quarter) === this.selectedQuarter
     );
   }
 
@@ -466,11 +467,8 @@ export class DeathbapComponent implements OnInit {
     ]);
   }
 
-  /**
-   * Select Baptism or Death record.
-   */
   selectRecord(
-    record: 'baptism' | 'death'
+    record: 'baptism' | 'death' | 'ministerial' | 'mission'
   ): void {
 
     this.selectedRecord = record;
@@ -480,9 +478,12 @@ export class DeathbapComponent implements OnInit {
 
     if (record === 'baptism') {
       this.loadBaptisms();
-    } else {
+    } else if (record === 'death') {
       this.comments = [];
       this.commentQuarterApproved = false;
+      this.loadLatestComment();
+    } else {
+      this.commentsOpen = false;
     }
   }
 
@@ -577,11 +578,6 @@ export class DeathbapComponent implements OnInit {
 
     if (details.length > 255) {
       this.commentsError = 'Comments must not exceed 255 characters.';
-      return;
-    }
-
-    if (this.isAnnualView) {
-      this.commentsError = 'Select a quarter to add a comment.';
       return;
     }
 
