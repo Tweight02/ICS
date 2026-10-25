@@ -1,134 +1,163 @@
-
-  <header class="top-header">
-    <div class="d-flex align-items-center justify-content-between">
-      <div class="header-actions">
-        <button
-          *ngIf="isReadOnly"
-          type="button"
-          class="back-button"
-          (click)="backToReports()">
-          ← Back to Reports
-        </button>
-      </div>
+<header class="top-header">
+  <div class="d-flex align-items-center justify-content-between">
+    <div class="header-actions">
+      <button
+        *ngIf="isReadOnly"
+        type="button"
+        class="back-button"
+        (click)="backToReports()">
+        ← Back to Reports
+      </button>
     </div>
-  </header>
+  </div>
+</header>
 
-  <!-- Main Content -->
-  <main class="content-section">
-    <div class="row g-4">
+<!-- Main Content -->
+<main class="content-section">
+  <div class="row g-4">
 
-      <!-- Records -->
-      <div class="records-column col-12">
-        <section class="records-panel">
-          <header class="records-heading">
-            <div>
-              <p class="section-label">PERSONAL REPORTS</p>
-              <h2>
-                {{ selectedRecord === 'baptism'
-                  ? 'Baptism Record'
-                  : selectedRecord === 'death'
-                    ? 'Death Record'
-                    : selectedRecord === 'ministerial'
-                      ? 'Ministerial & Evangelism'
-                      : 'Adventist Mission' }}
-              </h2>
-            </div>
+    <!-- Records -->
+    <div class="records-column col-12">
+      <section class="records-panel">
+        <header class="records-heading">
+          <div>
+            <p class="section-label">PERSONAL REPORTS</p>
+            <h2>
+              {{ selectedRecord === 'baptism'
+                ? 'Baptism Record'
+                : selectedRecord === 'death'
+                  ? 'Death Record'
+                  : selectedRecord === 'ministerial'
+                    ? 'Ministerial & Evangelism'
+                    : 'Adventist Mission' }}
+            </h2>
+          </div>
 
-            <a
-              *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
-              [routerLink]="selectedRecord === 'baptism'
-                ? '/pastor/bapaddrec'
-                : '/pastor/deathaddrec'"
-              class="add-record-btn">
-              <span aria-hidden="true">+</span>
-              Add {{ selectedRecord === 'baptism' ? 'Baptism' : 'Death' }} Record
-            </a>
-          </header>
+          <a
+            *ngIf="!isReadOnly && (selectedRecord === 'baptism' || selectedRecord === 'death')"
+            [routerLink]="selectedRecord === 'baptism'
+              ? '/pastor/bapaddrec'
+              : '/pastor/deathaddrec'"
+            class="add-record-btn">
+            <span aria-hidden="true">+</span>
+            Add {{ selectedRecord === 'baptism' ? 'Baptism' : 'Death' }} Record
+          </a>
+        </header>
 
-          <div class="records-toolbar">
-            <span class="selector-label">REPORT TYPE</span>
-            <div class="record-selector" role="group" aria-label="Select report type">
+        <div class="records-toolbar">
+          <span class="selector-label">REPORT TYPE</span>
+
+          <div class="record-selector" role="group" aria-label="Select report type">
+            <button
+              type="button"
+              class="record-btn"
+              [class.active]="selectedRecord === 'baptism'"
+              [attr.aria-pressed]="selectedRecord === 'baptism'"
+              (click)="selectRecord('baptism')">
+              Baptism Record
+            </button>
+
+            <button
+              type="button"
+              class="record-btn"
+              [class.active]="selectedRecord === 'death'"
+              [attr.aria-pressed]="selectedRecord === 'death'"
+              (click)="selectRecord('death')">
+              Death Record
+            </button>
+
+            <button
+              type="button"
+              class="record-btn"
+              [attr.aria-pressed]="selectedRecord === 'ministerial'"
+              [class.active]="selectedRecord === 'ministerial'"
+              (click)="selectRecord('ministerial')">
+              Ministerial &amp; Evangelism
+            </button>
+
+            <button
+              type="button"
+              class="record-btn"
+              [attr.aria-pressed]="selectedRecord === 'mission'"
+              [class.active]="selectedRecord === 'mission'"
+              (click)="selectRecord('mission')">
+              Adventist Mission
+            </button>
+          </div>
+        </div>
+
+        <!-- YEAR, QUARTER AND SEARCH -->
+        <div
+          *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
+          class="quarter-filter-toolbar">
+
+          <label class="report-period-field">
+            <span class="report-period-label">YEAR</span>
+
+            <select
+              class="report-period-year-select"
+              [value]="selectedYear"
+              (change)="onYearChange($event)"
+              aria-label="Select year">
+              <option
+                *ngFor="let year of availableYears"
+                [value]="year">
+                {{ year }}
+              </option>
+            </select>
+          </label>
+
+          <div class="report-period-field">
+            <span class="report-period-label">QUARTER</span>
+
+            <div
+              class="report-period-quarter-group"
+              role="group"
+              aria-label="Select quarter">
+
               <button
+                *ngFor="let quarter of quarterOptions"
                 type="button"
-                class="record-btn"
-                [class.active]="selectedRecord === 'baptism'"
-                [attr.aria-pressed]="selectedRecord === 'baptism'"
-                (click)="selectRecord('baptism')">
-                Baptism Record
+                class="report-period-quarter-button"
+                [attr.aria-pressed]="!isAnnualView && selectedQuarter === quarter"
+                (click)="selectQuarter(quarter)">
+                {{ quarter }}
               </button>
 
               <button
                 type="button"
-                class="record-btn"
-                [class.active]="selectedRecord === 'death'"
-                [attr.aria-pressed]="selectedRecord === 'death'"
-                (click)="selectRecord('death')">
-                Death Record
-              </button>
-
-              <button
-                type="button"
-                class="record-btn"
-                [attr.aria-pressed]="selectedRecord === 'ministerial'"
-                [class.active]="selectedRecord === 'ministerial'"
-                (click)="selectRecord('ministerial')">
-                Ministerial &amp; Evangelism
-              </button>
-
-              <button
-                type="button"
-                class="record-btn"
-                [attr.aria-pressed]="selectedRecord === 'mission'"
-                [class.active]="selectedRecord === 'mission'"
-                (click)="selectRecord('mission')">
-                Adventist Mission
+                class="report-period-quarter-button annual"
+                [attr.aria-pressed]="isAnnualView"
+                (click)="selectAnnual()">
+                Annual
               </button>
             </div>
           </div>
 
-          <div
-            *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
-            class="quarter-filter-toolbar">
-            <label class="report-period-field">
-              <span class="report-period-label">YEAR</span>
-              <select
-                class="report-period-year-select"
-                [value]="selectedYear"
-                (change)="onYearChange($event)"
-                aria-label="Select year">
-                <option
-                  *ngFor="let year of availableYears"
-                  [value]="year">
-                  {{ year }}
-                </option>
-              </select>
-            </label>
+          <!-- SEARCH FIELD: same row as Year and Quarter -->
+          <label class="report-period-field report-search-field">
+            <span class="report-period-label">SEARCH</span>
 
-            <div class="report-period-field">
-              <span class="report-period-label">QUARTER</span>
-              <div class="report-period-quarter-group" role="group" aria-label="Select quarter">
-                <button
-                  *ngFor="let quarter of quarterOptions"
-                  type="button"
-                  class="report-period-quarter-button"
-                  [attr.aria-pressed]="!isAnnualView && selectedQuarter === quarter"
-                  (click)="selectQuarter(quarter)">
-                  {{ quarter }}
-                </button>
-                <button
-                  type="button"
-                  class="report-period-quarter-button annual"
-                  [attr.aria-pressed]="isAnnualView"
-                  (click)="selectAnnual()">
-                  Annual
-                </button>
-              </div>
+            <div class="report-search-input-wrap">
+              <input
+                type="search"
+                class="report-search-input"
+                name="recordSearch"
+                [(ngModel)]="searchTerm"
+                (ngModelChange)="onSearchChange()"
+                (keydown.enter)="onSearchChange(true)"
+                [placeholder]="selectedRecord === 'baptism'
+                  ? 'Search baptism records...'
+                  : 'Search death records...'"
+                aria-label="Search records by member, church, date, or other details"
+                autocomplete="off">
             </div>
-          </div>
+          </label>
+        </div>
 
-          <div
-            *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
-            class="table-responsive records-table-wrap">
+        <div
+          *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
+          class="table-responsive records-table-wrap">
 
           <!-- ================================================= -->
           <!-- BAPTISM RECORD TABLE -->
@@ -150,7 +179,6 @@
             </thead>
 
             <tbody>
-
               <!-- Error -->
               <tr
                 *ngIf="
@@ -170,15 +198,16 @@
                   displayedBaptisms.length === 0
                 ">
                 <td colspan="7" class="text-center">
-                  No baptism records found for
-                  {{ isAnnualView ? 'the year' : selectedQuarter }} of {{ selectedYear }}.
+                  {{ searchTerm.trim()
+                    ? 'No baptism records match your search.'
+                    : 'No baptism records found for ' + (isAnnualView ? 'the year' : selectedQuarter) + ' of ' + selectedYear + '.' }}
                 </td>
               </tr>
 
               <!-- Baptism Records -->
               <tr
                 *ngFor="
-                  let baptism of displayedBaptisms;
+                  let baptism of paginatedBaptisms;
                   let i = index
                 "
                 class="baptism-record-row"
@@ -191,7 +220,7 @@
                 (keydown.space)="openBaptismModal(baptism); $event.preventDefault()">
 
                 <td>
-                  {{ i + 1 }}
+                  {{ ((baptismPage - 1) * pageSize) + i + 1 }}
                 </td>
 
                 <td class="member-name">
@@ -217,10 +246,61 @@
                 <td>
                   {{ baptism.gender || '—' }}
                 </td>
-
               </tr>
             </tbody>
           </table>
+
+          <!-- Baptism Pagination: only when 10 or more results -->
+          <nav
+            *ngIf="selectedRecord === 'baptism' && displayedBaptisms.length >= pageSize"
+            class="records-pagination d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 px-2 pb-2"
+            aria-label="Baptism record pagination">
+
+            <span class="small text-muted">
+              Showing {{ baptismStartRecord }}–{{ baptismEndRecord }} of {{ displayedBaptisms.length }} records
+            </span>
+
+            <ul class="pagination pagination-sm mb-0">
+              <li
+                class="page-item"
+                [class.disabled]="baptismPage === 1">
+                <button
+                  type="button"
+                  class="page-link"
+                  [disabled]="baptismPage === 1"
+                  (click)="setBaptismPage(baptismPage - 1)"
+                  aria-label="Previous baptism records page">
+                  Previous
+                </button>
+              </li>
+
+              <li
+                *ngFor="let page of baptismPageNumbers"
+                class="page-item"
+                [class.active]="baptismPage === page">
+                <button
+                  type="button"
+                  class="page-link"
+                  [attr.aria-current]="baptismPage === page ? 'page' : null"
+                  (click)="setBaptismPage(page)">
+                  {{ page }}
+                </button>
+              </li>
+
+              <li
+                class="page-item"
+                [class.disabled]="baptismPage === baptismTotalPages">
+                <button
+                  type="button"
+                  class="page-link"
+                  [disabled]="baptismPage === baptismTotalPages"
+                  (click)="setBaptismPage(baptismPage + 1)"
+                  aria-label="Next baptism records page">
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
 
           <!-- ================================================= -->
           <!-- DEATH RECORD TABLE -->
@@ -243,7 +323,6 @@
             </thead>
 
             <tbody>
-
               <!-- Error -->
               <tr
                 *ngIf="
@@ -263,15 +342,16 @@
                   displayedDeaths.length === 0
                 ">
                 <td colspan="8" class="text-center">
-                  No death records found for
-                  {{ isAnnualView ? 'the year' : selectedQuarter }} of {{ selectedYear }}.
+                  {{ searchTerm.trim()
+                    ? 'No death records match your search.'
+                    : 'No death records found for ' + (isAnnualView ? 'the year' : selectedQuarter) + ' of ' + selectedYear + '.' }}
                 </td>
               </tr>
 
               <!-- Death Records -->
               <tr
                 *ngFor="
-                  let death of displayedDeaths;
+                  let death of paginatedDeaths;
                   let i = index
                 "
                 class="baptism-record-row"
@@ -284,7 +364,7 @@
                 (keydown.space)="openDeathModal(death); $event.preventDefault()">
 
                 <td>
-                  {{ i + 1 }}
+                  {{ ((deathPage - 1) * pageSize) + i + 1 }}
                 </td>
 
                 <td class="member-name">
@@ -319,573 +399,542 @@
                 <td>
                   {{ getDeathBaptism(death)?.marital_status || '—' }}
                 </td>
-
               </tr>
             </tbody>
           </table>
 
+          <!-- Death Pagination: only when 10 or more results -->
+          <nav
+            *ngIf="selectedRecord === 'death' && displayedDeaths.length >= pageSize"
+            class="records-pagination d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 px-2 pb-2"
+            aria-label="Death record pagination">
+
+            <span class="small text-muted">
+              Showing {{ deathStartRecord }}–{{ deathEndRecord }} of {{ displayedDeaths.length }} records
+            </span>
+
+            <ul class="pagination pagination-sm mb-0">
+              <li
+                class="page-item"
+                [class.disabled]="deathPage === 1">
+                <button
+                  type="button"
+                  class="page-link"
+                  [disabled]="deathPage === 1"
+                  (click)="setDeathPage(deathPage - 1)"
+                  aria-label="Previous death records page">
+                  Previous
+                </button>
+              </li>
+
+              <li
+                *ngFor="let page of deathPageNumbers"
+                class="page-item"
+                [class.active]="deathPage === page">
+                <button
+                  type="button"
+                  class="page-link"
+                  [attr.aria-current]="deathPage === page ? 'page' : null"
+                  (click)="setDeathPage(page)">
+                  {{ page }}
+                </button>
+              </li>
+
+              <li
+                class="page-item"
+                [class.disabled]="deathPage === deathTotalPages">
+                <button
+                  type="button"
+                  class="page-link"
+                  [disabled]="deathPage === deathTotalPages"
+                  (click)="setDeathPage(deathPage + 1)"
+                  aria-label="Next death records page">
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
+
+        </div>
+
+        <ng-container *ngIf="selectedDepartmentId as departmentId">
+          <p
+            *ngIf="churchesError"
+            class="report-error"
+            role="alert">
+            {{ churchesError }}
+          </p>
+
+          <div
+            *ngIf="churchesLoading"
+            class="report-loading"
+            role="status">
+            <span class="report-loading-spinner" aria-hidden="true"></span>
+            Loading church reports...
           </div>
 
-          <ng-container *ngIf="selectedDepartmentId as departmentId">
-            <p
-              *ngIf="churchesError"
-              class="report-error"
-              role="alert">
-              {{ churchesError }}
-            </p>
-            <div
-              *ngIf="churchesLoading"
-              class="report-loading"
-              role="status">
-              <span class="report-loading-spinner" aria-hidden="true"></span>
-              Loading church reports...
+          <section
+            *ngFor="let church of reportChurches"
+            class="church-report-section">
+            <app-report-particulars
+              [embedded]="true"
+              [churchId]="church.church_id"
+              [churchName]="church.name"
+              [districtId]="districtId"
+              [districtName]="getChurchName(districtId)"
+              [departmentId]="departmentId">
+            </app-report-particulars>
+          </section>
+
+          <p
+            *ngIf="!churchesLoading && !churchesError && reportChurches.length === 0"
+            class="report-empty-state">
+            No churches are available for this report.
+          </p>
+        </ng-container>
+      </section>
+    </div>
+
+    <!-- ================================================= -->
+    <!-- COMMENTS -->
+    <!-- ================================================= -->
+    <ng-container *ngIf="!isReadOnly">
+
+      <aside
+        *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
+        class="comments-chathead">
+
+        <section
+          *ngIf="commentsOpen"
+          class="fixed inset-x-3 bottom-3 z-50 flex max-h-[min(78vh,640px)] flex-col overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-2xl shadow-emerald-950/20 sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]"
+          role="dialog"
+          aria-label="Report comments">
+
+          <header class="flex shrink-0 items-center justify-between gap-3 bg-emerald-900 px-4 py-3 text-white">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
+                </svg>
+              </span>
+
+              <div class="min-w-0">
+                <h2 class="font-serif text-base font-semibold text-white">Comments</h2>
+                <p class="text-xs text-white/70">
+                  {{ selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record' }}
+                  · {{ isAnnualView ? 'Annual' : selectedQuarter }} {{ selectedYear }}
+                </p>
+              </div>
             </div>
 
-            <section
-              *ngFor="let church of reportChurches"
-              class="church-report-section">
-              <app-report-particulars
-                [embedded]="true"
-                [churchId]="church.church_id"
-                [churchName]="church.name"
-                [districtId]="districtId"
-                [districtName]="getChurchName(districtId)"
-                [departmentId]="departmentId">
-              </app-report-particulars>
-            </section>
+            <button
+              type="button"
+              (click)="closeComments()"
+              aria-label="Close comments"
+              class="rounded-full p-2 text-white/80 transition hover:bg-white/10 hover:text-white">
+              <span aria-hidden="true">×</span>
+            </button>
+          </header>
 
-            <p
-              *ngIf="!churchesLoading && !churchesError && reportChurches.length === 0"
-              class="report-empty-state">
-              No churches are available for this report.
-            </p>
-          </ng-container>
+          <div
+            *ngIf="commentsError"
+            role="alert"
+            class="border-t border-red-100 bg-red-50/90 px-4 py-2.5 text-sm text-red-700">
+            {{ commentsError }}
+          </div>
+
+          <div class="min-h-0 flex-1 overflow-y-auto bg-emerald-50/70 px-4 py-4">
+            <div *ngIf="commentsLoading" class="flex items-center gap-2 py-3 text-sm text-emerald-900/70">
+              <span class="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
+              Loading comments...
+            </div>
+
+            <ng-container *ngIf="!commentsLoading">
+              <article
+                *ngFor="let comment of visibleComments"
+                class="mb-4 flex flex-col items-start gap-1"
+                [class.items-end]="isOwnComment(comment)">
+
+                <div class="max-w-[92%] rounded-2xl border border-emerald-900/10 bg-white px-4 py-3 text-emerald-950 shadow-sm">
+                  <p class="whitespace-pre-line break-words text-sm leading-5">{{ comment.details }}</p>
+                </div>
+
+                <div class="flex max-w-[92%] flex-wrap items-center gap-x-2 px-2 text-[11px] text-emerald-900/60">
+                  <span class="font-semibold text-emerald-900/75">{{ comment.commenter_name || comment.commenter_role || 'Report comment' }}</span>
+                  <time>{{ comment.date_commented | date: 'mediumDate' }}</time>
+                </div>
+              </article>
+            </ng-container>
+
+            <div *ngIf="!commentsLoading && visibleComments.length === 0" class="py-8 text-center text-sm text-emerald-900/60">
+              No comments yet.
+            </div>
+          </div>
+
+          <div *ngIf="canComment" class="shrink-0 border-t border-emerald-900/10 p-4">
+            <ng-container *ngIf="commentQuarterApproved && !isAnnualView; else commentForm">
+              <p class="text-sm text-emerald-900/70">This report has been approved. Comments are closed.</p>
+            </ng-container>
+
+            <ng-template #commentForm>
+              <form (ngSubmit)="publishComment()" class="flex items-center gap-2">
+                <input
+                  type="text"
+                  name="reportComment"
+                  [(ngModel)]="newComment"
+                  [disabled]="savingComment || !churchId || isAnnualView"
+                  maxlength="255"
+                  placeholder="Write a comment..."
+                  aria-label="Write a comment"
+                  class="h-11 min-w-0 flex-1 rounded-full border-0 bg-emerald-900/5 px-4 text-sm text-emerald-950 outline-none transition placeholder:text-emerald-900/45 focus:bg-white focus:ring-2 focus:ring-emerald-600/25 disabled:cursor-not-allowed disabled:opacity-60">
+
+                <button
+                  type="submit"
+                  aria-label="Send comment"
+                  title="Send comment"
+                  [disabled]="savingComment || !newComment.trim() || !churchId || isAnnualView"
+                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-900/30">
+
+                  <span *ngIf="savingComment; else sendIcon" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+
+                  <ng-template #sendIcon>
+                    <span aria-hidden="true">➤</span>
+                  </ng-template>
+                </button>
+              </form>
+
+              <p *ngIf="isAnnualView" class="mt-2 text-xs text-emerald-900/60">
+                Select a quarter to add a comment.
+              </p>
+            </ng-template>
+          </div>
+
+          <div *ngIf="!canComment" class="border-t border-emerald-900/10 px-4 py-3 text-sm text-emerald-900/70">
+            View only. Comments cannot be added from this account.
+          </div>
         </section>
-      </div>
 
-      <!-- ================================================= -->
-      <!-- COMMENTS -->
-      <!-- ================================================= -->
-      <ng-container
-        *ngIf="!isReadOnly"
-        >
+        <button *ngIf="!commentsOpen" type="button" (click)="openComments()"
+          aria-label="Open comments" title="Open comments" [attr.aria-expanded]="commentsOpen"
+          class="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-950/25 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
 
-<aside
-  *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
-  class="comments-chathead">
-  <section
-    *ngIf="commentsOpen"
-    class="fixed inset-x-3 bottom-3 z-50 flex max-h-[min(78vh,640px)] flex-col overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-2xl shadow-emerald-950/20 sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]"
-    role="dialog"
-    aria-label="Report comments">
-    <header class="flex shrink-0 items-center justify-between gap-3 bg-emerald-900 px-4 py-3 text-white">
-      <div class="flex min-w-0 items-center gap-3">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
+            <path d="M8 11.5h8M8 8.5h5" />
           </svg>
-        </span>
-        <div class="min-w-0">
-          <h2 class="font-serif text-base font-semibold text-white">Comments</h2>
-          <p class="text-xs text-white/70">
-            {{ selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record' }}
-            · {{ isAnnualView ? 'Annual' : selectedQuarter }} {{ selectedYear }}
-          </p>
-        </div>
-      </div>
-      <button
-        type="button"
-        (click)="closeComments()"
-        aria-label="Close comments"
-        class="rounded-full p-2 text-white/80 transition hover:bg-white/10 hover:text-white">
-        <span aria-hidden="true">×</span>
-      </button>
-    </header>
+        </button>
+      </aside>
+    </ng-container>
+
+    <!-- ================================================= -->
+    <!-- BAPTISM DETAILS MODAL -->
+    <!-- ================================================= -->
+    <div
+      *ngIf="selectedBaptism"
+      class="baptism-modal-backdrop"
+      (click)="closeBaptismModal()">
+    </div>
 
     <div
-      *ngIf="commentsError"
-      role="alert"
-      class="border-t border-red-100 bg-red-50/90 px-4 py-2.5 text-sm text-red-700">
-      {{ commentsError }}
+      *ngIf="selectedBaptism"
+      class="baptism-modal-wrapper"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="baptismModalTitle"
+      (click)="$event.stopPropagation()">
+
+      <div class="baptism-modal">
+
+        <!-- Modal Header -->
+        <div class="baptism-modal-header">
+          <div class="modal-heading-content">
+            <div>
+              <h2 id="baptismModalTitle">
+                Baptism Record
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="baptism-modal-body" *ngIf="selectedBaptism">
+          <div class="details-section">
+
+            <div class="details-section-heading">
+              <div>
+                <h3>{{ getFullName(selectedBaptism) }}</h3>
+              </div>
+            </div>
+
+            <div class="details-grid">
+
+              <div class="detail-item">
+                <span class="detail-label">First Name</span>
+                <span class="detail-value">{{ selectedBaptism.first_name || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Middle Name</span>
+                <span class="detail-value">{{ selectedBaptism.middle_name || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Last Name</span>
+                <span class="detail-value">{{ selectedBaptism.last_name || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Extension Name</span>
+                <span class="detail-value">{{ selectedBaptism.extension_name || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Gender</span>
+                <span class="detail-value">{{ selectedBaptism.gender || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Marital Status</span>
+                <span class="detail-value">{{ selectedBaptism.marital_status || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Birthdate</span>
+                <span class="detail-value">{{ formatDate(selectedBaptism.birthdate) }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Age</span>
+                <span class="detail-value">
+                  {{ calculateAge(selectedBaptism.birthdate) }}
+                  <span class="detail-unit">years old</span>
+                </span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Address</span>
+                <span class="detail-value">{{ selectedBaptism.address || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Church</span>
+                <span class="detail-value">{{ getChurchName(selectedBaptism.church_id) }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Quarter</span>
+                <span class="detail-value">{{ selectedBaptism.quarter || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Date of Baptism</span>
+                <span class="detail-value">{{ formatDate(selectedBaptism.date_of_baptism) }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Officiating Minister</span>
+                <span class="detail-value">{{ selectedBaptism.officiating_minister || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Place of Baptism</span>
+                <span class="detail-value">{{ selectedBaptism.place_of_baptism || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Baptism Status</span>
+                <span
+                  class="status-badge"
+                  [class.status-yes]="getBaptismStatus(selectedBaptism.is_reclaimed) === 'Reclaimed Member'"
+                  [class.status-no]="getBaptismStatus(selectedBaptism.is_reclaimed) === 'Newly Baptized'">
+                  {{ getBaptismStatus(selectedBaptism.is_reclaimed) }}
+                </span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="baptism-modal-footer">
+          <div class="baptism-modal-footer-actions">
+
+            <button
+              *ngIf="!isReadOnly"
+              type="button"
+              class="modal-edit-btn"
+              (click)="editSelectedBaptism()">
+              Edit Record
+            </button>
+
+            <button
+              type="button"
+              class="modal-done-btn"
+              (click)="closeBaptismModal()">
+              Close
+            </button>
+
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="min-h-0 flex-1 overflow-y-auto bg-emerald-50/70 px-4 py-4">
-      <div *ngIf="commentsLoading" class="flex items-center gap-2 py-3 text-sm text-emerald-900/70">
-        <span class="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
-        Loading comments...
-      </div>
-
-      <ng-container *ngIf="!commentsLoading">
-        <article
-          *ngFor="let comment of visibleComments"
-          class="mb-4 flex flex-col items-start gap-1"
-          [class.items-end]="isOwnComment(comment)">
-          <div class="max-w-[92%] rounded-2xl border border-emerald-900/10 bg-white px-4 py-3 text-emerald-950 shadow-sm">
-            <p class="whitespace-pre-line break-words text-sm leading-5">{{ comment.details }}</p>
-          </div>
-          <div class="flex max-w-[92%] flex-wrap items-center gap-x-2 px-2 text-[11px] text-emerald-900/60">
-            <span class="font-semibold text-emerald-900/75">{{ comment.commenter_name || comment.commenter_role || 'Report comment' }}</span>
-            <time>{{ comment.date_commented | date: 'mediumDate' }}</time>
-          </div>
-        </article>
-      </ng-container>
-
-      <div *ngIf="!commentsLoading && visibleComments.length === 0" class="py-8 text-center text-sm text-emerald-900/60">
-        No comments yet.
-      </div>
-
+    <!-- ================================================= -->
+    <!-- DEATH DETAILS MODAL -->
+    <!-- ================================================= -->
+    <div
+      *ngIf="selectedDeath"
+      class="baptism-modal-backdrop"
+      (click)="closeDeathModal()">
     </div>
 
-    <div *ngIf="canComment" class="shrink-0 border-t border-emerald-900/10 p-4">
-      <ng-container *ngIf="commentQuarterApproved && !isAnnualView; else commentForm">
-        <p class="text-sm text-emerald-900/70">This report has been approved. Comments are closed.</p>
-      </ng-container>
+    <div
+      *ngIf="selectedDeath"
+      class="baptism-modal-wrapper"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="deathModalTitle"
+      (click)="$event.stopPropagation()">
 
-      <ng-template #commentForm>
-        <form (ngSubmit)="publishComment()" class="flex items-center gap-2">
-          <input
-            type="text"
-            name="reportComment"
-            [(ngModel)]="newComment"
-            [disabled]="savingComment || !churchId || isAnnualView"
-            maxlength="255"
-            placeholder="Write a comment..."
-            aria-label="Write a comment"
-            class="h-11 min-w-0 flex-1 rounded-full border-0 bg-emerald-900/5 px-4 text-sm text-emerald-950 outline-none transition placeholder:text-emerald-900/45 focus:bg-white focus:ring-2 focus:ring-emerald-600/25 disabled:cursor-not-allowed disabled:opacity-60">
+      <div class="baptism-modal">
+
+        <!-- Modal Header -->
+        <div class="baptism-modal-header">
+          <div class="modal-heading-content">
+            <div>
+              <h2 id="deathModalTitle">Death Record</h2>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="baptism-modal-body" *ngIf="selectedDeath as deathRecord">
+          <div class="details-section">
+
+            <div class="details-section-heading">
+              <div>
+                <h3>{{ getFullName(getDeathBaptism(deathRecord)) }}</h3>
+              </div>
+            </div>
+
+            <div class="details-grid">
+
+              <div class="detail-item">
+                <span class="detail-label">First Name</span>
+                <span class="detail-value">{{ getDeathBaptism(deathRecord)?.first_name || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Middle Name</span>
+                <span class="detail-value">{{ getDeathBaptism(deathRecord)?.middle_name || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Last Name</span>
+                <span class="detail-value">{{ getDeathBaptism(deathRecord)?.last_name || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Extension Name</span>
+                <span class="detail-value">{{ getDeathBaptism(deathRecord)?.extension_name || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Gender</span>
+                <span class="detail-value">{{ getDeathBaptism(deathRecord)?.gender || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Marital Status</span>
+                <span class="detail-value">{{ getDeathBaptism(deathRecord)?.marital_status || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Birthdate</span>
+                <span class="detail-value">{{ formatDate(getDeathBaptism(deathRecord)?.birthdate || '') }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Age at Death</span>
+                <span class="detail-value">
+                  {{
+                    calculateAgeAtDeath(
+                      getDeathBaptism(deathRecord)?.birthdate || '',
+                      deathRecord.date_of_death
+                    )
+                  }}
+                  <span class="detail-unit">years old</span>
+                </span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Address</span>
+                <span class="detail-value">{{ getDeathBaptism(deathRecord)?.address || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Church</span>
+                <span class="detail-value">{{ getChurchName(getDeathBaptism(deathRecord)?.church_id) }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Date of Death</span>
+                <span class="detail-value">{{ formatDate(deathRecord.date_of_death) }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Quarter</span>
+                <span class="detail-value">{{ deathRecord.quarter || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Date of Baptism</span>
+                <span class="detail-value">{{ formatDate(getDeathBaptism(deathRecord)?.date_of_baptism || '') }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Officiating Minister</span>
+                <span class="detail-value">{{ getDeathBaptism(deathRecord)?.officiating_minister || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Place of Baptism</span>
+                <span class="detail-value">{{ getDeathBaptism(deathRecord)?.place_of_baptism || '—' }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">Reclaimed Member</span>
+                <span
+                  class="status-badge"
+                  [class.status-yes]="getDeathBaptism(deathRecord)?.is_reclaimed"
+                  [class.status-no]="!getDeathBaptism(deathRecord)?.is_reclaimed">
+                  {{
+                    getDeathBaptism(deathRecord)?.is_reclaimed
+                      ? 'Yes'
+                      : 'No'
+                  }}
+                </span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="baptism-modal-footer">
           <button
-            type="submit"
-            aria-label="Send comment"
-            title="Send comment"
-            [disabled]="savingComment || !newComment.trim() || !churchId || isAnnualView"
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-900/30">
-            <span *ngIf="savingComment; else sendIcon" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-            <ng-template #sendIcon>
-              <span aria-hidden="true">➤</span>
-            </ng-template>
+            type="button"
+            class="modal-done-btn"
+            (click)="closeDeathModal()">
+            Close
           </button>
-        </form>
-        <p *ngIf="isAnnualView" class="mt-2 text-xs text-emerald-900/60">
-          Select a quarter to add a comment.
-        </p>
-      </ng-template>
-    </div>
-
-    <div *ngIf="!canComment" class="border-t border-emerald-900/10 px-4 py-3 text-sm text-emerald-900/70">
-      View only. Comments cannot be added from this account.
-    </div>
-  </section>
-
-  <button *ngIf="!commentsOpen" type="button" (click)="openComments()"
-    aria-label="Open comments" title="Open comments" [attr.aria-expanded]="commentsOpen"
-    class="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-950/25 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
-    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
-      <path d="M8 11.5h8M8 8.5h5" />
-    </svg>
-  </button>
-</aside>
-      </ng-container>
-
-<!-- ================================================= -->
-<!-- BAPTISM DETAILS MODAL -->
-<!-- ================================================= -->
-<div
-  *ngIf="selectedBaptism"
-  class="baptism-modal-backdrop"
-  (click)="closeBaptismModal()">
-</div>
-
-<div
-  *ngIf="selectedBaptism"
-  class="baptism-modal-wrapper"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="baptismModalTitle"
-  (click)="$event.stopPropagation()">
-
-  <div class="baptism-modal">
-
-    <!-- Modal Header -->
-    <div class="baptism-modal-header">
-      <div class="modal-heading-content">
-        <div>
-          <h2 id="baptismModalTitle">
-            Baptism Record
-          </h2>
         </div>
-      </div>
-    </div>
-
-    <!-- Modal Body -->
-    <div
-      class="baptism-modal-body"
-      *ngIf="selectedBaptism">
-
-      <div class="details-section">
-
-        <div class="details-section-heading">
-          <div>
-            <h3>
-              {{ getFullName(selectedBaptism) }}
-            </h3>
-          </div>
-        </div>
-
-        <div class="details-grid">
-
-          <div class="detail-item">
-            <span class="detail-label">First Name</span>
-            <span class="detail-value">
-              {{ selectedBaptism.first_name || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Middle Name</span>
-            <span class="detail-value">
-              {{ selectedBaptism.middle_name || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Last Name</span>
-            <span class="detail-value">
-              {{ selectedBaptism.last_name || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Extension Name</span>
-            <span class="detail-value">
-              {{ selectedBaptism.extension_name || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Gender</span>
-            <span class="detail-value">
-              {{ selectedBaptism.gender || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Marital Status</span>
-            <span class="detail-value">
-              {{ selectedBaptism.marital_status || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Birthdate</span>
-            <span class="detail-value">
-              {{ formatDate(selectedBaptism.birthdate) }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Age</span>
-            <span class="detail-value">
-              {{ calculateAge(selectedBaptism.birthdate) }}
-              <span class="detail-unit">years old</span>
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Address</span>
-            <span class="detail-value">
-              {{ selectedBaptism.address || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Church</span>
-            <span class="detail-value">
-              {{ getChurchName(selectedBaptism.church_id) }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Quarter</span>
-            <span class="detail-value">
-              {{ selectedBaptism.quarter || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Date of Baptism</span>
-            <span class="detail-value">
-              {{ formatDate(selectedBaptism.date_of_baptism) }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Officiating Minister</span>
-            <span class="detail-value">
-              {{ selectedBaptism.officiating_minister || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Place of Baptism</span>
-            <span class="detail-value">
-              {{ selectedBaptism.place_of_baptism || '—' }}
-            </span>
-          </div>
-
-          <!-- Baptism Status: shown in the modal only -->
-          <div class="detail-item">
-            <span class="detail-label">Baptism Status</span>
-
-            <span
-              class="status-badge"
-              [class.status-yes]="getBaptismStatus(selectedBaptism.is_reclaimed) === 'Reclaimed Member'"
-              [class.status-no]="getBaptismStatus(selectedBaptism.is_reclaimed) === 'Newly Baptized'">
-              {{ getBaptismStatus(selectedBaptism.is_reclaimed) }}
-            </span>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Footer -->
-    <div class="baptism-modal-footer">
-
-      <div class="baptism-modal-footer-actions">
-
-        <!-- Edit Selected Baptism -->
-        <button
-          *ngIf="!isReadOnly"
-          type="button"
-          class="modal-edit-btn"
-          (click)="editSelectedBaptism()">
-          Edit Record
-        </button>
-
-        <!-- Close Modal -->
-        <button
-          type="button"
-          class="modal-done-btn"
-          (click)="closeBaptismModal()">
-          Close
-        </button>
 
       </div>
     </div>
-
-  </div>
-</div>
-
-<!-- ================================================= -->
-<!-- DEATH DETAILS MODAL -->
-<!-- ================================================= -->
-<div
-  *ngIf="selectedDeath"
-  class="baptism-modal-backdrop"
-  (click)="closeDeathModal()">
-</div>
-
-<div
-  *ngIf="selectedDeath"
-  class="baptism-modal-wrapper"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="deathModalTitle"
-  (click)="$event.stopPropagation()">
-
-  <div class="baptism-modal">
-
-    <!-- Modal Header -->
-    <div class="baptism-modal-header">
-      <div class="modal-heading-content">
-        <div>
-          <h2 id="deathModalTitle">
-            Death Record
-          </h2>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Body -->
-    <div
-      class="baptism-modal-body"
-      *ngIf="selectedDeath as deathRecord">
-
-      <div class="details-section">
-
-        <div class="details-section-heading">
-          <div>
-            <h3>
-              {{ getFullName(getDeathBaptism(deathRecord)) }}
-            </h3>
-          </div>
-        </div>
-
-        <div class="details-grid">
-
-          <div class="detail-item">
-            <span class="detail-label">First Name</span>
-            <span class="detail-value">
-              {{ getDeathBaptism(deathRecord)?.first_name || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Middle Name</span>
-            <span class="detail-value">
-              {{ getDeathBaptism(deathRecord)?.middle_name || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Last Name</span>
-            <span class="detail-value">
-              {{ getDeathBaptism(deathRecord)?.last_name || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Extension Name</span>
-            <span class="detail-value">
-              {{ getDeathBaptism(deathRecord)?.extension_name || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Gender</span>
-            <span class="detail-value">
-              {{ getDeathBaptism(deathRecord)?.gender || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Marital Status</span>
-            <span class="detail-value">
-              {{ getDeathBaptism(deathRecord)?.marital_status || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Birthdate</span>
-            <span class="detail-value">
-              {{ formatDate(getDeathBaptism(deathRecord)?.birthdate || '') }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Age at Death</span>
-            <span class="detail-value">
-              {{
-                calculateAgeAtDeath(
-                  getDeathBaptism(deathRecord)?.birthdate || '',
-                  deathRecord.date_of_death
-                )
-              }}
-              <span class="detail-unit">years old</span>
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Address</span>
-            <span class="detail-value">
-              {{ getDeathBaptism(deathRecord)?.address || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Church</span>
-            <span class="detail-value">
-              {{ getChurchName(getDeathBaptism(deathRecord)?.church_id) }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Date of Death</span>
-            <span class="detail-value">
-              {{ formatDate(deathRecord.date_of_death) }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Quarter</span>
-            <span class="detail-value">
-              {{ deathRecord.quarter || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Date of Baptism</span>
-            <span class="detail-value">
-              {{ formatDate(getDeathBaptism(deathRecord)?.date_of_baptism || '') }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Officiating Minister</span>
-            <span class="detail-value">
-              {{ getDeathBaptism(deathRecord)?.officiating_minister || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Place of Baptism</span>
-            <span class="detail-value">
-              {{ getDeathBaptism(deathRecord)?.place_of_baptism || '—' }}
-            </span>
-          </div>
-
-          <div class="detail-item">
-            <span class="detail-label">Reclaimed Member</span>
-
-            <span
-              class="status-badge"
-              [class.status-yes]="getDeathBaptism(deathRecord)?.is_reclaimed"
-              [class.status-no]="!getDeathBaptism(deathRecord)?.is_reclaimed">
-              {{
-                getDeathBaptism(deathRecord)?.is_reclaimed
-                  ? 'Yes'
-                  : 'No'
-              }}
-            </span>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Footer -->
-    <div class="baptism-modal-footer">
-      <button
-        type="button"
-        class="modal-done-btn"
-        (click)="closeDeathModal()">
-        Close
-      </button>
-    </div>
-
-  </div>
-</div>
 
 <link
   href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
   rel="stylesheet">
-
-<style>
-  /* Hover effect for Baptism and Death record table rows */
-  .record-hover-table tbody tr.baptism-record-row {
-    cursor: pointer;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .record-hover-table tbody tr.baptism-record-row:hover > td {
-    background-color: #eef5ff !important;
-    box-shadow: inset 0 1px 0 #d7e7ff, inset 0 -1px 0 #d7e7ff;
-  }
-
-  .record-hover-table tbody tr.baptism-record-row:focus-visible {
-    outline: 2px solid #0d6efd;
-    outline-offset: -2px;
-  }
-</style>

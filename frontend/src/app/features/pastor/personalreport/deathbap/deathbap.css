@@ -768,3 +768,141 @@
     padding: 0 6px;
   }
 }
+
+/* Baptism Record Pagination - Dark Green Theme */
+.records-pagination .page-link {
+  color: #006400;
+  background-color: #ffffff;
+  border-color: #006400;
+}
+
+/* Hover Effect */
+.records-pagination .page-link:hover {
+  color: #ffffff;
+  background-color: #004d00;
+  border-color: #004d00;
+}
+
+/* Active Page */
+.records-pagination .page-item.active .page-link {
+  color: #ffffff;
+  background-color: #006400;
+  border-color: #006400;
+}
+
+
+
+/* Disabled Buttons */
+.records-pagination .page-item.disabled .page-link {
+  color: #888888;
+  background-color: #f2f2f2;
+  border-color: #cccccc;
+  cursor: not-allowed;
+}
+
+
+  /* Hover effect for Baptism and Death record table rows */
+  .record-hover-table tbody tr.baptism-record-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .record-hover-table tbody tr.baptism-record-row:hover > td {
+    background-color: #eef5ff !important;
+    box-shadow: inset 0 1px 0 #d7e7ff, inset 0 -1px 0 #d7e7ff;
+  }
+
+  .record-hover-table tbody tr.baptism-record-row:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: -2px;
+  }
+
+  /* Search field aligned with the Year and Quarter controls */
+  .quarter-filter-toolbar {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+ .quarter-filter-toolbar > .report-search-field {
+  flex: 1 1 240px;
+  min-width: 220px;
+  max-width: 360px;
+  margin-left: 20px !important;
+  padding-left: 0 !important;
+  box-sizing: border-box;
+}
+
+.quarter-filter-toolbar > .report-search-field .report-search-input-wrap {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.quarter-filter-toolbar .report-search-input {
+  display: block;
+  width: 100%;
+  height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background: #fff;
+  color: #212529;
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.quarter-filter-toolbar .report-search-input:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.quarter-filter-toolbar .report-search-input::placeholder {
+  color: #6c757d;
+  opacity: 1;
+}
+/* Force the entire Search field to move right */
+.quarter-filter-toolbar > label.report-period-field.report-search-field {
+  margin-left: 200px !important;
+  padding-left: 0 !important;
+  position: relative !important;
+  left: 0 !important;
+  flex: 0 1 360px !important;
+  min-width: 220px !important;
+  max-width: 360px !important;
+  box-sizing: border-box !important;
+}
+
+/* Move the entire Search field to the right */
+.quarter-filter-toolbar > .report-search-field {
+  transform: translateX(20px) !important;
+  position: relative !important;
+  box-sizing: border-box;
+}
+
+/* Keep the input width correct */
+.quarter-filter-toolbar > .report-search-field
+.report-search-input-wrap {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.quarter-filter-toolbar > .report-search-field
+.report-search-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mobile adjustment */
+@media (max-width: 767.98px) {
+  .quarter-filter-toolbar > .report-search-field {
+    transform: translateX(50px) !important;
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+}
+
+
