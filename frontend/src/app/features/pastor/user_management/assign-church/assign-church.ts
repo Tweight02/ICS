@@ -19,6 +19,18 @@ interface ChurchFilterOption {
   label: string;
 }
 
+interface RepresentativeMove {
+  representative: string;
+  from: string | null;
+  to: string | null;
+}
+
+interface AssignmentPreview {
+  title: string;
+  moves: RepresentativeMove[];
+  note: string | null;
+}
+
 @Component({
   imports: [RouterLink],
   selector: 'app-assign-church',
@@ -77,12 +89,10 @@ export class AssignChurch implements OnInit {
   readonly selectedRepresentativeId = signal<number | null>(null);
   readonly representativeQuery = signal('');
   private modalOpener: HTMLElement | null = null;
-
+  
   readonly filteredRepresentatives = computed(() => {
     const query = this.representativeQuery().trim().toLowerCase();
-    const candidates = this.representatives().filter((representative) =>
-      representative.church_id !== this.transferTarget()?.church_id
-    );
+    const candidates = this.representatives();
     return query
       ? candidates.filter((representative) => this.fullName(representative).toLowerCase().includes(query))
       : candidates;
@@ -98,6 +108,43 @@ export class AssignChurch implements OnInit {
       return null;
     }
     return this.assignments().find((assignment) => assignment.church_id === representative.church_id) ?? null;
+  });
+
+  readonly canSubmitAssignment = computed(() => {
+    const target = this.transferTarget();
+    return !!this.selectedRepresentative() && (!target?.representative || !!this.selectedRepresentativeFrom());
+  });
+
+  readonly preview = computed<AssignmentPreview | null>(() => {
+    const target = this.transferTarget();
+    const representative = this.selectedRepresentative();
+    if (!target || !representative) {
+      return null;
+    }
+
+    const from = this.selectedRepresentativeFrom();
+    if (target.representative && !from) {
+      return null;
+    }
+
+    const moves: RepresentativeMove[] = [
+      { representative: this.fullName(representative), from: from?.name ?? null, to: target.name },
+    ];
+
+    if (target.representative) {
+      moves.push({
+        representative: this.fullName(target.representative),
+        from: target.name,
+        to: from?.name ?? null,
+      });
+      return { title: 'Swap representatives', moves, note: null };
+    }
+
+    return {
+      title: from ? 'Transfer representative' : 'Assign representative',
+      moves,
+      note: from ? `${from.name} will have no representative after this transfer.` : null,
+    };
   });
 
   constructor() {
@@ -277,6 +324,21 @@ export class AssignChurch implements OnInit {
     this.representativeQuery.set(value);
   }
 
+  selectRepresentative(representative: Representative): void {
+    if (this.saving() || representative.user_id === this.transferTarget()?.representative?.user_id) {
+      return;
+    }
+    this.selectedRepresentativeId.set(representative.user_id);
+  }
+
+  clearRepresentative(): void {
+    if (this.saving()) {
+      return;
+    }
+    this.selectedRepresentativeId.set(null);
+    setTimeout(() => document.getElementById('representative-search')?.focus());
+  }
+
   onModalKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -323,12 +385,10 @@ export class AssignChurch implements OnInit {
         (assignment) => assignment.church_id === representative.church_id
       );
       if (!sourceChurch) {
-        await Swal.fire({
-          icon: 'error',
-          title: 'Change unavailable',
-          text: 'The selected representative is not currently assigned to a church in your district.',
-          confirmButtonColor: this.brandColor,
-        });
+        this.notifyError(
+          'Change unavailable',
+          'Choose a representative currently assigned to another church in your district to swap assignments.'
+        );
         return;
       }
 
@@ -339,6 +399,28 @@ export class AssignChurch implements OnInit {
     }
 
     this.saving.set(true);
+    const sourceChurch = this.selectedRepresentativeFrom();
+    const confirmationText = church.representative && sourceChurch
+      ? `${this.fullName(representative)} will move from ${sourceChurch.name} to ${church.name}, and ${this.fullName(church.representative)} will move to ${sourceChurch.name}.`
+      : sourceChurch
+        ? `${this.fullName(representative)} will move from ${sourceChurch.name} to ${church.name}, leaving ${sourceChurch.name} without a representative.`
+        : `${this.fullName(representative)} will be assigned to ${church.name}.`;
+
+    const confirmation = await Swal.fire({
+      icon: 'warning',
+      title: 'Confirm representative transfer',
+      text: confirmationText,
+      showCancelButton: true,
+      reverseButtons: true,
+      cancelButtonText: 'Cancel',
+      confirmButtonText: 'Approve transfer',
+      confirmButtonColor: this.brandColor,
+    });
+    if (!confirmation.isConfirmed) {
+      this.saving.set(false);
+      return;
+    }
+
     this.representativeService.transferRepresentatives(transfers)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -352,8 +434,14 @@ export class AssignChurch implements OnInit {
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: church.representative ? 'Representative changed' : 'Representative assigned',
-            text: response.message,
+            title: church.representative ? 'Representative changed' : sourceChurch ? 'Representative transferred' : 'Representative assigned',
+            text: this.successText(
+              this.fullName(representative),
+              church.name,
+              sourceChurch?.name ?? null,
+              church.representative ? this.fullName(church.representative) : null,
+              response.message
+            ),
             showConfirmButton: false,
             timer: 3500,
             timerProgressBar: true,
@@ -362,15 +450,35 @@ export class AssignChurch implements OnInit {
         },
         error: async (error) => {
           console.error('Failed to assign representative:', error);
-          await Swal.fire({
-            icon: 'error',
-            title: 'Assignment failed',
-            text: error?.error?.errors?.transfers?.[0]
+          this.notifyError(
+            church.representative ? 'Change failed' : sourceChurch ? 'Transfer failed' : 'Assignment failed',
+            error?.error?.errors?.transfers?.[0]
               ?? error?.error?.message
-              ?? 'The representative could not be assigned. Please try again.',
-            confirmButtonColor: this.brandColor,
-          });
+              ?? 'The representative could not be assigned. Please try again.'
+          );
         },
       });
+  }
+
+  private successText(
+    representative: string,
+    to: string,
+    from: string | null,
+    replaced: string | null,
+    responseMessage: string
+  ): string {
+    if (replaced && from) {
+      return `${representative} moved to ${to}, and ${replaced} moved to ${from}.`;
+    }
+    if (replaced) {
+      return responseMessage;
+    }
+    return from
+      ? `${representative} moved from ${from} to ${to}.`
+      : `${representative} is now assigned to ${to}.`;
+  }
+
+  private notifyError(title: string, text: string): void {
+    Swal.fire({ icon: 'error', title, text, confirmButtonColor: this.brandColor });
   }
 }
