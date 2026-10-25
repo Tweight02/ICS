@@ -613,6 +613,14 @@
   box-shadow: 0 8px 15px rgba(62, 122, 84, 0.25);
 }
 
+.report-responsive-page .monitoring-status-data {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--monitor-green-700);
+  box-shadow: 0 0 0 3px rgba(62, 122, 84, 0.12);
+}
+
 .report-responsive-page .monitoring-status-percent {
   color: var(--monitor-green-800);
   font-weight: 700;
@@ -622,6 +630,80 @@
 .report-responsive-page .monitoring-status-empty {
   color: rgba(32, 38, 31, 0.32);
   font-size: 0.9rem;
+}
+
+.report-period-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.report-period-label {
+  color: rgba(6, 65, 63, 0.6);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+
+.report-period-year-select {
+  width: 6.75rem;
+  min-width: 6.75rem;
+  height: 2.375rem;
+  padding: 0 1.625rem 0 0.8125rem;
+  border: 1px solid rgba(6, 65, 63, 0.12);
+  border-radius: 0.35rem;
+  background-color: #fff;
+  color: #06413f;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.report-period-year-select:focus-visible,
+.report-period-quarter-button:focus-visible {
+  outline: 2px solid rgba(5, 120, 87, 0.35);
+  outline-offset: 2px;
+}
+
+.report-period-quarter-group {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 0.125rem;
+  padding: 0.125rem;
+  border: 1px solid rgba(6, 65, 63, 0.1);
+  border-radius: 0.35rem;
+  background: #f5f8f6;
+}
+
+.report-period-quarter-button {
+  min-width: 3.125rem;
+  height: 2rem;
+  padding: 0 0.5625rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: rgba(6, 65, 63, 0.8);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+.report-period-quarter-button:hover:not(.active):not([aria-pressed="true"]) {
+  background: rgba(255, 255, 255, 0.7);
+  color: #022c29;
+}
+
+.report-period-quarter-button.active,
+.report-period-quarter-button[aria-pressed="true"] {
+  background: #047857;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(6, 65, 63, 0.18);
+}
+
+.report-period-quarter-button.annual {
+  min-width: 3.875rem;
 }
 
 .report-responsive-page .monitoring-empty {
@@ -901,4 +983,3 @@
     max-width: 100%;
   }
 }
-

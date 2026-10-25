@@ -23,12 +23,13 @@
     </div>
 
     <!-- Period bar: year + quarters -->
-    <div class="flex flex-wrap items-center gap-4 rounded-2xl border border-white/60 bg-white/70 px-5 py-4 shadow-md backdrop-blur">
-      <div>
-        <label for="year" class="sr-only">Year</label>
+    <div class="flex flex-wrap items-end gap-4 rounded-2xl border border-white/60 bg-white/70 px-5 py-4 shadow-md backdrop-blur">
+      <label class="report-period-field">
+        <span class="report-period-label">YEAR</span>
+        <span class="sr-only">Year</span>
         <select
           id="year"
-          class="block rounded-lg border border-slate-200 bg-white px-4 py-2 font-semibold text-emerald-900 focus:border-emerald-600 focus:outline-2 focus:outline-emerald-200"
+          class="report-period-year-select"
           [(ngModel)]="year"
           (ngModelChange)="onPeriodChange()"
         >
@@ -36,15 +37,16 @@
             <option [ngValue]="y">{{ y }}</option>
           }
         </select>
-      </div>
+      </label>
 
-      <div role="group" aria-label="Quarter" class="flex flex-wrap items-center gap-1 rounded-xl bg-emerald-900/10 p-1">
+      <div class="report-period-field">
+        <span class="report-period-label">QUARTER</span>
+        <div role="group" aria-label="Quarter" class="report-period-quarter-group">
         @for (q of quarters; track q) {
           <button
             type="button"
-            style="border-radius: 0.25rem"
-            class="px-6 py-2 text-sm font-semibold transition-colors"
-            [class]="quarter === q ? 'bg-emerald-700 text-white shadow-sm' : 'bg-transparent text-emerald-800 hover:bg-white/60'"
+            class="report-period-quarter-button"
+            [class.active]="quarter === q"
             [attr.aria-pressed]="quarter === q"
             (click)="quarter = q; onPeriodChange()"
           >
@@ -53,14 +55,14 @@
         }
         <button
           type="button"
-          style="border-radius: 0.25rem"
-          class="px-6 py-2 text-sm font-semibold transition-colors"
-          [class]="isAnnual ? 'bg-emerald-700 text-white shadow-sm' : 'bg-transparent text-emerald-800 hover:bg-white/60'"
+          class="report-period-quarter-button annual"
+          [class.active]="isAnnual"
           [attr.aria-pressed]="isAnnual"
           (click)="quarter = 0; onPeriodChange()"
         >
           Annual
         </button>
+        </div>
       </div>
     </div>
 

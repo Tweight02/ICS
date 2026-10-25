@@ -11,6 +11,7 @@ describe('ReportParticulars', () => {
   let component: ReportParticulars;
   let fixture: ComponentFixture<ReportParticulars>;
   let saveDepartmentReport: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     vi.spyOn(Swal, 'fire').mockResolvedValue({
@@ -56,6 +57,7 @@ describe('ReportParticulars', () => {
       }]
     };
     saveDepartmentReport = vi.fn().mockReturnValue(of({ message: 'Report saved successfully.' }));
+    navigate = vi.fn();
 
     await TestBed.configureTestingModule({
       imports: [ReportParticulars],
@@ -67,7 +69,7 @@ describe('ReportParticulars', () => {
             snapshot: { paramMap, queryParamMap }
           }
         },
-        { provide: Router, useValue: { navigate: vi.fn(), url: '' } },
+        { provide: Router, useValue: { navigate, url: '/pastor/reports/particulars/16/1/2' } },
         { provide: AuthService, useValue: { getCurrentUser: () => null } },
         { provide: ChurchService, useValue: {} },
         {
@@ -95,6 +97,12 @@ describe('ReportParticulars', () => {
     expect(accordions.length).toBe(2);
     expect(accordions[0].open).toBe(true);
     expect(accordions[1].open).toBe(false);
+  });
+
+  it('returns to Pastor monitoring when Back is clicked', () => {
+    component.backToPrograms();
+
+    expect(navigate).toHaveBeenCalledWith(['/pastor/reports/details']);
   });
 
   it('opens and closes the comments chathead panel', () => {

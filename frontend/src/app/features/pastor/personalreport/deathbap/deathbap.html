@@ -89,10 +89,10 @@
           <div
             *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
             class="quarter-filter-toolbar">
-            <label class="year-filter">
-              <span class="filter-label">YEAR</span>
+            <label class="report-period-field">
+              <span class="report-period-label">YEAR</span>
               <select
-                class="year-selector"
+                class="report-period-year-select"
                 [value]="selectedYear"
                 (change)="onYearChange($event)"
                 aria-label="Select year">
@@ -104,22 +104,20 @@
               </select>
             </label>
 
-            <div class="quarter-filter">
-              <span class="filter-label">QUARTER</span>
-              <div class="quarter-selector" role="group" aria-label="Select quarter">
+            <div class="report-period-field">
+              <span class="report-period-label">QUARTER</span>
+              <div class="report-period-quarter-group" role="group" aria-label="Select quarter">
                 <button
                   *ngFor="let quarter of quarterOptions"
                   type="button"
-                  class="quarter-tab"
-                  [class.active]="!isAnnualView && selectedQuarter === quarter"
+                  class="report-period-quarter-button"
                   [attr.aria-pressed]="!isAnnualView && selectedQuarter === quarter"
                   (click)="selectQuarter(quarter)">
                   {{ quarter }}
                 </button>
                 <button
                   type="button"
-                  class="quarter-tab"
-                  [class.active]="isAnnualView"
+                  class="report-period-quarter-button annual"
                   [attr.aria-pressed]="isAnnualView"
                   (click)="selectAnnual()">
                   Annual

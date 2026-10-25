@@ -1,5 +1,4 @@
 import {
-  ChangeDetectorRef,
   Component,
   OnInit,
   inject,
@@ -7,10 +6,12 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
+import { Department } from '../../../../core/models/report.model';
+import { ReportService } from '../../../../core/services/report/report';
 
 @Component({
   selector: 'app-reports-details',
@@ -21,69 +22,52 @@ import { Church } from '../../../../core/models/church.model';
 })
 export class ReportsDetails implements OnInit {
 
-  private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private cdr = inject(ChangeDetectorRef);
   private churchService = inject(ChurchService);
+  private reportService = inject(ReportService);
 
-  districtId = 0;
-  districtName = '';
+  readonly districtId = signal(0);
+  readonly districtName = signal('');
+  readonly district = signal<Church | null>(null);
+  readonly churches = signal<Church[]>([]);
+  readonly loadingChurches = signal(false);
+  readonly errorMessage = signal('');
+  readonly expandedChurchId = signal<number | null>(null);
+  readonly departmentsByChurch = signal<Record<number, Department[]>>({});
+  readonly loadingDepartments = signal<Record<number, boolean>>({});
+  readonly departmentErrors = signal<Record<number, string>>({});
+  private readonly personalReportDepartmentIds = new Set([16, 20, 22, 23]);
+  readonly quarterKeys = ['q1', 'q2', 'q3', 'q4'] as const;
 
-  district: Church | null = null;
-  churches: Church[] = [];
-  private readonly loadingChurchesState = signal(false);
-  get loadingChurches(): boolean {
-    return this.loadingChurchesState();
+  ngOnInit(): void {
+    this.loadChurches();
   }
-  set loadingChurches(value: boolean) {
-    this.loadingChurchesState.set(value);
+
+  loadChurches(): void {
+    this.errorMessage.set('');
+    this.loadingChurches.set(true);
+
+    this.churchService.getMyDistrictChurches().subscribe({
+      next: response => {
+        this.district.set(response.district ?? null);
+        this.districtId.set(response.district?.church_id ?? 0);
+        this.districtName.set(response.district?.name ?? '');
+        this.churches.set(Array.isArray(response.data) ? response.data : []);
+        this.loadingChurches.set(false);
+      },
+      error: error => {
+        console.error('[REPORT DETAILS] API error:', error);
+        this.churches.set([]);
+        this.district.set(null);
+        this.loadingChurches.set(false);
+        this.errorMessage.set(
+          error.status === 401
+            ? 'Your session has expired. Please log in again.'
+            : 'Unable to load your district churches.'
+        );
+      }
+    });
   }
-
-  errorMessage = '';
-
-ngOnInit(): void {
-  this.loadChurches();
-}
-
-loadChurches(): void {
-  this.errorMessage = '';
-  this.loadingChurches = true;
-  this.cdr.detectChanges();
-
-  this.churchService.getMyDistrictChurches().subscribe({
-    next: (response) => {
-      this.loadingChurches = false;
-      console.log('[REPORT DETAILS] API response:', response);
-
-      this.district = response.district;
-      this.districtId = response.district?.church_id ?? 0;
-      this.districtName = response.district?.name ?? '';
-
-      this.churches = Array.isArray(response.data)
-        ? response.data
-        : [];
-
-      console.log('[REPORT DETAILS] District:', this.districtName);
-      console.log('[REPORT DETAILS] Church count:', this.churches.length);
-      console.log('[REPORT DETAILS] Churches:', this.churches);
-
-      this.cdr.detectChanges();
-    },
-    error: (error) => {
-      console.error('[REPORT DETAILS] API error:', error);
-
-      this.churches = [];
-      this.district = null;
-      this.loadingChurches = false;
-      this.errorMessage =
-        error.status === 401
-          ? 'Your session has expired. Please log in again.'
-          : 'Unable to load your district churches.';
-
-      this.cdr.detectChanges();
-    }
-  });
-}
 
   openDepartmentReports(): void {
 
@@ -91,8 +75,8 @@ loadChurches(): void {
       ['/pastor/reports/programs'],
       {
         queryParams: {
-          district_id: this.districtId,
-          district_name: this.districtName
+          district_id: this.districtId(),
+          district_name: this.districtName()
         }
       }
     );
@@ -103,26 +87,134 @@ loadChurches(): void {
     this.router.navigate(['/pastor/baptism']);
   }
 
+  toggleChurch(churchId: number): void {
+    if (this.expandedChurchId() === churchId) {
+      this.expandedChurchId.set(null);
+      return;
+    }
 
-openChurch(church: Church): void {
-  this.router.navigate([
-    '/pastor/reports/programs',
-    this.districtId,
-    church.church_id
-  ]);
-}
+    this.expandedChurchId.set(churchId);
 
-  getMonitoring(churchId: number) {
-    const monitoring = this.churches.find(
-      church => church.church_id === churchId
-    )?.monitoring;
+    if (
+      Object.hasOwn(this.departmentsByChurch(), churchId)
+      || this.loadingDepartments()[churchId]
+    ) {
+      return;
+    }
 
-    return {
-      q1: { progress: monitoring?.q1 ?? null, approved: !!monitoring?.q1_approved },
-      q2: { progress: monitoring?.q2 ?? null, approved: !!monitoring?.q2_approved },
-      q3: { progress: monitoring?.q3 ?? null, approved: !!monitoring?.q3_approved },
-      q4: { progress: monitoring?.q4 ?? null, approved: !!monitoring?.q4_approved }
-    };
+    this.loadDepartments(churchId);
+  }
+
+  isChurchOpen(churchId: number): boolean {
+    return this.expandedChurchId() === churchId;
+  }
+
+  loadDepartments(churchId: number): void {
+    this.loadingDepartments.update(current => ({ ...current, [churchId]: true }));
+    this.departmentErrors.update(current => {
+      const next = { ...current };
+      delete next[churchId];
+      return next;
+    });
+
+    this.reportService.getDepartments(churchId).subscribe({
+      next: response => {
+        this.departmentsByChurch.update(current => ({
+          ...current,
+          [churchId]: Array.isArray(response) ? response : []
+        }));
+        this.loadingDepartments.update(current => ({ ...current, [churchId]: false }));
+      },
+      error: error => {
+        this.loadingDepartments.update(current => ({ ...current, [churchId]: false }));
+        this.departmentErrors.update(current => ({
+          ...current,
+          [churchId]: error?.error?.message || 'Unable to load departments for this church.'
+        }));
+      }
+    });
+  }
+
+  getReportDepartments(churchId: number): Department[] {
+    return (this.departmentsByChurch()[churchId] ?? []).filter(
+      department => !this.isPersonalReportDepartment(department)
+    );
+  }
+
+  private isPersonalReportDepartment(department: Department): boolean {
+    const name = String(department.department_name || '').trim().toLowerCase();
+
+    return this.personalReportDepartmentIds.has(Number(department.department_id))
+      || name.includes('adventist mission')
+      || name.includes('ministerial')
+      || name.includes('baptism record')
+      || name.includes('death record');
+  }
+
+  hasDepartmentData(
+    department: Department,
+    quarter: 'q1' | 'q2' | 'q3' | 'q4'
+  ): boolean {
+    const hasSubmittedData = {
+      q1: department.q1_submitted_data_progress,
+      q2: department.q2_submitted_data_progress,
+      q3: department.q3_submitted_data_progress,
+      q4: department.q4_submitted_data_progress
+    }[quarter];
+    const progress = {
+      q1: department.q1_data_progress,
+      q2: department.q2_data_progress,
+      q3: department.q3_data_progress,
+      q4: department.q4_data_progress
+    }[quarter];
+    const submitted = {
+      q1: department.q1_submitted,
+      q2: department.q2_submitted,
+      q3: department.q3_submitted,
+      q4: department.q4_submitted
+    }[quarter];
+
+    return Boolean(submitted) || (hasSubmittedData ?? 0) > 0 || (progress ?? 0) > 0;
+  }
+
+  isDepartmentApproved(
+    department: Department,
+    quarter: 'q1' | 'q2' | 'q3' | 'q4'
+  ): boolean {
+    return Boolean({
+      q1: department.q1_approved,
+      q2: department.q2_approved,
+      q3: department.q3_approved,
+      q4: department.q4_approved
+    }[quarter]);
+  }
+
+  trackDepartment(index: number, department: Department): number {
+    return department.department_id || index;
+  }
+
+  openDepartment(department: Department): void {
+    if (!department?.department_id) {
+      return;
+    }
+
+    const departmentName = String(department.department_name || '').toLowerCase();
+    const isBaptismOrDeath = department.department_id === 22
+      || department.department_id === 23
+      || departmentName.includes('baptism')
+      || departmentName.includes('death');
+
+    if (isBaptismOrDeath) {
+      this.router.navigate(['/pastor/deathbap']);
+      return;
+    }
+
+    this.router.navigate([
+      '/pastor/reports/particulars',
+      department.department_id,
+      this.districtId(),
+      this.expandedChurchId()
+    ]);
   }
 
 }
