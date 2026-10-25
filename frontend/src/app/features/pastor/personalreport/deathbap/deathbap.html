@@ -663,31 +663,39 @@
           <div class="details-section">
 
             <div class="details-section-heading">
-              <div>
-                <h3>{{ getFullName(selectedBaptism) }}</h3>
-              </div>
+              
             </div>
 
-            <div class="details-grid">
+            <!-- UPDATED: one-column details layout -->
+            <div
+              class="details-grid"
+              style="display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px;">
 
-              <div class="detail-item">
-                <span class="detail-label">First Name</span>
-                <span class="detail-value">{{ selectedBaptism.first_name || '—' }}</span>
-              </div>
+              <!-- First four name fields appear together in one row -->
+              <div
+                class="details-name-row"
+                style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; width: 100%;">
 
-              <div class="detail-item">
-                <span class="detail-label">Middle Name</span>
-                <span class="detail-value">{{ selectedBaptism.middle_name || '—' }}</span>
-              </div>
+                <div class="detail-item" style="min-width: 0;">
+                  <span class="detail-label">First Name</span>
+                  <span class="detail-value">{{ selectedBaptism.first_name || '—' }}</span>
+                </div>
 
-              <div class="detail-item">
-                <span class="detail-label">Last Name</span>
-                <span class="detail-value">{{ selectedBaptism.last_name || '—' }}</span>
-              </div>
+                <div class="detail-item" style="min-width: 0;">
+                  <span class="detail-label">Middle Name</span>
+                  <span class="detail-value">{{ selectedBaptism.middle_name || '—' }}</span>
+                </div>
 
-              <div class="detail-item">
-                <span class="detail-label">Extension Name</span>
-                <span class="detail-value">{{ selectedBaptism.extension_name || '—' }}</span>
+                <div class="detail-item" style="min-width: 0;">
+                  <span class="detail-label">Last Name</span>
+                  <span class="detail-value">{{ selectedBaptism.last_name || '—' }}</span>
+                </div>
+
+                <div class="detail-item" style="min-width: 0;">
+                  <span class="detail-label">Extension Name</span>
+                  <span class="detail-value">{{ selectedBaptism.extension_name || '—' }}</span>
+                </div>
+
               </div>
 
               <div class="detail-item">

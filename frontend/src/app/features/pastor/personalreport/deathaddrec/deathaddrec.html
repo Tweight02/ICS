@@ -1,4 +1,3 @@
-
 <div class="form-page">
 
   <div class="form-card">
@@ -192,68 +191,75 @@
 
           </div>
 
-          <!-- First Name -->
-          <div class="form-group">
-            <label for="first_name">
-              First Name
-            </label>
+          <!-- NAME FIELDS: FOUR FIELDS IN ONE ROW -->
+          <div
+            class="name-fields-row"
+            style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; grid-column: 1 / -1; width: 100%;">
 
-            <input
-              id="first_name"
-              type="text"
-              name="first_name"
-              class="form-control"
-              [value]="selectedBaptism?.first_name || ''"
-              placeholder="First name"
-              readonly>
-          </div>
+            <!-- First Name -->
+            <div class="form-group" style="min-width: 0;">
+              <label for="first_name">
+                First Name
+              </label>
 
-          <!-- Middle Name -->
-          <div class="form-group">
-            <label for="middle_name">
-              Middle Name
-            </label>
+              <input
+                id="first_name"
+                type="text"
+                name="first_name"
+                class="form-control"
+                [value]="selectedBaptism?.first_name || ''"
+                placeholder="First name"
+                readonly>
+            </div>
 
-            <input
-              id="middle_name"
-              type="text"
-              name="middle_name"
-              class="form-control"
-              [value]="selectedBaptism?.middle_name || ''"
-              placeholder="Middle name"
-              readonly>
-          </div>
+            <!-- Middle Name -->
+            <div class="form-group" style="min-width: 0;">
+              <label for="middle_name">
+                Middle Name
+              </label>
 
-          <!-- Last Name -->
-          <div class="form-group">
-            <label for="last_name">
-              Last Name
-            </label>
+              <input
+                id="middle_name"
+                type="text"
+                name="middle_name"
+                class="form-control"
+                [value]="selectedBaptism?.middle_name || ''"
+                placeholder="Middle name"
+                readonly>
+            </div>
 
-            <input
-              id="last_name"
-              type="text"
-              name="last_name"
-              class="form-control"
-              [value]="selectedBaptism?.last_name || ''"
-              placeholder="Last name"
-              readonly>
-          </div>
+            <!-- Last Name -->
+            <div class="form-group" style="min-width: 0;">
+              <label for="last_name">
+                Last Name
+              </label>
 
-          <!-- Extension Name -->
-          <div class="form-group">
-            <label for="extension_name">
-              Extension Name
-            </label>
+              <input
+                id="last_name"
+                type="text"
+                name="last_name"
+                class="form-control"
+                [value]="selectedBaptism?.last_name || ''"
+                placeholder="Last name"
+                readonly>
+            </div>
 
-            <input
-              id="extension_name"
-              type="text"
-              name="extension_name"
-              class="form-control"
-              [value]="selectedBaptism?.extension_name || ''"
-              placeholder="Jr., Sr., III, IV, etc."
-              readonly>
+            <!-- Extension Name -->
+            <div class="form-group" style="min-width: 0;">
+              <label for="extension_name">
+                Extension Name
+              </label>
+
+              <input
+                id="extension_name"
+                type="text"
+                name="extension_name"
+                class="form-control"
+                [value]="selectedBaptism?.extension_name || ''"
+                placeholder="Jr., Sr., III, IV, etc."
+                readonly>
+            </div>
+
           </div>
 
           <!-- Church -->
