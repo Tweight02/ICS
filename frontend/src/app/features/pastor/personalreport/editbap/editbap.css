@@ -25,18 +25,20 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
+  gap: 11px;
   padding: 28px 34px;
   border-bottom: 1px solid #e7eee9;
   background: linear-gradient(135deg, #ffffff, #f6faf7);
 }
 
 .eyebrow {
-  margin: 0 0 8px;
+  margin-bottom: 0;
   color: #16805b;
-  font-size: 11px;
+  font-size: 25px;
+  padding-top: 10px;
   font-weight: 800;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.8px;
+  
 }
 
 .edit-header h1 {
@@ -48,7 +50,7 @@
 }
 
 .header-description {
-  margin: 8px 0 0;
+   margin-top: 0;
   color: #728279;
   font-size: 14px;
   line-height: 1.6;
