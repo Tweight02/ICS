@@ -264,7 +264,7 @@
     }
 
     .year-selector {
-      min-width: 100px;
+      min-width: 82px;
     }
 
     .quarter-selector {
@@ -273,8 +273,9 @@
     }
 
     .quarter-tab {
-      padding: 10px 8px;
-      font-size: 14px;
+      min-height: 22px;
+      padding: 0 7px;
+      font-size: 10px;
     }
 
     .baptism-modal-wrapper {
@@ -487,6 +488,29 @@
   border-bottom: 1px solid #edf1ef;
 }
 
+.quarter-filter-toolbar .report-period-field {
+  gap: 6px;
+}
+
+.quarter-filter-toolbar .report-period-year-select {
+  width: auto;
+  min-width: 98px;
+  height: 34px;
+  padding: 0 34px 0 12px;
+  font-size: 12px;
+}
+
+.quarter-filter-toolbar .report-period-quarter-button {
+  min-width: 45px;
+  height: 27px;
+  padding: 0 8px;
+  font-size: 10px;
+}
+
+.quarter-filter-toolbar .report-period-quarter-button.annual {
+  min-width: 56px;
+}
+
 .year-filter,
 .quarter-filter {
   display: flex;
@@ -496,9 +520,9 @@
 }
 
 .year-selector {
-  min-width: 98px;
-  height: 34px;
-  padding: 0 34px 0 12px;
+  min-width: 82px;
+  height: 28px;
+  padding: 0 24px 0 10px;
   border: 1px solid #dce5e1;
   border-radius: 6px;
   background-color: #fff;
@@ -519,9 +543,9 @@
 }
 
 .quarter-tab {
-  min-width: 45px;
-  min-height: 27px;
-  padding: 0 8px;
+  min-width: 36px;
+  min-height: 22px;
+  padding: 0 7px;
   border: 0;
   border-radius: 4px;
   background: transparent;
@@ -540,6 +564,10 @@
   background: #17694f;
   color: #fff;
   box-shadow: 0 2px 5px rgb(23 105 79 / 20%);
+}
+
+.quarter-filter .quarter-tab:last-child {
+  min-width: 46px;
 }
 
 .records-table-wrap {
@@ -737,6 +765,6 @@
   .quarter-tab {
     flex: 1;
     min-width: 0;
-    padding: 0 8px;
+    padding: 0 6px;
   }
 }
