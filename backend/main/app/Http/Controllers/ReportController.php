@@ -271,14 +271,18 @@ class ReportController extends Controller
                 $particularData = [];
 
                 foreach ($particulars as $particular) {
+                    $supportsMonthlyValues = $this->supportsMonthlyStewardshipValues(
+                        (int) $departmentId,
+                        (string) $section->program_name,
+                        (string) $particular->particular_name
+                    );
                     $particularQuarters = $quarters->map(
-                        function ($quarter) use ($particular) {
+                        function ($quarter) use ($particular, $supportsMonthlyValues) {
                             $savedItem = DB::table('particular_items')
                                 ->where('particular_id', $particular->particular_id)
                                 ->where('quarter_id', $quarter->quarter_id)
                                 ->first();
-
-                            return [
+                            $quarterData = [
                                 'quarter_id' => (int) $quarter->quarter_id,
                                 'quarter' => $quarter->quarter,
                                 'year' => $quarter->year,
@@ -287,6 +291,19 @@ class ReportController extends Controller
                                 'mission_approve' => $quarter->mission_approve,
                                 'value' => $savedItem ? $savedItem->value : null,
                             ];
+
+                            if ($supportsMonthlyValues) {
+                                $quarterData['monthly_values'] = [];
+
+                                if ($savedItem) {
+                                    $quarterData['monthly_values'] = DB::table('stewardships')
+                                        ->where('item_id', $savedItem->item_id)
+                                        ->pluck('value', 'month')
+                                        ->all();
+                                }
+                            }
+
+                            return $quarterData;
                         }
                     )->values();
 
@@ -348,6 +365,8 @@ class ReportController extends Controller
             'items.*.particular_id' => ['required', 'integer'],
             'items.*.quarter_id' => ['required', 'integer'],
             'items.*.value' => ['nullable', 'numeric', 'min:0'],
+            'items.*.monthly_values' => ['sometimes', 'array'],
+            'items.*.monthly_values.*' => ['nullable', 'numeric', 'min:0'],
             'submitted' => ['sometimes', 'boolean'],
         ]);
 
@@ -377,7 +396,9 @@ class ReportController extends Controller
                     ->whereNull('program.parent_id')
                     ->select([
                         'p.particular_id',
+                        'p.particular_name',
                         'section.program_id as section_program_id',
+                        'section.program_name as section_name',
                         'program.program_id as main_program_id',
                     ])
                     ->first();
@@ -407,36 +428,60 @@ class ReportController extends Controller
                     );
                 }
 
-                $quarterNumber = $this->getQuarterNumber($quarter->quarter);
+                $monthlyValues = $item['monthly_values'] ?? null;
 
-                if ($quarterNumber === null) {
-                    throw new \Exception('Invalid quarter name.');
-                }
-
-                if ($quarterNumber > 1) {
-                    $previousQuarterName = 'Q'.($quarterNumber - 1);
-
-                    $previousQuarter = DB::table('quarters')
-                        ->where('church_id', $churchId)
-                        ->where('program_id', $particular->main_program_id)
-                        ->where('year', $quarter->year)
-                        ->where('quarter', $previousQuarterName)
-                        ->first();
-
-                    if (! $previousQuarter) {
+                if ($monthlyValues !== null) {
+                    if (! $this->supportsMonthlyStewardshipValues(
+                        (int) $departmentId,
+                        (string) $particular->section_name,
+                        (string) $particular->particular_name
+                    )) {
                         throw new \Exception(
-                            $previousQuarterName.
-                            ' must exist before this quarter can be submitted.'
+                            'Monthly values are only supported for Stewardship offering and tithe reports.'
                         );
                     }
 
-                    if (! $this->isApproved($previousQuarter->mission_approve)) {
+                    $quarterNumber = $this->getQuarterNumber($quarter->quarter);
+
+                    if ($quarterNumber === null) {
+                        throw new \Exception('Invalid quarter for monthly report values.');
+                    }
+
+                    $firstMonth = (($quarterNumber - 1) * 3) + 1;
+                    $monthNames = collect(range($firstMonth, $firstMonth + 2))
+                        ->map(fn (int $month) => now()
+                            ->setDate((int) $quarter->year, $month, 1)
+                            ->format('F'))
+                        ->all();
+                    $invalidMonths = array_diff(array_keys($monthlyValues), $monthNames);
+
+                    if ($invalidMonths !== []) {
                         throw new \Exception(
-                            $previousQuarterName.
-                            ' must be approved before saving '.
-                            $quarter->quarter.'.'
+                            'Monthly values must match the selected reporting quarter.'
                         );
                     }
+
+                    $monthlyValues = array_replace(
+                        array_fill_keys($monthNames, null),
+                        $monthlyValues
+                    );
+
+                    if ($submitted) {
+                        $monthlyValues = array_map(
+                            fn ($value) => $value ?? 0,
+                            $monthlyValues
+                        );
+                    }
+
+                    $item['value'] = count(array_filter(
+                        $monthlyValues,
+                        fn ($value) => $value !== null
+                    )) > 0
+                        ? array_sum(array_map(
+                            fn ($value) => $value ?? 0,
+                            $monthlyValues
+                        ))
+                        : null;
                 }
 
                 $existing = DB::table('particular_items')
@@ -445,6 +490,7 @@ class ReportController extends Controller
                     ->first();
 
                 if ($existing) {
+                    $itemId = $existing->item_id;
                     DB::table('particular_items')
                         ->where('item_id', $existing->item_id)
                         ->update([
@@ -453,13 +499,32 @@ class ReportController extends Controller
                                 : $item['value'],
                         ]);
                 } else {
-                    DB::table('particular_items')->insert([
+                    $itemId = DB::table('particular_items')->insertGetId([
                         'particular_id' => $item['particular_id'],
                         'quarter_id' => $item['quarter_id'],
                         'value' => $submitted && $item['value'] === null
                             ? 0
                             : $item['value'],
                     ]);
+                }
+
+                if ($monthlyValues !== null) {
+                    DB::table('stewardships')
+                        ->where('item_id', $itemId)
+                        ->whereIn('month', $monthNames)
+                        ->delete();
+
+                    foreach ($monthlyValues as $month => $value) {
+                        DB::table('stewardships')->insert([
+                            'item_id' => $itemId,
+                            'type' => str_contains(
+                                strtolower($particular->particular_name),
+                                'tithe'
+                            ) ? 'tithes' : 'offering',
+                            'month' => $month,
+                            'value' => $value,
+                        ]);
+                    }
                 }
 
                 $savedCount++;
@@ -517,6 +582,19 @@ class ReportController extends Controller
         }
 
         return null;
+    }
+
+    private function supportsMonthlyStewardshipValues(
+        int $departmentId,
+        string $sectionName,
+        string $particularName
+    ): bool {
+        $sectionName = strtolower($sectionName);
+        $particularName = strtolower($particularName);
+
+        return $departmentId === 14
+            && (str_contains($sectionName, 'offering') || str_contains($sectionName, 'tithe'))
+            && (str_contains($particularName, 'offering') || str_contains($particularName, 'tithe'));
     }
 
     private function isApproved($value): bool
@@ -1012,6 +1090,32 @@ class ReportController extends Controller
         $quarters = DB::table('quarters')
             ->whereIn('quarter_id', $quarterIds)
             ->get();
+
+        $programCount = DB::table('programs')
+            ->where('department_id', $departmentId)
+            ->whereNull('parent_id')
+            ->count();
+
+        for ($previousQuarterNumber = 1; $previousQuarterNumber < $quarterNumber; $previousQuarterNumber++) {
+            $previousQuarterIds = $this->departmentQuarterIds(
+                $churchId,
+                $departmentId,
+                $data['year'],
+                $previousQuarterNumber
+            );
+
+            if (
+                count($previousQuarterIds) !== $programCount ||
+                DB::table('quarters')
+                    ->whereIn('quarter_id', $previousQuarterIds)
+                    ->whereNull('mission_approve')
+                    ->exists()
+            ) {
+                return response()->json([
+                    'message' => 'All previous quarters must be approved before this report can be approved.',
+                ], 422);
+            }
+        }
 
         if ($quarters->contains(fn ($quarter) => ! $this->isApproved($quarter->district_endorse))) {
             return response()->json([
