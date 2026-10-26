@@ -30,17 +30,17 @@ class ReportSeeder extends Seeder
 
     /** Q3 completion per department (Q1 and Q2 are complete, Q4 is empty). */
     private const Q3_PROGRESS = [
-        'Children and Family Ministries'       => 0.50,
-        'Stewardship Ministries'               => 0.40,
+        'Children and Family Ministries' => 0.50,
+        'Stewardship Ministries' => 0.40,
         'Sabbath School & Personal Ministries' => 0.50,
-        'Ministerial & Evangelism'             => 0.60,
-        'Youth Ministries'                     => 0.53,
-        'Womens Ministries'                    => 0.63,
-        'Communication'                        => 0.60,
-        'Adventist Mission'                    => 0.53,
-        'Secretariat'                          => 0.67,
-        'Baptism Record'                       => 0.50,
-        'Death Record'                         => 0.40,
+        'Ministerial & Evangelism' => 0.60,
+        'Youth Ministries' => 0.53,
+        'Womens Ministries' => 0.63,
+        'Communication' => 0.60,
+        'Adventist Mission' => 0.53,
+        'Secretariat' => 0.67,
+        'Baptism Record' => 0.50,
+        'Death Record' => 0.40,
     ];
 
     /** @var array<string,int> "district|church" => church_id */
@@ -79,15 +79,15 @@ class ReportSeeder extends Seeder
     {
         foreach ($this->roster() as $district => $names) {
             $districtId = DB::table('churches')->insertGetId([
-                'name'      => $district,
-                'address'   => $district . ' District',
+                'name' => $district,
+                'address' => $district.' District',
                 'parent_id' => null,
             ], 'church_id');
 
             foreach ($names as $name) {
                 $this->churchIds["$district|$name"] = DB::table('churches')->insertGetId([
-                    'name'      => $name,
-                    'address'   => $name . ', ' . $district,
+                    'name' => $name,
+                    'address' => $name.', '.$district,
                     'parent_id' => $districtId,
                 ], 'church_id');
             }
@@ -108,25 +108,25 @@ class ReportSeeder extends Seeder
             foreach ($forms as $form => $sections) {
                 $formId = DB::table('programs')->insertGetId([
                     'department_id' => $departmentId,
-                    'program_name'  => $form,
-                    'parent_id'     => null,
+                    'program_name' => $form,
+                    'parent_id' => null,
                 ], 'program_id');
 
-                $this->formIds[$form]         = $formId;
+                $this->formIds[$form] = $formId;
                 $this->formDepartments[$form] = $department;
 
                 foreach ($sections as $section => $rows) {
                     $sectionId = DB::table('programs')->insertGetId([
                         'department_id' => $departmentId,
-                        'program_name'  => $section,
-                        'parent_id'     => $formId,
+                        'program_name' => $section,
+                        'parent_id' => $formId,
                     ], 'program_id');
 
                     foreach ($rows as $row) {
                         $this->particulars[$form][] = [
                             'id' => DB::table('particulars')->insertGetId([
-                                'program_id'       => $sectionId,
-                                'particular_name'   => $row,
+                                'program_id' => $sectionId,
+                                'particular_name' => $row,
                             ], 'particular_id'),
                             'name' => $row,
                         ];
@@ -170,7 +170,7 @@ class ReportSeeder extends Seeder
             ]);
 
             DB::table('deaths')->insert([
-                'baptism_id'    => $baptismId,
+                'baptism_id' => $baptismId,
                 'date_of_death' => $died,
             ]);
 
@@ -183,19 +183,19 @@ class ReportSeeder extends Seeder
     private function insertBaptism(array $r): int
     {
         return DB::table('baptisms')->insertGetId([
-            'church_id'            => $r['church_id'],
-            'first_name'           => $r['first'],
-            'middle_name'          => '',
-            'last_name'            => $r['last'],
-            'extension_name'       => '',
-            'birthdate'            => $r['birthdate'],
-            'gender'               => $r['gender'],
-            'address'              => $r['address'],
+            'church_id' => $r['church_id'],
+            'first_name' => $r['first'],
+            'middle_name' => '',
+            'last_name' => $r['last'],
+            'extension_name' => '',
+            'birthdate' => $r['birthdate'],
+            'gender' => $r['gender'],
+            'address' => $r['address'],
             'officiating_minister' => $r['minister'],
-            'place_of_baptism'     => $r['place'],
-            'date_of_baptism'      => $r['baptized'],
-            'marital_status'       => $r['marital'],
-            'is_reclaimed'         => $r['reclaimed'],
+            'place_of_baptism' => $r['place'],
+            'date_of_baptism' => $r['baptized'],
+            'marital_status' => $r['marital'],
+            'is_reclaimed' => $r['reclaimed'],
         ], 'baptism_id');
     }
 
@@ -210,7 +210,7 @@ class ReportSeeder extends Seeder
 
     private function recordChurchId(string $church): int
     {
-        return $this->churchIds[self::RECORDS_DISTRICT . '|' . $church];
+        return $this->churchIds[self::RECORDS_DISTRICT.'|'.$church];
     }
 
     /* ---------------------------------------------------------------
@@ -219,7 +219,7 @@ class ReportSeeder extends Seeder
 
     private function seedQuarterlyReports(array $counts): void
     {
-        $prefix = self::REPORT_DISTRICT . '|';
+        $prefix = self::REPORT_DISTRICT.'|';
 
         foreach ($this->churchIds as $key => $churchId) {
             if (! str_starts_with($key, $prefix)) {
@@ -230,7 +230,7 @@ class ReportSeeder extends Seeder
 
             foreach ($this->formIds as $form => $programId) {
                 $particulars = $this->particulars[$form];
-                $countBased  = isset($counts[$form]);
+                $countBased = isset($counts[$form]);
 
                 foreach ([1, 2, 3, 4] as $quarter) {
                     /*
@@ -240,28 +240,24 @@ class ReportSeeder extends Seeder
                      * district_endorse (date|null),
                      * mission_approve (date|null).
                      *
-                     * Q1/Q2 = submitted, endorsed and approved.
-                     * Q3    = submitted and endorsed, waiting for mission approval.
-                     * Q4    = not submitted yet and has no values.
+                     * Q1-Q3 are submitted and endorsed, awaiting mission approval.
+                     * Q4 is not submitted yet and has no values.
                      */
                     $submitted = $quarter <= 3;
                     $districtEndorsed = $quarter <= 3;
-                    $missionApproved = $quarter <= 2;
 
                     $quarterId = DB::table('quarters')->insertGetId([
-                        'program_id'       => $programId,
-                        'church_id'        => $churchId,
-                        'quarter'          => 'Q' . $quarter,
-                        'year'             => (string) self::YEAR,
-                        'date_submitted'   => $submitted
+                        'program_id' => $programId,
+                        'church_id' => $churchId,
+                        'quarter' => 'Q'.$quarter,
+                        'year' => (string) self::YEAR,
+                        'date_submitted' => $submitted
                             ? Carbon::create(self::YEAR, $quarter * 3, 5)->toDateString()
                             : null,
                         'district_endorse' => $districtEndorsed
                             ? Carbon::create(self::YEAR, $quarter * 3, 6)->toDateString()
                             : null,
-                        'mission_approve'  => $missionApproved
-                            ? Carbon::create(self::YEAR, $quarter * 3, 7)->toDateString()
-                            : null,
+                        'mission_approve' => null,
                     ], 'quarter_id');
 
                     // Q3 is still being filled in, so only part of the form has values.
@@ -288,8 +284,8 @@ class ReportSeeder extends Seeder
 
                         $items[] = [
                             'particular_id' => $particular['id'],
-                            'quarter_id'    => $quarterId,
-                            'value'         => $this->valueFor($form, $particular, $churchId, $key, $quarter, $members, $counts),
+                            'quarter_id' => $quarterId,
+                            'value' => $this->valueFor($form, $particular, $churchId, $key, $quarter, $members, $counts),
                         ];
                     }
 
@@ -323,23 +319,23 @@ class ReportSeeder extends Seeder
 
         for ($i = 0; $i < 3; $i++) {
             $perMember = $type === 'Offering' ? mt_rand(180, 440) : mt_rand(650, 1400);
-            $month     = Carbon::create(self::YEAR, ($quarter - 1) * 3 + $i + 1, 1)->format('F');
+            $month = Carbon::create(self::YEAR, ($quarter - 1) * 3 + $i + 1, 1)->format('F');
 
             $months[$month] = $members * $perMember;
         }
 
         $itemId = DB::table('particular_items')->insertGetId([
             'particular_id' => $particularId,
-            'quarter_id'    => $quarterId,
-            'value'         => array_sum($months),
+            'quarter_id' => $quarterId,
+            'value' => array_sum($months),
         ], 'item_id');
 
         foreach ($months as $month => $amount) {
             DB::table('stewardships')->insert([
                 'item_id' => $itemId,
-                'type'    => $type,
-                'month'   => $month,
-                'value'   => $amount,
+                'type' => $type,
+                'month' => $month,
+                'value' => $amount,
             ]);
         }
     }
@@ -390,35 +386,35 @@ class ReportSeeder extends Seeder
     private function roster(): array
     {
         $raw = [
-            'Batanes'                     => 'Pasuc',
-            'Northwestern Cagayan (NWC)'  => 'Calayan, San Antonio, Claveria Centro, Namuac, Sanchez Mira, Buguey, San Julian, Guzman Company',
+            'Batanes' => 'Pasuc',
+            'Northwestern Cagayan (NWC)' => 'Calayan, San Antonio, Claveria Centro, Namuac, Sanchez Mira, Buguey, San Julian, Guzman Company',
             'North Central Cagayan (NCG)' => 'Cabaruan, Centro Ballesteros, Payagan, Annafunan, Linao, Navagan, Sta. Cruz, Mabutag, San Agustin',
-            'West Central Cagayan'        => 'Pugod, Carbonan, Bangag, Caunayan, Matucay, Cabarauan',
-            'Eastern Cagayan'             => 'San Vicente, Aparri, Caroan, Paytao, Lafu, Minanga Company',
-            'East Central Cagayan'        => 'Logac, Cabanaban, Lasam, Ufan, Tagao',
-            'Northeastern Cagayan 1'      => 'Dummun, Ogging, Ganzano, Calamagui, Matalao Company',
-            'Northeastern Cagayan 2'      => 'Capirayan, T. Putagan, Tagumay Company, Bunnayan, Agaman Company',
-            'Southern Cagayan'            => 'Anuling Church, Caguiwan Church, Calantan, Nanungaran Church, Sampaguita Church, Catabagan Company, Sto. Niño Nueve Company',
-            'Metro Tuguegarao'            => 'Tuguegarao Central, Libag Company, Cabbo Company, Namnama',
-            'Mallig'                      => 'Quiling, Rizal, Cullalabo, Mabini, Furao, Daug, Aurora',
-            'Metro Ilagan'                => 'Sipay, Malalam, Rang-ayan, Bliss, Cabisera 14 Cataguan, Namnama, Cabisera 9/11, Cabisera 7, Palucpuc',
-            'Northwestern Isabela'        => 'Guzon, Bimoton, Villa Corazon, Carmencita, Villa Ganzo, Sta. Catalina, Santiago, San Ramon Company',
-            'Northern Isabela 1'          => 'Balembong, Cauayan, Antatan, San Juan, Baybay, Aneg, San Antonio, Rasan Almacen',
-            'Northern Isabela 2'          => 'Minano, Lanna, San Mateo Tumauini, Antagan, Cumabao, Lapogan',
-            'Northeastern Isabela'        => 'Maguilan, Reina Mercedes, Sta. Cruz, Placer, Disulap, Dingasnan, Turod',
-            'West Central Isabela'        => 'Laing, Dadap, Marana, Cauayan Center, Villa Luna, Villa Concepcion, Minante, Naganacan, Naguilian, San Isidro',
-            'Western Isabela'             => 'Namnama, Recarona, Malasin, Salinungan, Villa Cruz, Nagsabaran, Sinamar, Aguinaldo Company',
-            'North Central Isabela'       => 'Dr. Pilar, Burgos, Mabini, Villa Domingo, Vega, Dipalua, San Ambrocio',
-            'South Central Isabela'       => 'Alicia, Villa Flor, Naguilian, Gomez, Angoleon, Doña Faustina, Castillo Company, Loida, Reserva Company, San Guillermo',
-            'Southeastern Isabela'        => 'San Manuel, Sta. Maria, Villa Marina, San Isidro, San Antonio, Sto. Niño, Mapalad Company, Sta. Ana',
-            'Southern Isabela'            => 'Divisoria, Ahso, Santiago, Cordon, Sta. Rosa Company',
-            'Quirino West'                => 'Salvacion, Saguday, Bangar, Sta. An, Cabbaga, Diffun, La Paz Company',
-            'Quirino East'                => 'Diobol Company, Dumbo Company, Diguyon, Diffun Company, Puagbo',
-            'Northern Nueva Vizcaya'      => 'Namanparan, Sinuhan Company, Sta. Cruz, Bagabag, Solano, Aggub, Communal',
-            'Southwestern Nueva Vizcaya'  => 'Kirapa Company, Indiana, Alimaguio, Tucanon, Alibao, Bone, Ilaan Company, Comon',
-            'Southeastern Nueva Vizcaya'  => 'Ramang, Paungan, Abinganan, Malasin, Belance, Manakka',
-            'Eastern Nueva Vizcaya'       => 'Kinogkiran Company, Canamasi Company, Cordon, Macalong, Kongkong Company, Paqui, Moya Company, Maglan, Palia, Poblacion',
-            'Central Nueva Vizcaya'       => 'La Torre, Masoc, Pinket Company, Ramabong, Busilac, Paitan, Sto. Domingo, Palaran Company',
+            'West Central Cagayan' => 'Pugod, Carbonan, Bangag, Caunayan, Matucay, Cabarauan',
+            'Eastern Cagayan' => 'San Vicente, Aparri, Caroan, Paytao, Lafu, Minanga Company',
+            'East Central Cagayan' => 'Logac, Cabanaban, Lasam, Ufan, Tagao',
+            'Northeastern Cagayan 1' => 'Dummun, Ogging, Ganzano, Calamagui, Matalao Company',
+            'Northeastern Cagayan 2' => 'Capirayan, T. Putagan, Tagumay Company, Bunnayan, Agaman Company',
+            'Southern Cagayan' => 'Anuling Church, Caguiwan Church, Calantan, Nanungaran Church, Sampaguita Church, Catabagan Company, Sto. Niño Nueve Company',
+            'Metro Tuguegarao' => 'Tuguegarao Central, Libag Company, Cabbo Company, Namnama',
+            'Mallig' => 'Quiling, Rizal, Cullalabo, Mabini, Furao, Daug, Aurora',
+            'Metro Ilagan' => 'Sipay, Malalam, Rang-ayan, Bliss, Cabisera 14 Cataguan, Namnama, Cabisera 9/11, Cabisera 7, Palucpuc',
+            'Northwestern Isabela' => 'Guzon, Bimoton, Villa Corazon, Carmencita, Villa Ganzo, Sta. Catalina, Santiago, San Ramon Company',
+            'Northern Isabela 1' => 'Balembong, Cauayan, Antatan, San Juan, Baybay, Aneg, San Antonio, Rasan Almacen',
+            'Northern Isabela 2' => 'Minano, Lanna, San Mateo Tumauini, Antagan, Cumabao, Lapogan',
+            'Northeastern Isabela' => 'Maguilan, Reina Mercedes, Sta. Cruz, Placer, Disulap, Dingasnan, Turod',
+            'West Central Isabela' => 'Laing, Dadap, Marana, Cauayan Center, Villa Luna, Villa Concepcion, Minante, Naganacan, Naguilian, San Isidro',
+            'Western Isabela' => 'Namnama, Recarona, Malasin, Salinungan, Villa Cruz, Nagsabaran, Sinamar, Aguinaldo Company',
+            'North Central Isabela' => 'Dr. Pilar, Burgos, Mabini, Villa Domingo, Vega, Dipalua, San Ambrocio',
+            'South Central Isabela' => 'Alicia, Villa Flor, Naguilian, Gomez, Angoleon, Doña Faustina, Castillo Company, Loida, Reserva Company, San Guillermo',
+            'Southeastern Isabela' => 'San Manuel, Sta. Maria, Villa Marina, San Isidro, San Antonio, Sto. Niño, Mapalad Company, Sta. Ana',
+            'Southern Isabela' => 'Divisoria, Ahso, Santiago, Cordon, Sta. Rosa Company',
+            'Quirino West' => 'Salvacion, Saguday, Bangar, Sta. An, Cabbaga, Diffun, La Paz Company',
+            'Quirino East' => 'Diobol Company, Dumbo Company, Diguyon, Diffun Company, Puagbo',
+            'Northern Nueva Vizcaya' => 'Namanparan, Sinuhan Company, Sta. Cruz, Bagabag, Solano, Aggub, Communal',
+            'Southwestern Nueva Vizcaya' => 'Kirapa Company, Indiana, Alimaguio, Tucanon, Alibao, Bone, Ilaan Company, Comon',
+            'Southeastern Nueva Vizcaya' => 'Ramang, Paungan, Abinganan, Malasin, Belance, Manakka',
+            'Eastern Nueva Vizcaya' => 'Kinogkiran Company, Canamasi Company, Cordon, Macalong, Kongkong Company, Paqui, Moya Company, Maglan, Palia, Poblacion',
+            'Central Nueva Vizcaya' => 'La Torre, Masoc, Pinket Company, Ramabong, Busilac, Paitan, Sto. Domingo, Palaran Company',
         ];
 
         return array_map(fn ($names) => array_map('trim', explode(',', $names)), $raw);

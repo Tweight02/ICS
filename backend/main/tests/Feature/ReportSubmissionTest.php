@@ -88,6 +88,23 @@ function createRepresentative(int $churchId, int $departmentId): User
     ]);
 }
 
+function createReportAssistant(int $churchId, int $departmentId): User
+{
+    return User::query()->create([
+        'department_id' => $departmentId,
+        'church_id' => $churchId,
+        'first_name' => 'Report',
+        'middle_name' => '',
+        'last_name' => 'Assistant',
+        'birthdate' => '1980-01-01',
+        'gender' => 'other',
+        'role' => 'assistant',
+        'email' => 'report-assistant@example.com',
+        'password' => Hash::make('password'),
+        'status' => 'active',
+    ]);
+}
+
 test('assistant can comment on baptism and death reports when no quarter exists yet', function () {
     $churchId = DB::table('churches')->insertGetId([
         'name' => 'Personal Report Church',
@@ -281,6 +298,133 @@ test('submitting a completely blank report stores every entry as zero', function
     }
 });
 
+test('a later quarter cannot be approved until the first quarter is approved', function () {
+    $fixture = reportSubmissionFixture();
+    $q2Id = DB::table('quarters')->insertGetId([
+        'program_id' => DB::table('programs')
+            ->where('department_id', $fixture['departmentId'])
+            ->whereNull('parent_id')
+            ->value('program_id'),
+        'church_id' => $fixture['churchId'],
+        'quarter' => 'Q2',
+        'year' => '2026',
+        'date_submitted' => null,
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    $pastor = createDistrictPastor($fixture['churchId'], $fixture['departmentId']);
+
+    $this->actingAs($pastor, 'sanctum')
+        ->postJson(
+            "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/save",
+            [
+                'submitted' => true,
+                'items' => array_map(
+                    fn (int $particularId) => [
+                        'particular_id' => $particularId,
+                        'quarter_id' => $q2Id,
+                        'value' => 10,
+                    ],
+                    $fixture['particularIds']
+                ),
+            ]
+        )
+        ->assertOk();
+
+    $this->actingAs($pastor, 'sanctum')
+        ->postJson(
+            "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/endorse",
+            ['year' => 2026, 'quarter' => 'Q2']
+        )
+        ->assertOk();
+
+    $assistant = createReportAssistant($fixture['churchId'], $fixture['departmentId']);
+    $approvalUrl = "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/approve";
+
+    $this->actingAs($assistant, 'sanctum')
+        ->postJson($approvalUrl, ['year' => 2026, 'quarter' => 'Q2'])
+        ->assertUnprocessable()
+        ->assertJsonPath(
+            'message',
+            'All previous quarters must be approved before this report can be approved.'
+        );
+
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $fixture['quarterId'],
+        'mission_approve' => null,
+    ]);
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $q2Id,
+        'mission_approve' => null,
+    ]);
+
+    DB::table('quarters')
+        ->where('quarter_id', $fixture['quarterId'])
+        ->update([
+            'date_submitted' => '2026-03-01',
+            'district_endorse' => '2026-03-02',
+            'mission_approve' => '2026-03-03',
+        ]);
+
+    $this->actingAs($assistant, 'sanctum')
+        ->postJson($approvalUrl, ['year' => 2026, 'quarter' => 'Q2'])
+        ->assertOk();
+
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $q2Id,
+        'mission_approve' => now()->toDateString(),
+    ]);
+});
+
+test('approving a quarter requires every earlier quarter to be approved', function () {
+    $fixture = reportSubmissionFixture();
+    $programId = DB::table('programs')
+        ->where('department_id', $fixture['departmentId'])
+        ->whereNull('parent_id')
+        ->value('program_id');
+
+    DB::table('quarters')->insert([
+        [
+            'program_id' => $programId,
+            'church_id' => $fixture['churchId'],
+            'quarter' => 'Q2',
+            'year' => '2026',
+            'date_submitted' => '2026-06-01',
+            'district_endorse' => '2026-06-02',
+            'mission_approve' => '2026-06-03',
+        ],
+        [
+            'program_id' => $programId,
+            'church_id' => $fixture['churchId'],
+            'quarter' => 'Q3',
+            'year' => '2026',
+            'date_submitted' => '2026-09-01',
+            'district_endorse' => '2026-09-02',
+            'mission_approve' => null,
+        ],
+    ]);
+
+    $this->actingAs(
+        createReportAssistant($fixture['churchId'], $fixture['departmentId']),
+        'sanctum'
+    )->postJson(
+        "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/approve",
+        ['year' => 2026, 'quarter' => 'Q3']
+    )->assertUnprocessable()
+        ->assertJsonPath(
+            'message',
+            'All previous quarters must be approved before this report can be approved.'
+        );
+
+    $this->assertDatabaseHas('quarters', [
+        'church_id' => $fixture['churchId'],
+        'program_id' => $programId,
+        'quarter' => 'Q3',
+        'year' => '2026',
+        'mission_approve' => null,
+    ]);
+});
+
 test('endorsement is rejected until every report quarter has been submitted', function () {
     $fixture = reportSubmissionFixture();
     $pastor = createDistrictPastor(
@@ -350,6 +494,25 @@ test('department monitoring returns data completion before approval', function (
         ->assertJsonPath('0.q1_approved', false)
         ->assertJsonPath('0.q1_submitted', false)
         ->assertJsonPath('0.q1_data_progress', 50);
+});
+
+test('department report omits monthly values for ordinary report items', function () {
+    $fixture = reportSubmissionFixture();
+    DB::table('particular_items')->insert([
+        'particular_id' => $fixture['particularIds'][0],
+        'quarter_id' => $fixture['quarterId'],
+        'value' => 12,
+    ]);
+
+    $this->actingAs(
+        createDistrictPastor($fixture['churchId'], $fixture['departmentId']),
+        'sanctum'
+    )->getJson(
+        "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report"
+    )->assertOk()
+        ->assertJsonMissingPath(
+            'programs.0.sections.0.particulars.0.quarters.0.monthly_values'
+        );
 });
 
 test('church monitoring returns data completion and approval separately', function () {

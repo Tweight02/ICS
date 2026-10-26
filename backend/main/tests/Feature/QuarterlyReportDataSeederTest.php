@@ -29,7 +29,7 @@ test('quarterly report seeder creates reports through the current quarter and is
     ]);
     $programId = DB::table('programs')->insertGetId([
         'department_id' => 13,
-        'program_name' => 'Children and Family Ministries Quarterly Report',
+        'program_name' => 'AY Quarterly Report',
         'parent_id' => null,
     ]);
     $sectionId = DB::table('programs')->insertGetId([
@@ -66,6 +66,32 @@ test('quarterly report seeder creates reports through the current quarter and is
         ->value('value');
 
     expect($q4Value)->toBeGreaterThan(0);
+    $this->assertDatabaseHas('quarters', [
+        'church_id' => $churchId,
+        'program_id' => $programId,
+        'quarter' => 'Q1',
+        'year' => '2026',
+        'mission_approve' => null,
+    ]);
+    $q1Approval = DB::table('quarters')
+        ->where('church_id', $churchId)
+        ->where('program_id', $programId)
+        ->where('quarter', 'Q1')
+        ->value('mission_approve');
+    $q2Approval = DB::table('quarters')
+        ->where('church_id', $churchId)
+        ->where('program_id', $programId)
+        ->where('quarter', 'Q2')
+        ->value('mission_approve');
+    $q3Approval = DB::table('quarters')
+        ->where('church_id', $churchId)
+        ->where('program_id', $programId)
+        ->where('quarter', 'Q3')
+        ->value('mission_approve');
+
+    $this->assertNull($q1Approval);
+    $this->assertNull($q2Approval);
+    $this->assertNull($q3Approval);
     $this->assertDatabaseHas('quarters', [
         'church_id' => $churchId,
         'program_id' => $programId,

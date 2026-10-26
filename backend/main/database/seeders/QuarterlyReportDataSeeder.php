@@ -42,7 +42,9 @@ class QuarterlyReportDataSeeder extends Seeder
         }
 
         $programIds = $programs->pluck('program_id')->all();
+        $programNames = $programs->pluck('program_name', 'program_id');
         $churchIds = $churches->pluck('church_id')->all();
+        $pendingApprovalExampleChurchId = (int) $churches->first()->church_id;
         $particularsByProgram = [];
 
         DB::table('programs as sections')
@@ -70,8 +72,14 @@ class QuarterlyReportDataSeeder extends Seeder
             ->where('year', $year)
             ->whereIn('program_id', $programIds)
             ->whereIn('church_id', $churchIds)
-            ->orderBy('quarter_id')
-            ->get();
+            ->get()
+            ->sortBy(fn ($quarter) => sprintf(
+                '%010d|%010d|%d',
+                (int) $quarter->church_id,
+                (int) $quarter->program_id,
+                $this->quarterNumber((string) $quarter->quarter) ?? 5
+            ))
+            ->values();
 
         if ($quarters->isEmpty()) {
             throw new RuntimeException("No reporting quarters found for {$year}. Run ReportingSetupSeeder first.");
@@ -88,11 +96,16 @@ class QuarterlyReportDataSeeder extends Seeder
             $quarters,
             $quarterIdsWithItems,
             $particularsByProgram,
+            $programNames,
+            $pendingApprovalExampleChurchId,
             $reportingYear,
             $lastQuarter,
             $today,
             &$seeded
         ): void {
+            $previousQuarterApproval = [];
+            $previousQuarterNumber = [];
+
             foreach ($quarters as $quarter) {
                 $quarterNumber = $this->quarterNumber((string) $quarter->quarter);
 
@@ -100,22 +113,42 @@ class QuarterlyReportDataSeeder extends Seeder
                     continue;
                 }
 
-                $particulars = $particularsByProgram[$quarter->program_id] ?? [];
-
-                if ($particulars === []) {
-                    continue;
-                }
+                $scopeKey = "{$quarter->church_id}|{$quarter->program_id}";
+                $canApprove = $quarterNumber === 1
+                    || (($previousQuarterNumber[$scopeKey] ?? null) === $quarterNumber - 1
+                        && ($previousQuarterApproval[$scopeKey] ?? false));
 
                 if ($quarterIdsWithItems->has($quarter->quarter_id) || $quarter->date_submitted !== null
                     || $quarter->district_endorse !== null || $quarter->mission_approve !== null) {
+                    $previousQuarterNumber[$scopeKey] = $quarterNumber;
+                    $previousQuarterApproval[$scopeKey] = $quarter->mission_approve !== null;
+
+                    continue;
+                }
+
+                $particulars = $particularsByProgram[$quarter->program_id] ?? [];
+
+                if ($particulars === []) {
+                    $previousQuarterNumber[$scopeKey] = $quarterNumber;
+                    $previousQuarterApproval[$scopeKey] = false;
+
                     continue;
                 }
 
                 $key = "{$quarter->church_id}|{$quarter->program_id}|{$reportingYear}|{$quarterNumber}";
+                $isPendingApprovalExample =
+                    (int) $quarter->church_id === $pendingApprovalExampleChurchId
+                    && ($programNames[$quarter->program_id] ?? null) === 'AY Quarterly Report'
+                    && $quarterNumber === 1;
                 $quarterEnd = Carbon::create($reportingYear, $quarterNumber * 3, 1)->endOfMonth();
-                $submitted = $quarterEnd->lt($today) && $this->score("{$key}|submitted") < $this->submissionRate($quarterNumber);
-                $endorsed = $submitted && $this->score("{$key}|endorsed") < 82;
-                $approved = $endorsed && $this->score("{$key}|approved") < 74;
+                $submitted = $quarterEnd->lt($today) && (
+                    $this->score("{$key}|submitted") < $this->submissionRate($quarterNumber)
+                );
+                $endorsed = $submitted && (
+                    $this->score("{$key}|endorsed") < 82
+                );
+                $approved = $endorsed && $canApprove && ! $isPendingApprovalExample
+                    && $this->score("{$key}|approved") < 74;
                 $dates = $this->statusDates($key, $quarterEnd, $today, $submitted, $endorsed, $approved);
 
                 DB::table('quarters')
@@ -184,6 +217,8 @@ class QuarterlyReportDataSeeder extends Seeder
                 }
 
                 $seeded++;
+                $previousQuarterNumber[$scopeKey] = $quarterNumber;
+                $previousQuarterApproval[$scopeKey] = $approved;
             }
         });
 
