@@ -25,7 +25,8 @@ export class EventService {
   // EVENTOS (`events` & `particular_items`)
   // ==========================================
   getEvents(): Observable<EventModel[]> {
-    return this.http.get<any>(`${this.apiUrl}/events`).pipe(
+    const params = new HttpParams().set('status', 'all');
+    return this.http.get<any>(`${this.apiUrl}/events`, { params }).pipe(
       map(response => response.data ?? response)
     );
   }

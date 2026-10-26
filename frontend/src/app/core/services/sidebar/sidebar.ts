@@ -49,12 +49,7 @@ export class SidebarService {
             label: 'Reports',
             route: '/representative/reports/programs',
             icon: 'bi-bar-chart'
-          },
-          {
-            label: 'Stewardship',
-            route: '/representative/stewardship',
-            icon: 'bi-cash-coin'
-          },
+          }
         ];
 
       // ADMINISTRATIVE ASSISTANT

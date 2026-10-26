@@ -2,20 +2,19 @@
 <ng-template #qcell let-v>
   <div class="flex items-center justify-center">
 
-    <span *ngIf="v.progress === null || v.progress === 0" class="text-sm text-emerald-900/40">-</span>
+    <span *ngIf="v.progress === null || v.progress === 0" class="monitoring-status-empty">-</span>
 
     <span
       *ngIf="v.approved && v.progress !== 0 && v.progress !== null"
       title="Complete"
-      class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700
-             text-xs font-bold text-white shadow-sm">
+      class="monitoring-status-check">
       ✓
     </span>
 
     <span
       *ngIf="!v.approved && v.progress !== null && v.progress > 0"
       [attr.title]="'Report data entered: ' + v.progress + '%'"
-      class="text-sm font-semibold tabular-nums text-emerald-800">
+      class="monitoring-status-percent">
       {{ v.progress }}%
     </span>
 
@@ -23,11 +22,11 @@
 </ng-template>
 
 
-<div class="report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
-  <div class="mx-auto max-w-6xl">
+<div class="report-responsive-page monitoring-list-shell min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+  <div class="monitoring-content">
 
     <!-- HEADER -->
-    <header class="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <header class="monitoring-header">
       <div>
         <button
           type="button"
@@ -38,13 +37,11 @@
           Back
         </button>
 
-        <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
-          Report Management
-        </p>
-        <h1 class="font-serif text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
+        <p class="monitoring-kicker">Report management</p>
+        <h1 class="monitoring-title">
           {{ churchName || 'Church Reports' }}
         </h1>
-        <p class="mt-0.5 text-sm font-medium text-emerald-900/70">
+        <p class="monitoring-subtitle">
           {{ districtName }}
         </p>
       </div>
@@ -74,11 +71,10 @@
     <!-- TABLE -->
     <div
       *ngIf="!loading && !errorMessage && (reportDepartments.length > 0 || personalReportDepartments.length > 0)"
-      class="h-fit self-start overflow-hidden rounded-2xl border border-white/60 bg-white/60
-             shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
+      class="monitoring-panel h-fit self-start">
 
       <div class="overflow-x-auto">
-        <table class="w-full border-collapse">
+        <table class="monitoring-table">
 
           <thead>
             <tr class="bg-emerald-900/10 text-xs font-bold uppercase tracking-wider text-emerald-950">
@@ -93,28 +89,26 @@
           <tbody>
             <tr
               *ngFor="let department of reportDepartments; let i = index; trackBy: trackDepartment"
-              class="group cursor-pointer border-t border-emerald-900/5 transition hover:bg-white/70"
+              class="monitoring-row group"
               (click)="openDepartment(department)">
 
               <!-- Icon + name -->
-              <td class="px-5 py-3.5">
-                <div class="flex items-center gap-3">
+              <td class="monitoring-name-cell">
+                <div class="monitoring-name-wrap">
                   <span
-                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700/10
-                           text-emerald-700 transition group-hover:bg-emerald-700 group-hover:text-white">
+                    class="monitoring-icon">
                     <i
                       class="bi text-base"
                       [ngClass]="getDepartmentIcon(department.department_name)">
                     </i>
                   </span>
 
-                  <span class="text-sm font-semibold text-emerald-950">
+                  <span>
                     {{ department.department_name }}
                   </span>
 
                   <svg
-                    class="ml-auto h-4 w-4 -translate-x-1 text-emerald-700 opacity-0 transition
-                           group-hover:translate-x-0 group-hover:opacity-100"
+                    class="monitoring-chevron h-4 w-4"
                     viewBox="0 0 20 20" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     aria-hidden="true">
@@ -123,25 +117,25 @@
                 </div>
               </td>
 
-              <td class="px-3 py-3.5 text-center">
+              <td class="monitoring-cell">
                 <ng-container
                   *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q1 }">
                 </ng-container>
               </td>
 
-              <td class="px-3 py-3.5 text-center">
+              <td class="monitoring-cell">
                 <ng-container
                   *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q2 }">
                 </ng-container>
               </td>
 
-              <td class="px-3 py-3.5 text-center">
+              <td class="monitoring-cell">
                 <ng-container
                   *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q3 }">
                 </ng-container>
               </td>
 
-              <td class="px-3 py-3.5 text-center">
+              <td class="monitoring-cell">
                 <ng-container
                   *ngTemplateOutlet="qcell; context: { $implicit: getMonitoring(i).q4 }">
                 </ng-container>
@@ -156,23 +150,23 @@
 
             <tr
               *ngFor="let department of personalReportDepartments; let i = index; trackBy: trackDepartment"
-              class="group cursor-pointer border-t border-emerald-900/5 transition hover:bg-white/70"
+              class="monitoring-row group"
               (click)="openDepartment(department)">
-              <td class="px-5 py-3.5">
-                <div class="flex items-center gap-3">
-                  <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700/10 text-emerald-700 transition group-hover:bg-emerald-700 group-hover:text-white">
+              <td class="monitoring-name-cell">
+                <div class="monitoring-name-wrap">
+                  <span class="monitoring-icon">
                     <i class="bi text-base" [ngClass]="getDepartmentIcon(department.department_name)"></i>
                   </span>
-                  <span class="text-sm font-semibold text-emerald-950">{{ department.department_name }}</span>
-                  <svg class="ml-auto h-4 w-4 -translate-x-1 text-emerald-700 opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <span>{{ department.department_name }}</span>
+                  <svg class="monitoring-chevron h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M8 5l5 5-5 5" />
                   </svg>
                 </div>
               </td>
-              <td class="px-3 py-3.5 text-center"><ng-container *ngTemplateOutlet="qcell; context: { $implicit: getPersonalMonitoring(i).q1 }"></ng-container></td>
-              <td class="px-3 py-3.5 text-center"><ng-container *ngTemplateOutlet="qcell; context: { $implicit: getPersonalMonitoring(i).q2 }"></ng-container></td>
-              <td class="px-3 py-3.5 text-center"><ng-container *ngTemplateOutlet="qcell; context: { $implicit: getPersonalMonitoring(i).q3 }"></ng-container></td>
-              <td class="px-3 py-3.5 text-center"><ng-container *ngTemplateOutlet="qcell; context: { $implicit: getPersonalMonitoring(i).q4 }"></ng-container></td>
+              <td class="monitoring-cell"><ng-container *ngTemplateOutlet="qcell; context: { $implicit: getPersonalMonitoring(i).q1 }"></ng-container></td>
+              <td class="monitoring-cell"><ng-container *ngTemplateOutlet="qcell; context: { $implicit: getPersonalMonitoring(i).q2 }"></ng-container></td>
+              <td class="monitoring-cell"><ng-container *ngTemplateOutlet="qcell; context: { $implicit: getPersonalMonitoring(i).q3 }"></ng-container></td>
+              <td class="monitoring-cell"><ng-container *ngTemplateOutlet="qcell; context: { $implicit: getPersonalMonitoring(i).q4 }"></ng-container></td>
             </tr>
           </tbody>
 

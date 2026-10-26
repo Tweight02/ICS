@@ -26,6 +26,7 @@ interface QuarterRecord {
   date_submitted?: string | null;
   district_endorse?: string | null;
   mission_approve: string | null;
+  monthly_values?: Record<string, number | null>;
 }
 
 interface Quarter {
@@ -54,7 +55,7 @@ interface Program {
 }
 
 interface Report {
-  department?: { department_name?: string };
+  department?: { department_id?: number; department_name?: string };
   programs: Program[];
 }
 
@@ -62,6 +63,7 @@ interface SaveReportItem {
   particular_id: number;
   quarter_id: number;
   value: number | null;
+  monthly_values?: Record<string, number | null>;
 }
 
 interface ReportComment {
@@ -85,12 +87,19 @@ interface QuarterRef {
 }
 
 type AutoSaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
+type StewardshipTab = 'activities' | 'offering';
+
+const STEWARDSHIP_MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 @Component({
   selector: 'app-report-particulars',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './report-particulars.html'
+  templateUrl: './report-particulars.html',
+  styleUrl: './report-particulars.css'
 })
 export class ReportParticulars implements OnInit, OnDestroy {
 
@@ -118,6 +127,7 @@ export class ReportParticulars implements OnInit, OnDestroy {
   selectedYear: number | null = null;
   selectedQuarterId: number | null = null;
   selectedProgramId: number | null = null;
+  activeStewardshipTab: StewardshipTab = 'activities';
 
   isAnnualView = false;
   private readonly loadingState = signal(false);
@@ -409,6 +419,100 @@ ngOnInit(): void {
     return this.report?.programs?.find(
       p => p.program_id === this.selectedProgramId
     ) ?? null;
+  }
+
+  get isStewardshipReport(): boolean {
+    return Number(this.report?.department?.department_id ?? this.departmentId) === 14;
+  }
+
+  getVisibleSections(program: Program): Section[] {
+    if (!this.isStewardshipReport) {
+      return program.sections;
+    }
+
+    return program.sections.filter(section =>
+      this.isOfferingSection(section) === (this.activeStewardshipTab === 'offering')
+    );
+  }
+
+  selectStewardshipTab(tab: StewardshipTab): void {
+    this.activeStewardshipTab = tab;
+  }
+
+  getStewardshipTotal(type: 'offering' | 'tithe'): number {
+    const sections = this.getSelectedProgram()?.sections ?? [];
+    const quarter = this.getSelectedQuarter();
+
+    return sections
+      .filter(section => this.isOfferingSection(section))
+      .flatMap(section => section.particulars)
+      .filter(particular => particular.particular_name.toLowerCase().includes(type))
+      .reduce((total, particular) => {
+        const records = this.isAnnualView
+          ? particular.quarters.filter(record => Number(record.year) === this.selectedYear)
+          : quarter
+            ? [this.getParticularQuarterRecord(particular, quarter)].filter(
+                (record): record is QuarterRecord => record !== null
+              )
+            : [];
+
+        return total + records.reduce((subtotal, record) => {
+          const value = Number(record.value);
+          return Number.isFinite(value) ? subtotal + value : subtotal;
+        }, 0);
+      }, 0);
+  }
+
+  private isOfferingSection(section: Section): boolean {
+    const name = (section.program_name ?? section.section_name ?? '').toLowerCase();
+    return name.includes('offering') || name.includes('tithe');
+  }
+
+  isStewardshipMonthlySection(section: Section): boolean {
+    return this.isStewardshipReport && this.isOfferingSection(section);
+  }
+
+  getQuarterMonthNames(quarter: Quarter): string[] {
+    const quarterNumber = this.quarterNumber(quarter.quarter);
+    const firstMonthIndex = (quarterNumber - 1) * 3;
+    return STEWARDSHIP_MONTHS.slice(firstMonthIndex, firstMonthIndex + 3);
+  }
+
+  getStewardshipMonthValue(record: QuarterRecord, month: string): number | null {
+    return record.monthly_values?.[month] ?? null;
+  }
+
+  setStewardshipMonthValue(
+    particular: Particular,
+    quarter: Quarter,
+    month: string,
+    value: number | string | null
+  ): void {
+    if (this.saving || this.isAnnualView || this.isQuarterApproved(quarter.quarter_id)) {
+      return;
+    }
+
+    const record = this.getParticularQuarterRecord(particular, quarter);
+
+    if (!record) {
+      this.errorMessage = 'This report quarter is unavailable.';
+      return;
+    }
+
+    const monthValue = value === '' || value === null ? null : Number(value);
+
+    if (monthValue !== null && (!Number.isFinite(monthValue) || monthValue < 0)) {
+      this.errorMessage = 'Enter a valid non-negative number.';
+      return;
+    }
+
+    record.monthly_values = { ...(record.monthly_values ?? {}), [month]: monthValue };
+    record.value = Object.values(record.monthly_values).reduce<number>(
+      (total, amount) => total + (amount ?? 0),
+      0
+    );
+    this.clearMessages();
+    this.scheduleAutoSave();
   }
 
   getParticularQuarterRecord(
@@ -983,7 +1087,8 @@ ngOnInit(): void {
         items.push({
           particular_id: particular.particular_id,
           quarter_id: itemQuarterId,
-          value
+          value,
+          ...(record?.monthly_values ? { monthly_values: record.monthly_values } : {})
         });
       }
     }

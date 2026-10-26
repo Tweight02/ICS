@@ -42,6 +42,7 @@ export interface ReportQuarter {
   mission_approve: string | null;
 
   value: number | null;
+  monthly_values?: Record<string, number | null>;
 }
 
 /* =========================================================
@@ -52,6 +53,7 @@ export interface SaveReportItem {
   particular_id: number;
   quarter_id: number;
   value: number | null;
+  monthly_values?: Record<string, number | null>;
 }
 
 /* =========================================================
