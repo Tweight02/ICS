@@ -1,0 +1,104 @@
+<main class="profile-page">
+  <div class="profile-content">
+    <button type="button" class="profile-back" (click)="goBack()">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+      Back
+    </button>
+
+    <header class="profile-heading">
+      <p class="profile-eyebrow">Account settings</p>
+      <h1>Your profile</h1>
+      <p>Keep your personal information and profile photo up to date.</p>
+    </header>
+
+    <div *ngIf="loading()" class="profile-message" role="status">Loading your profile…</div>
+
+    <form *ngIf="!loading()" [formGroup]="form" (ngSubmit)="submit()" class="profile-card">
+      <section class="profile-photo-section" aria-labelledby="profile-photo-heading">
+        <div class="profile-avatar">
+          <img
+            *ngIf="imagePreview() || profileImageUrl"
+            [src]="imagePreview() || profileImageUrl"
+            alt="Profile photo preview" />
+          <span *ngIf="!imagePreview() && !profileImageUrl" aria-hidden="true">
+            {{ form.controls.first_name.value.charAt(0) }}{{ form.controls.last_name.value.charAt(0) }}
+          </span>
+        </div>
+        <div class="profile-photo-copy">
+          <h2 id="profile-photo-heading">Profile photo</h2>
+          <p>Use a clear JPG, PNG, or WebP image. Maximum size: 2 MB.</p>
+          <label class="profile-upload">
+            <i class="bi bi-camera" aria-hidden="true"></i>
+            {{ selectedFile() ? 'Choose another photo' : 'Upload photo' }}
+            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileChange($event)" />
+          </label>
+          <span *ngIf="selectedFile()" class="profile-file-name">{{ selectedFile()?.name }}</span>
+        </div>
+      </section>
+
+      <div *ngIf="errorMessage()" class="profile-alert profile-alert-error" role="alert">
+        {{ errorMessage() }}
+      </div>
+      <div *ngIf="successMessage()" class="profile-alert profile-alert-success" role="status">
+        {{ successMessage() }}
+      </div>
+
+      <section class="profile-fields" aria-labelledby="profile-info-heading">
+        <div class="profile-section-heading">
+          <h2 id="profile-info-heading">Personal information</h2>
+          <p>Fields marked required must be filled in.</p>
+        </div>
+
+        <label class="profile-field">
+          <span>First name <b>*</b></span>
+          <input type="text" formControlName="first_name" autocomplete="given-name" />
+          <small *ngIf="form.controls.first_name.touched && form.controls.first_name.invalid">Enter your first name.</small>
+        </label>
+
+        <label class="profile-field">
+          <span>Middle name</span>
+          <input type="text" formControlName="middle_name" autocomplete="additional-name" />
+        </label>
+
+        <label class="profile-field">
+          <span>Last name <b>*</b></span>
+          <input type="text" formControlName="last_name" autocomplete="family-name" />
+          <small *ngIf="form.controls.last_name.touched && form.controls.last_name.invalid">Enter your last name.</small>
+        </label>
+
+        <label class="profile-field">
+          <span>Extension</span>
+          <input type="text" formControlName="extension_name" placeholder="Jr., Sr., III" />
+        </label>
+
+        <label class="profile-field profile-field-wide">
+          <span>Email address <b>*</b></span>
+          <input type="email" formControlName="email" autocomplete="email" />
+          <small *ngIf="form.controls.email.touched && form.controls.email.invalid">Enter a valid email address.</small>
+        </label>
+
+        <label class="profile-field">
+          <span>Birthdate <b>*</b></span>
+          <input type="date" formControlName="birthdate" autocomplete="bday" />
+        </label>
+
+        <label class="profile-field">
+          <span>Gender <b>*</b></span>
+          <select formControlName="gender">
+            <option value="" disabled>Select gender</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+      </section>
+
+      <footer class="profile-actions">
+        <button type="submit" [disabled]="saving()">
+          <i class="bi bi-check2" aria-hidden="true"></i>
+          {{ saving() ? 'Saving…' : 'Save changes' }}
+        </button>
+      </footer>
+    </form>
+  </div>
+</main>

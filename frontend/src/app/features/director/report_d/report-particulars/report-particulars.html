@@ -231,7 +231,10 @@
                             *ngIf="getParticularQuarterRecord(particular, quarter) as record;
                                    else noAnnualValue">
 
-                            <span>{{ record.value ?? '—' }}</span>
+                            <span>{{ record.combined_value ?? record.value ?? '—' }}</span>
+                            <small *ngIf="record.participant_count" class="block text-xs text-emerald-800">
+                              Manual {{ record.value ?? 0 }} + {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
+                            </small>
                           </ng-container>
 
                           <ng-template #noAnnualValue>
@@ -246,7 +249,10 @@
                             <ng-container
                               *ngIf="getParticularQuarterRecord(particular, quarter) as record; else noValue">
 
-                              <span>{{ record.value ?? '—' }}</span>
+                              <span>{{ record.combined_value ?? record.value ?? '—' }}</span>
+                              <small *ngIf="record.participant_count" class="block text-xs text-emerald-800">
+                                Manual {{ record.value ?? 0 }} + {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
+                              </small>
                             </ng-container>
 
                             <ng-template #noValue>

@@ -208,9 +208,9 @@ describe('ReportParticulars', () => {
 
     expect(saveDepartmentReport).toHaveBeenCalledOnce();
     expect(saveDepartmentReport.mock.calls[0][2]).toEqual([
-      { particular_id: 7, quarter_id: 9, value: 0 },
-      { particular_id: 8, quarter_id: 9, value: 0 },
-      { particular_id: 13, quarter_id: 19, value: 0 }
+      { particular_id: 7, quarter_id: 9, value: 0, value_includes_participants: true },
+      { particular_id: 8, quarter_id: 9, value: 0, value_includes_participants: true },
+      { particular_id: 13, quarter_id: 19, value: 0, value_includes_participants: true }
     ]);
     expect(saveDepartmentReport.mock.calls[0][3]).toBe(true);
   });
@@ -223,7 +223,68 @@ describe('ReportParticulars', () => {
     expect(saveDepartmentReport.mock.calls[0][2]).toContainEqual({
       particular_id: 13,
       quarter_id: 19,
-      value: 6
+      value: 6,
+      value_includes_participants: true
+    });
+  });
+
+  it('shows the participant-inclusive total and prevents lowering it below confirmed participants', () => {
+    const report = {
+      department: { department_id: 3, department_name: 'Youth' },
+      programs: [{
+        program_id: 5,
+        program_name: 'Program',
+        sections: [{
+          program_id: 6,
+          program_name: 'Section',
+          particulars: [
+            {
+              particular_id: 7,
+              particular_name: 'Attendance',
+              quarters: [{
+                quarter_id: 9,
+                quarter: 'Q1',
+                year: 2026,
+                value: 6,
+                participant_count: 1,
+                combined_value: 7,
+                mission_approve: null
+              }]
+            },
+            {
+              particular_id: 8,
+              particular_name: 'Outreach',
+              quarters: [{
+                quarter_id: 9,
+                quarter: 'Q1',
+                year: 2026,
+                value: null,
+                participant_count: 0,
+                combined_value: null,
+                mission_approve: null
+              }]
+            }
+          ]
+        }]
+      }]
+    };
+    getDepartmentReport.mockReturnValue(of(report));
+    component.loadReport();
+
+    const particular = component.report!.programs[0].sections[0].particulars[0];
+    const quarter = component.getSelectedQuarter()!;
+    const record = particular.quarters[0];
+    expect(record.value).toBe(7);
+
+    component.setQuarterValue(particular, quarter, 0);
+    expect(record.value).toBe(1);
+
+    component.saveReport();
+    expect(saveDepartmentReport.mock.calls[0][2]).toContainEqual({
+      particular_id: 7,
+      quarter_id: 9,
+      value: 1,
+      value_includes_participants: true
     });
   });
 

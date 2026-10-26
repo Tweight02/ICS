@@ -18,20 +18,6 @@
   </div>
 
 
-  <!-- ===================== ROLE ===================== -->
-  <div class="role-wrap px-3 mt-3">
-
-    <div class="role-pill d-flex align-items-center gap-2">
-
-      <span class="role-dot"></span>
-
-      <span>{{ roleName }}</span>
-
-    </div>
-
-  </div>
-
-
   <!-- ===================== MENU ===================== -->
   <nav class="nav flex-column gap-1 px-3 mt-4 flex-grow-1">
 
@@ -63,11 +49,19 @@
 
     @if (user) {
 
-      <div class="user-row d-flex align-items-center gap-2 mb-3">
+      <a
+        class="user-profile-link user-row d-flex align-items-center gap-2 mb-3"
+        routerLink="/profile"
+        [attr.title]="collapsed ? 'Edit profile' : null"
+        aria-label="Open profile settings">
 
-        <div class="user-avatar">
-          {{ userInitials }}
-        </div>
+        <span class="user-avatar">
+          @if (user.profile_image) {
+            <img [src]="profileImageUrl" alt="" />
+          } @else {
+            {{ userInitials }}
+          }
+        </span>
 
         <div class="user-info lh-sm overflow-hidden">
 
@@ -75,9 +69,12 @@
             {{ userName }}
           </div>
 
-        </div>
+          <div class="user-role text-truncate">
+            {{ roleName }}
+          </div>
 
-      </div>
+        </div>
+      </a>
 
     }
 

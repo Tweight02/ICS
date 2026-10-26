@@ -20,7 +20,7 @@
       </h2>
 
       <p class="mt-2 text-sm text-white/90">
-        Discover upcoming events and register to participate.
+        Discover events and register for events that are still open.
       </p>
     </div>
 
@@ -50,6 +50,10 @@
         class="event-card flex min-w-0 flex-col overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg transition duration-200 hover:-translate-y-1 hover:shadow-xl"
       >
         <div [ngClass]="['event-banner', 'bg-linear-to-br', event.banner, 'p-5', 'text-white']">
+          <span *ngIf="!event.registration_open"
+            class="mb-2 self-start rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wide">
+            Registration closed
+          </span>
           <h3 class="text-xl font-bold leading-snug">{{ event.title }}</h3>
           <p class="mt-1 text-xl text-white/85">{{ event.start_date | date: 'MMMM d, y' }}</p>
         </div>
@@ -97,12 +101,18 @@
 
           <div class="mt-auto flex flex-col gap-3 pt-6">
             <a
+              *ngIf="event.registration_open; else registrationClosed"
               [routerLink]="['/participants/registration']"
               [queryParams]="{ event: event.id }"
               class="no-underline flex items-center justify-center rounded-lg border border-green-700 bg-green-700 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-green-800"
             >
               Register
             </a>
+            <ng-template #registrationClosed>
+              <span class="flex items-center justify-center rounded-lg border border-gray-200 bg-gray-100 px-5 py-3 font-semibold text-gray-500">
+                Registration closed
+              </span>
+            </ng-template>
           </div>
         </div>
       </article>

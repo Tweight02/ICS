@@ -27,6 +27,7 @@ describe('Home', () => {
               description: 'Saved event',
               church_name: 'North District',
               scope: ['North District'],
+              registration_open: true,
             }]),
           },
         },
@@ -52,5 +53,27 @@ describe('Home', () => {
   it('should build a registration route with the selected event id', () => {
     expect(component.registrationUrl(42))
       .toBe('/participants/registration?event=42');
+  });
+
+  it('shows events with closed registration without offering registration', () => {
+    component.events.set([{
+      id: 12,
+      title: 'Completed Event',
+      location: 'Central Church',
+      start_date: '2026-10-10',
+      end_date: '2026-10-10',
+      start_time: '09:00',
+      end_time: '11:00',
+      description: 'Past event',
+      church_name: 'Central Church',
+      scope: ['Central Church'],
+      registration_open: false,
+      banner: 'from-green-700 to-green-900',
+    }]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Completed Event');
+    expect(fixture.nativeElement.textContent).toContain('Registration closed');
+    expect(fixture.nativeElement.querySelector('a[routerLink]')).toBeNull();
   });
 });

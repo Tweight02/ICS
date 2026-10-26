@@ -11,15 +11,10 @@
   margin-left: 0;
   overflow-x: clip;
 
-  background-color: #f5fcfa;
-  background-image: url('/assets/images/mountain-bg.png');
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-attachment: fixed;
+  background: var(--app-canvas);
 
-  color: #064e3b;
-  font-family: Arial, sans-serif;
+  color: var(--app-ink);
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
 
   transition: margin-left 200ms ease;
 }
@@ -27,19 +22,16 @@
 /* Sidebar is expanded */
 .app-main.sidebar-expanded {
   margin-left: 235px;
-  background-image: url('/assets/mountain.png');
 }
 
 /* Sidebar is collapsed */
 .app-main.sidebar-collapsed {
   margin-left: 76px;
-  background-image: url('/assets/mountain.png');
 }
 
 /* No sidebar */
 .app-main.no-sidebar {
   margin-left: 0;
-  background-image: url('/assets/images/mountain-bg.png');
 }
 
 /* Background overlay */
@@ -49,12 +41,7 @@
   z-index: 0;
   pointer-events: none;
 
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.9),
-    rgba(245, 252, 250, 0.75),
-    rgba(255, 255, 255, 0.85)
-  );
+  background: transparent;
 
   transition: left 200ms ease;
 }
@@ -75,8 +62,31 @@
   min-width: 0;
   max-width: 100%;
   min-height: 100vh;
-  padding: 1.5rem;
+  padding: 1rem clamp(1rem, 2.25vw, 1.75rem);
   box-sizing: border-box;
+}
+
+@media (min-width: 1025px) {
+  .app-main:has(app-events-home) {
+    display: flex;
+    height: 100dvh;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .app-content:has(app-events-home) {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+}
+
+.app-main.login-shell .app-content {
+  padding: 0;
 }
 
 .app-sidebar-backdrop {
@@ -84,7 +94,7 @@
 }
 
 /* Use the sidebar as an overlay drawer on tablet and phone widths. */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-main.sidebar-expanded,
   .app-main.sidebar-collapsed {
     margin-left: 0;
@@ -96,7 +106,7 @@
   }
 
   .app-content {
-    padding: 4.5rem 1rem 1rem;
+    padding: 4.25rem 1rem 1rem;
   }
 
   .app-sidebar-backdrop {
@@ -111,7 +121,7 @@
 
 @media (max-width: 480px) {
   .app-content {
-    padding: 4.25rem 0.75rem 0.75rem;
+    padding: 4rem 0.625rem 0.75rem;
   }
 }
 
@@ -124,7 +134,7 @@
 }
 
 /* Allow normal scrolling on devices where fixed backgrounds are awkward */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-main {
     background-attachment: scroll;
   }

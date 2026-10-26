@@ -26,12 +26,14 @@ import { User, UserRole } from '../../../core/models/user.model';
 })
 export class SidebarComponent implements OnChanges {
 
+  private readonly apiBase = 'http://127.0.0.1:8000';
+
   @Input() user: User | null = null;
+  @Input() collapsed = false;
   @Output() collapsedChange = new EventEmitter<boolean>();
 
   menuItems: SidebarItem[] = [];
   roleName = 'User';
-  collapsed = false;
 
   constructor(
     private readonly sidebarService: SidebarService,
@@ -73,6 +75,14 @@ export class SidebarComponent implements OnChanges {
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
 
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+
+  get profileImageUrl(): string | null {
+    const image = this.user?.profile_image;
+    if (!image) return null;
+    if (/^https?:\/\//i.test(image)) return image;
+
+    return `${this.apiBase}/storage/${image.replace(/^\/+/, '')}`;
   }
 
   logout(): void {

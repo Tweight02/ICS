@@ -3,6 +3,12 @@ import { EVENTS_ROUTES } from './events/events.routes';
 
 
 export const RepresentativeRoute: Routes = [
+  {
+    path: 'profile',
+    redirectTo: '/profile',
+    pathMatch: 'full'
+  },
+
   // Default route
   {
     path: '',

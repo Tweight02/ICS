@@ -23,6 +23,8 @@ interface QuarterRecord {
   quarter?: string;
   year?: number | string;
   value: number | string | null;
+  participant_count?: number;
+  combined_value?: number | null;
   date_submitted?: string | null;
   district_endorse?: string | null;
   mission_approve: string | null;
@@ -63,6 +65,7 @@ interface SaveReportItem {
   particular_id: number;
   quarter_id: number;
   value: number | null;
+  value_includes_participants?: boolean;
   monthly_values?: Record<string, number | null>;
 }
 
@@ -264,6 +267,7 @@ ngOnInit(): void {
       .subscribe({
         next: (response: any) => {
           this.report = (response?.data ?? response) as Report;
+          this.useCombinedValuesForInputs();
           this.initializeSelections();
           this.loading = false;
           this.cdr.detectChanges();
@@ -277,6 +281,24 @@ ngOnInit(): void {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private useCombinedValuesForInputs(): void {
+    for (const program of this.report?.programs ?? []) {
+      for (const section of program.sections ?? []) {
+        for (const particular of section.particulars ?? []) {
+          for (const record of particular.quarters ?? []) {
+            if (record.monthly_values) continue;
+
+            if (record.combined_value !== null && record.combined_value !== undefined) {
+              record.value = record.combined_value;
+            } else if ((record.participant_count ?? 0) > 0) {
+              record.value = record.participant_count ?? 0;
+            }
+          }
+        }
+      }
+    }
   }
 
   private initializeSelections(): void {
@@ -662,8 +684,10 @@ ngOnInit(): void {
       particular.quarters.push(record);
     }
 
+    const minimum = record.participant_count ?? 0;
     if (value === '' || value === null) {
-      record.value = null;
+      record.value = minimum > 0 ? minimum : null;
+      record.combined_value = record.value;
       this.clearMessages();
       this.scheduleAutoSave();
       return;
@@ -676,7 +700,8 @@ ngOnInit(): void {
       return;
     }
 
-    record.value = numeric;
+    record.value = Math.max(numeric, minimum);
+    record.combined_value = record.value;
     this.clearMessages();
     this.scheduleAutoSave();
   }
@@ -1088,6 +1113,7 @@ ngOnInit(): void {
           particular_id: particular.particular_id,
           quarter_id: itemQuarterId,
           value,
+          ...(!record?.monthly_values ? { value_includes_participants: true } : {}),
           ...(record?.monthly_values ? { monthly_values: record.monthly_values } : {})
         });
       }

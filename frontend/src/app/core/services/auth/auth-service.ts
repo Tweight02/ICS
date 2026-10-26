@@ -106,6 +106,21 @@ export class AuthService {
     this.currentUserSignal.set(user);
   }
 
+  getProfile(): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/user`).pipe(
+      tap((user) => this.setCurrentUser(user))
+    );
+  }
+
+  updateProfile(data: FormData): Observable<{ message: string; user: User }> {
+    return this.http.post<{ message: string; user: User }>(
+      `${this.apiUrl}/profile`,
+      data
+    ).pipe(
+      tap(({ user }) => this.setCurrentUser(user))
+    );
+  }
+
   /**
    * Load the previously saved user.
    */

@@ -130,11 +130,11 @@
   align-items: flex-end;
   margin-bottom: 1.4rem;
   padding: 1.15rem 1.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.84);
+  border: 1px solid #dcebe6;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 10px 30px rgba(22, 57, 47, 0.07);
-  backdrop-filter: blur(16px);
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(22, 70, 56, 0.06);
+  backdrop-filter: blur(12px);
 }
 
 .report-responsive-page.particulars-modern .report-period-field {
@@ -161,9 +161,9 @@
 .report-responsive-page.particulars-modern .report-period-quarter-group {
   gap: 0.2rem;
   padding: 0.22rem;
-  border: 1px solid rgba(26, 73, 59, 0.1);
+  border: 1px solid #dcebe6;
   border-radius: 0.7rem;
-  background: #edf3ef;
+  background: #eff7f3;
 }
 
 .report-responsive-page.particulars-modern .report-period-quarter-button {
@@ -174,8 +174,8 @@
 }
 
 .report-responsive-page.particulars-modern .report-period-quarter-button[aria-pressed='true'] {
-  background: linear-gradient(145deg, #176b50, #0e513e) !important;
-  box-shadow: 0 3px 8px rgba(14, 81, 62, 0.22);
+  background: linear-gradient(145deg, #218653, #176d44) !important;
+  box-shadow: 0 3px 8px rgba(23, 109, 68, 0.2);
 }
 
 .report-responsive-page.particulars-modern .report-program-tabs {
@@ -204,16 +204,16 @@
 .report-responsive-page.particulars-modern section.report-section-card {
   margin-bottom: 1rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.88) !important;
+  border: 1px solid #dcebe6 !important;
   border-radius: 1rem !important;
-  background: rgba(255, 255, 255, 0.88) !important;
-  box-shadow: 0 12px 32px rgba(22, 57, 47, 0.075), 0 2px 6px rgba(22, 57, 47, 0.035) !important;
-  backdrop-filter: blur(14px) !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 28px rgba(22, 70, 56, 0.07), 0 2px 6px rgba(22, 70, 56, 0.03) !important;
+  backdrop-filter: blur(10px) !important;
   transition: box-shadow 180ms ease, transform 180ms ease;
 }
 
 .report-responsive-page.particulars-modern section.report-section-card:hover {
-  box-shadow: 0 16px 38px rgba(22, 57, 47, 0.11), 0 3px 8px rgba(22, 57, 47, 0.04) !important;
+  box-shadow: 0 16px 34px rgba(22, 70, 56, 0.1), 0 3px 8px rgba(22, 70, 56, 0.04) !important;
 }
 
 .report-responsive-page.particulars-modern details > summary.report-section-summary {
@@ -221,9 +221,9 @@
   min-height: 4rem;
   align-items: center;
   padding: 1rem 4rem 1rem 1.35rem;
-  border-bottom: 1px solid rgba(22, 57, 47, 0.075);
-  background: linear-gradient(100deg, rgba(235, 243, 238, 0.94), rgba(248, 250, 248, 0.9)) !important;
-  color: #1a4538 !important;
+  border-bottom: 1px solid #deeee6;
+  background: linear-gradient(105deg, #e5f3ee, #f1f8f4) !important;
+  color: #145844 !important;
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.11em;
@@ -277,25 +277,28 @@
 
 .report-responsive-page.particulars-modern table {
   font-size: 0.875rem;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .report-responsive-page.particulars-modern table thead tr {
-  background: #f8faf8 !important;
+  background: #eaf5f0 !important;
 }
 
 .report-responsive-page.particulars-modern table th {
-  color: #688075;
+  color: #28664f;
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.11em;
 }
 
 .report-responsive-page.particulars-modern table td {
-  height: 3.35rem;
+  height: 3.5rem;
+  border-color: #eaf2ee;
 }
 
 .report-responsive-page.particulars-modern table tbody td:first-child {
-  color: #32584a;
+  color: #294f42;
   font-weight: 550;
 }
 
@@ -306,7 +309,36 @@
 }
 
 .report-responsive-page.particulars-modern table tbody tr:hover {
-  background-color: #f5f8f5 !important;
+  background-color: #edf7f1 !important;
+}
+
+.report-responsive-page.particulars-modern table tbody tr:nth-child(even) {
+  background-color: #f7fbf9;
+}
+
+.report-responsive-page.particulars-modern .stewardship-summary-card,
+.report-responsive-page.particulars-modern aside section {
+  background: #ffffff;
+}
+
+.report-responsive-page.particulars-modern input[type='number'] {
+  min-height: 2.5rem;
+  border-color: #d8e8df !important;
+  border-radius: 0.65rem !important;
+  background-color: #f5faf7 !important;
+  color: #164638 !important;
+  font-weight: 650;
+}
+
+.report-responsive-page.particulars-modern input[type='number']:focus {
+  border-color: #36a16b !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(54, 161, 107, 0.16) !important;
+}
+
+.report-responsive-page.particulars-modern input[type='number']:disabled {
+  background-color: #edf3ef !important;
+  color: #62776c !important;
 }
 
 .stewardship-report .stewardship-tabs {

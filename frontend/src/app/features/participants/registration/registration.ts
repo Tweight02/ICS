@@ -35,6 +35,7 @@ type RegistrationFormData = {
 })
 export class Registration implements OnInit {
   eventId: number | null = null;
+  private registrationAttribution: { church_id: number; registration_token: string } | undefined;
   private readonly selectedEventState = signal<RegistrationEvent | null>(null);
   get selectedEvent(): RegistrationEvent | null { return this.selectedEventState(); }
   set selectedEvent(value: RegistrationEvent | null) { this.selectedEventState.set(value); }
@@ -105,13 +106,25 @@ export class Registration implements OnInit {
     }
 
     this.eventId = id;
-    this.eventService.getPublicEventById(id).subscribe({
+    const churchId = Number(this.route.snapshot.queryParamMap.get('church_id'));
+    const registrationToken = this.route.snapshot.queryParamMap.get('registration_token');
+    if (Number.isInteger(churchId) && churchId > 0 && registrationToken) {
+      this.registrationAttribution = {
+        church_id: churchId,
+        registration_token: registrationToken,
+      };
+    }
+
+    this.eventService.getPublicEventById(id, this.registrationAttribution).subscribe({
       next: (event) => {
         this.selectedEvent = {
           id: event.id,
           title: event.title,
           banner: 'from-green-700 to-green-900',
-          church: (event.scope ?? []).join(', ') || event.church_name || 'Not specified',
+          church: event.registration_church_name
+            || (event.scope ?? []).join(', ')
+            || event.church_name
+            || 'Not specified',
           date: this.formatDate(event.start_date, event.end_date),
           time: event.start_time,
           end: event.end_time,
@@ -169,7 +182,7 @@ export class Registration implements OnInit {
       const record = await firstValueFrom(this.eventService.registerPublicParticipant(this.eventId, {
         ...this.formData,
         age: Number(this.formData.age),
-      }));
+      }, this.registrationAttribution));
       const fullName = [
         this.formData.first_name,
         this.formData.middle_name,

@@ -14,6 +14,7 @@ interface PublicEvent {
   description: string;
   church_name: string | null;
   scope: string[];
+  registration_open: boolean;
   banner: string;
 }
 

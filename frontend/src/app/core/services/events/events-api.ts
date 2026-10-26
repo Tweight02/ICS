@@ -15,8 +15,8 @@ export class EventService {
   // ==========================================
   // USUÁRIO AUTENTICADO
   // ==========================================
-  getAuthenticatedUser(userId?: number): Observable<User> {
-    return this.http.get<any>(`${this.apiUrl}/users/${userId ?? 1}`).pipe(
+  getAuthenticatedUser(userId: number): Observable<User> {
+    return this.http.get<any>(`${this.apiUrl}/users/${userId}`).pipe(
       map(response => response.data ?? response)
     );
   }
@@ -37,8 +37,27 @@ export class EventService {
     );
   }
 
-  getPublicEventById(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/public/events/${id}`).pipe(
+  getPublicEventById(
+    id: number,
+    attribution?: { church_id: number; registration_token: string },
+  ): Observable<any> {
+    let params = new HttpParams();
+    if (attribution) {
+      params = params
+        .set('church_id', attribution.church_id)
+        .set('registration_token', attribution.registration_token);
+    }
+
+    return this.http.get<any>(`${this.apiUrl}/public/events/${id}`, { params }).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  getEventRegistrationLink(eventId: number): Observable<{
+    church_id: number;
+    registration_token: string;
+  }> {
+    return this.http.post<any>(`${this.apiUrl}/events/${eventId}/registration-link`, {}).pipe(
       map(response => response.data ?? response)
     );
   }
@@ -50,8 +69,15 @@ export class EventService {
     extension_name?: string;
     age: number;
     gender: string;
-  }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/public/events/${eventId}/participants`, participant).pipe(
+  }, attribution?: { church_id: number; registration_token: string }): Observable<any> {
+    let params = new HttpParams();
+    if (attribution) {
+      params = params
+        .set('church_id', attribution.church_id)
+        .set('registration_token', attribution.registration_token);
+    }
+
+    return this.http.post<any>(`${this.apiUrl}/public/events/${eventId}/participants`, participant, { params }).pipe(
       map(response => response.data ?? response)
     );
   }
@@ -104,6 +130,12 @@ export class EventService {
     );
   }
 
+  getEventDepartments(): Observable<Department[]> {
+    return this.http.get<any>(`${this.apiUrl}/event-departments`).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
   getProgramsByDepartment(departmentId: number): Observable<ProgramNode[]> {
     return this.http.get<any>(`${this.apiUrl}/departments/${departmentId}/programs`).pipe(
       map(response => Array.isArray(response) ? response : (response.data ?? []))
@@ -146,7 +178,7 @@ export class EventService {
     );
   }
 
-  updateParticipantStatus(participantId: number, status: 'Confirmed' | 'Pending' | 'Declined' | 'confirmed' | 'pending'): Observable<Participant> {
+  updateParticipantStatus(participantId: number, status: 'confirmed' | 'pending'): Observable<Participant> {
     return this.http.patch<any>(`${this.apiUrl}/participants/${participantId}`, { status }).pipe(
       map(response => response.data ?? response)
     );
