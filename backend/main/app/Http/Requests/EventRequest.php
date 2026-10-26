@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Support\EventUser;
 use App\Support\EventParticulars;
+use App\Support\EventDepartments;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -32,11 +33,14 @@ class EventRequest extends FormRequest
             ],
             default => [],
         };
+        $canSelectDepartment = in_array($user->role, ['church_representative', 'district_pastor'], true);
+        $department = $canSelectDepartment
+            ? ['department_id' => ['required', 'integer', Rule::exists('departments', 'department_id')]]
+            : [];
 
         return [
             'title' => ['required', 'string', 'max:255'],
             'location' => ['required', 'string', 'max:255'],
-            'department_id' => ['required', 'integer', Rule::exists('departments', 'department_id')],
             'particular_ids' => ['required', 'array', 'min:1'],
             'particular_ids.*' => ['required', 'integer', 'distinct', Rule::exists('particulars', 'particular_id')],
             'start_date' => ['required', 'date_format:Y-m-d'],
@@ -44,7 +48,7 @@ class EventRequest extends FormRequest
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
             'notes' => ['nullable', 'string', 'max:255'],
-        ] + $scope;
+        ] + $scope + $department;
     }
 
     public function after(): array
@@ -55,9 +59,25 @@ class EventRequest extends FormRequest
             }
 
             $user = EventUser::fromRequest($this);
+            $canSelectDepartment = in_array($user->role, ['church_representative', 'district_pastor'], true);
+            $departmentId = $canSelectDepartment
+                ? (int) $this->input('department_id', 0)
+                : $user->departmentId;
+            if (! $departmentId) {
+                $validator->errors()->add('department_id', 'Choose a department before creating events.');
+
+                return;
+            }
+
+            if ($user->role !== 'district_pastor' && EventDepartments::isPersonalReport($departmentId)) {
+                $validator->errors()->add('department_id', 'Personal-report departments are available to pastors only.');
+
+                return;
+            }
+
             $programId = EventParticulars::rootProgramId(
                 $this->input('particular_ids', []),
-                $this->integer('department_id')
+                $departmentId
             );
 
             if (! $programId) {
@@ -107,5 +127,16 @@ class EventRequest extends FormRequest
                 $validator->errors()->add('end_time', 'End time must be after the start time.');
             }
         }];
+    }
+
+    public function departmentId(): int
+    {
+        $user = EventUser::fromRequest($this);
+        $departmentId = in_array($user->role, ['church_representative', 'district_pastor'], true)
+            ? (int) $this->validated('department_id')
+            : $user->departmentId;
+        abort_unless($departmentId, 422, 'A department is required before creating events.');
+
+        return $departmentId;
     }
 }

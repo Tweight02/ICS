@@ -17,10 +17,19 @@ class EventResource extends JsonResource
         $church = EventsOrg::church((int) $this->church_id);
         $particulars = $this->particulars()->with('program')->get();
         $districts = $this->districts()->get(['churches.church_id as id', 'churches.name']);
-        $total = $this->participants_count ?? $this->participants()->count();
-        $confirmed = $this->confirmed_count ?? $this->participants()
-            ->whereRaw('LOWER(registration_status) = ?', ['confirmed'])->count();
+        $participantQuery = $this->participants();
+        if ($user->role === 'church_representative') {
+            $participantQuery->where('church_id', $user->churchId ?? 0);
+        }
+        $total = $user->role === 'church_representative'
+            ? (clone $participantQuery)->count()
+            : ($this->participants_count ?? $participantQuery->count());
+        $confirmed = $user->role === 'church_representative'
+            ? (clone $participantQuery)->whereRaw('LOWER(registration_status) = ?', ['confirmed'])->count()
+            : ($this->confirmed_count ?? $participantQuery
+                ->whereRaw('LOWER(registration_status) = ?', ['confirmed'])->count());
         $can = Event::canChange($user, $this->resource);
+        $canConfirmParticipants = $user->role === 'church_representative';
         $isDistrict = $church && ! $church->district_id;
         if ($districts->isEmpty() && $isDistrict) {
             $districts = collect([(object) ['id' => $church->id, 'name' => $church->name]]);
@@ -74,6 +83,7 @@ class EventResource extends JsonResource
                 'update' => $can,
                 'delete' => $can,
                 'manage_participants' => $can,
+                'confirm_participants' => $canConfirmParticipants,
             ],
         ];
     }
