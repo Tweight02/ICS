@@ -10,6 +10,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { EventService } from '../../core/services/events/events-api';
+import { EventModel, Participant } from '../../core/models/event.model';
 import { ParticipantsConfig } from './events.config';
 import { formatDateRange, formatTime, initialsOf } from './event.utils';
 import { PaginationComponent } from './pagination.component';
@@ -27,13 +28,13 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
   get eventId(): number { return this.eventIdState(); }
   set eventId(value: number) { this.eventIdState.set(value); }
 
-  private readonly eventState = signal<any>(null);
-  get event(): any { return this.eventState(); }
-  set event(value: any) { this.eventState.set(value); }
+  private readonly eventState = signal<EventModel | null>(null);
+  get event(): EventModel | null { return this.eventState(); }
+  set event(value: EventModel | null) { this.eventState.set(value); }
 
-  private readonly participantsState = signal<any[]>([]);
-  get participants(): any[] { return this.participantsState(); }
-  set participants(value: any[]) { this.participantsState.set(value); }
+  private readonly participantsState = signal<Participant[]>([]);
+  get participants(): Participant[] { return this.participantsState(); }
+  set participants(value: Participant[]) { this.participantsState.set(value); }
 
   private readonly loadingState = signal(true);
   get loading(): boolean { return this.loadingState(); }
@@ -42,6 +43,14 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
   private readonly errorMsgState = signal('');
   get errorMsg(): string { return this.errorMsgState(); }
   set errorMsg(value: string) { this.errorMsgState.set(value); }
+
+  private readonly participantActionErrorState = signal('');
+  get participantActionError(): string { return this.participantActionErrorState(); }
+  set participantActionError(value: string) { this.participantActionErrorState.set(value); }
+
+  private readonly updatingParticipantIdsState = signal<number[]>([]);
+  get updatingParticipantIds(): number[] { return this.updatingParticipantIdsState(); }
+  set updatingParticipantIds(value: number[]) { this.updatingParticipantIdsState.set(value); }
 
   private readonly searchQueryState = signal('');
   get searchQuery(): string { return this.searchQueryState(); }
@@ -101,7 +110,7 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
     this.errorMsg = '';
 
     this.eventService.getEventById(this.eventId).subscribe({
-      next: (res: any) => (this.event = res?.data ?? res),
+      next: (event) => (this.event = event),
       error: (err) => console.error('Failed to load the event:', err),
     });
 
@@ -163,19 +172,32 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
   }
 
   get departmentName(): string {
-    return this.event?.department?.department_name ?? this.event?.department_name ?? '';
+    return this.event?.department?.name
+      ?? this.event?.department?.department_name
+      ?? this.event?.department_name
+      ?? '';
   }
 
   get churchName(): string {
-    return this.event?.church?.name ?? this.event?.church_name ?? '';
+    return this.event?.church_name ?? '';
+  }
+
+  get linkedPrograms(): NonNullable<EventModel['programs']> {
+    return (this.event?.programs ?? []).filter((program) =>
+      Array.isArray(program.particulars) && program.particulars.length > 0
+    );
+  }
+
+  get canConfirmParticipants(): boolean {
+    return this.event?.abilities?.confirm_participants === true;
   }
 
   // ---------- Counts ----------
-  private count(status: string): number {
+  private count(status: Participant['status']): number {
     return this.participants.filter((p) => this.norm(p.status) === status).length;
   }
 
-  private norm(s: any): string {
+  private norm(s: unknown): string {
     return String(s ?? '').toLowerCase();
   }
 
@@ -188,7 +210,7 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
   }
 
   // ---------- Filter + pagination ----------
-  get filtered(): any[] {
+  get filtered(): Participant[] {
     return this.participants;
   }
 
@@ -197,7 +219,7 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
     return Math.min(this.page, pages);
   }
 
-  get paged(): any[] {
+  get paged(): Participant[] {
     return this.participants;
   }
 
@@ -211,7 +233,7 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
     this.loadParticipants();
   }
 
-  statusClass(status: any): string {
+  statusClass(status: Participant['status']): string {
     switch (this.norm(status)) {
       case 'confirmed':
         return 'bg-emerald-50 text-emerald-800';
@@ -220,5 +242,31 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
       default:
         return 'bg-gray-100 text-gray-600';
     }
+  }
+
+  isUpdatingParticipant(participantId: number | undefined): boolean {
+    return participantId !== undefined && this.updatingParticipantIds.includes(participantId);
+  }
+
+  updateParticipantStatus(participant: Participant, status: 'confirmed' | 'pending'): void {
+    const participantId = Number(participant.id);
+    if (!Number.isInteger(participantId) || participantId <= 0 || this.isUpdatingParticipant(participantId)) {
+      return;
+    }
+
+    this.participantActionError = '';
+    this.updatingParticipantIds = [...this.updatingParticipantIds, participantId];
+    this.eventService.updateParticipantStatus(participantId, status).subscribe({
+      next: () => this.loadParticipants(),
+      error: (err) => {
+        console.error('Failed to update participant confirmation:', err);
+        this.participantActionError =
+          err?.error?.message ?? 'We could not update this participant. Please try again.';
+        this.updatingParticipantIds = this.updatingParticipantIds.filter((id) => id !== participantId);
+      },
+      complete: () => {
+        this.updatingParticipantIds = this.updatingParticipantIds.filter((id) => id !== participantId);
+      },
+    });
   }
 }

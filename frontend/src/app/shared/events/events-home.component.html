@@ -1,12 +1,7 @@
   <!-- Header -->
-  <div class="shrink-0 flex items-start justify-between gap-4">
-    <div>
-      <br>
-      <h1 class="text-[26px] leading-8 font-bold text-gray-900 tracking-tight">{{ config.title }}</h1>
-      <p class="text-sm text-gray-500">{{ fill(config.subtitle) }}</p>
-    </div>
+  <div class="events-page-actions shrink-0 flex items-center justify-end gap-4">
     <a *ngIf="config.canCreate" routerLink="new"
-       class="shrink-0 bg-[#1b4d3e] hover:bg-[#143c30] text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2 transition no-underline">
+       class="shrink-0 bg-[#08794f] hover:bg-[#056442] text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-md shadow-emerald-900/10 flex items-center gap-2 transition no-underline">
       <i class="bi bi-plus-lg"></i> Create event
     </a>
     <span *ngIf="config.badge" class="shrink-0 bg-emerald-50 text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full">
@@ -14,24 +9,22 @@
     </span>
   </div>
 
-  <!-- Banner (hidden on short screens so nothing has to scroll) -->
-  <div class="shrink-0 [@media(max-height:719px)]:hidden relative bg-[#143c30] rounded-2xl px-6 py-5 text-white shadow-md overflow-hidden bg-cover bg-center" style="background-image: linear-gradient(to right, rgba(20, 60, 48, 0.95), rgba(27, 77, 62, 0.75)), url('/assets/images/mountain-bg.png');">
-    <div class="relative z-10 space-y-1.5">
-      <span class="text-[10px] uppercase tracking-wider font-bold bg-[#265c4b] px-2.5 py-1 rounded">TOGETHER IN MISSION</span>
-      <h2 class="text-xl sm:text-2xl font-bold tracking-tight">{{ config.bannerTitle }}</h2>
-      <p class="text-emerald-100 text-sm">{{ fill(config.bannerSubtitle) }} • Your {{ today | date: 'MMMM' }} event workspace</p>
+  <div class="events-hero shrink-0">
+    <div class="events-hero-copy">
+      <p class="events-hero-eyebrow">{{ config.title }}</p>
+      <h1>{{ config.bannerTitle }}</h1>
+      <p class="events-hero-subtitle">{{ fill(config.bannerSubtitle) }} · Your {{ today | date: 'MMMM' }} event workspace</p>
     </div>
+    <p class="events-hero-tagline">Stronger Churches<br />Brighter Communities</p>
   </div>
-
-  <br>
 
   <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[252px_1fr] gap-4">
     <!-- Left: small calendar + workspace -->
-    <div class="flex flex-col gap-3 min-h-0 overflow-y-auto [scrollbar-width:thin]">
-      <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+    <div class="events-sidebar-cards flex flex-col gap-3 min-h-0 overflow-y-auto [scrollbar-width:thin]">
+      <div class="events-surface bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm shadow-emerald-950/5">
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
-            <i class="bi bi-calendar3 text-[#1b4d3e]"></i> {{ calendarLabel }}
+            <i class="bi bi-calendar3 text-[#1b4d3e]"></i> {{ calendarLabel() }}
           </h3>
           <div class="flex gap-2 text-gray-600">
             <button type="button" (click)="prevMonth()" aria-label="Previous month" class="hover:text-gray-900"><i class="bi bi-chevron-left"></i></button>
@@ -41,13 +34,13 @@
 
         <div class="flex items-center justify-between mt-1 mb-2">
           <p class="text-[11px] text-gray-500">Today · {{ today | date: 'MMMM d' }}</p>
-          <button *ngIf="!showingCurrentMonth" type="button" (click)="goToday()" class="text-[11px] font-semibold text-[#1b4d3e] hover:underline">Go to today</button>
+          <button *ngIf="!showingCurrentMonth()" type="button" (click)="goToday()" class="text-[11px] font-semibold text-[#1b4d3e] hover:underline">Go to today</button>
         </div>
 
         <div class="grid grid-cols-7 gap-y-0.5 text-center text-xs">
           <span *ngFor="let w of weekdays" class="text-gray-500 text-[10px] pb-0.5">{{ w }}</span>
 
-          <ng-container *ngFor="let c of calendarCells">
+          <ng-container *ngFor="let c of calendarCells()">
             <span *ngIf="c.day === null"></span>
             <!-- Days with events: green and clickable. Days without events: plain white. -->
             <button *ngIf="c.day !== null" type="button"
@@ -68,11 +61,11 @@
 
         <p class="mt-2 pt-2 border-t border-gray-100 text-[11px] text-gray-500 flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-emerald-700 shrink-0"></span>
-          {{ calendarMonthCount }} event{{ calendarMonthCount === 1 ? '' : 's' }} this month · click a green day
+          {{ calendarMonthCount() }} event{{ calendarMonthCount() === 1 ? '' : 's' }} this month · click a green day
         </p>
       </div>
 
-      <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-2 [@media(max-height:690px)]:hidden">
+      <div class="events-workspace-card bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm shadow-emerald-950/5 space-y-2">
         <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
           <i class="bi bi-building text-[#1b4d3e]"></i> Your workspace
         </h3>
@@ -83,10 +76,10 @@
     </div>
 
     <!-- Right: filters + events -->
-    <div class="flex flex-col gap-2.5 min-h-0 min-w-0">
+    <div class="events-list-panel flex flex-col gap-2.5 min-h-0 min-w-0">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-bold text-gray-900">{{ heading }}</h3>
-        <span class="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">{{ filteredEvents.length }} event{{ filteredEvents.length === 1 ? '' : 's' }}</span>
+        <h3 class="text-lg font-bold text-gray-900">{{ heading() }}</h3>
+        <span class="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">{{ filteredEvents().length }} event{{ filteredEvents().length === 1 ? '' : 's' }}</span>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-[1fr_170px_150px] gap-2.5">
@@ -102,7 +95,7 @@
           <label class="block text-[11px] font-semibold text-gray-800 mb-1">Month</label>
           <select [(ngModel)]="selectedMonth" (ngModelChange)="onMonthChange()" class="w-full text-sm bg-white border border-gray-300 rounded-lg px-3 py-2">
             <option value="all">All months</option>
-            <option *ngFor="let m of monthOptions" [value]="m">{{ m }}</option>
+            <option *ngFor="let m of monthOptions()" [value]="m">{{ m }}</option>
           </select>
         </div>
         <div>
@@ -117,12 +110,12 @@
       </div>
 
       <!-- Active filter chips: easy to undo -->
-      <div *ngIf="selectedDay || hasSampleEvents" class="flex flex-wrap items-center gap-2">
+      <div *ngIf="selectedDay || hasSampleEvents()" class="flex flex-wrap items-center gap-2">
         <span *ngIf="selectedDay" class="inline-flex items-center gap-2 bg-emerald-50 text-emerald-900 text-xs px-3 py-1 rounded-full">
           <i class="bi bi-calendar-check"></i> {{ selectedDay | date: 'MMMM d, y' }}
           <button type="button" (click)="clearDay()" aria-label="Clear day filter" class="font-bold hover:text-emerald-700"><i class="bi bi-x-lg"></i></button>
         </span>
-        <span *ngIf="hasSampleEvents" class="text-[11px] text-gray-500"><i class="bi bi-info-circle"></i> Includes sample events, labeled below.</span>
+        <span *ngIf="hasSampleEvents()" class="text-[11px] text-gray-500"><i class="bi bi-info-circle"></i> Includes sample events, labeled below.</span>
       </div>
 
       <!-- The list always fills the free space; cards that do not fit move to the next page -->
@@ -139,19 +132,21 @@
         </div>
 
         <!-- Empty -->
-        <div *ngIf="!loading && !errorMsg && filteredEvents.length === 0"
-             class="bg-white border border-dashed border-gray-300 rounded-xl p-6 text-center">
-          <i class="bi bi-calendar-x text-2xl text-gray-400"></i>
+        <div *ngIf="!loading && !errorMsg && filteredEvents().length === 0"
+             class="bg-gradient-to-br from-white via-emerald-50/70 to-emerald-100/70 border border-emerald-200 rounded-2xl p-6 text-center shadow-sm">
+          <span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white text-emerald-700 shadow-sm">
+            <i class="bi bi-calendar-x text-2xl"></i>
+          </span>
           <p class="text-sm font-semibold text-gray-700 mt-2">No events found</p>
           <p class="text-xs text-gray-500 mt-1">Try another month or status, or clear the search.</p>
           <div class="mt-3 flex items-center justify-center gap-2">
-            <button type="button" (click)="clearFilters()" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50">Show all events</button>
-            <a *ngIf="config.canCreate" routerLink="new" class="px-3 py-1.5 bg-[#1b4d3e] text-white rounded-lg text-xs font-semibold no-underline">Create event</a>
+            <button type="button" (click)="clearFilters()" class="px-3 py-1.5 border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-900 bg-white hover:bg-emerald-50">Show all events</button>
+            <a *ngIf="config.canCreate" routerLink="new" class="px-3 py-1.5 bg-[#218653] hover:bg-[#176d44] text-white rounded-lg text-xs font-semibold no-underline transition">Create event</a>
           </div>
         </div>
 
         <!-- Cards -->
-        <div *ngFor="let event of pagedEvents"
+        <div *ngFor="let event of pagedEvents()"
              class="h-[84px] shrink-0 bg-white border border-gray-200 rounded-xl px-4 flex items-center gap-4 hover:border-emerald-300 transition">
           <div class="bg-emerald-50 text-emerald-900 rounded-lg w-[52px] py-1.5 text-center shrink-0">
             <p class="text-[10px] font-bold uppercase tracking-wider leading-3">{{ event.start_date | date: 'MMM' }}</p>
@@ -186,6 +181,6 @@
         </div>
       </div>
 
-      <app-pagination class="shrink-0" [page]="currentPage" [pageSize]="pageSize" [total]="filteredEvents.length" label="events" (pageChange)="page = $event"></app-pagination>
+      <app-pagination class="shrink-0" [page]="currentPage()" [pageSize]="pageSize" [total]="filteredEvents().length" label="events" (pageChange)="page = $event"></app-pagination>
     </div>
   </div>

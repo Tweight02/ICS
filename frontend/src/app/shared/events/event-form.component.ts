@@ -1,9 +1,11 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, Input, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { EventService } from '../../core/services/events/events-api';
+import { AuthService } from '../../core/services/auth/auth-service';
+import { Department } from '../../core/models/event.model';
 import { API_URL, EventFormConfig } from './events.config';
 
 interface ProgramNode {
@@ -88,21 +90,28 @@ export class EventFormComponent implements OnInit {
   set touched(value: Record<string, boolean>) { this.touchedState.set(value); }
 
   // ----- Step 1 -----
-  private readonly departmentsState = signal<{ department_id: number; department_name: string }[]>([]);
-  get departments(): { department_id: number; department_name: string }[] { return this.departmentsState(); }
-  set departments(value: { department_id: number; department_name: string }[]) { this.departmentsState.set(value); }
-
-  private readonly departmentsLoadingState = signal(false);
-  get departmentsLoading(): boolean { return this.departmentsLoadingState(); }
-  set departmentsLoading(value: boolean) { this.departmentsLoadingState.set(value); }
-
-  private readonly departmentsErrorState = signal('');
-  get departmentsError(): string { return this.departmentsErrorState(); }
-  set departmentsError(value: string) { this.departmentsErrorState.set(value); }
-
   private readonly deptIdState = signal<number | null>(null);
   get deptId(): number | null { return this.deptIdState(); }
   set deptId(value: number | null) { this.deptIdState.set(value); }
+
+  private readonly departmentNameState = signal('');
+  get departmentName(): string { return this.departmentNameState(); }
+  set departmentName(value: string) { this.departmentNameState.set(value); }
+
+  private readonly canChooseDepartmentState = signal(false);
+  get canChooseDepartment(): boolean { return this.canChooseDepartmentState(); }
+
+  private readonly departmentsState = signal<Department[]>([]);
+  get departments(): Department[] { return this.departmentsState(); }
+  set departments(value: Department[]) { this.departmentsState.set(value); }
+
+  private readonly loadingDepartmentsState = signal(false);
+  get loadingDepartments(): boolean { return this.loadingDepartmentsState(); }
+  set loadingDepartments(value: boolean) { this.loadingDepartmentsState.set(value); }
+
+  private readonly departmentErrorState = signal('');
+  get departmentError(): string { return this.departmentErrorState(); }
+  set departmentError(value: string) { this.departmentErrorState.set(value); }
 
   private readonly allProgramsState = signal<ProgramNode[]>([]);
   private get allPrograms(): ProgramNode[] { return this.allProgramsState(); }
@@ -173,7 +182,6 @@ export class EventFormComponent implements OnInit {
   // Existing event (edit mode) waiting for the lists it depends on
   private existing: any = null;
   private basicApplied = false;
-  private deptApplied = false;
   private pendingChurchIds: number[] | null = null;
   private pendingDistrictIds: number[] | null = null;
 
@@ -182,6 +190,7 @@ export class EventFormComponent implements OnInit {
     private router: Router,
     private http: HttpClient,
     private eventService: EventService,
+    private auth: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -190,12 +199,11 @@ export class EventFormComponent implements OnInit {
     this.eventId = Number(idParam);
     this.summaryOpen = this.config.coverage === 'church';
 
-    this.loadDepartments();
     this.loadUser();
     if (this.config.coverage === 'districts') this.loadDistricts();
 
     if (this.isEdit) {
-      this.step = 2; // editing starts on the details; "Change department" goes back to step 1
+      this.step = 2; // Editing starts on the details; the particulars action returns to step 1.
       this.loadExisting();
     }
   }
@@ -203,26 +211,16 @@ export class EventFormComponent implements OnInit {
   // =====================================================================
   // Loading
   // =====================================================================
-  loadDepartments(): void {
-    this.departmentsLoading = true;
-    this.departmentsError = '';
-    this.eventService.getDepartments().subscribe({
-      next: (res) => {
-        this.departments = res;
-        this.departmentsLoading = false;
-        this.applyExisting();
-      },
-      error: (err) => {
-        console.error('Failed to load departments', err);
-        this.departments = [];
-        this.departmentsLoading = false;
-        this.departmentsError = 'We could not load departments. Check your connection and try again.';
-      },
-    });
-  }
+  loadUser(): void {
+    this.departmentError = '';
+    const id = this.auth.getCurrentUser()?.user_id;
+    if (!id) {
+      console.error('Could not load the event form: no signed-in user is available.');
+      this.departmentError = 'We could not identify your signed-in account. Sign in again and retry.';
+      if (this.config.coverage === 'churches') this.failChurches();
+      return;
+    }
 
-  private loadUser(): void {
-    const id = Number(localStorage.getItem('user_id')) || 1;
     this.userId = id;
     this.eventService.getAuthenticatedUser(id).subscribe({
       next: (res: any) => {
@@ -230,15 +228,81 @@ export class EventFormComponent implements OnInit {
         if (u) {
           this.userId = u.user_id ?? id;
           this.userChurchId = u.church_id ?? u.church?.church_id ?? null;
-          this.userChurchName = u.church_name || u.church?.name || '';
+          this.userChurchName = u.church_name || u.church?.name || u.district?.name || '';
+          const role = String(u.role ?? '').toLowerCase().replace(/[-_]/g, ' ').trim();
+          const isRepresentative = role === 'representative' || role === 'church representative';
+          const isPastor = role === 'pastor' || role === 'district pastor';
+          this.canChooseDepartmentState.set(isRepresentative || isPastor);
+          if (isRepresentative || isPastor) {
+            if (!this.isEdit) {
+              this.deptId = null;
+              this.departmentName = '';
+            }
+            this.loadDepartments();
+          } else {
+            const departmentId = Number(u.department_id ?? u.department?.department_id);
+            if (Number.isInteger(departmentId) && departmentId > 0) {
+              this.deptId = departmentId;
+              this.departmentName = u.department?.department_name || `Department ${departmentId}`;
+              this.loadPrograms(departmentId);
+            } else {
+              this.deptId = null;
+              this.departmentName = '';
+              this.departmentError = 'Your account is not assigned to a department. Contact an administrator before creating events.';
+            }
+          }
+        } else {
+          this.departmentError = 'We could not load your account details. Try again.';
         }
         if (this.config.coverage === 'churches') this.loadChurches();
       },
       error: (err) => {
-        console.warn('User load failed, continuing', err);
+        console.error('Could not load the signed-in user for the event form.', err);
+        this.departmentError = 'We could not load your assigned department. Check your connection and try again.';
         if (this.config.coverage === 'churches') this.loadChurches();
       },
     });
+  }
+
+  loadDepartments(): void {
+    this.loadingDepartments = true;
+    this.departmentError = '';
+    this.eventService.getEventDepartments().subscribe({
+      next: (departments) => {
+        this.departments = departments;
+        const selected = departments.find((department) => department.department_id === this.deptId);
+        if (selected) this.departmentName = selected.department_name;
+        this.loadingDepartments = false;
+      },
+      error: (err) => {
+        console.error('Failed to load departments for the event form.', err);
+        this.departments = [];
+        this.departmentError = 'We could not load departments. Check your connection and try again.';
+        this.loadingDepartments = false;
+      },
+    });
+  }
+
+  selectDepartment(value: string | number): void {
+    const departmentId = Number(value);
+    if (!Number.isInteger(departmentId) || departmentId <= 0) {
+      this.deptId = null;
+      this.departmentName = '';
+      this.selectedParticularIds = [];
+      this.programs = [];
+      this.allPrograms = [];
+      return;
+    }
+
+    const department = this.departments.find((item) => item.department_id === departmentId);
+    if (!department) return;
+
+    if (departmentId !== this.deptId) this.selectedParticularIds = [];
+    this.deptId = departmentId;
+    this.departmentName = department.department_name;
+    this.departmentError = '';
+    this.tried1 = false;
+    this.loadPrograms(departmentId);
   }
 
   loadPrograms(departmentId: number): void {
@@ -360,6 +424,14 @@ export class EventFormComponent implements OnInit {
       this.selectedParticularIds = Array.isArray(e.particular_ids)
         ? e.particular_ids.map(Number)
         : [];
+      if (this.config.coverage === 'church') {
+        const departmentId = Number(e.department?.id ?? e.department?.department_id);
+        if (Number.isInteger(departmentId) && departmentId > 0) {
+          this.deptId = departmentId;
+          this.departmentName = e.department?.name ?? e.department?.department_name ?? `Department ${departmentId}`;
+          this.loadPrograms(departmentId);
+        }
+      }
 
       const ids = (list: any): number[] | null =>
         Array.isArray(list) ? list.map((x: any) => Number(x?.church_id ?? x?.id ?? x)) : null;
@@ -368,18 +440,6 @@ export class EventFormComponent implements OnInit {
       this.applyPendingCoverage();
     }
 
-    if (!this.deptApplied && this.departments.length) {
-      this.deptApplied = true;
-      const byId = e.department_id ?? e.department?.id ?? e.department?.department_id;
-      const byName = e.department_name ?? e.department?.name ?? e.department?.department_name;
-      const d =
-        this.departments.find((x) => x.department_id === byId) ??
-        this.departments.find((x) => x.department_name === byName);
-      if (d) {
-        this.deptId = d.department_id;
-        this.loadPrograms(d.department_id);
-      }
-    }
   }
 
   private applyPendingCoverage(): void {
@@ -402,20 +462,9 @@ export class EventFormComponent implements OnInit {
   }
 
   // =====================================================================
-  // Step 1: department + programs
+  // Step 1: assigned department + programs
   // =====================================================================
-  get deptName(): string {
-    return this.departments.find((d) => d.department_id === this.deptId)?.department_name ?? '';
-  }
-
-  selectDepartment(id: number): void {
-    if (this.deptId === id) return;
-    this.deptId = id;
-    this.selectedParticularIds = [];
-    this.allPrograms = [];
-    this.programs = [];
-    this.loadPrograms(id);
-  }
+  readonly deptName = computed(() => this.departmentName);
 
   private rootProgramId(programId: number): number | null {
     const byId = new Map(this.allPrograms.map((program) => [program.program_id, program]));
@@ -455,28 +504,32 @@ export class EventFormComponent implements OnInit {
     }
   }
 
-  get summaryGroups(): { name: string; items: string[] }[] {
-    return this.programs.map((program) => ({
+  readonly summaryGroups = computed(() =>
+    this.programs.map((program) => ({
       name: program.program_name,
       items: program.particulars
         .filter((particular) => this.isParticularSelected(particular.particular_id))
         .map((particular) => particular.particular_name),
-    })).filter((group) => group.items.length > 0);
-  }
+    })).filter((group) => group.items.length > 0),
+  );
 
-  get step1Error(): string {
-    if (!this.deptId) return 'Choose one department to continue.';
+  readonly step1Error = computed(() => {
+    if (!this.deptId) {
+      return this.canChooseDepartment
+        ? 'Choose a department before continuing.'
+        : 'Your account must be assigned to a department before continuing.';
+    }
     if (!this.selectedParticularIds.length) return 'Choose at least one particular to continue.';
     return '';
-  }
+  });
 
   next(): void {
     this.tried1 = true;
-    if (this.step1Error) return;
+    if (this.step1Error()) return;
     this.step = 2;
   }
 
-  changeDepartment(): void {
+  changeParticulars(): void {
     this.tried1 = false;
     this.step = 1;
   }
@@ -527,42 +580,40 @@ export class EventFormComponent implements OnInit {
       : 'border-gray-300 focus:ring-[#1b4d3e]';
   }
 
-  get coverageError(): string {
-    if (this.config.coverage === 'districts' && this.selectedDistrictCount === 0) {
+  readonly coverageError = computed(() => {
+    if (this.config.coverage === 'districts' && this.selectedDistrictCount() === 0) {
       return 'Choose at least one district.';
     }
-    if (this.config.coverage === 'churches' && this.selectedChurchCount === 0) {
+    if (this.config.coverage === 'churches' && this.selectedChurchCount() === 0) {
       return 'Select one church.';
     }
     return '';
-  }
+  });
 
-  get missingCount(): number {
+  readonly missingCount = computed(() => {
     const fields = ['title', 'location', 'start_date', 'end_date', 'start_time', 'end_time'];
-    return fields.filter((f) => this.rawError(f)).length + (this.coverageError ? 1 : 0);
-  }
+    return fields.filter((f) => this.rawError(f)).length + (this.coverageError() ? 1 : 0);
+  });
 
   // ----- Districts (assistant) -----
-  get filteredDistricts(): Option[] {
+  readonly filteredDistricts = computed(() => {
     const q = this.districtSearch.trim().toLowerCase();
     return q ? this.districts.filter((d) => d.name.toLowerCase().includes(q)) : this.districts;
-  }
+  });
 
-  get selectedDistrictCount(): number {
-    return this.districts.filter((d) => d.selected).length;
-  }
+  readonly selectedDistrictCount = computed(() => this.districts.filter((d) => d.selected).length);
 
-  get allDistrictsSelected(): boolean {
-    return this.districts.length > 0 && this.selectedDistrictCount === this.districts.length;
-  }
+  readonly allDistrictsSelected = computed(
+    () => this.districts.length > 0 && this.selectedDistrictCount() === this.districts.length,
+  );
 
-  get districtSummary(): string {
+  readonly districtSummary = computed(() => {
     const names = this.districts.filter((d) => d.selected).map((d) => d.name);
     return names.length ? names.join(', ') : 'No district selected yet';
-  }
+  });
 
   toggleAllDistricts(): void {
-    const selected = !this.allDistrictsSelected;
+    const selected = !this.allDistrictsSelected();
     this.districts = this.districts.map((district) => ({ ...district, selected }));
   }
 
@@ -574,9 +625,7 @@ export class EventFormComponent implements OnInit {
   }
 
   // ----- Churches (district pastor) -----
-  get selectedChurchCount(): number {
-    return this.churches.filter((c) => c.selected).length;
-  }
+  readonly selectedChurchCount = computed(() => this.churches.filter((c) => c.selected).length);
 
   toggleChurch(c: Option): void {
     const selected = !c.selected;
@@ -589,48 +638,49 @@ export class EventFormComponent implements OnInit {
   // =====================================================================
   // Header, footer text
   // =====================================================================
-  get eyebrow(): string {
-    return `MY EVENTS / ${this.isEdit ? 'EDIT EVENT' : 'CREATE EVENT'}`;
-  }
+  readonly eyebrow = computed(() => `MY EVENTS / ${this.isEdit ? 'EDIT EVENT' : 'CREATE EVENT'}`);
 
-  get title(): string {
-    if (this.step === 1) return this.isEdit ? 'Change Department & Particulars' : 'Department & Particular Selection';
+  readonly title = computed(() => {
+    if (this.step === 1) return this.isEdit ? 'Change Particulars' : 'Particular Selection';
     return this.isEdit ? 'Edit Event Details' : 'Event Details';
-  }
+  });
 
-  get subtitle(): string {
+  readonly subtitle = computed(() => {
     if (this.step === 1) {
+      if (this.canChooseDepartment && !this.isEdit) {
+        return 'Choose a department, then select the particulars for this event.';
+      }
       return this.isEdit
-        ? 'Pick a different department or particulars. Your event details stay saved.'
-        : 'Choose a department and the particulars for this event.';
+        ? 'Update the particulars linked to this event. Its department is fixed.'
+        : 'Choose particulars from your assigned department.';
     }
-    if (this.isEdit) return 'Update this event or return to step 1 to change its department and programs.';
+    if (this.isEdit) return 'Update this event or return to step 1 to change its particulars.';
     return this.config.subtitleCreate.replace('{name}', this.userChurchName || 'your district');
-  }
+  });
 
-  get step1Caption(): string {
+  readonly step1Caption = computed(() => {
     if (this.step === 1) return 'Current step';
     return this.isEdit ? 'Saved particulars' : 'Completed';
-  }
+  });
 
-  get cancelLink(): any[] {
+  readonly cancelLink = computed<any[]>(() => {
     return this.isEdit ? [this.config.basePath, this.eventId] : [this.config.basePath];
-  }
+  });
 
-  get hint(): string {
+  readonly hint = computed(() => {
     if (this.saveError) return this.saveError;
-    if (this.step === 1) return this.tried1 && this.step1Error ? this.step1Error : '';
-    if (this.tried2 && this.missingCount > 0) {
-      const n = this.missingCount;
+    if (this.step === 1) return this.tried1 && this.step1Error() ? this.step1Error() : '';
+    if (this.tried2 && this.missingCount() > 0) {
+      const n = this.missingCount();
       return `${n} required field${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} your attention.`;
     }
     return this.isEdit ? 'Existing values are preserved until you save.' : '';
-  }
+  });
 
-  get hintIsError(): boolean {
+  readonly hintIsError = computed(() => {
     if (this.saveError) return true;
-    return this.step === 1 ? this.tried1 && !!this.step1Error : this.tried2 && this.missingCount > 0;
-  }
+    return this.step === 1 ? this.tried1 && !!this.step1Error() : this.tried2 && this.missingCount() > 0;
+  });
 
   // =====================================================================
   // Save
@@ -638,9 +688,12 @@ export class EventFormComponent implements OnInit {
   private buildPayload(): any {
     const payload: any = {
       ...this.form,
-      department_id: this.deptId,
       particular_ids: this.selectedParticularIds,
     };
+
+    if (this.canChooseDepartment) {
+      payload.department_id = this.deptId;
+    }
 
     switch (this.config.coverage) {
       case 'church':
@@ -659,7 +712,7 @@ export class EventFormComponent implements OnInit {
   submit(): void {
     this.tried2 = true;
     this.saveError = '';
-    if (this.missingCount > 0) return;
+    if (this.missingCount() > 0) return;
 
     this.saving = true;
     const payload = this.buildPayload();

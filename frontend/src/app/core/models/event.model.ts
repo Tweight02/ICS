@@ -66,8 +66,15 @@ export interface EventModel {
     id?: number;
     name?: string;
     program_name?: string;
+    selected?: string[];
     particulars?: Array<{ particular_id: number; particular_name: string }>;
   }>;
+  abilities?: {
+    update?: boolean;
+    delete?: boolean;
+    manage_participants?: boolean;
+    confirm_participants?: boolean;
+  };
   scope?: {
     label?: string;
     churches?: Org[];

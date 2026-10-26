@@ -1,84 +1,84 @@
-<div class="relative isolate min-h-dvh overflow-x-hidden font-sans text-white antialiased">
+<div class="login-page relative isolate min-h-dvh overflow-x-hidden font-sans text-white antialiased">
 
   <!-- Photo + scrims -->
   <img
     src="/assets/mountain.png"
     alt=""
     aria-hidden="true"
-    class="fixed inset-0 -z-20 h-full w-full object-cover"
+    class="login-background fixed inset-0 -z-20 h-full w-full object-cover"
   />
-  <div class="fixed inset-0 -z-10 bg-gradient-to-r from-green-950/85 via-green-950/45 to-green-950/15"></div>
-  <div class="fixed inset-0 -z-10 bg-gradient-to-t from-black/50 via-transparent to-black/20"></div>
+  <div class="login-scrim login-scrim-horizontal fixed inset-0 -z-10"></div>
+  <div class="login-scrim login-scrim-vertical fixed inset-0 -z-10"></div>
 
-  <main class="mx-auto grid min-h-dvh max-w-7xl items-center gap-12 px-6 py-12 sm:px-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-20 lg:px-14">
+  <main class="login-layout mx-auto grid min-h-dvh max-w-7xl items-center gap-12 px-6 py-12 sm:px-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-20 lg:px-14">
 
     <!-- Brand, headline, system intro -->
-    <section class="mx-auto flex max-w-2xl flex-col items-center text-center">
+    <section class="login-brand mx-auto flex max-w-2xl flex-col items-center text-center">
 
       <span class="inline-flex">
         <img
           src="/assets/logo.png"
           alt="Northeast Luzon Mission"
-          class="h-44 w-auto object-contain"
+          class="login-logo h-44 w-auto object-contain"
         />
       </span>
 
-      <h1 class="mt-9 text-balance text-5xl font-semibold leading-[1.02] tracking-tight drop-shadow-[0_2px_24px_rgba(0,0,0,0.35)] sm:text-6xl lg:text-7xl">
+      <h1 class="login-title mt-9 text-balance text-5xl font-semibold leading-[1.02] tracking-tight drop-shadow-[0_2px_24px_rgba(0,0,0,0.35)] sm:text-6xl lg:text-7xl">
         Northeast Luzon Mission
       </h1>
 
-      <div class="mt-10 h-px w-14 bg-white/50" aria-hidden="true"></div>
+      <div class="login-divider mt-10 h-px w-14 bg-white/50" aria-hidden="true"></div>
 
       <!-- System intro -->
-      <p class="mt-8 max-w-lg text-pretty text-lg leading-relaxed text-white/90 drop-shadow-[0_1px_12px_rgba(0,0,0,0.4)] sm:text-xl">
+      <p class="login-intro mt-8 max-w-lg text-pretty text-lg leading-relaxed text-white/90 drop-shadow-[0_1px_12px_rgba(0,0,0,0.4)] sm:text-xl">
         The Integrated Communication System (ICS) is a web-based platform for the Northeast Luzon Mission that brings ministry reporting, event coordination, and notifications together in one place.
       </p>
     </section>
 
     <!-- Glass card -->
-    <section class="w-full max-w-md justify-self-center rounded-3xl border border-white/25 bg-gradient-to-br from-white/20 via-green-950/35 to-green-950/45 p-7 shadow-2xl shadow-black/40 ring-1 ring-inset ring-white/10 backdrop-blur-2xl backdrop-saturate-150 sm:p-9 lg:max-w-none lg:justify-self-end">
+    <section class="login-card w-full max-w-md justify-self-center rounded-3xl border border-white/25 bg-gradient-to-br from-white/20 via-green-950/35 to-green-950/45 p-7 shadow-2xl shadow-black/40 ring-1 ring-inset ring-white/10 backdrop-blur-2xl backdrop-saturate-150 sm:p-9 lg:max-w-none lg:justify-self-end">
 
-      <h2 class="text-2xl font-semibold tracking-tight">Sign in to your account</h2>
+      <h2 class="login-card-title text-2xl font-semibold tracking-tight">Sign in to your account</h2>
 
-      <form class="mt-8 space-y-5" [formGroup]="credentials" (ngSubmit)="submit()" novalidate>
+      <form class="login-form mt-8 space-y-5" [formGroup]="credentials" (ngSubmit)="submit()" novalidate>
 
         @if (error()) {
-          <div role="alert" class="rounded-xl border border-red-300/50 bg-red-500/25 px-3.5 py-2.5 text-sm text-red-50">
+          <div role="alert" class="login-error rounded-xl border border-red-300/50 bg-red-500/25 px-3.5 py-2.5 text-sm text-red-50">
             {{ error() }}
           </div>
         }
 
         <div>
-          <label for="email" class="block text-sm font-medium text-white/95">Email</label>
+          <label for="email" class="login-label block text-sm font-medium text-white/95">Email</label>
           <input
             id="email" type="email" autocomplete="email" formControlName="email"
             placeholder="you@example.com"
             [class.border-red-400]="email.invalid && email.touched"
-            class="mt-2 block h-12 w-full rounded-xl border border-white/30 bg-white/15 px-4 text-base text-white placeholder-white/60 transition focus:border-white/70 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 motion-reduce:transition-none sm:text-sm [-webkit-text-fill-color:white] [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s]"
+            class="login-input mt-2 block h-12 w-full rounded-xl border border-white/30 bg-white/15 px-4 text-base text-white placeholder-white/60 transition focus:border-white/70 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 motion-reduce:transition-none sm:text-sm [-webkit-text-fill-color:white] [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s]"
           />
           @if (email.touched && email.invalid) {
-            <p class="mt-2 text-sm text-red-200">
+            <p class="login-field-error mt-2 text-sm text-red-200">
               {{ email.hasError('required') ? 'Email is required.' : 'Enter a valid email address.' }}
             </p>
           }
         </div>
 
         <div>
-          <label for="password" class="block text-sm font-medium text-white/95">Password</label>
-          <div class="relative mt-2">
+          <label for="password" class="login-label block text-sm font-medium text-white/95">Password</label>
+          <div class="login-password-wrap relative mt-2">
             <input
               id="password" [type]="showPassword() ? 'text' : 'password'"
               autocomplete="current-password" formControlName="password"
               placeholder="••••••••"
               [class.border-red-400]="password.invalid && password.touched"
-              class="block h-12 w-full rounded-xl border border-white/30 bg-white/15 pl-4 pr-12 text-base text-white placeholder-white/60 transition focus:border-white/70 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 motion-reduce:transition-none sm:text-sm [-webkit-text-fill-color:white] [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s]"
+              class="login-input block h-12 w-full rounded-xl border border-white/30 bg-white/15 pl-4 pr-12 text-base text-white placeholder-white/60 transition focus:border-white/70 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 motion-reduce:transition-none sm:text-sm [-webkit-text-fill-color:white] [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s]"
             />
             <button
               type="button"
               (click)="showPassword.set(!showPassword())"
               [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
               [attr.aria-pressed]="showPassword()"
-              class="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-white/75 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/60 motion-reduce:transition-none"
+              class="login-password-toggle absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-white/75 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/60 motion-reduce:transition-none"
             >
               @if (showPassword()) {
                 <!-- eye-off -->
@@ -95,25 +95,25 @@
             </button>
           </div>
           @if (password.touched && password.invalid) {
-            <p class="mt-2 text-sm text-red-200">Password is required.</p>
+            <p class="login-field-error mt-2 text-sm text-red-200">Password is required.</p>
           }
         </div>
 
-        <div class="flex items-center justify-between gap-4 text-sm">
-          <label class="flex cursor-pointer items-center gap-2.5">
+        <div class="login-options flex items-center justify-between gap-4 text-sm">
+          <label class="login-remember flex cursor-pointer items-center gap-2.5">
             <input
               type="checkbox" formControlName="remember"
               class="h-4 w-4 rounded border-white/50 bg-white/10 accent-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             />
             Remember me
           </label>
-          <a href="#" class="font-medium underline decoration-white/60 underline-offset-4 hover:decoration-white focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">Forgot password?</a>
+          <a href="#" class="login-forgot font-medium underline decoration-white/60 underline-offset-4 hover:decoration-white focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">Forgot password?</a>
         </div>
 
         <button
           type="submit"
           [disabled]="loading()"
-          class="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-green-950 shadow-lg shadow-black/25 transition hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-green-950 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 motion-reduce:transition-none"
+          class="login-submit group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-green-950 shadow-lg shadow-black/25 transition hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-green-950 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 motion-reduce:transition-none"
         >
           {{ loading() ? 'Signing in…' : 'Login' }}
           <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

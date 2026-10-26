@@ -41,7 +41,9 @@ export interface ReportQuarter {
   district_endorse: string | null;
   mission_approve: string | null;
 
-  value: number | null;
+  value: number | string | null;
+  participant_count?: number;
+  combined_value?: number | null;
   monthly_values?: Record<string, number | null>;
 }
 

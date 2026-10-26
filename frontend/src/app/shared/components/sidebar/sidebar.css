@@ -5,6 +5,8 @@
 :host {
   --sidebar-width: 235px;
   --sidebar-collapsed-width: 76px;
+  --sidebar-background: var(--brand-forest);
+  --sidebar-accent: var(--brand-gold);
 }
 
 .sidebar {
@@ -26,15 +28,11 @@
   overflow: hidden;
 
   background:
-    linear-gradient(
-      180deg,
-      rgba(3, 72, 43, 0.82) 0%,
-      rgba(0, 91, 54, 0.78) 45%,
-      rgba(0, 55, 35, 0.94) 100%
-    ),
-    url('/assets/mountain.png') center center / cover no-repeat;
+    linear-gradient(180deg, rgba(8, 59, 46, 0.82) 0%, rgba(8, 59, 46, 0.72) 54%, rgba(8, 59, 46, 0.56) 100%),
+    url('/assets/mountain.png') center / cover no-repeat,
+    linear-gradient(180deg, #0b4b3a 0%, var(--sidebar-background) 100%);
 
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 4px 0 18px rgba(21, 55, 44, 0.14);
 
   transition:
     width 0.3s ease,
@@ -52,13 +50,7 @@
 
   inset: 0;
 
-  background:
-    linear-gradient(
-      180deg,
-      rgba(0, 63, 39, 0.35),
-      rgba(0, 75, 45, 0.15) 45%,
-      rgba(0, 42, 27, 0.55)
-    );
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.035), transparent 60%);
 
   pointer-events: none;
 
@@ -172,7 +164,7 @@
   border-radius: 10px;
 
   color: #ffffff;
-  background: rgba(0, 75, 46, 0.96);
+  background: var(--sidebar-background);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 
   cursor: pointer;
@@ -184,60 +176,12 @@
 }
 
 .sidebar-floating-toggle:hover {
-  background: #075b3c;
+  background: #28553e;
   transform: scale(1.04);
 }
 
 .sidebar-floating-toggle i {
   font-size: 19px;
-}
-
-
-/* =========================================================
-   ROLE PILL
-   ========================================================= */
-
-.role-wrap {
-  margin-top: 14px !important;
-}
-
-
-.role-pill {
-  min-height: 42px;
-
-  padding: 0 14px;
-
-  border-radius: 22px;
-
-  color: #ffffff;
-
-  font-size: 13px;
-
-  font-weight: 600;
-
-  background: rgba(255, 255, 255, 0.10);
-
-  border: 1px solid rgba(255, 255, 255, 0.13);
-
-  backdrop-filter: blur(8px);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-
-.role-dot {
-  width: 9px;
-  height: 9px;
-
-  flex-shrink: 0;
-
-  border-radius: 50%;
-
-  background: #59e36a;
-
-  box-shadow:
-    0 0 8px rgba(89, 227, 106, 0.7);
 }
 
 
@@ -298,16 +242,8 @@
 
 .sidebar-link.active {
   color: #ffffff !important;
-
-  background:
-    linear-gradient(
-      90deg,
-      #64bd3c,
-      #76ce45
-    );
-
-  box-shadow:
-    0 5px 15px rgba(55, 150, 45, 0.30);
+  background: linear-gradient(105deg, #16865b, #21986a);
+  box-shadow: 0 5px 14px rgba(2, 35, 27, 0.24), inset 0 1px rgba(255, 255, 255, 0.14);
 
   font-weight: 600;
 }
@@ -337,6 +273,7 @@
 
 
 .user-avatar {
+  position: relative;
   width: 44px;
   height: 44px;
 
@@ -348,14 +285,8 @@
 
   border-radius: 50%;
 
-  color: #ffffff;
-
-  background:
-    linear-gradient(
-      135deg,
-      #8bcf45,
-      #4b9e38
-    );
+  color: var(--sidebar-background);
+  background: #ffffff;
 
   font-size: 14px;
 
@@ -363,6 +294,22 @@
 
   box-shadow:
     0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.user-profile-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.user-profile-link:hover .user-name {
+  color: #f6d77e;
 }
 
 
@@ -381,9 +328,11 @@
 
 
 .user-role {
-  color: rgba(255, 255, 255, 0.65);
+  margin-top: 3px;
+  color: rgba(218, 242, 226, 0.78);
 
   font-size: 11px;
+  line-height: 1.2;
 }
 
 
@@ -425,7 +374,6 @@
    ========================================================= */
 
 .sidebar.collapsed .brand-text,
-.sidebar.collapsed .role-pill span:not(.role-dot),
 .sidebar.collapsed .nav-label,
 .sidebar.collapsed .user-info,
 .sidebar.collapsed .logout-btn span {
@@ -444,21 +392,6 @@
 .sidebar.collapsed .brand-logo {
   width: 42px;
   height: 42px;
-}
-
-
-.sidebar.collapsed .role-wrap {
-  padding-left: 14px !important;
-  padding-right: 14px !important;
-}
-
-
-.sidebar.collapsed .role-pill {
-  justify-content: center;
-
-  padding: 0;
-
-  background: rgba(255, 255, 255, 0.10);
 }
 
 
@@ -508,7 +441,7 @@
    RESPONSIVE
    ========================================================= */
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
 
   .sidebar {
     width: 235px;

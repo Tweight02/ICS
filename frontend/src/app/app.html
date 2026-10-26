@@ -1,6 +1,7 @@
 @if (showSidebar) {
   <app-sidebar
     [user]="currentUser()!"
+    [collapsed]="collapsed"
     (collapsedChange)="collapsed = $event"
   />
 
@@ -20,6 +21,7 @@
   [class.sidebar-collapsed]="showSidebar && collapsed"
   [class.sidebar-expanded]="showSidebar && !collapsed"
   [class.no-sidebar]="!showSidebar"
+  [class.login-shell]="isLoginPage"
 >
   <!-- Background overlay -->
   <div class="app-background-overlay"></div>

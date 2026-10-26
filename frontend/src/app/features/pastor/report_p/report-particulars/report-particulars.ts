@@ -28,6 +28,8 @@ interface QuarterRecord {
   quarter?: string;
   year?: number | string;
   value: number | string | null;
+  participant_count?: number;
+  combined_value?: number | null;
   date_submitted?: string | null;
   district_endorse?: string | null;
   mission_approve: string | null;

@@ -7,12 +7,14 @@ import {
   OnDestroy,
   OnInit,
   ViewChild,
+  computed,
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { EventService } from '../../core/services/events/events-api';
+import { AuthService } from '../../core/services/auth/auth-service';
 import { EventsHomeConfig } from './events.config';
 import {
   EventStatus,
@@ -43,6 +45,7 @@ const CARD_GAP = 8;
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, PaginationComponent],
   templateUrl: './events-home.component.html',
+  styleUrl: './events-home.component.css',
 })
 export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input({ required: true }) config!: EventsHomeConfig;
@@ -56,7 +59,7 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   get selectedMonth(): string { return this.selectedMonthState(); }
   set selectedMonth(value: string) { this.selectedMonthState.set(value); }
 
-  private readonly selectedStatusState = signal<'all' | EventStatus>('Upcoming');
+  private readonly selectedStatusState = signal<'all' | EventStatus>('all');
   get selectedStatus(): 'all' | EventStatus { return this.selectedStatusState(); }
   set selectedStatus(value: 'all' | EventStatus) { this.selectedStatusState.set(value); }
 
@@ -107,6 +110,7 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private eventService: EventService,
+    private auth: AuthService,
     private zone: NgZone,
   ) {}
 
@@ -145,14 +149,19 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ---------- Data ----------
   private loadUser(): void {
-    const userId = Number(localStorage.getItem('user_id')) || 1;
+    const userId = this.auth.getCurrentUser()?.user_id;
+    if (!userId) {
+      console.error('Could not load the event workspace: no signed-in user is available.');
+      return;
+    }
+
     this.eventService.getAuthenticatedUser(userId).subscribe({
       next: (res: any) => {
         const user = res?.data ?? res;
-        const name = user?.church_name || user?.church?.name;
+        const name = user?.church_name || user?.church?.name || user?.district?.name;
         if (name) this.workspaceName = name;
       },
-      error: (err) => console.warn('Could not load the user, using defaults', err),
+      error: (err) => console.error('Could not load the signed-in user for the event workspace.', err),
     });
   }
 
@@ -182,14 +191,6 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
       .filter((e) => toDate(e.start_date))
       .sort((a, b) => toDate(a.start_date)!.getTime() - toDate(b.start_date)!.getTime());
 
-    if (this.events.some((e) => statusOf(e) === 'Upcoming')) {
-      this.selectedStatus = 'Upcoming';
-    } else if (this.events.some((e) => statusOf(e) === 'Ongoing')) {
-      this.selectedStatus = 'Ongoing';
-    } else {
-      this.selectedStatus = 'all';
-    }
-
     if (dated.length === 0) return;
 
     const next =
@@ -198,12 +199,10 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const s = toDate(next.start_date)!;
     this.calendarDate = new Date(s.getFullYear(), s.getMonth(), 1);
-    this.selectedMonth = this.calendarLabel;
+    this.selectedMonth = this.calendarLabel();
   }
 
-  get hasSampleEvents(): boolean {
-    return this.events.some((e) => e.isSample);
-  }
+  readonly hasSampleEvents = computed(() => this.events.some((e) => e.isSample));
 
   // ---------- Filters ----------
   private monthLabelOf(e: any): string {
@@ -217,13 +216,15 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
       const d = toDate(e.start_date);
       if (d) map.set(this.monthLabelOf(e), new Date(d.getFullYear(), d.getMonth(), 1).getTime());
     }
-    map.set(this.calendarLabel, this.calendarDate.getTime());
+    map.set(this.calendarLabel(), this.calendarDate.getTime());
     return map;
   }
 
-  get monthOptions(): string[] {
-    return [...this.monthTimes().entries()].sort((a, b) => a[1] - b[1]).map(([label]) => label);
-  }
+  readonly monthOptions = computed(() =>
+    [...this.monthTimes().entries()]
+      .sort((a, b) => a[1] - b[1])
+      .map(([label]) => label),
+  );
 
   onMonthChange(): void {
     this.page = 1;
@@ -244,15 +245,13 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.page = 1;
   }
 
-  get hasActiveFilters(): boolean {
-    return !!this.searchTerm.trim() || !!this.selectedDay;
-  }
+  readonly hasActiveFilters = computed(() => !!this.searchTerm.trim() || !!this.selectedDay);
 
-  get heading(): string {
-    return this.selectedStatus === 'all' ? 'All events' : `${statusLabel(this.selectedStatus)} events`;
-  }
+  readonly heading = computed(() =>
+    this.selectedStatus === 'all' ? 'All events' : `${statusLabel(this.selectedStatus)} events`,
+  );
 
-  get filteredEvents(): any[] {
+  readonly filteredEvents = computed(() => {
     const term = this.searchTerm.trim().toLowerCase();
     return this.events
       .filter((e) => {
@@ -264,34 +263,34 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
         return okSearch && okStatus && okDay;
       })
       .sort((a, b) => (toDate(a.start_date)?.getTime() ?? 0) - (toDate(b.start_date)?.getTime() ?? 0));
-  }
+  });
 
   departmentName(e: any): string {
     return e.department?.department_name ?? e.department_name ?? '';
   }
 
   // ---------- Pagination ----------
-  get currentPage(): number {
-    const pages = Math.max(1, Math.ceil(this.filteredEvents.length / this.pageSize));
+  readonly currentPage = computed(() => {
+    const pages = Math.max(1, Math.ceil(this.filteredEvents().length / this.pageSize));
     return Math.min(this.page, pages);
-  }
+  });
 
-  get pagedEvents(): any[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredEvents.slice(start, start + this.pageSize);
-  }
+  readonly pagedEvents = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize;
+    return this.filteredEvents().slice(start, start + this.pageSize);
+  });
 
   // ---------- Calendar ----------
-  get calendarLabel(): string {
-    return this.calendarDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-  }
+  readonly calendarLabel = computed(() =>
+    this.calendarDate.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+  );
 
-  get showingCurrentMonth(): boolean {
+  readonly showingCurrentMonth = computed(() => {
     return (
       this.calendarDate.getFullYear() === this.today.getFullYear() &&
       this.calendarDate.getMonth() === this.today.getMonth()
     );
-  }
+  });
 
   prevMonth(): void {
     this.goToMonth(-1);
@@ -303,14 +302,14 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   goToday(): void {
     this.calendarDate = new Date(this.today.getFullYear(), this.today.getMonth(), 1);
-    this.selectedMonth = this.calendarLabel;
+    this.selectedMonth = this.calendarLabel();
     this.selectedDay = null;
     this.page = 1;
   }
 
   private goToMonth(delta: number): void {
     this.calendarDate = new Date(this.calendarDate.getFullYear(), this.calendarDate.getMonth() + delta, 1);
-    this.selectedMonth = this.calendarLabel;
+    this.selectedMonth = this.calendarLabel();
     this.selectedDay = null;
     this.page = 1;
   }
@@ -338,7 +337,7 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.page = 1;
   }
 
-  get calendarCells(): CalendarCell[] {
+  readonly calendarCells = computed(() => {
     const y = this.calendarDate.getFullYear();
     const m = this.calendarDate.getMonth();
     const leading = (new Date(y, m, 1).getDay() + 6) % 7; // week starts on Monday
@@ -361,10 +360,10 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
     return cells;
-  }
+  });
 
   /** Number of events overlapping the month shown in the calendar. */
-  get calendarMonthCount(): number {
+  readonly calendarMonthCount = computed(() => {
     const first = new Date(this.calendarDate.getFullYear(), this.calendarDate.getMonth(), 1);
     const last = new Date(this.calendarDate.getFullYear(), this.calendarDate.getMonth() + 1, 0);
     return this.events.filter((e) => {
@@ -372,5 +371,5 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
       const en = toDate(e.end_date) ?? s;
       return !!s && !!en && s <= last && en >= first;
     }).length;
-  }
+  });
 }

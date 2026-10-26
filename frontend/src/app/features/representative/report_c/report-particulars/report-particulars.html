@@ -241,7 +241,7 @@
                           <ng-container *ngIf="getParticularQuarterRecord(particular, quarter) as record;
                                    else noAnnualValue">
 
-                            <span>{{ record.value ?? '—' }}</span>
+                            <span>{{ record.combined_value ?? record.value ?? '—' }}</span>
                           </ng-container>
 
                           <ng-template #noAnnualValue>
@@ -270,7 +270,7 @@
                                     class="w-full min-w-[76px] rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
                                 </td>
                                 <td class="px-3 py-3.5 text-center font-semibold tabular-nums text-emerald-950/80">
-                                  ₱{{ record.value ?? 0 | number: '1.2-2' }}
+                                  ₱{{ record.combined_value ?? record.value ?? 0 | number: '1.2-2' }}
                                 </td>
                               </ng-container>
                               <ng-template #unavailableMonthlyRecord>
@@ -287,14 +287,16 @@
                             <ng-container *ngIf="getSelectedQuarter() as quarter">
                               <ng-container *ngIf="{ record: getParticularQuarterRecord(particular, quarter) } as ctx">
                                 <div class="flex justify-center">
-                                  <input type="number" min="0" step="any" [ngModel]="ctx.record?.value ?? null"
-                                    (ngModelChange)="setQuarterValue(particular, quarter, $event)"
-                                    [disabled]="saving || isQuarterApproved(quarter.quarter_id)"
-                                    [attr.aria-label]="particular.particular_name" class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5
-                                           text-center tabular-nums text-emerald-950 outline-none transition
-                                           placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2
-                                           focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5
-                                           disabled:text-emerald-900/90" />
+                                  <div class="flex flex-col items-center gap-1">
+                                    <input type="number" [min]="ctx.record?.participant_count ?? 0" step="any" [ngModel]="ctx.record?.value ?? null"
+                                        (ngModelChange)="setQuarterValue(particular, quarter, $event)"
+                                        [disabled]="saving || isQuarterApproved(quarter.quarter_id)"
+                                        [attr.aria-label]="particular.particular_name" class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5
+                                             text-center tabular-nums text-emerald-950 outline-none transition
+                                             placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2
+                                             focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5
+                                             disabled:text-emerald-900/90" />
+                                    </div>
                                 </div>
                               </ng-container>
                             </ng-container>
