@@ -128,7 +128,7 @@
 			<!-- Vacant church -->
 			<button type="button" (click)="openAssignment(assignment)" [disabled]="saving()"
 				[attr.aria-label]="'Open representative assignment for ' + assignment.name"
-				class="group flex w-full items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50/50 p-2 text-left shadow-sm transition hover:border-amber-300 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] disabled:cursor-not-allowed disabled:opacity-60">
+				class="group flex w-full items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/50 min-h-[3rem] px-2.5 py-2 text-left shadow-sm transition hover:border-amber-300 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] disabled:cursor-not-allowed disabled:opacity-60">
 				<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-700"
 					aria-hidden="true">
 					<svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
@@ -137,16 +137,16 @@
 							clip-rule="evenodd" />
 					</svg>
 				</div>
-				<div class="min-w-0 flex-1">
-					<h3 class="break-words text-xs font-semibold leading-snug text-slate-950">{{ assignment.name }}</h3>
-					<p class="text-[10px] font-medium leading-snug text-amber-700">No active representative</p>
+				<div class="flex min-w-0 flex-1 flex-col justify-center">
+					<h3 class="m-0 break-words text-xs font-semibold leading-4 text-slate-950">{{ assignment.name }}</h3>
+					<p class="m-0 mt-0.5 text-[10px] font-medium leading-[14px] text-amber-700">No active representative</p>
 				</div>
 			</button>
 			} @else {
 			<!-- Assigned church: selectable to change its representative -->
 			<button type="button" (click)="openAssignment(assignment)" [disabled]="saving()"
 				[attr.aria-label]="'Open representative assignment for ' + assignment.name"
-				class="group flex w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-white p-2 text-left shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] disabled:cursor-not-allowed disabled:opacity-60">
+				class="group flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white min-h-[3rem] px-2.5 py-2 text-left shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] disabled:cursor-not-allowed disabled:opacity-60">
 				<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700"
 					aria-hidden="true">
 					<svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
@@ -155,9 +155,9 @@
 							clip-rule="evenodd" />
 					</svg>
 				</div>
-				<div class="min-w-0 flex-1">
-					<h3 class="break-words text-xs font-semibold leading-snug text-slate-950">{{ assignment.name }}</h3>
-					<p class="break-words text-[10px] leading-snug text-slate-600">{{ fullName(assignment.representative) }}</p>
+				<div class="flex min-w-0 flex-1 flex-col justify-center">
+					<h3 class="m-0 break-words text-xs font-semibold leading-4 text-slate-950">{{ assignment.name }}</h3>
+					<p class="m-0 mt-0.5 break-words text-[10px] leading-[14px] text-slate-600">{{ fullName(assignment.representative) }}</p>
 				</div>
 			</button>
 			}
