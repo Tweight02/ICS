@@ -104,6 +104,17 @@ class Event extends Model
 
     public function scopeVisibleTo(Builder $query, EventUser $user): Builder
     {
+        if ($user->role !== 'church_representative') {
+            if (! $user->departmentId) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            $query->whereIn('quarter_id', DB::table('quarters')
+                ->join('programs', 'programs.program_id', '=', 'quarters.program_id')
+                ->where('programs.department_id', $user->departmentId)
+                ->select('quarters.quarter_id'));
+        }
+
         if ($user->role === 'district_pastor') {
             $districtChurchIds = array_merge(
                 [$user->districtId],
@@ -119,6 +130,16 @@ class Event extends Model
 
         return match ($user->role) {
             'director', 'assistant' => $query,
+            'church_representative' => $query->where(function (Builder $scope) use ($user) {
+                $scope->whereIn('church_id', array_values(array_filter([
+                    $user->churchId,
+                    $user->districtId,
+                ])));
+                if ($user->districtId) {
+                    $scope->orWhereHas('districts', fn (Builder $districts) => $districts
+                        ->where('churches.church_id', $user->districtId));
+                }
+            }),
             default => $query->where('church_id', $user->churchId ?? 0),
         };
     }

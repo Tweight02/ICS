@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Support\EventRegistrationAttribution;
 use App\Support\EventsOrg;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,26 +15,35 @@ class PublicEventController extends Controller
     {
         $today = now('Asia/Manila')->toDateString();
         $events = Event::query()
-            ->where('date_end', '>=', $today)
+            ->orderByRaw('CASE WHEN date_end >= ? THEN 0 ELSE 1 END', [$today])
             ->orderBy('date_start')
             ->orderBy('time_start')
             ->get();
 
-        return response()->json(['data' => $events->map(fn (Event $event) => $this->eventData($event))->values()]);
+        return response()->json([
+            'data' => $events->map(fn (Event $event) => $this->eventData($event))->values(),
+        ]);
     }
 
-    public function show(int $event)
+    public function show(Request $request, int $event)
     {
         $today = now('Asia/Manila')->toDateString();
         $event = Event::query()->where('date_end', '>=', $today)->findOrFail($event);
 
-        return response()->json(['data' => $this->eventData($event)]);
+        $data = $this->eventData($event);
+        $churchId = $this->registrationChurchId($request, $event);
+        if ($churchId !== null) {
+            $data['registration_church_name'] = EventsOrg::church($churchId)?->name;
+        }
+
+        return response()->json(['data' => $data]);
     }
 
     public function register(Request $request, int $event)
     {
         $today = now('Asia/Manila')->toDateString();
         $event = Event::query()->where('date_end', '>=', $today)->findOrFail($event);
+        $churchId = $this->registrationChurchId($request, $event);
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
             'middle_name' => ['nullable', 'string', 'max:80'],
@@ -43,7 +53,7 @@ class PublicEventController extends Controller
             'gender' => ['required', 'string', Rule::in(['male', 'female', 'other'])],
         ]);
         $data['event_id'] = $event->event_id;
-        $data['church_id'] = $event->church_id;
+        $data['church_id'] = $churchId ?? $event->church_id;
         $data['middle_name'] ??= '';
         $data['registration_status'] = 'pending';
 
@@ -57,6 +67,30 @@ class PublicEventController extends Controller
                 'status' => $participant->status,
             ],
         ], 201);
+    }
+
+    private function registrationChurchId(Request $request, Event $event): ?int
+    {
+        $churchId = $request->query('church_id');
+        $token = $request->query('registration_token');
+        if ($churchId === null && $token === null) {
+            return null;
+        }
+
+        abort_unless(
+            filter_var($churchId, FILTER_VALIDATE_INT) !== false
+            && is_string($token)
+            && hash_equals(
+                EventRegistrationAttribution::token((int) $event->event_id, (int) $churchId),
+                $token
+            ),
+            422,
+            'This church-specific registration link is invalid.'
+        );
+
+        EventRegistrationAttribution::quarterId((int) $event->quarter_id, (int) $churchId);
+
+        return (int) $churchId;
     }
 
     private function eventData(Event $event): array
@@ -79,6 +113,7 @@ class PublicEventController extends Controller
             'description' => $event->notes,
             'church_name' => $church->name ?? null,
             'scope' => $scopeNames,
+            'registration_open' => ($event->end_date?->toDateString() ?? '') >= now('Asia/Manila')->toDateString(),
         ];
     }
 }

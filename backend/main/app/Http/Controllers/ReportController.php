@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\ReportMonitoringService;
+use App\Support\ReportParticipantCoverage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -237,6 +238,20 @@ class ReportController extends Controller
             ->orderBy('program_id')
             ->get();
 
+        $participantCounts = DB::query()
+            ->fromSub(ReportParticipantCoverage::counts(), 'participant_counts')
+            ->join('quarters', 'quarters.quarter_id', '=', 'participant_counts.quarter_id')
+            ->join('programs as report_programs', 'report_programs.program_id', '=', 'quarters.program_id')
+            ->where('quarters.church_id', $churchId)
+            ->where('report_programs.department_id', $departmentId)
+            ->select(
+                'participant_counts.quarter_id',
+                'participant_counts.particular_id',
+                'participant_counts.participant_count'
+            )
+            ->get()
+            ->keyBy(fn ($row) => $row->quarter_id.':'.$row->particular_id);
+
         $reportPrograms = [];
 
         foreach ($programs as $program) {
@@ -277,11 +292,15 @@ class ReportController extends Controller
                         (string) $particular->particular_name
                     );
                     $particularQuarters = $quarters->map(
-                        function ($quarter) use ($particular, $supportsMonthlyValues) {
+                        function ($quarter) use ($particular, $supportsMonthlyValues, $participantCounts) {
                             $savedItem = DB::table('particular_items')
                                 ->where('particular_id', $particular->particular_id)
                                 ->where('quarter_id', $quarter->quarter_id)
                                 ->first();
+                            $participantCount = (int) (
+                                $participantCounts[$quarter->quarter_id.':'.$particular->particular_id]->participant_count ?? 0
+                            );
+                            $manualValue = $savedItem ? $savedItem->manual_value : null;
                             $quarterData = [
                                 'quarter_id' => (int) $quarter->quarter_id,
                                 'quarter' => $quarter->quarter,
@@ -289,7 +308,11 @@ class ReportController extends Controller
                                 'date_submitted' => $quarter->date_submitted,
                                 'district_endorse' => $quarter->district_endorse,
                                 'mission_approve' => $quarter->mission_approve,
-                                'value' => $savedItem ? $savedItem->value : null,
+                                'value' => $manualValue,
+                                'participant_count' => $participantCount,
+                                'combined_value' => $manualValue === null && $participantCount === 0
+                                    ? null
+                                    : (float) ($manualValue ?? 0) + $participantCount,
                             ];
 
                             if ($supportsMonthlyValues) {
@@ -365,6 +388,7 @@ class ReportController extends Controller
             'items.*.particular_id' => ['required', 'integer'],
             'items.*.quarter_id' => ['required', 'integer'],
             'items.*.value' => ['nullable', 'numeric', 'min:0'],
+            'items.*.value_includes_participants' => ['sometimes', 'boolean'],
             'items.*.monthly_values' => ['sometimes', 'array'],
             'items.*.monthly_values.*' => ['nullable', 'numeric', 'min:0'],
             'submitted' => ['sometimes', 'boolean'],
@@ -484,6 +508,28 @@ class ReportController extends Controller
                         : null;
                 }
 
+                $participantCount = ReportParticipantCoverage::countFor(
+                    (int) $item['quarter_id'],
+                    (int) $item['particular_id']
+                );
+                $inputValue = $submitted && $item['value'] === null
+                    ? 0
+                    : $item['value'];
+                $valueIncludesParticipants = (bool) ($item['value_includes_participants'] ?? false)
+                    && $monthlyValues === null;
+
+                if ($valueIncludesParticipants) {
+                    $manualValue = $inputValue === null && $participantCount === 0
+                        ? null
+                        : max(0, (int) ($inputValue ?? $participantCount) - $participantCount);
+                } else {
+                    $manualValue = $inputValue;
+                }
+
+                $combinedValue = $manualValue === null && $participantCount === 0
+                    ? null
+                    : (int) ($manualValue ?? 0) + $participantCount;
+
                 $existing = DB::table('particular_items')
                     ->where('particular_id', $item['particular_id'])
                     ->where('quarter_id', $item['quarter_id'])
@@ -494,17 +540,15 @@ class ReportController extends Controller
                     DB::table('particular_items')
                         ->where('item_id', $existing->item_id)
                         ->update([
-                            'value' => $submitted && $item['value'] === null
-                                ? 0
-                                : $item['value'],
+                            'manual_value' => $manualValue,
+                            'value' => $combinedValue,
                         ]);
                 } else {
                     $itemId = DB::table('particular_items')->insertGetId([
                         'particular_id' => $item['particular_id'],
                         'quarter_id' => $item['quarter_id'],
-                        'value' => $submitted && $item['value'] === null
-                            ? 0
-                            : $item['value'],
+                        'manual_value' => $manualValue,
+                        'value' => $combinedValue,
                     ]);
                 }
 

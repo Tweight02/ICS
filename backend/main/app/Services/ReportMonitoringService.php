@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\ReportParticipantCoverage;
 use Illuminate\Support\Facades\DB;
 
 class ReportMonitoringService
@@ -106,13 +107,40 @@ class ReportMonitoringService
             return [];
         }
 
-        $rows = DB::table('quarters')
+        $reportRows = DB::table('quarters')
+            ->join('programs', 'quarters.program_id', '=', 'programs.program_id')
+            ->whereIn('quarters.church_id', $churchIds)
+            ->whereNull('programs.parent_id')
+            ->select(
+                'quarters.church_id',
+                'programs.department_id',
+                'quarters.year',
+                'quarters.quarter'
+            )
+            ->selectRaw('COUNT(*) AS report_count')
+            ->selectRaw('SUM(CASE WHEN quarters.mission_approve IS NOT NULL THEN 1 ELSE 0 END) AS approved_count')
+            ->selectRaw('SUM(CASE WHEN quarters.date_submitted IS NOT NULL THEN 1 ELSE 0 END) AS submitted_count')
+            ->groupBy(
+                'quarters.church_id',
+                'programs.department_id',
+                'quarters.year',
+                'quarters.quarter'
+            )
+            ->get();
+
+        $participantCoverage = ReportParticipantCoverage::counts();
+
+        $coverageRows = DB::table('quarters')
             ->join('programs', 'quarters.program_id', '=', 'programs.program_id')
             ->leftJoin('programs as sections', 'sections.parent_id', '=', 'programs.program_id')
             ->leftJoin('particulars', 'particulars.program_id', '=', 'sections.program_id')
             ->leftJoin('particular_items', function ($join) {
                 $join->on('particular_items.quarter_id', '=', 'quarters.quarter_id')
                     ->on('particular_items.particular_id', '=', 'particulars.particular_id');
+            })
+            ->leftJoinSub($participantCoverage, 'participant_coverage', function ($join) {
+                $join->on('participant_coverage.quarter_id', '=', 'quarters.quarter_id')
+                    ->on('participant_coverage.particular_id', '=', 'particulars.particular_id');
             })
             ->whereIn('quarters.church_id', $churchIds)
             ->whereNull('programs.parent_id')
@@ -122,13 +150,10 @@ class ReportMonitoringService
                 'quarters.year',
                 'quarters.quarter'
             )
-            ->selectRaw('COUNT(DISTINCT quarters.quarter_id) AS report_count')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN quarters.mission_approve IS NOT NULL THEN quarters.quarter_id END) AS approved_count')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN quarters.date_submitted IS NOT NULL THEN quarters.quarter_id END) AS submitted_count')
-            ->selectRaw('COUNT(DISTINCT particulars.particular_id) AS expected_count')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN particular_items.value IS NOT NULL THEN particular_items.particular_id END) AS entered_count')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN quarters.date_submitted IS NOT NULL THEN particulars.particular_id END) AS submitted_expected_count')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN quarters.date_submitted IS NOT NULL AND particular_items.value IS NOT NULL THEN particular_items.particular_id END) AS submitted_entered_count')
+            ->selectRaw('COUNT(particulars.particular_id) AS expected_count')
+            ->selectRaw('COUNT(CASE WHEN particular_items.value IS NOT NULL OR participant_coverage.participant_count IS NOT NULL THEN particular_items.particular_id END) AS entered_count')
+            ->selectRaw('COUNT(CASE WHEN quarters.date_submitted IS NOT NULL THEN particulars.particular_id END) AS submitted_expected_count')
+            ->selectRaw('COUNT(CASE WHEN quarters.date_submitted IS NOT NULL AND (particular_items.value IS NOT NULL OR participant_coverage.participant_count IS NOT NULL) THEN particular_items.particular_id END) AS submitted_entered_count')
             ->groupBy(
                 'quarters.church_id',
                 'programs.department_id',
@@ -137,9 +162,20 @@ class ReportMonitoringService
             )
             ->get();
 
+        $coverageByGroup = [];
+        foreach ($coverageRows as $row) {
+            $key = implode('|', [
+                $row->church_id,
+                $row->department_id,
+                $row->year,
+                $row->quarter,
+            ]);
+            $coverageByGroup[$key] = $row;
+        }
+
         $latestYears = [];
 
-        foreach ($rows as $row) {
+        foreach ($reportRows as $row) {
             $churchId = (int) $row->church_id;
             $departmentId = (int) $row->department_id;
             $year = (float) $row->year;
@@ -152,7 +188,7 @@ class ReportMonitoringService
 
         $stats = [];
 
-        foreach ($rows as $row) {
+        foreach ($reportRows as $row) {
             $churchId = (int) $row->church_id;
             $departmentId = (int) $row->department_id;
 
@@ -166,6 +202,13 @@ class ReportMonitoringService
                 continue;
             }
 
+            $key = implode('|', [
+                $row->church_id,
+                $row->department_id,
+                $row->year,
+                $row->quarter,
+            ]);
+            $coverage = $coverageByGroup[$key] ?? null;
             $quarter = &$stats[$churchId][$departmentId][$quarterNumber];
             $quarter ??= [
                 'total' => 0,
@@ -179,10 +222,10 @@ class ReportMonitoringService
             $quarter['total'] += (int) $row->report_count;
             $quarter['approved'] += (int) $row->approved_count;
             $quarter['submitted'] += (int) $row->submitted_count;
-            $quarter['expected'] += (int) $row->expected_count;
-            $quarter['entered'] += (int) $row->entered_count;
-            $quarter['submitted_expected'] += (int) $row->submitted_expected_count;
-            $quarter['submitted_entered'] += (int) $row->submitted_entered_count;
+            $quarter['expected'] += (int) ($coverage->expected_count ?? 0);
+            $quarter['entered'] += (int) ($coverage->entered_count ?? 0);
+            $quarter['submitted_expected'] += (int) ($coverage->submitted_expected_count ?? 0);
+            $quarter['submitted_entered'] += (int) ($coverage->submitted_entered_count ?? 0);
             unset($quarter);
         }
 

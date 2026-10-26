@@ -6,6 +6,8 @@ use App\Http\Requests\EventRequest;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
 use App\Support\EventParticulars;
+use App\Support\EventDepartments;
+use App\Support\EventRegistrationAttribution;
 use App\Support\EventUser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -13,6 +15,15 @@ use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
+    public function departments(Request $request)
+    {
+        $user = EventUser::fromRequest($request);
+
+        return response()->json([
+            'data' => EventDepartments::selectableFor($user->role)->get(),
+        ]);
+    }
+
     public function index(Request $request)
     {
         $request->validate([
@@ -68,6 +79,25 @@ class EventController extends Controller
         return new EventResource($this->find($request, $event));
     }
 
+    public function registrationLink(Request $request, int $event)
+    {
+        $user = EventUser::fromRequest($request);
+        abort_unless($user->role === 'church_representative' && $user->churchId, 403);
+
+        $event = $this->find($request, $event);
+        EventRegistrationAttribution::quarterId((int) $event->quarter_id, $user->churchId);
+
+        return response()->json([
+            'data' => [
+                'church_id' => $user->churchId,
+                'registration_token' => EventRegistrationAttribution::token(
+                    (int) $event->event_id,
+                    $user->churchId
+                ),
+            ],
+        ]);
+    }
+
     public function store(EventRequest $request)
     {
         $event = DB::transaction(function () use ($request) {
@@ -119,9 +149,10 @@ class EventController extends Controller
             default => null,
         };
 
+        $departmentId = $request->departmentId();
         $programId = EventParticulars::rootProgramId(
             $request->validated('particular_ids'),
-            $request->validated('department_id')
+            $departmentId
         );
         abort_unless($programId, 422, 'Choose particulars from one program in the selected department.');
         $eventDate = Carbon::createFromFormat('!Y-m-d', $request->validated('start_date'));
