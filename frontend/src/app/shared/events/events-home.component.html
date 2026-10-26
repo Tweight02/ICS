@@ -15,7 +15,7 @@
   </div>
 
   <!-- Banner (hidden on short screens so nothing has to scroll) -->
-  <div class="shrink-0 [@media(max-height:719px)]:hidden relative bg-[#143c30] rounded-2xl px-6 py-5 text-white shadow-md overflow-hidden bg-cover bg-center" style="background-image: linear-gradient(to right, rgba(20, 60, 48, 0.95), rgba(27, 77, 62, 0.75)), url('/images/mission-bg.png');">
+  <div class="shrink-0 [@media(max-height:719px)]:hidden relative bg-[#143c30] rounded-2xl px-6 py-5 text-white shadow-md overflow-hidden bg-cover bg-center" style="background-image: linear-gradient(to right, rgba(20, 60, 48, 0.95), rgba(27, 77, 62, 0.75)), url('/assets/images/mountain-bg.png');">
     <div class="relative z-10 space-y-1.5">
       <span class="text-[10px] uppercase tracking-wider font-bold bg-[#265c4b] px-2.5 py-1 rounded">TOGETHER IN MISSION</span>
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight">{{ config.bannerTitle }}</h2>
@@ -189,4 +189,3 @@
       <app-pagination class="shrink-0" [page]="currentPage" [pageSize]="pageSize" [total]="filteredEvents.length" label="events" (pageChange)="page = $event"></app-pagination>
     </div>
   </div>
-

@@ -1,7 +1,7 @@
 <div class="report-responsive-page particulars-modern min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
   <div class="mx-auto max-w-6xl">
 
-        <button type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="group mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
+        <button type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="report-back-button group mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
           px-5 text-sm font-medium tracking-widest text-white
          [text-shadow:0_0_10px_rgba(255,255,255,0.55)]
          shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)]
@@ -17,16 +17,16 @@
       Back
     </button>
 
-    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <header class="report-hero mb-6 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-4">
         <div>
-          <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
+          <p class="report-kicker text-xs font-bold uppercase tracking-widest text-emerald-700">
             Department Report
           </p>
-          <h1 class="font-serif text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
+          <h1 class="report-title font-serif text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
             {{ report?.department?.department_name || 'Report Particulars' }}
           </h1>
-          <p *ngIf="churchName" class="mt-0.5 text-sm font-medium text-emerald-900/70">
+          <p *ngIf="churchName" class="report-location mt-0.5 text-sm font-medium text-emerald-900/70">
             {{ churchName }}
             <span *ngIf="districtName"> · {{ districtName }}</span>
           </p>
@@ -34,7 +34,7 @@
       </div>
 
       <span
-        class="rounded-full border border-white/70 bg-white/70 px-4 py-1.5 text-sm
+        class="report-year-badge rounded-full border border-white/70 bg-white/70 px-4 py-1.5 text-sm
                font-semibold text-emerald-900 shadow-sm backdrop-blur-md">
         {{ selectedYear }}
       </span>
@@ -69,7 +69,7 @@
     <ng-container *ngIf="!loading && report">
 
       <div
-        class="mb-5 flex flex-wrap items-end justify-between gap-4">
+        class="report-toolbar mb-5 flex flex-wrap items-end justify-between gap-4">
 
         <div class="flex flex-wrap items-end gap-4">
           <label class="report-period-field">
@@ -143,7 +143,7 @@
 
       <div
         *ngIf="(report.programs?.length ?? 0) > 1"
-        class="mb-5 flex flex-wrap gap-2 border-b border-white/50 pb-4">
+        class="report-program-tabs mb-5 flex flex-wrap gap-2 border-b border-white/50 pb-4">
 
         <button
           *ngFor="let program of report.programs; trackBy: trackProgram"
@@ -155,7 +155,7 @@
             'border-white/70 bg-white/60 text-emerald-900 backdrop-blur-md hover:bg-white/90':
               selectedProgramId !== program.program_id
           }"
-          class="rounded-full border px-5 py-2 text-sm font-semibold transition">
+          class="report-program-tab rounded-full border px-5 py-2 text-sm font-semibold transition">
           {{ program.program_name }}
         </button>
       </div>
@@ -167,11 +167,11 @@
 
             <section
               *ngFor="let section of program.sections; let first = first; trackBy: trackSection"
-              class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
+              class="report-section-card mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
               <details [attr.open]="first ? '' : null">
-                <summary class="relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
+                <summary class="report-section-summary relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
                   <span class="block min-w-0 pr-32">{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
                   <span class="absolute right-5 top-2.5 flex items-center gap-2 whitespace-nowrap">
                     <span *ngIf="!isAnnualView && isQuarterEndorsed()"

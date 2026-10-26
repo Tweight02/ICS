@@ -140,6 +140,61 @@ describe('ReportParticulars', () => {
     expect(component).toBeTruthy();
   });
 
+  it('shows stewardship sections and totals in the dedicated report tabs', () => {
+    component.departmentId = 14;
+    component.report!.department!.department_id = 14;
+    component.report!.programs[0].sections = [
+      {
+        program_id: 21,
+        program_name: 'STEWARDSHIP',
+        particulars: [{
+          particular_id: 22,
+          particular_name: 'No. of Church Members',
+          quarters: [{ quarter_id: 9, quarter: 'Q1', year: 2026, value: 40, mission_approve: null }]
+        }]
+      },
+      {
+        program_id: 23,
+        program_name: 'OFFERING AND TITHES',
+        particulars: [
+          {
+            particular_id: 24,
+            particular_name: 'Offering',
+            quarters: [{
+              quarter_id: 9,
+              quarter: 'Q1',
+              year: 2026,
+              value: 1200,
+              monthly_values: { January: 100, February: 400, March: 700 },
+              mission_approve: null
+            }]
+          },
+          {
+            particular_id: 25,
+            particular_name: 'Tithes',
+            quarters: [{ quarter_id: 9, quarter: 'Q1', year: 2026, value: 3400, mission_approve: null }]
+          }
+        ]
+      }
+    ];
+
+    const program = component.getSelectedProgram()!;
+    expect(component.isStewardshipReport).toBe(true);
+    expect(component.getVisibleSections(program).map(section => section.program_name))
+      .toEqual(['STEWARDSHIP']);
+
+    component.selectStewardshipTab('offering');
+    fixture.detectChanges();
+    expect(component.getVisibleSections(program).map(section => section.program_name))
+      .toEqual(['OFFERING AND TITHES']);
+    expect(component.getStewardshipTotal('offering')).toBe(1200);
+    expect(component.getStewardshipTotal('tithe')).toBe(3400);
+    expect(component.getQuarterMonthNames(component.getSelectedQuarter()!))
+      .toEqual(['January', 'February', 'March']);
+    expect(fixture.nativeElement.textContent).toContain('January');
+    expect(fixture.nativeElement.querySelectorAll('input[type="number"]')).toHaveLength(6);
+  });
+
   it('loads and saves reports for the local church assigned to the representative district', () => {
     expect(getDepartmentReport).toHaveBeenCalledWith(2, 3);
 

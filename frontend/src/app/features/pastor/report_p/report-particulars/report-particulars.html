@@ -1,7 +1,7 @@
-<div [class.particulars-page]="!embedded" [class.particulars-modern]="!embedded" [ngClass]="embedded ? 'text-emerald-950' : 'report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10'">
+<div [class.particulars-page]="!embedded" [class.particulars-modern]="!embedded" [class.stewardship-report]="isStewardshipReport" [ngClass]="embedded ? 'text-emerald-950' : 'report-responsive-page min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10'">
   <div [ngClass]="embedded ? '' : 'mx-auto max-w-6xl'">
 
-        <button *ngIf="!embedded" type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="group mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
+        <button *ngIf="!embedded" type="button" (click)="backToPrograms()" style="border-radius: 9999px" class="report-back-button group mb-4 inline-flex h-9 items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600
           px-5 text-sm font-medium tracking-widest text-white
          [text-shadow:0_0_10px_rgba(255,255,255,0.55)]
          shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)]
@@ -17,16 +17,16 @@
       Back
     </button>
 
-    <header *ngIf="!embedded" class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <header *ngIf="!embedded" class="report-hero mb-6 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-4">
         <div>
-          <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
+          <p class="report-kicker text-xs font-bold uppercase tracking-widest text-emerald-700">
             Department Report
           </p>
-          <h1 class="font-serif text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
-            {{ report?.department?.department_name || 'Report Particulars' }}
+          <h1 class="report-title font-serif text-2xl font-bold tracking-tight text-emerald-950 sm:text-3xl">
+            {{ isStewardshipReport ? (getSelectedProgram()?.program_name || 'Stewardship Quarterly Report') : (report?.department?.department_name || 'Report Particulars') }}
           </h1>
-          <p *ngIf="churchName" class="mt-0.5 text-sm font-medium text-emerald-900/70">
+          <p *ngIf="churchName" class="report-location mt-0.5 text-sm font-medium text-emerald-900/70">
             {{ churchName }}
             <span *ngIf="districtName"> · {{ districtName }}</span>
           </p>
@@ -54,7 +54,7 @@
     <ng-container *ngIf="!loading && report">
 
       <div
-        class="mb-5 flex flex-wrap items-end justify-between gap-4">
+        class="report-toolbar mb-5 flex flex-wrap items-end justify-between gap-4">
 
         <div class="flex flex-wrap items-end gap-4">
           <label class="report-period-field">
@@ -106,7 +106,7 @@
 
       <div
         *ngIf="(report.programs?.length ?? 0) > 1"
-        class="mb-5 flex flex-wrap gap-2 border-b border-white/50 pb-4">
+        class="report-program-tabs mb-5 flex flex-wrap gap-2 border-b border-white/50 pb-4">
 
         <button
           *ngFor="let program of report.programs; trackBy: trackProgram"
@@ -118,10 +118,46 @@
             'border-white/70 bg-white/60 text-emerald-900 backdrop-blur-md hover:bg-white/90':
               selectedProgramId !== program.program_id
           }"
-          class="rounded-full border px-5 py-2 text-sm font-semibold transition">
+          class="report-program-tab rounded-full border px-5 py-2 text-sm font-semibold transition">
           {{ program.program_name }}
         </button>
       </div>
+
+      <ng-container *ngIf="isStewardshipReport">
+        <div class="stewardship-tabs" role="tablist" aria-label="Stewardship report sections">
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeStewardshipTab === 'activities'"
+            [attr.aria-pressed]="activeStewardshipTab === 'activities'"
+            [class.active]="activeStewardshipTab === 'activities'"
+            class="stewardship-tab"
+            (click)="selectStewardshipTab('activities')">
+            Stewardship Activities
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeStewardshipTab === 'offering'"
+            [attr.aria-pressed]="activeStewardshipTab === 'offering'"
+            [class.active]="activeStewardshipTab === 'offering'"
+            class="stewardship-tab"
+            (click)="selectStewardshipTab('offering')">
+            Offering and Tithes
+          </button>
+        </div>
+
+        <div *ngIf="activeStewardshipTab === 'offering'" class="stewardship-summary" aria-label="Offering and tithe totals">
+          <article class="stewardship-summary-card">
+            <span>Total Offering</span>
+            <strong>₱{{ getStewardshipTotal('offering') | number: '1.2-2' }}</strong>
+          </article>
+          <article class="stewardship-summary-card">
+            <span>Total Tithes</span>
+            <strong>₱{{ getStewardshipTotal('tithe') | number: '1.2-2' }}</strong>
+          </article>
+        </div>
+      </ng-container>
 
       <div class="grid gap-6">
 
@@ -129,12 +165,12 @@
           <ng-container *ngIf="getSelectedProgram() as program">
 
             <section
-              *ngFor="let section of program.sections; let first = first; trackBy: trackSection"
-              class="mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
+              *ngFor="let section of getVisibleSections(program); let first = first; trackBy: trackSection"
+              class="report-section-card mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
               <details [attr.open]="first ? '' : null">
-                <summary class="relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
+                <summary class="report-section-summary relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
                   <span class="block min-w-0 pr-32">{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
                   <span class="absolute right-5 top-2.5 flex items-center gap-2 whitespace-nowrap">
                     <span *ngIf="!isAnnualView && isQuarterEndorsed()"
@@ -168,10 +204,18 @@
                       </ng-container>
 
                       <ng-template #quarterHeader>
-                        <th
-                          class="w-40 min-w-[150px] px-5 py-3.5 text-center text-xs font-bold">
-                          {{ getSelectedQuarter()?.quarter || 'Amount' }}
-                        </th>
+                        <ng-container *ngIf="isStewardshipMonthlySection(section) && getSelectedQuarter() as quarter; else singleQuarterHeader">
+                          <th *ngFor="let month of getQuarterMonthNames(quarter)"
+                            class="min-w-[110px] px-3 py-3.5 text-center text-xs font-bold">
+                            {{ month }}
+                          </th>
+                          <th class="w-32 min-w-[110px] px-3 py-3.5 text-center text-xs font-bold">Total</th>
+                        </ng-container>
+                        <ng-template #singleQuarterHeader>
+                          <th class="w-40 min-w-[150px] px-5 py-3.5 text-center text-xs font-bold">
+                            {{ getSelectedQuarter()?.quarter || 'Amount' }}
+                          </th>
+                        </ng-template>
                       </ng-template>
                     </tr>
                   </thead>
@@ -204,31 +248,63 @@
                       </ng-container>
 
                       <ng-template #quarterCell>
-                        <td class="px-5 py-3.5 text-center tabular-nums text-emerald-950/80">
+                        <ng-container *ngIf="isStewardshipMonthlySection(section); else singleQuarterCell">
                           <ng-container *ngIf="getSelectedQuarter() as quarter">
                             <ng-container
                               *ngIf="getParticularQuarterRecord(particular, quarter) as record; else noValue">
 
-                              <input
-                                *ngIf="canEditDepartmentReport; else quarterValue"
-                                type="number"
-                                min="0"
-                                step="any"
-                                [attr.aria-label]="particular.particular_name"
-                                [(ngModel)]="record.value"
-                                [ngModelOptions]="{ standalone: true }"
-                                [disabled]="savingAction || isQuarterApproved(quarter)"
-                                class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
-                              <ng-template #quarterValue>
-                                <span>{{ isRecordSubmitted(record) ? (record.value ?? '—') : '—' }}</span>
-                              </ng-template>
+                              <ng-container *ngFor="let month of getQuarterMonthNames(quarter)">
+                                <td class="min-w-[110px] px-3 py-3.5 text-center tabular-nums text-emerald-950/80">
+                                  <input
+                                    *ngIf="canEditDepartmentReport && !isQuarterApproved(quarter); else monthlyQuarterValue"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    [attr.aria-label]="particular.particular_name + ' ' + month"
+                                    [ngModel]="getStewardshipMonthValue(record, month)"
+                                    (ngModelChange)="updateStewardshipMonth(record, month, $event)"
+                                    [ngModelOptions]="{ standalone: true }"
+                                    [disabled]="savingAction"
+                                    class="w-full min-w-[76px] rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
+                                  <ng-template #monthlyQuarterValue>
+                                    <span>{{ getStewardshipMonthValue(record, month) ?? (isRecordSubmitted(record) ? '0' : '—') }}</span>
+                                  </ng-template>
+                                </td>
+                              </ng-container>
+                              <td class="px-3 py-3.5 text-center font-semibold tabular-nums text-emerald-950/80">
+                                ₱{{ record.value ?? 0 | number: '1.2-2' }}
+                              </td>
                             </ng-container>
 
                             <ng-template #noValue>
-                              <span class="text-emerald-900/40">—</span>
+                              <td [attr.colspan]="getQuarterMonthNames(quarter).length + 1"
+                                class="px-5 py-3.5 text-center text-emerald-900/40">—</td>
                             </ng-template>
                           </ng-container>
-                        </td>
+                        </ng-container>
+
+                        <ng-template #singleQuarterCell>
+                          <td class="px-5 py-3.5 text-center tabular-nums text-emerald-950/80">
+                            <ng-container *ngIf="getSelectedQuarter() as quarter">
+                              <ng-container *ngIf="getParticularQuarterRecord(particular, quarter) as record; else noValue">
+                                <input
+                                  *ngIf="canEditDepartmentReport; else quarterValue"
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  [attr.aria-label]="particular.particular_name"
+                                  [(ngModel)]="record.value"
+                                  [ngModelOptions]="{ standalone: true }"
+                                  [disabled]="savingAction || isQuarterApproved(quarter)"
+                                  class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
+                                <ng-template #quarterValue>
+                                  <span>{{ isRecordSubmitted(record) ? (record.value ?? '—') : '—' }}</span>
+                                </ng-template>
+                              </ng-container>
+                              <ng-template #noValue><span class="text-emerald-900/40">—</span></ng-template>
+                            </ng-container>
+                          </td>
+                        </ng-template>
                       </ng-template>
                     </tr>
 

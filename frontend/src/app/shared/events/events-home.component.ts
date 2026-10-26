@@ -181,6 +181,15 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const dated = this.events
       .filter((e) => toDate(e.start_date))
       .sort((a, b) => toDate(a.start_date)!.getTime() - toDate(b.start_date)!.getTime());
+
+    if (this.events.some((e) => statusOf(e) === 'Upcoming')) {
+      this.selectedStatus = 'Upcoming';
+    } else if (this.events.some((e) => statusOf(e) === 'Ongoing')) {
+      this.selectedStatus = 'Ongoing';
+    } else {
+      this.selectedStatus = 'all';
+    }
+
     if (dated.length === 0) return;
 
     const next =
@@ -190,9 +199,6 @@ export class EventsHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const s = toDate(next.start_date)!;
     this.calendarDate = new Date(s.getFullYear(), s.getMonth(), 1);
     this.selectedMonth = this.calendarLabel;
-
-    // Nothing upcoming or ongoing: show everything instead of an empty list.
-    if (!this.events.some((e) => statusOf(e) !== 'Past')) this.selectedStatus = 'all';
   }
 
   get hasSampleEvents(): boolean {

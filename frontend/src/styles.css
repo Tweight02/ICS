@@ -26,6 +26,10 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+.report-responsive-page.monitoring-list-shell {
+  background: transparent;
+}
+
 .report-responsive-page .overflow-x-auto {
   max-width: 100%;
   min-width: 0;

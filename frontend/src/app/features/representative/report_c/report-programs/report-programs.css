@@ -1,4 +1,8 @@
 @media (max-width: 40rem) {
+  .report-responsive-page .report-table {
+    min-width: 0;
+  }
+
   .report-table,
   .report-table tbody {
     display: block;
