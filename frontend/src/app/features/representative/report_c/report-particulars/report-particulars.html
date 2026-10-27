@@ -117,30 +117,7 @@
       </div>
 
       <ng-container *ngIf="isStewardshipReport">
-        <div class="stewardship-tabs" role="tablist" aria-label="Stewardship report sections">
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="activeStewardshipTab === 'activities'"
-            [attr.aria-pressed]="activeStewardshipTab === 'activities'"
-            [class.active]="activeStewardshipTab === 'activities'"
-            class="stewardship-tab"
-            (click)="selectStewardshipTab('activities')">
-            Stewardship Activities
-          </button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="activeStewardshipTab === 'offering'"
-            [attr.aria-pressed]="activeStewardshipTab === 'offering'"
-            [class.active]="activeStewardshipTab === 'offering'"
-            class="stewardship-tab"
-            (click)="selectStewardshipTab('offering')">
-            Offering and Tithes
-          </button>
-        </div>
-
-        <div *ngIf="activeStewardshipTab === 'offering'" class="stewardship-summary" aria-label="Offering and tithe totals">
+        <div class="stewardship-summary" aria-label="Offering and tithe totals">
           <article class="stewardship-summary-card">
             <span>Total Offering</span>
             <strong>₱{{ getStewardshipTotal('offering') | number: '1.2-2' }}</strong>
@@ -162,7 +139,7 @@
             <section *ngFor="let section of getVisibleSections(program); let first = first; trackBy: trackSection" class="report-section-card mb-6 overflow-hidden rounded-2xl border border-white/60 bg-white/60
                      shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
 
-              <details [attr.open]="first ? '' : null">
+              <details [attr.open]="first || isStewardshipReport ? '' : null">
                 <summary class="report-section-summary relative block cursor-pointer list-none bg-emerald-900/10 px-5 py-2.5 text-sm font-bold uppercase tracking-wider leading-5 text-emerald-950">
                   <span class="block min-w-0 pr-32">
                     {{ section.program_name || section.section_name || program.program_name || 'Particular' }}

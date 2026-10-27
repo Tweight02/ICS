@@ -140,7 +140,7 @@ describe('ReportParticulars', () => {
     expect(component).toBeTruthy();
   });
 
-  it('shows stewardship sections and totals in the dedicated report tabs', () => {
+  it('shows stewardship and offering sections together in one report view', () => {
     component.departmentId = 14;
     component.report!.department!.department_id = 14;
     component.report!.programs[0].sections = [
@@ -181,18 +181,18 @@ describe('ReportParticulars', () => {
     const program = component.getSelectedProgram()!;
     expect(component.isStewardshipReport).toBe(true);
     expect(component.getVisibleSections(program).map(section => section.program_name))
-      .toEqual(['STEWARDSHIP']);
+      .toEqual(['STEWARDSHIP', 'OFFERING AND TITHES']);
 
-    component.selectStewardshipTab('offering');
     fixture.detectChanges();
-    expect(component.getVisibleSections(program).map(section => section.program_name))
-      .toEqual(['OFFERING AND TITHES']);
+    expect(fixture.nativeElement.textContent).toContain('STEWARDSHIP');
+    expect(fixture.nativeElement.textContent).toContain('OFFERING AND TITHES');
     expect(component.getStewardshipTotal('offering')).toBe(1200);
     expect(component.getStewardshipTotal('tithe')).toBe(3400);
     expect(component.getQuarterMonthNames(component.getSelectedQuarter()!))
       .toEqual(['January', 'February', 'March']);
     expect(fixture.nativeElement.textContent).toContain('January');
-    expect(fixture.nativeElement.querySelectorAll('input[type="number"]')).toHaveLength(6);
+    expect(fixture.nativeElement.querySelectorAll('details[open]')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelectorAll('input[type="number"]')).toHaveLength(7);
   });
 
   it('loads and saves reports for the local church assigned to the representative district', () => {
@@ -288,7 +288,7 @@ describe('ReportParticulars', () => {
     });
   });
 
-  it('starts section accordions collapsed and allows multiple sections to stay open', () => {
+  it('opens the first section by default and allows multiple sections to stay open', () => {
     const accordions = Array.from(
       fixture.nativeElement.querySelectorAll('details')
     ) as HTMLDetailsElement[];
@@ -296,12 +296,8 @@ describe('ReportParticulars', () => {
     const summary = details.querySelector('summary') as HTMLElement;
 
     expect(summary.textContent).toContain('Section');
-    expect(details.open).toBe(false);
-
-    summary.click();
-    fixture.detectChanges();
-
     expect(details.open).toBe(true);
+    expect(nextDetails.open).toBe(false);
     expect(details.querySelectorAll('input[type="number"]')).toHaveLength(2);
 
     (nextDetails.querySelector('summary') as HTMLElement).click();
