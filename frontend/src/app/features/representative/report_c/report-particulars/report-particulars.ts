@@ -90,7 +90,6 @@ interface QuarterRef {
 }
 
 type AutoSaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
-type StewardshipTab = 'activities' | 'offering';
 
 const STEWARDSHIP_MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -130,7 +129,6 @@ export class ReportParticulars implements OnInit, OnDestroy {
   selectedYear: number | null = null;
   selectedQuarterId: number | null = null;
   selectedProgramId: number | null = null;
-  activeStewardshipTab: StewardshipTab = 'activities';
 
   isAnnualView = false;
   private readonly loadingState = signal(false);
@@ -448,17 +446,7 @@ ngOnInit(): void {
   }
 
   getVisibleSections(program: Program): Section[] {
-    if (!this.isStewardshipReport) {
-      return program.sections;
-    }
-
-    return program.sections.filter(section =>
-      this.isOfferingSection(section) === (this.activeStewardshipTab === 'offering')
-    );
-  }
-
-  selectStewardshipTab(tab: StewardshipTab): void {
-    this.activeStewardshipTab = tab;
+    return program.sections;
   }
 
   getStewardshipTotal(type: 'offering' | 'tithe'): number {
