@@ -89,34 +89,7 @@
       </div>
 
       <ng-container *ngIf="isStewardshipReport">
-        <div class="mb-4 flex flex-wrap gap-2 border-b border-emerald-900/10 pb-3" role="tablist" aria-label="Stewardship report sections">
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="activeStewardshipTab === 'activities'"
-            [attr.aria-pressed]="activeStewardshipTab === 'activities'"
-            [ngClass]="activeStewardshipTab === 'activities'
-              ? 'border-emerald-800 bg-emerald-800 text-white shadow-md shadow-emerald-900/20'
-              : 'border-white/80 bg-white/80 text-emerald-900 hover:bg-white'"
-            class="min-h-9 rounded-lg border px-4 py-2 text-xs font-bold shadow-sm transition sm:text-sm"
-            (click)="selectStewardshipTab('activities')">
-            Stewardship Activities
-          </button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="activeStewardshipTab === 'offering'"
-            [attr.aria-pressed]="activeStewardshipTab === 'offering'"
-            [ngClass]="activeStewardshipTab === 'offering'
-              ? 'border-emerald-800 bg-emerald-800 text-white shadow-md shadow-emerald-900/20'
-              : 'border-white/80 bg-white/80 text-emerald-900 hover:bg-white'"
-            class="min-h-9 rounded-lg border px-4 py-2 text-xs font-bold shadow-sm transition sm:text-sm"
-            (click)="selectStewardshipTab('offering')">
-            Offering and Tithes
-          </button>
-        </div>
-
-        <div *ngIf="activeStewardshipTab === 'offering'" class="mb-4 grid gap-3 sm:grid-cols-2" aria-label="Offering and tithe totals">
+        <div class="mb-4 grid gap-3 sm:grid-cols-2" aria-label="Offering and tithe totals">
           <article class="grid gap-1 rounded-xl border border-emerald-900/10 bg-white/80 p-4 shadow-sm">
             <span class="text-xs font-bold uppercase tracking-wider text-emerald-900/70">Total Offering</span>
             <strong class="text-xl font-bold tabular-nums text-emerald-950">₱{{ getStewardshipTotal('offering') | number: '1.2-2' }}</strong>
@@ -137,7 +110,7 @@
               *ngFor="let section of getVisibleSections(program); let first = first; trackBy: trackSection"
               class="mb-1.5 overflow-hidden rounded-lg border border-white/80 bg-white/90 shadow-sm shadow-emerald-950/5 backdrop-blur transition-shadow hover:border-emerald-900/15 hover:shadow-md">
 
-              <details [attr.open]="first && expandFirstSection ? '' : null">
+              <details [attr.open]="isStewardshipReport || (first && expandFirstSection) ? '' : null">
                 <summary class="flex min-h-9 list-none cursor-pointer items-center justify-between gap-2 border-b border-emerald-900/5 bg-gradient-to-r from-white to-emerald-50/65 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] leading-4 text-emerald-950 transition hover:from-emerald-50 hover:to-emerald-100/70 marker:hidden [&::-webkit-details-marker]:hidden sm:px-4">
                   <span class="block min-w-0 flex-1">{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
                 </summary>

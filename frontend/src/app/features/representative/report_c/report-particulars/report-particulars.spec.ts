@@ -140,9 +140,6 @@ describe('ReportParticulars', () => {
     expect(component).toBeTruthy();
   });
 
-<<<<<<< Updated upstream
-  it('shows stewardship and offering sections together in one report view', () => {
-=======
   it('keeps program selectors unfilled while identifying the selected program', () => {
     const buttons = fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
     const programButton = Array.from(buttons)
@@ -195,8 +192,7 @@ describe('ReportParticulars', () => {
     vi.useRealTimers();
   });
 
-  it('shows stewardship sections and totals in the dedicated report tabs', () => {
->>>>>>> Stashed changes
+  it('shows stewardship and offering sections together in one report view', () => {
     component.departmentId = 14;
     component.report!.department!.department_id = 14;
     component.report!.programs[0].sections = [
@@ -242,6 +238,9 @@ describe('ReportParticulars', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('STEWARDSHIP');
     expect(fixture.nativeElement.textContent).toContain('OFFERING AND TITHES');
+    expect(fixture.nativeElement.querySelector('[role="tablist"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Total Offering');
+    expect(fixture.nativeElement.textContent).toContain('Total Tithes');
     expect(component.getStewardshipTotal('offering')).toBe(1200);
     expect(component.getStewardshipTotal('tithe')).toBe(3400);
     expect(component.getQuarterMonthNames(component.getSelectedQuarter()!))
