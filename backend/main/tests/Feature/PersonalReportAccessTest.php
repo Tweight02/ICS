@@ -87,8 +87,10 @@ function personalReportAccessFixture(): array
         'departmentId' => $departmentId,
         'baptismIds' => $baptismIds,
         'deathIds' => $deathIds,
-        'director' => personalReportAccessUser($districtId, $departmentId, 'director', 'director'),
-        'assistant' => personalReportAccessUser($districtId, $departmentId, 'assistant', 'assistant'),
+        'director' => personalReportAccessUser($districtId, 16, 'director', 'director'),
+        'assistant' => personalReportAccessUser($districtId, 16, 'assistant', 'assistant'),
+        'otherDepartmentDirector' => personalReportAccessUser($districtId, $departmentId, 'director', 'other-director'),
+        'otherDepartmentAssistant' => personalReportAccessUser($districtId, $departmentId, 'assistant', 'other-assistant'),
         'representative' => personalReportAccessUser($districtId, $departmentId, 'representative', 'representative'),
     ];
 }
@@ -117,6 +119,20 @@ test('director and assistant personal reports are limited to their assigned dist
 
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/deaths/'.$fixture['deathIds'][1])
+            ->assertForbidden();
+    }
+});
+
+test('directors and assistants outside Ministerial and Evangelism cannot access personal records', function () {
+    $fixture = personalReportAccessFixture();
+
+    foreach (['otherDepartmentDirector', 'otherDepartmentAssistant'] as $role) {
+        $this->actingAs($fixture[$role], 'sanctum')
+            ->getJson('/api/baptisms')
+            ->assertForbidden();
+
+        $this->actingAs($fixture[$role], 'sanctum')
+            ->getJson('/api/deaths')
             ->assertForbidden();
     }
 });

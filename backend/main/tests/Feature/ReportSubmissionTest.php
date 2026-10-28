@@ -51,7 +51,7 @@ function reportSubmissionFixture(): array
         'mission_approve' => null,
     ]);
 
-    return compact('churchId', 'departmentId', 'particularIds', 'quarterId');
+    return compact('churchId', 'departmentId', 'programId', 'sectionId', 'particularIds', 'quarterId');
 }
 
 function createDistrictPastor(int $churchId, int $departmentId): User
@@ -104,6 +104,74 @@ function createReportAssistant(int $churchId, int $departmentId): User
         'status' => 'active',
     ]);
 }
+
+test('completed event purposes add one report count per event instead of per participant', function () {
+    $fixture = reportSubmissionFixture();
+    $assistant = createReportAssistant($fixture['churchId'], $fixture['departmentId']);
+    $campingId = DB::table('particulars')->insertGetId([
+        'program_id' => $fixture['sectionId'],
+        'particular_name' => 'Camping',
+    ]);
+
+    $createCompletedCampingEvent = function (string $title) use ($fixture, $campingId): int {
+        $eventId = DB::table('events')->insertGetId([
+            'quarter_id' => $fixture['quarterId'],
+            'church_id' => $fixture['churchId'],
+            'title' => $title,
+            'date_start' => now('Asia/Manila')->subDays(2)->toDateString(),
+            'date_end' => now('Asia/Manila')->subDay()->toDateString(),
+            'time_start' => '09:00:00',
+            'time_end' => '10:00:00',
+            'details' => '',
+            'status' => 'completed',
+            'location' => 'Church',
+        ], 'event_id');
+        DB::table('event_particular')->insert([
+            'event_id' => $eventId,
+            'particular_id' => $campingId,
+        ]);
+
+        return $eventId;
+    };
+
+    $firstEventId = $createCompletedCampingEvent('Youth Camping');
+    foreach (['One', 'Two'] as $lastName) {
+        DB::table('participants')->insert([
+            'event_id' => $firstEventId,
+            'church_id' => $fixture['churchId'],
+            'first_name' => 'Youth',
+            'middle_name' => '',
+            'last_name' => $lastName,
+            'extension_name' => null,
+            'age' => '20',
+            'gender' => 'other',
+            'registration_status' => 'confirmed',
+        ]);
+    }
+
+    $this->actingAs($assistant, 'sanctum');
+    $reportUrl = "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report";
+    $particulars = $this->getJson($reportUrl)->assertOk()->json('programs.0.sections.0.particulars');
+    expect($particulars[2]['quarters'][0]['participant_count'])->toBe(0)
+        ->and($particulars[2]['quarters'][0]['completed_event_count'])->toBe(1)
+        ->and($particulars[2]['quarters'][0]['combined_value'])->toBe(1.0);
+
+    $createCompletedCampingEvent('Another Youth Camping');
+    $this->postJson($reportUrl.'/save', [
+        'items' => [[
+            'particular_id' => $campingId,
+            'quarter_id' => $fixture['quarterId'],
+            'value' => 5,
+            'value_includes_participants' => true,
+        ]],
+    ])->assertOk();
+    $this->assertDatabaseHas('particular_items', [
+        'particular_id' => $campingId,
+        'quarter_id' => $fixture['quarterId'],
+        'manual_value' => 3,
+        'value' => 5,
+    ]);
+});
 
 test('reverting a confirmed event participant to pending removes their report counts', function () {
     $fixture = reportSubmissionFixture();
@@ -171,17 +239,17 @@ test('reverting a confirmed event participant to pending removes their report co
         ->assertOk()
         ->assertJsonPath('data.status', 'confirmed');
     $this->patchJson($participantUrl, ['status' => 'confirmed'])->assertOk();
-    $this->assertDatabaseCount('event_participant_contributions', 2);
+    $this->assertDatabaseCount('event_participant_contributions', 1);
 
     $particulars = $getReport();
     $quarterData = $particulars[0]['quarters'][0];
     expect((float) $quarterData['value'])->toBe(5.0)
         ->and($quarterData['participant_count'])->toBe(1)
         ->and((float) $quarterData['combined_value'])->toBe(6.0)
-        ->and($particulars[1]['quarters'][0]['participant_count'])->toBe(1)
+        ->and($particulars[1]['quarters'][0]['participant_count'])->toBe(0)
         ->and(app(ReportMonitoringService::class)
             ->departmentApprovals($fixture['churchId'])[$fixture['departmentId']]['q1_data_progress'])
-        ->toBe(100);
+        ->toBe(50);
 
     $this->postJson($reportUrl.'/save', [
         'items' => [[
@@ -212,13 +280,13 @@ test('reverting a confirmed event participant to pending removes their report co
     $withLegacyConfirmed = $getReport();
     expect($withLegacyConfirmed[0]['quarters'][0]['participant_count'])->toBe(2)
         ->and((float) $withLegacyConfirmed[0]['quarters'][0]['combined_value'])->toBe(8.0)
-        ->and($withLegacyConfirmed[1]['quarters'][0]['participant_count'])->toBe(2);
+        ->and($withLegacyConfirmed[1]['quarters'][0]['participant_count'])->toBe(0);
 
     $this->patchJson($participantUrl, ['status' => 'pending'])->assertOk();
     $pendingAgain = $getReport();
     expect($pendingAgain[0]['quarters'][0]['participant_count'])->toBe(1)
         ->and((float) $pendingAgain[0]['quarters'][0]['combined_value'])->toBe(7.0)
-        ->and($pendingAgain[1]['quarters'][0]['participant_count'])->toBe(1);
+        ->and($pendingAgain[1]['quarters'][0]['participant_count'])->toBe(0);
     $this->assertDatabaseCount('event_participant_contributions', 0);
 
     $this->deleteJson($participantUrl)->assertNoContent();
@@ -227,7 +295,7 @@ test('reverting a confirmed event participant to pending removes their report co
     $retainedQuarterData = $retainedParticulars[0]['quarters'][0];
     expect($retainedQuarterData['participant_count'])->toBe(1)
         ->and((float) $retainedQuarterData['combined_value'])->toBe(7.0)
-        ->and($retainedParticulars[1]['quarters'][0]['participant_count'])->toBe(1);
+        ->and($retainedParticulars[1]['quarters'][0]['participant_count'])->toBe(0);
     $this->assertDatabaseCount('event_participant_contributions', 0);
     $this->assertDatabaseHas('particular_items', [
         'particular_id' => $particularId,
@@ -261,7 +329,7 @@ test('reverting a confirmed event participant to pending removes their report co
         'participant_id' => $lateParticipantId,
         'registration_status' => 'pending',
     ]);
-    $this->assertDatabaseCount('event_participant_contributions', 2);
+    $this->assertDatabaseCount('event_participant_contributions', 0);
 });
 
 test('assistant can comment on baptism and death reports when no quarter exists yet', function () {
@@ -457,6 +525,86 @@ test('submitting a completely blank report stores every entry as zero', function
     }
 });
 
+test('representative cannot submit a quarter until the previous quarter is approved', function () {
+    $fixture = reportSubmissionFixture();
+    $programId = DB::table('programs')
+        ->where('department_id', $fixture['departmentId'])
+        ->whereNull('parent_id')
+        ->value('program_id');
+    $q2Id = DB::table('quarters')->insertGetId([
+        'program_id' => $programId,
+        'church_id' => $fixture['churchId'],
+        'quarter' => 'Q2',
+        'year' => '2026',
+        'date_submitted' => null,
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    $representative = createRepresentative(
+        $fixture['churchId'],
+        $fixture['departmentId']
+    );
+    $url = "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/save";
+    $payload = [
+        'submitted' => true,
+        'items' => array_map(
+            fn (int $particularId) => [
+                'particular_id' => $particularId,
+                'quarter_id' => $q2Id,
+                'value' => 10,
+            ],
+            $fixture['particularIds']
+        ),
+    ];
+
+    $this->actingAs($representative, 'sanctum')
+        ->postJson($url, $payload)
+        ->assertUnprocessable()
+        ->assertJsonPath(
+            'message',
+            'The previous quarter must be approved before submitting this report.'
+        );
+
+    $this->assertDatabaseMissing('comments', [
+        'quarter_id' => $q2Id,
+        'details' => 'Report submitted.',
+    ]);
+
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $q2Id,
+        'date_submitted' => null,
+    ]);
+
+    DB::table('quarters')
+        ->where('quarter_id', $fixture['quarterId'])
+        ->update(['mission_approve' => '2026-03-01']);
+
+    $this->actingAs($representative, 'sanctum')
+        ->postJson($url, $payload)
+        ->assertOk();
+
+    $this->assertDatabaseHas('comments', [
+        'quarter_id' => $q2Id,
+        'commented_by' => $representative->user_id,
+        'details' => 'Report submitted.',
+    ]);
+
+    $this->actingAs($representative, 'sanctum')
+        ->postJson($url, $payload)
+        ->assertOk();
+
+    $this->assertDatabaseHas('comments', [
+        'quarter_id' => $q2Id,
+        'commented_by' => $representative->user_id,
+        'details' => 'Report resubmitted.',
+    ]);
+
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $q2Id,
+        'date_submitted' => now()->toDateString(),
+    ]);
+});
+
 test('a later quarter cannot be approved until the first quarter is approved', function () {
     $fixture = reportSubmissionFixture();
     $q2Id = DB::table('quarters')->insertGetId([
@@ -493,15 +641,24 @@ test('a later quarter cannot be approved until the first quarter is approved', f
     $this->actingAs($pastor, 'sanctum')
         ->postJson(
             "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/endorse",
-            ['year' => 2026, 'quarter' => 'Q2']
+            ['program_id' => $fixture['programId'], 'year' => 2026, 'quarter' => 'Q2']
         )
         ->assertOk();
+    $this->assertDatabaseHas('comments', [
+        'quarter_id' => $q2Id,
+        'commented_by' => $pastor->user_id,
+        'details' => 'Report endorsed.',
+    ]);
 
     $assistant = createReportAssistant($fixture['churchId'], $fixture['departmentId']);
     $approvalUrl = "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/approve";
 
     $this->actingAs($assistant, 'sanctum')
-        ->postJson($approvalUrl, ['year' => 2026, 'quarter' => 'Q2'])
+        ->postJson($approvalUrl, [
+            'program_id' => $fixture['programId'],
+            'year' => 2026,
+            'quarter' => 'Q2',
+        ])
         ->assertUnprocessable()
         ->assertJsonPath(
             'message',
@@ -526,12 +683,103 @@ test('a later quarter cannot be approved until the first quarter is approved', f
         ]);
 
     $this->actingAs($assistant, 'sanctum')
-        ->postJson($approvalUrl, ['year' => 2026, 'quarter' => 'Q2'])
+        ->postJson($approvalUrl, [
+            'program_id' => $fixture['programId'],
+            'year' => 2026,
+            'quarter' => 'Q2',
+        ])
         ->assertOk();
+    $this->assertDatabaseHas('comments', [
+        'quarter_id' => $q2Id,
+        'commented_by' => $assistant->user_id,
+        'details' => 'Report approved.',
+    ]);
 
     $this->assertDatabaseHas('quarters', [
         'quarter_id' => $q2Id,
         'mission_approve' => now()->toDateString(),
+    ]);
+});
+
+test('endorsing and approving one report program leaves other report programs unchanged', function () {
+    $fixture = reportSubmissionFixture();
+    $otherProgramId = DB::table('programs')->insertGetId([
+        'department_id' => $fixture['departmentId'],
+        'program_name' => 'Other Report',
+        'parent_id' => null,
+    ]);
+
+    $selectedQ2Id = DB::table('quarters')->insertGetId([
+        'program_id' => $fixture['programId'],
+        'church_id' => $fixture['churchId'],
+        'quarter' => 'Q2',
+        'year' => '2026',
+        'date_submitted' => '2026-06-01',
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    $otherQ1Id = DB::table('quarters')->insertGetId([
+        'program_id' => $otherProgramId,
+        'church_id' => $fixture['churchId'],
+        'quarter' => 'Q1',
+        'year' => '2026',
+        'date_submitted' => '2026-03-01',
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    $otherQ2Id = DB::table('quarters')->insertGetId([
+        'program_id' => $otherProgramId,
+        'church_id' => $fixture['churchId'],
+        'quarter' => 'Q2',
+        'year' => '2026',
+        'date_submitted' => '2026-06-01',
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    DB::table('quarters')
+        ->where('quarter_id', $fixture['quarterId'])
+        ->update(['mission_approve' => '2026-03-03']);
+
+    $pastor = createDistrictPastor($fixture['churchId'], $fixture['departmentId']);
+    $baseUrl = "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report";
+
+    $this->actingAs($pastor, 'sanctum')
+        ->postJson("{$baseUrl}/endorse", [
+            'program_id' => $fixture['programId'],
+            'year' => 2026,
+            'quarter' => 'Q2',
+        ])
+        ->assertOk();
+
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $selectedQ2Id,
+        'district_endorse' => now()->toDateString(),
+    ]);
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $otherQ2Id,
+        'district_endorse' => null,
+    ]);
+
+    $assistant = createReportAssistant($fixture['churchId'], $fixture['departmentId']);
+    $this->actingAs($assistant, 'sanctum')
+        ->postJson("{$baseUrl}/approve", [
+            'program_id' => $fixture['programId'],
+            'year' => 2026,
+            'quarter' => 'Q2',
+        ])
+        ->assertOk();
+
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $selectedQ2Id,
+        'mission_approve' => now()->toDateString(),
+    ]);
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $otherQ2Id,
+        'mission_approve' => null,
+    ]);
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $otherQ1Id,
+        'mission_approve' => null,
     ]);
 });
 
@@ -568,7 +816,7 @@ test('approving a quarter requires every earlier quarter to be approved', functi
         'sanctum'
     )->postJson(
         "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/approve",
-        ['year' => 2026, 'quarter' => 'Q3']
+        ['program_id' => $programId, 'year' => 2026, 'quarter' => 'Q3']
     )->assertUnprocessable()
         ->assertJsonPath(
             'message',
@@ -594,7 +842,7 @@ test('endorsement is rejected until every report quarter has been submitted', fu
     $this->actingAs($pastor, 'sanctum')
         ->postJson(
             "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/endorse",
-            ['year' => 2026, 'quarter' => 'Q1']
+            ['program_id' => $fixture['programId'], 'year' => 2026, 'quarter' => 'Q1']
         )
         ->assertUnprocessable()
         ->assertJsonPath(
@@ -703,4 +951,54 @@ test('church monitoring returns data completion and approval separately', functi
 
     expect($submittedMonitoring['q1_submitted'])->toBeTrue()
         ->and($submittedMonitoring['q1_submitted_data_progress'])->toBe(50);
+});
+
+test('church monitoring can be scoped to one department and exposes report workflow stages', function () {
+    $fixture = reportSubmissionFixture();
+    $churchId = DB::table('churches')->insertGetId([
+        'name' => 'Bayombong',
+        'address' => 'Nueva Vizcaya',
+        'parent_id' => $fixture['churchId'],
+    ]);
+
+    DB::table('quarters')
+        ->where('quarter_id', $fixture['quarterId'])
+        ->update([
+            'church_id' => $churchId,
+            'date_submitted' => '2026-10-13',
+            'district_endorse' => '2026-10-14',
+            'mission_approve' => '2026-10-15',
+        ]);
+
+    $otherDepartmentId = DB::table('departments')->insertGetId([
+        'department_name' => 'Stewardship',
+    ]);
+    $otherProgramId = DB::table('programs')->insertGetId([
+        'department_id' => $otherDepartmentId,
+        'program_name' => 'Stewardship Program',
+        'parent_id' => null,
+    ]);
+    DB::table('quarters')->insert([
+        'program_id' => $otherProgramId,
+        'church_id' => $churchId,
+        'quarter' => 'Q1',
+        'year' => '2026',
+        'date_submitted' => '2026-10-13',
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+
+    $url = "/api/districts/{$fixture['churchId']}/churches";
+
+    $this->getJson("{$url}?department_id={$fixture['departmentId']}")
+        ->assertOk()
+        ->assertJsonPath('data.0.monitoring.q1_submitted', true)
+        ->assertJsonPath('data.0.monitoring.q1_endorsed', true)
+        ->assertJsonPath('data.0.monitoring.q1_approved', true);
+
+    $this->getJson($url)
+        ->assertOk()
+        ->assertJsonPath('data.0.monitoring.q1_submitted', true)
+        ->assertJsonPath('data.0.monitoring.q1_endorsed', false)
+        ->assertJsonPath('data.0.monitoring.q1_approved', false);
 });

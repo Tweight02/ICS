@@ -502,7 +502,8 @@ class UserController extends Controller
     {
         $user = User::query()
             ->with([
-                'church:church_id,name',
+                'church:church_id,name,parent_id',
+                'church.parent:church_id,name',
                 'department:department_id,department_name',
             ])
             ->select([
@@ -512,9 +513,18 @@ class UserController extends Controller
             ])
             ->findOrFail($id);
 
+        $isPastor = strtolower(trim((string) $user->role)) === 'pastor';
+        $district = $isPastor
+            ? ($user->church?->parent ?? $user->church)
+            : null;
+
         return response()->json([
             'success' => true,
-            'data'    => $user,
+            'data'    => array_merge($user->toArray(), [
+                'district' => $district
+                    ? ['id' => (int) $district->church_id, 'name' => $district->name]
+                    : null,
+            ]),
         ]);
     }
 }

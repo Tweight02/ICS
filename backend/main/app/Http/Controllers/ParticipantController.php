@@ -146,6 +146,7 @@ class ParticipantController extends Controller
 
                 foreach (DB::table('event_particular')
                     ->where('event_id', $event->event_id)
+                    ->whereIn('particular_id', ReportParticipantCoverage::headcountParticularIds())
                     ->pluck('particular_id') as $particularId) {
                     $affectedItems[$event->quarter_id.':'.$particularId] = [
                         'quarter_id' => (int) $event->quarter_id,
@@ -190,11 +191,13 @@ class ParticipantController extends Controller
     private function recordReportContributions(Event $event, EventParticipant $participant, int $quarterId): void
     {
         $now = now();
+        $headcountParticularIds = ReportParticipantCoverage::headcountParticularIds();
         $existingParticularIds = DB::table('event_participant_contributions')
             ->where('event_id', $event->event_id)
             ->where('participant_id', $participant->participant_id)
             ->pluck('particular_id');
         $contributions = DB::table('event_particular')
+            ->whereIn('particular_id', $headcountParticularIds)
             ->where('event_id', $event->event_id)
             ->whereNotIn('particular_id', $existingParticularIds)
             ->get(['particular_id'])

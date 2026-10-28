@@ -7,6 +7,7 @@ import { EventService } from '../../core/services/events/events-api';
 import { AuthService } from '../../core/services/auth/auth-service';
 import { Department } from '../../core/models/event.model';
 import { API_URL, EventFormConfig } from './events.config';
+import { Button } from '../components/button/button';
 
 interface ProgramNode {
   program_id: number;
@@ -43,7 +44,7 @@ interface EventFormValues {
 @Component({
   selector: 'app-event-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, Button],
   templateUrl: './event-form.component.html',
 })
 export class EventFormComponent implements OnInit {
@@ -149,6 +150,10 @@ export class EventFormComponent implements OnInit {
   get userChurchId(): number | null { return this.userChurchIdState(); }
   set userChurchId(value: number | null) { this.userChurchIdState.set(value); }
 
+  private readonly userDistrictIdState = signal<number | null>(null);
+  get userDistrictId(): number | null { return this.userDistrictIdState(); }
+  set userDistrictId(value: number | null) { this.userDistrictIdState.set(value); }
+
   private readonly userChurchNameState = signal('');
   get userChurchName(): string { return this.userChurchNameState(); }
   set userChurchName(value: string) { this.userChurchNameState.set(value); }
@@ -228,10 +233,15 @@ export class EventFormComponent implements OnInit {
         if (u) {
           this.userId = u.user_id ?? id;
           this.userChurchId = u.church_id ?? u.church?.church_id ?? null;
-          this.userChurchName = u.church_name || u.church?.name || u.district?.name || '';
           const role = String(u.role ?? '').toLowerCase().replace(/[-_]/g, ' ').trim();
           const isRepresentative = role === 'representative' || role === 'church representative';
           const isPastor = role === 'pastor' || role === 'district pastor';
+          this.userDistrictId = Number(
+            u.district?.id ?? u.district?.church_id ?? u.district_id ?? u.church?.parent_id,
+          ) || (isPastor ? this.userChurchId : null);
+          this.userChurchName = isPastor
+            ? u.district?.name || u.district_name || u.church?.parent?.name || u.church?.name || ''
+            : u.church_name || u.church?.name || '';
           this.canChooseDepartmentState.set(isRepresentative || isPastor);
           if (isRepresentative || isPastor) {
             if (!this.isEdit) {
@@ -349,7 +359,8 @@ export class EventFormComponent implements OnInit {
     this.loadingChurches = true;
     this.churchesError = '';
     const mine = `${API_URL}/pastor/my-district/churches`;
-    const first = this.userChurchId ? `${API_URL}/districts/${this.userChurchId}/churches` : mine;
+    const districtId = this.userDistrictId ?? this.userChurchId;
+    const first = districtId ? `${API_URL}/districts/${districtId}/churches` : mine;
 
     this.http.get<any>(first).subscribe({
       next: (res) => this.setChurches(res),
@@ -484,6 +495,39 @@ export class EventFormComponent implements OnInit {
     return this.selectedParticularIds.includes(id);
   }
 
+  getVisiblePrograms(): ProgramNode[] {
+    return this.programs.filter((program) => this.getVisibleParticulars(program).length > 0);
+  }
+
+  getVisibleParticulars(program: ProgramNode): Particular[] {
+    return (program.particulars ?? []).filter((particular) =>
+      this.isParticularSelected(particular.particular_id) ||
+      this.isHeadcountParticular(particular) ||
+      this.isEventPurposeParticular(particular),
+    );
+  }
+
+  private isHeadcountParticular(particular: Particular): boolean {
+    const name = particular.particular_name.trim().toLowerCase();
+    if (/\b(attendance|attending|attendees|participants?|headcount)\b/.test(name)) {
+      return true;
+    }
+
+    const countSubject = name.match(/\b(?:number|no\.?)\s+of\s+(.+)/)?.[1];
+    return !!countSubject && /\b(?:people|persons|children|youth|women|men|members|students|visitors|leaders|workers|souls|baptisms)\b/.test(countSubject);
+  }
+
+  isEventPurposeParticular(particular: Particular): boolean {
+    return /\b(?:camping|camporee|retreats?|conventions?|festivals?|seminars?|trainings?|fellowships?|meetings?|evangelism|bible studies)\b/i
+      .test(particular.particular_name.trim());
+  }
+
+  particularCountType(particular: Particular): 'participant' | 'completed event' | null {
+    if (this.isHeadcountParticular(particular)) return 'participant';
+    if (this.isEventPurposeParticular(particular)) return 'completed event';
+    return null;
+  }
+
   canSelectParticular(particular: Particular): boolean {
     if (this.isParticularSelected(particular.particular_id) || this.selectedParticularIds.length === 0) {
       return true;
@@ -585,7 +629,7 @@ export class EventFormComponent implements OnInit {
       return 'Choose at least one district.';
     }
     if (this.config.coverage === 'churches' && this.selectedChurchCount() === 0) {
-      return 'Select one church.';
+      return 'Select at least one church.';
     }
     return '';
   });
@@ -627,12 +671,21 @@ export class EventFormComponent implements OnInit {
   // ----- Churches (district pastor) -----
   readonly selectedChurchCount = computed(() => this.churches.filter((c) => c.selected).length);
 
+  readonly allChurchesSelected = computed(
+    () => this.churches.length > 0 && this.selectedChurchCount() === this.churches.length,
+  );
+
+  toggleAllChurches(): void {
+    if (this.isEdit) return;
+    const selected = !this.allChurchesSelected();
+    this.churches = this.churches.map((church) => ({ ...church, selected }));
+  }
+
   toggleChurch(c: Option): void {
-    const selected = !c.selected;
-    this.churches = this.churches.map((church) => ({
-      ...church,
-      selected: church.id === c.id && selected,
-    }));
+    this.churches = this.churches.map((church) => {
+      if (church.id !== c.id) return church;
+      return { ...church, selected: this.isEdit ? true : !church.selected };
+    });
   }
 
   // =====================================================================
@@ -723,7 +776,8 @@ export class EventFormComponent implements OnInit {
     request.subscribe({
       next: (res) => {
         this.saving = false;
-        const newId = res?.data?.event_id ?? res?.data?.id ?? res?.event_id ?? res?.id;
+        const createdEvent = Array.isArray(res?.data) ? res.data[0] : res?.data;
+        const newId = createdEvent?.event_id ?? createdEvent?.id ?? res?.event_id ?? res?.id;
         const target = this.isEdit ? this.eventId : newId;
         this.router.navigate(target ? [this.config.basePath, target] : [this.config.basePath]);
       },

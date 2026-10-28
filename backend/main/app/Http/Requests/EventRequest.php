@@ -24,7 +24,7 @@ class EventRequest extends FormRequest
 
         $scope = match ($user->role) {
             'district_pastor' => [
-                'church_ids' => ['required', 'array', 'size:1'],
+                'church_ids' => ['required', 'array', $this->isMethod('post') ? 'min:1' : 'size:1'],
                 'church_ids.*' => ['integer', 'distinct', Rule::exists('churches', 'church_id')],
             ],
             'assistant' => [
@@ -94,10 +94,13 @@ class EventRequest extends FormRequest
                 default => null,
             };
 
+            $reportChurchIds = $churchId ? [$churchId] : [];
             if ($user->role === 'district_pastor') {
                 $allowed = array_merge([$user->districtId], \App\Support\EventsOrg::churchIdsOfDistrict($user->districtId));
-                if (! in_array($churchId, array_map('intval', array_filter($allowed)), true)) {
-                    $validator->errors()->add('church_ids', 'Choose one church from your own district.');
+                $allowed = array_map('intval', array_filter($allowed));
+                $reportChurchIds = array_map('intval', $this->input('church_ids', []));
+                if (array_diff($reportChurchIds, $allowed)) {
+                    $validator->errors()->add('church_ids', 'Choose only churches from your own district.');
                 }
             }
 
@@ -113,13 +116,16 @@ class EventRequest extends FormRequest
 
             $eventDate = Carbon::createFromFormat('!Y-m-d', $this->input('start_date'));
             $quarter = 'Q'.(int) ceil($eventDate->month / 3);
-            if ($churchId && ! DB::table('quarters')
-                ->where('church_id', $churchId)
-                ->where('program_id', $programId)
-                ->where('year', (string) $eventDate->year)
-                ->where('quarter', $quarter)
-                ->exists()) {
-                $validator->errors()->add('particular_ids', 'No reporting quarter exists for this church, event date, and the selected particulars.');
+            foreach (array_unique($reportChurchIds) as $reportChurchId) {
+                if (! DB::table('quarters')
+                    ->where('church_id', $reportChurchId)
+                    ->where('program_id', $programId)
+                    ->where('year', (string) $eventDate->year)
+                    ->where('quarter', $quarter)
+                    ->exists()) {
+                    $validator->errors()->add('particular_ids', 'A reporting quarter is missing for one or more selected churches, event date, and particulars.');
+                    break;
+                }
             }
 
             if ($this->input('start_date') === $this->input('end_date')

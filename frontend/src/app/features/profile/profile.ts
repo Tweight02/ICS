@@ -5,13 +5,13 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AuthService } from '../../core/services/auth/auth-service';
 import { User } from '../../core/models/user.model';
+import { Button } from '../../shared/components/button/button';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, Button],
   templateUrl: './profile.html',
-  styleUrl: './profile.css',
 })
 export class ProfileComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);

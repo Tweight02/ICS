@@ -6,13 +6,14 @@ import { finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { RepresentativeService } from '../../../../core/services/representative/representative-service'; // adjust to your real path
+import { Button } from '../../../../shared/components/button/button';
 
 @Component({
     selector: 'app-new-representative',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, Button],
     templateUrl: './new-representative.html',
-    styleUrl: './new-representative.css'
+
 })
 export class NewRepresentative implements OnInit {
     private fb = inject(FormBuilder);

@@ -104,6 +104,31 @@ class Event extends Model
 
     public function scopeVisibleTo(Builder $query, EventUser $user): Builder
     {
+        if ($user->role === 'district_pastor') {
+            $districtChurchIds = array_merge(
+                [$user->districtId],
+                EventsOrg::churchIdsOfDistrict($user->districtId)
+            );
+            $departmentQuarterIds = DB::table('quarters')
+                ->join('programs', 'programs.program_id', '=', 'quarters.program_id')
+                ->where('programs.department_id', $user->departmentId)
+                ->select('quarters.quarter_id');
+
+            return $query
+                ->where(function (Builder $scope) use ($districtChurchIds, $user) {
+                    $scope->whereIn('church_id', array_filter($districtChurchIds))
+                        ->orWhereHas('districts', fn (Builder $districts) => $districts
+                            ->where('churches.church_id', $user->districtId));
+                })
+                ->where(function (Builder $scope) use ($departmentQuarterIds, $user) {
+                    if ($user->departmentId) {
+                        $scope->whereIn('quarter_id', $departmentQuarterIds);
+                    }
+                    $scope->orWhereHas('createdBy', fn (Builder $creators) => $creators
+                        ->where('users.user_id', $user->id));
+                });
+        }
+
         if ($user->role !== 'church_representative') {
             if (! $user->departmentId) {
                 return $query->whereRaw('1 = 0');
@@ -113,19 +138,6 @@ class Event extends Model
                 ->join('programs', 'programs.program_id', '=', 'quarters.program_id')
                 ->where('programs.department_id', $user->departmentId)
                 ->select('quarters.quarter_id'));
-        }
-
-        if ($user->role === 'district_pastor') {
-            $districtChurchIds = array_merge(
-                [$user->districtId],
-                EventsOrg::churchIdsOfDistrict($user->districtId)
-            );
-
-            return $query->where(function (Builder $scope) use ($districtChurchIds, $user) {
-                $scope->whereIn('church_id', $districtChurchIds)
-                    ->orWhereHas('districts', fn (Builder $districts) => $districts
-                        ->where('churches.church_id', $user->districtId));
-            });
         }
 
         return match ($user->role) {

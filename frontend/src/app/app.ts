@@ -1,4 +1,5 @@
 import { Component, HostListener, inject, OnInit } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { Router, RouterOutlet } from '@angular/router';
 
 import { SidebarComponent } from './shared/components/sidebar/sidebar';
@@ -10,12 +11,12 @@ import { AuthService } from './core/services/auth/auth-service';
 
   imports: [
     RouterOutlet,
-    SidebarComponent
+    SidebarComponent,
+    NgClass
   ],
 
   templateUrl: './app.html',
 
-  styleUrl: './app.css'
 })
 export class App implements OnInit{
   

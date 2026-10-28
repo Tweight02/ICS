@@ -98,9 +98,12 @@ class PublicEventController extends Controller
         $church = EventsOrg::church((int) $event->church_id);
         $districts = $event->districts()->get(['churches.name']);
         $scopeNames = $districts->pluck('name')->all();
+        $allDistrictsSelected = $districts->isNotEmpty()
+            && $districts->count() === EventsOrg::districts()->count();
         if ($scopeNames === [] && $church) {
             $scopeNames[] = $church->name;
         }
+        $creatorRole = $event->createdBy()->first(['users.role'])?->role;
 
         return [
             'id' => (int) $event->event_id,
@@ -113,6 +116,15 @@ class PublicEventController extends Controller
             'description' => $event->notes,
             'church_name' => $church->name ?? null,
             'scope' => $scopeNames,
+            'all_districts' => $allDistrictsSelected,
+            'created_by' => match ($creatorRole) {
+                'assistant' => 'Department Assistant',
+                'administrative_assistant' => 'Administrative Assistant',
+                'district_pastor' => 'District Pastor',
+                'church_representative' => 'Church Representative',
+                'director' => 'Director',
+                default => null,
+            },
             'registration_open' => ($event->end_date?->toDateString() ?? '') >= now('Asia/Manila')->toDateString(),
         ];
     }

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { timeout } from 'rxjs';
 import { EventService } from '../../core/services/events/events-api';
 import { EventOverviewConfig } from './events.config';
+import { Button } from '../components/button/button';
 import {
   EventStatus,
   ProgramGroup,
@@ -17,7 +18,7 @@ import {
 @Component({
   selector: 'app-event-overview',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, Button],
   templateUrl: './event-overview.component.html',
 })
 export class EventOverviewComponent implements OnInit {
@@ -252,7 +253,7 @@ export class EventOverviewComponent implements OnInit {
     if (districts.length) {
       return {
         title: districts.length === 1 ? 'District' : 'Districts',
-        text: districts.join(', '),
+        text: e?.scope?.all_districts ? 'All District of NELM' : districts.join(', '),
       };
     }
     if (churches.length) return { title: 'Church', text: churches[0] };

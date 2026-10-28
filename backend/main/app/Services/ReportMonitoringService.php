@@ -11,9 +11,9 @@ class ReportMonitoringService
      * @param  list<int>  $churchIds
      * @return array<int, array<string, int|bool|null>>
      */
-    public function forChurches(array $churchIds): array
+    public function forChurches(array $churchIds, ?int $departmentId = null): array
     {
-        $stats = $this->departmentQuarterStats($churchIds);
+        $stats = $this->departmentQuarterStats($churchIds, $departmentId);
         $monitoring = [];
 
         foreach ($stats as $churchId => $departments) {
@@ -21,6 +21,7 @@ class ReportMonitoringService
 
             foreach (range(1, 4) as $quarterNumber) {
                 $approvedReports = 0;
+                $endorsedReports = 0;
                 $submittedReports = 0;
                 $reported = 0;
                 $expectedItems = 0;
@@ -37,6 +38,7 @@ class ReportMonitoringService
 
                     $reported += $quarter['total'];
                     $approvedReports += $quarter['approved'];
+                    $endorsedReports += $quarter['endorsed'];
                     $submittedReports += $quarter['submitted'];
                     $expectedItems += $quarter['expected'];
                     $enteredItems += $quarter['entered'];
@@ -49,6 +51,8 @@ class ReportMonitoringService
                     : (int) round(($enteredItems / $expectedItems) * 100);
                 $monitoring[$churchId]['q'.$quarterNumber.'_approved'] = $reported > 0
                     && $approvedReports === $reported;
+                $monitoring[$churchId]['q'.$quarterNumber.'_endorsed'] = $reported > 0
+                    && $endorsedReports === $reported;
                 $monitoring[$churchId]['q'.$quarterNumber.'_submitted'] = $reported > 0
                     && $submittedReports > 0;
                 $monitoring[$churchId]['q'.$quarterNumber.'_submitted_data_progress'] =
@@ -78,6 +82,8 @@ class ReportMonitoringService
                     $quarter !== null && $quarter['approved'] === $quarter['total'];
                 $approvals[$departmentId]['q'.$quarterNumber.'_submitted'] =
                     $quarter !== null && $quarter['submitted'] > 0;
+                $approvals[$departmentId]['q'.$quarterNumber.'_endorsed'] =
+                    $quarter !== null && $quarter['endorsed'] === $quarter['total'];
                 $approvals[$departmentId]['q'.$quarterNumber.'_data_progress'] =
                     $quarter === null || $quarter['expected'] === 0
                         ? null
@@ -94,9 +100,9 @@ class ReportMonitoringService
 
     /**
      * @param  list<int>  $churchIds
-     * @return array<int, array<int, array<int, array{total: int, approved: int, submitted: int, expected: int, entered: int, submitted_expected: int, submitted_entered: int}>>>
+     * @return array<int, array<int, array<int, array{total: int, approved: int, endorsed: int, submitted: int, expected: int, entered: int, submitted_expected: int, submitted_entered: int}>>>
      */
-    private function departmentQuarterStats(array $churchIds): array
+    private function departmentQuarterStats(array $churchIds, ?int $departmentId = null): array
     {
         $churchIds = array_values(array_unique(array_filter(
             array_map('intval', $churchIds),
@@ -111,6 +117,7 @@ class ReportMonitoringService
             ->join('programs', 'quarters.program_id', '=', 'programs.program_id')
             ->whereIn('quarters.church_id', $churchIds)
             ->whereNull('programs.parent_id')
+            ->when($departmentId !== null, fn ($query) => $query->where('programs.department_id', $departmentId))
             ->select(
                 'quarters.church_id',
                 'programs.department_id',
@@ -119,6 +126,7 @@ class ReportMonitoringService
             )
             ->selectRaw('COUNT(*) AS report_count')
             ->selectRaw('SUM(CASE WHEN quarters.mission_approve IS NOT NULL THEN 1 ELSE 0 END) AS approved_count')
+            ->selectRaw('SUM(CASE WHEN quarters.district_endorse IS NOT NULL THEN 1 ELSE 0 END) AS endorsed_count')
             ->selectRaw('SUM(CASE WHEN quarters.date_submitted IS NOT NULL THEN 1 ELSE 0 END) AS submitted_count')
             ->groupBy(
                 'quarters.church_id',
@@ -144,6 +152,7 @@ class ReportMonitoringService
             })
             ->whereIn('quarters.church_id', $churchIds)
             ->whereNull('programs.parent_id')
+            ->when($departmentId !== null, fn ($query) => $query->where('programs.department_id', $departmentId))
             ->select(
                 'quarters.church_id',
                 'programs.department_id',
@@ -213,6 +222,7 @@ class ReportMonitoringService
             $quarter ??= [
                 'total' => 0,
                 'approved' => 0,
+                'endorsed' => 0,
                 'submitted' => 0,
                 'expected' => 0,
                 'entered' => 0,
@@ -221,6 +231,7 @@ class ReportMonitoringService
             ];
             $quarter['total'] += (int) $row->report_count;
             $quarter['approved'] += (int) $row->approved_count;
+            $quarter['endorsed'] += (int) $row->endorsed_count;
             $quarter['submitted'] += (int) $row->submitted_count;
             $quarter['expected'] += (int) ($coverage->expected_count ?? 0);
             $quarter['entered'] += (int) ($coverage->entered_count ?? 0);

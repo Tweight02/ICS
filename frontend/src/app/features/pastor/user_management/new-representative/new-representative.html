@@ -158,11 +158,12 @@
                         </div>
 
                         <div class="flex flex-col-reverse gap-2 pt-3 sm:col-span-2 sm:flex-row sm:justify-end">
-                            <a routerLink="/pastor/view-representatives" class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium !no-underline text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200">
+                            <a app-button variant="secondary" size="md" routerLink="/pastor/view-representatives" class="!rounded-md">
                                 Cancel
                             </a>
                             <button
-                                type="submit"
+                                app-button variant="create" size="md"
+                                type="submit" [loading]="saving()"
                                 [disabled]="saving() || loadingChurches() || churches().length === 0"
                                 [attr.aria-busy]="saving()"
                                 class="inline-flex h-9 items-center justify-center gap-2 !rounded-lg bg-emerald-700 px-5 text-sm font-semibold text-white transition hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-60 sm:min-w-36"

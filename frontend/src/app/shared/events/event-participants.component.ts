@@ -14,11 +14,12 @@ import { EventModel, Participant } from '../../core/models/event.model';
 import { ParticipantsConfig } from './events.config';
 import { formatDateRange, formatTime, initialsOf } from './event.utils';
 import { PaginationComponent } from './pagination.component';
+import { Button } from '../components/button/button';
 
 @Component({
   selector: 'app-event-participants',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent, Button],
   templateUrl: './event-participants.component.html',
 })
 export class EventParticipantsComponent implements OnInit, OnDestroy {

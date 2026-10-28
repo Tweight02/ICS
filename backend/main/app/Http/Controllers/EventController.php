@@ -100,17 +100,31 @@ class EventController extends Controller
 
     public function store(EventRequest $request)
     {
-        $event = DB::transaction(function () use ($request) {
-            $event = Event::create($this->eventData($request));
-            $event->createdBy()->attach(EventUser::fromRequest($request)->id);
-            $event->particulars()->sync($request->validated('particular_ids'));
-            if (EventUser::fromRequest($request)->role === 'assistant') {
-                $event->districts()->sync($request->validated('district_ids'));
+        $user = EventUser::fromRequest($request);
+        $churchIds = $user->role === 'district_pastor'
+            ? $request->validated('church_ids')
+            : [null];
+
+        $events = DB::transaction(function () use ($request, $user, $churchIds) {
+            $events = collect();
+            foreach ($churchIds as $churchId) {
+                $event = Event::create($this->eventData($request, $churchId === null ? null : (int) $churchId));
+                $event->createdBy()->attach($user->id);
+                $event->particulars()->sync($request->validated('particular_ids'));
+                if ($user->role === 'assistant') {
+                    $event->districts()->sync($request->validated('district_ids'));
+                }
+                $events->push($event);
             }
 
-            return $event;
+            return $events;
         });
-        return (new EventResource($event))->response()->setStatusCode(201);
+
+        if ($events->count() === 1) {
+            return (new EventResource($events->first()))->response()->setStatusCode(201);
+        }
+
+        return EventResource::collection($events)->response()->setStatusCode(201);
     }
 
     public function update(EventRequest $request, int $event)
@@ -139,12 +153,12 @@ class EventController extends Controller
         return response()->noContent();
     }
 
-    private function eventData(EventRequest $request): array
+    private function eventData(EventRequest $request, ?int $targetChurchId = null): array
     {
         $user = EventUser::fromRequest($request);
         $churchId = match ($user->role) {
             'church_representative' => $user->churchId,
-            'district_pastor' => (int) $request->validated('church_ids')[0],
+            'district_pastor' => $targetChurchId ?? (int) $request->validated('church_ids')[0],
             'assistant' => (int) $request->validated('district_ids')[0],
             default => null,
         };

@@ -50,14 +50,16 @@ function departmentReportAccessFixture(): array
     return [
         'churchId' => $churchId,
         'departmentId' => $departmentId,
-        'director' => departmentReportAccessUser($churchId, $departmentId, 'director', 'director'),
-        'assistant' => departmentReportAccessUser($churchId, $departmentId, 'administrative assistant', 'assistant'),
+        'director' => departmentReportAccessUser($churchId, 16, 'director', 'director'),
+        'assistant' => departmentReportAccessUser($churchId, 16, 'administrative assistant', 'assistant'),
+        'otherDepartmentDirector' => departmentReportAccessUser($churchId, $departmentId, 'director', 'other-director'),
+        'otherDepartmentAssistant' => departmentReportAccessUser($churchId, $departmentId, 'assistant', 'other-assistant'),
         'pastor' => departmentReportAccessUser($churchId, $departmentId, 'pastor', 'pastor'),
         'representative' => departmentReportAccessUser($churchId, $departmentId, 'representative', 'representative'),
     ];
 }
 
-test('director and assistant can access only their department and personal report departments', function () {
+test('only Ministerial and Evangelism directors and assistants can access personal report departments', function () {
     $fixture = departmentReportAccessFixture();
 
     foreach (['director', 'assistant'] as $role) {
@@ -79,6 +81,21 @@ test('director and assistant can access only their department and personal repor
         $this->actingAs($user, 'sanctum')
             ->getJson("/api/churches/{$fixture['churchId']}/departments/30/report")
             ->assertForbidden();
+    }
+
+    foreach (['otherDepartmentDirector', 'otherDepartmentAssistant'] as $role) {
+        $user = $fixture[$role];
+        $departments = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/churches/{$fixture['churchId']}/departments")
+            ->assertOk();
+
+        $departments->assertJsonFragment(['department_id' => $fixture['departmentId']]);
+        foreach ([16, 20, 22, 23] as $departmentId) {
+            $departments->assertJsonMissing(['department_id' => $departmentId]);
+            $this->actingAs($user, 'sanctum')
+                ->getJson("/api/churches/{$fixture['churchId']}/departments/{$departmentId}/report")
+                ->assertForbidden();
+        }
     }
 });
 

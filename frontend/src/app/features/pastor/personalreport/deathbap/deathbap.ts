@@ -20,6 +20,11 @@ import {
   ReportQuarter
 } from '../../../../core/models/report.model';
 import { AuthService } from '../../../../core/services/auth/auth-service';
+import { Button } from '../../../../shared/components/button/button';
+import {
+  ReportPeriodSelector,
+  ReportQuarterOption
+} from '../../../../shared/reports/period-selector/report-period-selector';
 
 interface Baptism {
   baptism_id: number;
@@ -61,10 +66,12 @@ interface Death {
     CommonModule,
     FormsModule,
     RouterLink,
-    ReportParticulars
+    ReportParticulars,
+    Button,
+    ReportPeriodSelector
   ],
   templateUrl: './deathbap.html',
-  styleUrls: ['./deathbap.css']
+  host: { class: 'block min-h-full bg-[#f5f7f6]' }
 })
 export class DeathbapComponent implements OnInit {
 
@@ -98,6 +105,18 @@ export class DeathbapComponent implements OnInit {
     'Q3',
     'Q4'
   ];
+
+  get reportPeriodQuarters(): ReportQuarterOption[] {
+    return this.quarterOptions.map((quarter, index) => ({
+      quarter_id: index + 1,
+      quarter,
+      year: this.selectedYear
+    }));
+  }
+
+  get selectedQuarterId(): number {
+    return Number(this.selectedQuarter.slice(1));
+  }
 
   churchId = 0;
   districtId = 0;
@@ -185,6 +204,13 @@ export class DeathbapComponent implements OnInit {
       );
     }
 
+    if (this.selectedDepartmentId) {
+      const personalChurchId = Number(this.auth.getCurrentUser()?.church_id);
+      return this.churches.filter(
+        church => Number(church.church_id) === personalChurchId
+      );
+    }
+
     return this.churches.filter(church => church.parent_id !== null);
   }
 
@@ -212,6 +238,10 @@ export class DeathbapComponent implements OnInit {
         this.normalizeQuarter(comment.quarter) === this.selectedQuarter
       )
     );
+  }
+
+  get commentChurchId(): number {
+    return this.churchId || this.reportChurches[0]?.church_id || 0;
   }
 
   isOwnComment(comment: ReportComment): boolean {
@@ -305,17 +335,20 @@ export class DeathbapComponent implements OnInit {
     this.updateCommentQuarter();
   }
 
+  selectReportQuarter(quarter: string): void {
+    const option = this.quarterOptions.find(value => value === quarter);
+    if (option) {
+      this.selectQuarter(option);
+    }
+  }
+
   selectAnnual(): void {
     this.isAnnualView = true;
     this.resetPagination();
     this.updateCommentQuarter();
   }
 
-  onYearChange(event: Event): void {
-    const value = Number(
-      (event.target as HTMLSelectElement).value
-    );
-
+  onYearChange(value: number): void {
     if (Number.isInteger(value) && value > 0) {
       this.selectedYear = value;
       this.resetPagination();
@@ -914,7 +947,8 @@ export class DeathbapComponent implements OnInit {
       }
     });
 
-    if (this.churchId > 0) {
+    const commentChurchId = this.commentChurchId;
+    if (commentChurchId > 0) {
 
       const cachedReport = this.personalReports.get(departmentId);
 
@@ -924,7 +958,7 @@ export class DeathbapComponent implements OnInit {
       }
 
       this.reportService.getDepartmentReport(
-        this.churchId,
+        commentChurchId,
         departmentId
       ).subscribe({
         next: report => {
@@ -976,12 +1010,13 @@ export class DeathbapComponent implements OnInit {
 
     const details = this.newComment.trim();
     const departmentId = this.selectedRecord === 'baptism' ? 22 : 23;
+    const churchId = this.commentChurchId;
 
     if (
       !details ||
       this.savingComment ||
       !this.canComment ||
-      !this.churchId
+      !churchId
     ) {
       return;
     }
@@ -1006,7 +1041,7 @@ export class DeathbapComponent implements OnInit {
 
     this.reportService
       .addPersonalReportComment(
-        this.churchId,
+        churchId,
         departmentId,
         this.selectedYear,
         this.selectedQuarter,

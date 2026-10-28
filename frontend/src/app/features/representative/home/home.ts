@@ -5,7 +5,7 @@ import { AuthService } from '../../../core/services/auth/auth-service';
 @Component({
   imports: [],
   selector: 'app-home',
-  styleUrl: './home.css',
+
   templateUrl: './home.html',
 })
 export class Home{

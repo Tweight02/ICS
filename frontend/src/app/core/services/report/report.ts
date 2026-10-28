@@ -77,24 +77,26 @@ export class ReportService {
   endorseDepartmentReport(
     churchId: number,
     departmentId: number,
+    programId: number,
     year: number | string,
     quarter: string
   ): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(
       `${this.apiUrl}/churches/${churchId}/departments/${departmentId}/report/endorse`,
-      { year, quarter }
+      { program_id: programId, year, quarter }
     );
   }
 
   approveDepartmentReport(
     churchId: number,
     departmentId: number,
+    programId: number,
     year: number | string,
     quarter: string
   ): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(
       `${this.apiUrl}/churches/${churchId}/departments/${departmentId}/report/approve`,
-      { year, quarter }
+      { program_id: programId, year, quarter }
     );
   }
 

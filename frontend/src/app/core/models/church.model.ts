@@ -13,6 +13,10 @@ export interface Church {
     q2_approved?: boolean;
     q3_approved?: boolean;
     q4_approved?: boolean;
+    q1_endorsed?: boolean;
+    q2_endorsed?: boolean;
+    q3_endorsed?: boolean;
+    q4_endorsed?: boolean;
     q1_submitted?: boolean;
     q2_submitted?: boolean;
     q3_submitted?: boolean;
