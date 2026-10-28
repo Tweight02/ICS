@@ -64,6 +64,8 @@ interface Report {
   programs: Program[];
 }
 
+type StewardshipTab = 'activities' | 'offering';
+
 interface SaveReportItem {
   particular_id: number;
   quarter_id: number;
@@ -136,6 +138,7 @@ export class ReportParticulars implements OnInit, OnDestroy {
   selectedYear: number | null = null;
   selectedQuarterId: number | null = null;
   selectedProgramId: number | null = null;
+  activeStewardshipTab: StewardshipTab = 'activities';
 
   isAnnualView = false;
   private readonly loadingState = signal(false);
@@ -549,7 +552,17 @@ ngOnInit(): void {
   }
 
   getVisibleSections(program: Program): Section[] {
-    return program.sections;
+    if (!this.isStewardshipReport) {
+      return program.sections;
+    }
+
+    return program.sections.filter(section =>
+      this.isOfferingSection(section) === (this.activeStewardshipTab === 'offering')
+    );
+  }
+
+  selectStewardshipTab(tab: StewardshipTab): void {
+    this.activeStewardshipTab = tab;
   }
 
   getStewardshipTotal(type: 'offering' | 'tithe'): number {
