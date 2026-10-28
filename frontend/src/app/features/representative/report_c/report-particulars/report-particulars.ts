@@ -64,8 +64,6 @@ interface Report {
   programs: Program[];
 }
 
-type StewardshipTab = 'activities' | 'offering';
-
 interface SaveReportItem {
   particular_id: number;
   quarter_id: number;
@@ -109,7 +107,7 @@ const STEWARDSHIP_MONTHS = [
 })
 export class ReportParticulars implements OnInit, OnDestroy {
   embedded = false;
-  expandFirstSection = false;
+  expandFirstSection = true;
   showInputsWhenReadOnly = true;
   churchName = '';
   districtName = '';
@@ -138,8 +136,6 @@ export class ReportParticulars implements OnInit, OnDestroy {
   selectedYear: number | null = null;
   selectedQuarterId: number | null = null;
   selectedProgramId: number | null = null;
-  activeStewardshipTab: StewardshipTab = 'activities';
-
   isAnnualView = false;
   private readonly loadingState = signal(false);
   get loading(): boolean {
@@ -552,17 +548,7 @@ ngOnInit(): void {
   }
 
   getVisibleSections(program: Program): Section[] {
-    if (!this.isStewardshipReport) {
-      return program.sections;
-    }
-
-    return program.sections.filter(section =>
-      this.isOfferingSection(section) === (this.activeStewardshipTab === 'offering')
-    );
-  }
-
-  selectStewardshipTab(tab: StewardshipTab): void {
-    this.activeStewardshipTab = tab;
+    return program.sections;
   }
 
   getStewardshipTotal(type: 'offering' | 'tithe'): number {
