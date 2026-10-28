@@ -1,11 +1,13 @@
-<div class="min-h-screen bg-[#f6faf8] p-5 max-[768px]:p-2.5 max-[400px]:p-2">
+<div class="min-h-screen bg-[#f6faf8] p-3 max-[768px]:p-2 max-[400px]:p-2">
 
   <div class="mx-auto w-full max-w-[820px] overflow-visible rounded-[18px] border border-[#d7e4df] bg-white shadow-[0_8px_25px_rgba(0,0,0,0.05)] max-[768px]:max-w-full max-[768px]:rounded-[14px]">
 
     <!-- Header -->
-    <div class="flex items-center justify-between gap-5 rounded-t-[18px] border-b border-[#e0e7e4] px-7 py-6 max-[768px]:p-5 max-[400px]:p-4">
+    <div class="flex items-center justify-between gap-3 rounded-t-[18px] border-b border-[#e0e7e4] px-5 py-3 max-[768px]:p-4 max-[400px]:p-3">
       <div>
-        <div class="mb-1.5 text-sm font-extrabold tracking-[1px] text-[#087d6f]">ADD DEATH RECORD</div>
+        <div class="mb-0 text-sm font-extrabold tracking-[1px] text-[#087d6f]">
+          ADD DEATH RECORD
+        </div>
       </div>
     </div>
 
@@ -14,12 +16,13 @@
       #deathForm="ngForm"
       (ngSubmit)="saveDeath()">
 
-      <div class="px-7 py-[26px] max-[768px]:p-5 max-[400px]:p-4">
+      <div class="px-5 py-4 max-[768px]:p-4 max-[400px]:p-3">
 
-        <div class="grid w-full grid-cols-1 gap-[18px] max-[768px]:gap-4">
+        <div class="grid w-full grid-cols-1 gap-3 max-[768px]:gap-2.5">
 
           <!-- Baptized Member: Searchable Dropdown -->
-          <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+
             <label for="baptism_search">Baptized Member</label>
 
             <div
@@ -27,16 +30,18 @@
               #memberDropdown
               [class.open]="memberDropdownOpen">
 
-              <div class="relative flex w-full items-center">
+              <div class="relative w-full">
 
                 <!-- Search Icon -->
                 <svg
-                  class="pointer-events-none absolute left-[13px] top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-slate-500"
+                  class="pointer-events-none absolute left-3 top-1/2 z-10 !h-4 !w-4 -translate-y-1/2"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="currentColor"
+                  stroke="#64748b"
                   stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
                   aria-hidden="true">
                   <circle cx="11" cy="11" r="7"></circle>
                   <path d="m20 20-4-4"></path>
@@ -46,12 +51,8 @@
                 <input
                   id="baptism_search"
                   type="text"
-                  class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70 h-12 w-full cursor-text bg-white pl-10 pr-11 text-gray-900 disabled:cursor-not-allowed disabled:opacity-100 disabled:text-[#817a75]"
-                  [value]="
-                    memberDropdownOpen
-                      ? baptismSearch
-                      : getSelectedBaptismName()
-                  "
+                  class="box-border block h-[40px] w-full cursor-text rounded-lg border border-[rgba(22,75,60,0.12)] bg-white px-3 !py-2 !pl-10 !pr-11 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-100 disabled:text-[#817a75]"
+                  [value]="memberDropdownOpen ? baptismSearch : getSelectedBaptismName()"
                   (focus)="openBaptismDropdown()"
                   (input)="onBaptismSearch($event)"
                   [placeholder]="
@@ -78,7 +79,7 @@
                 <!-- Dropdown Arrow -->
                 <button
                   type="button"
-                  class="absolute right-[5px] top-1/2 z-[2] flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50 [&_svg]:transition-transform"
+                  class="absolute right-[5px] top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50"
                   (click)="toggleBaptismDropdown()"
                   [disabled]="
                     loadingBaptisms ||
@@ -88,11 +89,11 @@
                   "
                   aria-label="Toggle baptized member dropdown">
 
-                  <svg [class.rotate-180]="memberDropdownOpen"
+                  <svg
+                    class="h-[18px] w-[18px] transition-transform duration-200"
+                    [class.rotate-180]="memberDropdownOpen"
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
                     fill="none"
                     stroke="currentColor"
                     stroke-width="2"
@@ -107,16 +108,17 @@
 
               <!-- Member Options -->
               <div
-                class="absolute left-0 right-0 top-[calc(100%+5px)] z-[1050] max-h-[220px] overscroll-contain overflow-y-auto rounded-lg border border-slate-300 bg-white p-[5px] shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
+                class="absolute left-0 right-0 top-[calc(100%+4px)] z-[1050] max-h-[200px] overscroll-contain overflow-y-auto rounded-lg border border-slate-300 bg-white p-1 shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
                 *ngIf="memberDropdownOpen"
                 role="listbox">
 
                 <button
                   type="button"
-                  class="block w-full cursor-pointer break-words rounded-[5px] border-0 bg-white px-3 py-2.5 text-left text-sm font-normal text-slate-700 transition-colors hover:bg-blue-50 focus-visible:bg-blue-50 focus-visible:outline-none"
+                  class="block w-full cursor-pointer break-words rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] font-normal text-slate-700 transition-colors hover:bg-emerald-50 focus-visible:bg-emerald-50 focus-visible:outline-none"
                   role="option"
                   *ngFor="let baptism of filteredAvailableBaptisms"
-                  [class.bg-blue-50]="sameBaptism(baptism.baptism_id, death.baptism_id)" [class.text-blue-700]="sameBaptism(baptism.baptism_id, death.baptism_id)"
+                  [class.bg-emerald-50]="sameBaptism(baptism.baptism_id, death.baptism_id)"
+                  [class.text-emerald-800]="sameBaptism(baptism.baptism_id, death.baptism_id)"
                   [attr.aria-selected]="
                     sameBaptism(
                       baptism.baptism_id,
@@ -130,11 +132,9 @@
                 </button>
 
                 <div
-                  class="p-3 text-center text-[13px] text-slate-500"
+                  class="p-2.5 text-center text-[13px] text-slate-500"
                   *ngIf="filteredAvailableBaptisms.length === 0">
-
                   No matching baptized members found.
-
                 </div>
 
               </div>
@@ -151,13 +151,13 @@
             <!-- Existing Help Messages -->
             <small
               *ngIf="loadingBaptisms || loadingDeaths"
-              class="mt-[7px] block text-xs leading-[1.5] text-[#817a75]">
+              class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
               Checking existing records...
             </small>
 
             <small
               *ngIf="deathLoadError"
-              class="mt-[7px] block text-xs leading-[1.5] text-[#817a75]">
+              class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
               Death records could not be verified. Refresh the page to try again.
             </small>
 
@@ -168,7 +168,7 @@
                 !deathLoadError &&
                 baptisms.length === 0
               "
-              class="mt-[7px] block text-xs leading-[1.5] text-[#817a75]">
+              class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
               No baptism records found.
             </small>
 
@@ -180,75 +180,66 @@
                 baptisms.length > 0 &&
                 availableBaptisms.length === 0
               "
-              class="mt-[7px] block text-xs leading-[1.5] text-[#817a75]">
+              class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
               All available baptized members already have death records.
             </small>
 
           </div>
 
           <!-- NAME FIELDS: FOUR FIELDS IN ONE ROW -->
-          <div
-            class="col-span-full grid w-full grid-cols-4 gap-3 max-[768px]:grid-cols-2 max-[400px]:grid-cols-2">
+          <div class="col-span-full grid w-full grid-cols-4 gap-2 max-[768px]:grid-cols-2 max-[400px]:grid-cols-2">
 
             <!-- First Name -->
-            <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="first_name">
-                First Name
-              </label>
+            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+              <label for="first_name">First Name</label>
 
               <input
                 id="first_name"
                 type="text"
                 name="first_name"
-                class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
                 [value]="selectedBaptism?.first_name || ''"
                 placeholder="First name"
                 readonly>
             </div>
 
             <!-- Middle Name -->
-            <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="middle_name">
-                Middle Name
-              </label>
+            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+              <label for="middle_name">Middle Name</label>
 
               <input
                 id="middle_name"
                 type="text"
                 name="middle_name"
-                class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
                 [value]="selectedBaptism?.middle_name || ''"
                 placeholder="Middle name"
                 readonly>
             </div>
 
             <!-- Last Name -->
-            <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="last_name">
-                Last Name
-              </label>
+            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+              <label for="last_name">Last Name</label>
 
               <input
                 id="last_name"
                 type="text"
                 name="last_name"
-                class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
                 [value]="selectedBaptism?.last_name || ''"
                 placeholder="Last name"
                 readonly>
             </div>
 
             <!-- Extension Name -->
-            <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="extension_name">
-                Extension Name
-              </label>
+            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+              <label for="extension_name">Extension Name</label>
 
               <input
                 id="extension_name"
                 type="text"
                 name="extension_name"
-                class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
                 [value]="selectedBaptism?.extension_name || ''"
                 placeholder="Jr., Sr., III, IV, etc."
                 readonly>
@@ -257,90 +248,74 @@
           </div>
 
           <!-- Church -->
-          <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="church">
-              Church
-            </label>
+          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+            <label for="church">Church</label>
 
             <input
               id="church"
               type="text"
               name="church"
-              class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
               [value]="getChurchName(selectedBaptism?.church_id)"
               placeholder="Church"
               readonly>
           </div>
 
           <!-- Birthdate -->
-          <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="birthdate">
-              Birthdate
-            </label>
+          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+            <label for="birthdate">Birthdate</label>
 
             <input
               id="birthdate"
               type="date"
               name="birthdate"
-              class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
               [value]="selectedBaptism?.birthdate || ''"
               readonly>
           </div>
 
           <!-- Quarter -->
-          <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="quarter">
-              Quarter
-            </label>
+          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+            <label for="quarter">Quarter</label>
 
             <select
               id="quarter"
-              class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70 appearance-none pr-[42px] bg-no-repeat bg-[length:16px_16px] bg-[right_15px_center] [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
+              class="box-border block h-[40px] w-full appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
               name="quarter"
               [(ngModel)]="death.quarter"
               required>
 
-              <option
-                value=""
-                disabled>
-                Select quarter
-              </option>
-
+              <option value="" disabled>Select quarter</option>
               <option value="Q1">Q1</option>
               <option value="Q2">Q2</option>
               <option value="Q3">Q3</option>
               <option value="Q4">Q4</option>
-
             </select>
           </div>
 
           <!-- Date of Death -->
-          <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="date_of_death">
-              Date of Death
-            </label>
+          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+            <label for="date_of_death">Date of Death</label>
 
             <input
               id="date_of_death"
               type="date"
               name="date_of_death"
-              class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
               [(ngModel)]="death.date_of_death"
               [max]="today"
               required>
           </div>
 
           <!-- Age at Death -->
-          <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="age">
-              Age at Death
-            </label>
+          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+            <label for="age">Age at Death</label>
 
             <input
               id="age"
               type="number"
               name="age"
-              class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
               [value]="
                 selectedBaptism && death.date_of_death
                   ? calculateAgeAtDeath(
@@ -355,55 +330,54 @@
           </div>
 
           <!-- Gender -->
-          <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="gender">
-              Gender
-            </label>
+          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+            <label for="gender">Gender</label>
 
             <input
               id="gender"
               type="text"
               name="gender"
-              class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
               [value]="selectedBaptism?.gender || ''"
               placeholder="Gender"
               readonly>
           </div>
 
           <!-- Marital Status -->
-          <div class="w-full min-w-0 [&_label]:mb-2 [&_label]:block [&_label]:text-[13px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="marital_status">
-              Marital
-            </label>
+          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+            <label for="marital_status">Marital</label>
 
             <input
               id="marital_status"
               type="text"
               name="marital_status"
-              class="box-border block h-12 w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-[14px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
+              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
               [value]="selectedBaptism?.marital_status || ''"
               placeholder="Marital status"
               readonly>
           </div>
 
         </div>
-
       </div>
 
       <!-- Footer -->
-      <div class="flex justify-end gap-2.5 rounded-b-[18px] border-t border-[#e0e7e4] px-7 py-[18px] max-[768px]:px-5 max-[768px]:py-4 max-[400px]:px-4 max-[400px]:py-3.5">
+      <div class="flex items-center justify-end gap-2 rounded-b-[18px] border-t border-[#e0e7e4] px-5 py-3 max-[768px]:px-4 max-[768px]:py-3 max-[400px]:px-3 max-[400px]:py-2.5">
 
+        <!-- Cancel Button -->
         <button
           type="button"
-          class="flex-1 cursor-pointer rounded-[10px] border border-[#cbdcd6] bg-white px-[22px] py-3 text-sm text-[#0b4250] transition-colors hover:bg-[#f5f9f7]"
+          class="inline-flex h-[30px] w-[140px] items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] !opacity-100 transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed motion-reduce:transition-none max-[650px]:w-full"
           (click)="cancelForm()">
           Cancel
         </button>
 
+        <!-- Save Button -->
         <button
-          app-button variant="submit" size="md"
-          type="submit" [loading]="saving"
-          class="min-h-[38px] flex-1 cursor-pointer rounded-[7px] border border-emerald-700 bg-emerald-700 px-6 py-[9px] text-sm font-bold text-white transition-colors hover:border-emerald-800 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 max-[768px]:px-7 max-[768px]:py-3"
+          app-button
+          variant="submit"
+          size="md"
+          type="submit"
+          class="inline-flex h-[30px] w-[140px] items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] !opacity-100 transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:!opacity-100 motion-reduce:transition-none max-[650px]:w-full"
           [disabled]="
             saving ||
             deathForm.invalid ||
