@@ -13,17 +13,20 @@ describe('ReportsDetails', () => {
 
   beforeEach(async () => {
     navigate = vi.fn();
-    getDepartments = vi.fn(() => of([
+    getDepartments = vi.fn().mockReturnValue(of([
       {
         department_id: 4,
-        department_name: 'Education',
-        q1_approved: false,
-        q1_data_progress: 50
+        department_name: 'Youth',
+        q1_data_progress: 50,
+        q2_data_progress: 75,
+        q2_submitted: true,
+        q3_data_progress: 100,
+        q3_approved: true
       },
-      {
-        department_id: 22,
-        department_name: 'Baptism Record'
-      }
+      { department_id: 16, department_name: 'Ministerial & Evangelism' },
+      { department_id: 20, department_name: 'Adventist Mission' },
+      { department_id: 22, department_name: 'Baptism Record' },
+      { department_id: 23, department_name: 'Death Record' }
     ]));
 
     await TestBed.configureTestingModule({
@@ -57,10 +60,7 @@ describe('ReportsDetails', () => {
             })
           }
         },
-        {
-          provide: ReportService,
-          useValue: { getDepartments }
-        },
+        { provide: ReportService, useValue: { getDepartments } },
         { provide: Router, useValue: { url: '/pastor/reports/details', navigate } }
       ]
     }).compileComponents();
@@ -80,42 +80,27 @@ describe('ReportsDetails', () => {
     expect(navigate).toHaveBeenCalledWith(['/pastor/baptism']);
   });
 
-  it('expands a church and loads its department list', () => {
-    component.toggleChurch(2);
+  it('expands a church inline to show department statuses and loads them once', () => {
+    const church = component.churches()[0];
 
-    expect(component.isChurchOpen(2)).toBe(true);
-    expect(getDepartments).toHaveBeenCalledWith(2);
-    expect(component.loadingDepartments()[2]).toBe(false);
-    expect(component.getReportDepartments(2).map(department => department.department_name))
-      .toEqual(['Education']);
-    expect(fixture.nativeElement.querySelectorAll('thead th').length).toBe(1);
-    expect(fixture.nativeElement.querySelector('.monitoring-personal-reports')).toBeNull();
-  });
+    component.toggleChurch(church);
+    fixture.detectChanges();
 
-  it('shows a green data state for quarters with data and a check for approved quarters', () => {
-    const department = {
-      department_id: 4,
-      department_name: 'Education',
-      q1_data_progress: 25,
-      q2_submitted: true,
-      q3_approved: true
-    };
+    expect(component.isChurchOpen(church.church_id)).toBe(true);
+    expect(getDepartments).toHaveBeenCalledOnce();
+    expect(getDepartments).toHaveBeenCalledWith(church.church_id);
+    expect(fixture.nativeElement.textContent).toContain('Youth');
+    expect(fixture.nativeElement.textContent).toContain('Needs completion');
+    expect(fixture.nativeElement.textContent).toContain('Submitted for review');
+    expect(fixture.nativeElement.textContent).toContain('Approved');
+    expect(fixture.nativeElement.textContent).not.toContain('Ministerial & Evangelism');
+    expect(fixture.nativeElement.textContent).not.toContain('Adventist Mission');
+    expect(fixture.nativeElement.textContent).not.toContain('Baptism Record');
+    expect(fixture.nativeElement.textContent).not.toContain('Death Record');
+    expect(fixture.nativeElement.textContent).not.toContain('%');
 
-    expect(component.hasDepartmentData(department, 'q1')).toBe(true);
-    expect(component.hasDepartmentData(department, 'q2')).toBe(true);
-    expect(component.hasDepartmentData(department, 'q4')).toBe(false);
-    expect(component.isDepartmentApproved(department, 'q3')).toBe(true);
-  });
-
-  it('opens a department report for the expanded church', () => {
-    component.toggleChurch(2);
-    component.openDepartment({ department_id: 4, department_name: 'Education' });
-
-    expect(navigate).toHaveBeenCalledWith([
-      '/pastor/reports/particulars',
-      4,
-      1,
-      2
-    ]);
+    component.toggleChurch(church);
+    component.toggleChurch(church);
+    expect(getDepartments).toHaveBeenCalledOnce();
   });
 });

@@ -8,13 +8,14 @@ import Swal from 'sweetalert2';
 import { RepresentativeService } from '../../../../core/services/representative/representative-service'; // adjust to your real path
 import { Representative } from '../../../../core/models/representative.model';
 import { ChurchService } from '../../../../core/services/church/church-service';
+import { Button } from '../../../../shared/components/button/button';
 
 @Component({
     selector: 'app-edit-representative',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, Button],
     templateUrl: './edit-representative.html',
-    styleUrl: './edit-representative.css'
+
 })
 export class EditRepresentative implements OnInit {
     private fb = inject(FormBuilder);

@@ -16,6 +16,8 @@ import { ReportService } from '../../../../core/services/report/report';
 import { CommentReadStateService } from '../../../../core/services/report/comment-read-state';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
+import { Button } from '../../../../shared/components/button/button';
+import { ReportPeriodSelector } from '../../../../shared/reports/period-selector/report-period-selector';
 import Swal from 'sweetalert2';
 
 interface QuarterRecord {
@@ -23,6 +25,9 @@ interface QuarterRecord {
   quarter?: string;
   year?: number | string;
   value: number | string | null;
+  participant_count?: number;
+  completed_event_count?: number;
+  combined_value?: number | null;
   date_submitted?: string | null;
   district_endorse?: string | null;
   mission_approve: string | null;
@@ -63,6 +68,7 @@ interface SaveReportItem {
   particular_id: number;
   quarter_id: number;
   value: number | null;
+  value_includes_participants?: boolean;
   monthly_values?: Record<string, number | null>;
 }
 
@@ -87,7 +93,6 @@ interface QuarterRef {
 }
 
 type AutoSaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
-type StewardshipTab = 'activities' | 'offering';
 
 const STEWARDSHIP_MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -97,11 +102,15 @@ const STEWARDSHIP_MONTHS = [
 @Component({
   selector: 'app-report-particulars',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './report-particulars.html',
-  styleUrl: './report-particulars.css'
+  imports: [CommonModule, FormsModule, Button, ReportPeriodSelector],
+  templateUrl: '../../../../shared/reports/report-particulars/report-particulars.html'
 })
 export class ReportParticulars implements OnInit, OnDestroy {
+  embedded = false;
+  expandFirstSection = true;
+  showInputsWhenReadOnly = true;
+  churchName = '';
+  districtName = '';
 
   @ViewChild('commentMessages')
   private commentMessages?: ElementRef<HTMLUListElement>;
@@ -127,8 +136,6 @@ export class ReportParticulars implements OnInit, OnDestroy {
   selectedYear: number | null = null;
   selectedQuarterId: number | null = null;
   selectedProgramId: number | null = null;
-  activeStewardshipTab: StewardshipTab = 'activities';
-
   isAnnualView = false;
   private readonly loadingState = signal(false);
   get loading(): boolean {
@@ -145,6 +152,46 @@ export class ReportParticulars implements OnInit, OnDestroy {
   set saving(value: boolean) {
     this.savingState.set(value);
   }
+
+  get savingAction(): boolean {
+    return this.saving;
+  }
+
+  get savingComment(): boolean {
+    return this.commentSubmitting;
+  }
+
+  get newComment(): string {
+    return this.commentDraft;
+  }
+
+  set newComment(value: string) {
+    this.commentDraft = value;
+  }
+
+  get canEditDepartmentReport(): boolean {
+    const quarter = this.getSelectedQuarter();
+    return !this.isAnnualView && !!quarter;
+  }
+
+  get canEndorse(): boolean {
+    return false;
+  }
+
+  get canApprove(): boolean {
+    return false;
+  }
+
+  get canComment(): boolean {
+    return this.hasPreviousComment() && this.canReplyToComments();
+  }
+
+  get commentUnavailableMessage(): string {
+    return this.hasPreviousComment()
+      ? 'Replies are unavailable for this quarter.'
+      : 'You can reply after a pastor or assistant starts this conversation.';
+  }
+
   errorMessage = '';
 
   // ---- Comments (from District Pastor & Assistant, read-only) ----
@@ -166,14 +213,30 @@ export class ReportParticulars implements OnInit, OnDestroy {
 
   // ---- Auto-save state ----
   private readonly autoSaveStatusState = signal<AutoSaveStatus>('idle');
+  private savedStatusTimer: ReturnType<typeof setTimeout> | null = null;
   get autoSaveStatus(): AutoSaveStatus {
     return this.autoSaveStatusState();
   }
   set autoSaveStatus(value: AutoSaveStatus) {
     this.autoSaveStatusState.set(value);
+    if (this.savedStatusTimer) {
+      clearTimeout(this.savedStatusTimer);
+      this.savedStatusTimer = null;
+    }
+
+    if (value === 'saved' && !this.destroyed) {
+      this.savedStatusTimer = setTimeout(() => {
+        this.savedStatusTimer = null;
+        if (this.autoSaveStatus === 'saved') {
+          this.autoSaveStatusState.set('idle');
+          this.refreshView();
+        }
+      }, 5000);
+    }
   }
   private readonly autoSaveDelayMs = 800;
   private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private approvedWarningTimer: ReturnType<typeof setTimeout> | null = null;
   private autoSaving = false;
   private autoSaveQueue: SaveReportItem[] | null = null;
   private destroyed = false;
@@ -249,10 +312,18 @@ ngOnInit(): void {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    if (this.approvedWarningTimer) {
+      clearTimeout(this.approvedWarningTimer);
+      this.approvedWarningTimer = null;
+    }
+    if (this.savedStatusTimer) {
+      clearTimeout(this.savedStatusTimer);
+      this.savedStatusTimer = null;
+    }
     // Save anything still waiting before leaving the page.
     this.flushAutoSave();
     this.stopCommentPolling();
-    this.destroyed = true;
   }
 
   loadReport(): void {
@@ -264,6 +335,7 @@ ngOnInit(): void {
       .subscribe({
         next: (response: any) => {
           this.report = (response?.data ?? response) as Report;
+          this.useCombinedValuesForInputs();
           this.initializeSelections();
           this.loading = false;
           this.cdr.detectChanges();
@@ -277,6 +349,24 @@ ngOnInit(): void {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private useCombinedValuesForInputs(): void {
+    for (const program of this.report?.programs ?? []) {
+      for (const section of program.sections ?? []) {
+        for (const particular of section.particulars ?? []) {
+          for (const record of particular.quarters ?? []) {
+            if (record.monthly_values) continue;
+
+            if (record.combined_value !== null && record.combined_value !== undefined) {
+              record.value = record.combined_value;
+            } else if ((record.participant_count ?? 0) > 0) {
+              record.value = record.participant_count ?? 0;
+            }
+          }
+        }
+      }
+    }
   }
 
   private initializeSelections(): void {
@@ -374,6 +464,38 @@ ngOnInit(): void {
     return program ? this.getProgramQuarter(program, quarter) ?? quarter : quarter;
   }
 
+  canSubmitSelectedQuarter(): boolean {
+    return !this.isRepresentative() || this.hasPreviousQuarterApproval();
+  }
+
+  private hasPreviousQuarterApproval(
+    quarter: Quarter | null = this.getSelectedQuarter()
+  ): boolean {
+    if (!quarter) return false;
+
+    const number = this.quarterNumber(quarter.quarter);
+    if (number < 1) return false;
+    const previousNumber = number === 1 ? 4 : number - 1;
+    const previousYear = number === 1 ? quarter.year - 1 : quarter.year;
+
+    const previousQuarter = this.availableQuarters.find(
+      candidate =>
+        candidate.year === previousYear &&
+        this.quarterNumber(candidate.quarter) === previousNumber
+    );
+    if (!previousQuarter) return number === 1;
+
+    const particulars = (this.report?.programs ?? []).flatMap(program =>
+      program.sections.flatMap(section => section.particulars)
+    );
+
+    return particulars.length > 0 && particulars.every(particular =>
+      this.isRecordApproved(
+        this.getParticularQuarterRecord(particular, previousQuarter)
+      )
+    );
+  }
+
   selectYear(year: number): void {
     if (this.saving) return;
 
@@ -426,17 +548,7 @@ ngOnInit(): void {
   }
 
   getVisibleSections(program: Program): Section[] {
-    if (!this.isStewardshipReport) {
-      return program.sections;
-    }
-
-    return program.sections.filter(section =>
-      this.isOfferingSection(section) === (this.activeStewardshipTab === 'offering')
-    );
-  }
-
-  selectStewardshipTab(tab: StewardshipTab): void {
-    this.activeStewardshipTab = tab;
+    return program.sections;
   }
 
   getStewardshipTotal(type: 'offering' | 'tithe'): number {
@@ -515,6 +627,16 @@ ngOnInit(): void {
     this.scheduleAutoSave();
   }
 
+  updateReportStewardshipMonth(
+    particular: Particular,
+    quarter: Quarter,
+    _record: QuarterRecord,
+    month: string,
+    value: number | string | null
+  ): void {
+    this.setStewardshipMonthValue(particular, quarter, month, value);
+  }
+
   getParticularQuarterRecord(
     particular: Particular,
     quarter: Quarter
@@ -524,6 +646,14 @@ ngOnInit(): void {
     ) ?? particular.quarters?.find(record =>
       this.isSameQuarter(record, quarter)
     ) ?? null;
+  }
+
+  updateReportValue(
+    particular: Particular,
+    quarter: Quarter,
+    value: number | string | null
+  ): void {
+    this.setQuarterValue(particular, quarter, value);
   }
 
   private getProgramQuarter(program: Program, quarter: Quarter): Quarter | null {
@@ -571,7 +701,18 @@ ngOnInit(): void {
     return String(record.mission_approve ?? '').trim() !== '';
   }
 
-  isQuarterApproved(quarterId: number): boolean {
+  isRecordSubmitted(record: QuarterRecord | null): boolean {
+    return !!String(record?.date_submitted ?? '').trim();
+  }
+
+  isQuarterApproved(
+    quarterValue: Quarter | number | null = this.getSelectedQuarter()
+  ): boolean {
+    const quarterId = typeof quarterValue === 'number'
+      ? quarterValue
+      : quarterValue?.quarter_id;
+    if (!quarterId) return false;
+
     const program = this.getSelectedProgram();
     if (!program) return false;
 
@@ -586,8 +727,13 @@ ngOnInit(): void {
     });
   }
 
-  isQuarterEndorsed(quarterId: number): boolean {
-    if (this.isQuarterApproved(quarterId)) return false;
+  isQuarterEndorsed(
+    quarterValue: Quarter | number | null = this.getSelectedQuarter()
+  ): boolean {
+    const quarterId = typeof quarterValue === 'number'
+      ? quarterValue
+      : quarterValue?.quarter_id;
+    if (!quarterId || this.isQuarterApproved(quarterId)) return false;
 
     const program = this.getSelectedProgram();
     if (!program) return false;
@@ -601,6 +747,22 @@ ngOnInit(): void {
     return records.length > 0 &&
       !records.some(record => this.isRecordApproved(record)) &&
       records.every(record => String(record.district_endorse ?? '').trim() !== '');
+  }
+
+  isQuarterSubmitted(): boolean {
+    const quarter = this.getSelectedQuarter();
+    const programs = this.report?.programs ?? [];
+    if (!quarter || programs.length === 0) return false;
+
+    const records = programs.flatMap(program =>
+      program.sections.flatMap(section =>
+        section.particulars
+          .map(particular => this.getParticularQuarterRecord(particular, quarter))
+          .filter((record): record is QuarterRecord => record !== null)
+      )
+    );
+
+    return records.length > 0 && records.every(record => this.isRecordSubmitted(record));
   }
 
   getQuarterValue(
@@ -662,8 +824,10 @@ ngOnInit(): void {
       particular.quarters.push(record);
     }
 
+    const minimum = (record.participant_count ?? 0) + (record.completed_event_count ?? 0);
     if (value === '' || value === null) {
-      record.value = null;
+      record.value = minimum > 0 ? minimum : null;
+      record.combined_value = record.value;
       this.clearMessages();
       this.scheduleAutoSave();
       return;
@@ -676,7 +840,8 @@ ngOnInit(): void {
       return;
     }
 
-    record.value = numeric;
+    record.value = Math.max(numeric, minimum);
+    record.combined_value = record.value;
     this.clearMessages();
     this.scheduleAutoSave();
   }
@@ -802,8 +967,16 @@ ngOnInit(): void {
     this.loadComments(true);
   }
 
+  openComments(): void {
+    this.openMobileComments();
+  }
+
   closeMobileComments(): void {
     this.mobileCommentsOpen = false;
+  }
+
+  closeComments(): void {
+    this.closeMobileComments();
   }
 
   hasPreviousComment(): boolean {
@@ -875,6 +1048,10 @@ ngOnInit(): void {
           this.refreshView();
         }
       });
+  }
+
+  publishComment(): void {
+    this.submitComment();
   }
 
   /** Comments for the quarter on screen (or all four quarters in Annual view). */
@@ -1088,12 +1265,25 @@ ngOnInit(): void {
           particular_id: particular.particular_id,
           quarter_id: itemQuarterId,
           value,
+          ...(!record?.monthly_values ? { value_includes_participants: true } : {}),
           ...(record?.monthly_values ? { monthly_values: record.monthly_values } : {})
         });
       }
     }
 
     return items;
+  }
+
+  submitPersonalReport(): void {
+    this.saveReport();
+  }
+
+  endorseReport(): void {
+    this.errorMessage = 'Representatives cannot endorse reports.';
+  }
+
+  approveReport(): void {
+    this.errorMessage = 'Representatives cannot approve reports.';
   }
 
   saveReport(): void {
@@ -1107,6 +1297,12 @@ ngOnInit(): void {
 
     if (!program || !quarter) {
       this.errorMessage = 'Select a program and quarter.';
+      return;
+    }
+
+    if (!this.canSubmitSelectedQuarter()) {
+      this.errorMessage =
+        'The previous quarter must be approved before submitting this report.';
       return;
     }
 
@@ -1124,8 +1320,9 @@ ngOnInit(): void {
         programQuarter &&
         this.isProgramQuarterApproved(reportProgram, programQuarter)
       ) {
-        this.errorMessage =
-          `The ${programQuarter.quarter} report for ${reportProgram.program_name} has already been approved.`;
+        this.showApprovedReportWarning(
+          `The ${programQuarter.quarter} report for ${reportProgram.program_name} has already been approved.`
+        );
         return;
       }
 
@@ -1180,6 +1377,25 @@ ngOnInit(): void {
 
   private clearMessages(): void {
     this.errorMessage = '';
+    if (this.approvedWarningTimer) {
+      clearTimeout(this.approvedWarningTimer);
+      this.approvedWarningTimer = null;
+    }
+  }
+
+  private showApprovedReportWarning(message: string): void {
+    if (this.approvedWarningTimer) {
+      clearTimeout(this.approvedWarningTimer);
+    }
+
+    this.errorMessage = message;
+    this.approvedWarningTimer = setTimeout(() => {
+      this.approvedWarningTimer = null;
+      if (this.errorMessage === message) {
+        this.errorMessage = '';
+        this.refreshView();
+      }
+    }, 5000);
   }
 
   backToPrograms(): void {

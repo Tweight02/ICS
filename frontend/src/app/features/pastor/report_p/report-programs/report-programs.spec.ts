@@ -34,7 +34,12 @@ describe('ReportPrograms', () => {
                 department_name: 'Youth',
                 q1_approved: false,
                 q1_data_progress: 50,
-                q1_submitted_data_progress: null
+                q1_submitted_data_progress: null,
+                q2_approved: false,
+                q2_data_progress: 75,
+                q2_submitted: true,
+                q3_approved: true,
+                q3_data_progress: 100
               },
               { department_id: 16, department_name: 'Ministerial & Evangelism' },
               { department_id: 20, department_name: 'Adventist Mission' },
@@ -60,8 +65,16 @@ describe('ReportPrograms', () => {
   it('shows saved report progress before the representative submits it', () => {
     expect(component.getMonitoring(0).q1).toEqual({
       progress: 50,
-      approved: false
+      approved: false,
+      submitted: false
     });
+
+    const cells = Array.from(fixture.nativeElement.querySelectorAll('tbody tr:first-child td')) as HTMLTableCellElement[];
+    expect(cells[0].textContent).toContain('Needs completion');
+    expect(cells[0].textContent).not.toContain('%');
+    expect(cells[1].textContent).toContain('Submitted for review');
+    expect(cells[2].textContent.trim()).toBe('✓');
+    expect(cells[2].querySelector('[aria-label="Approved"]')).not.toBeNull();
   });
 
   it('groups the four personal-report departments separately', () => {

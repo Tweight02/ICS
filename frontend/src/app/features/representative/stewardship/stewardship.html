@@ -6,20 +6,30 @@
   Background: the soft green gradient below stands in for the mountain photo.
   To use a photo, add it as a background-image on this <section> (e.g. style="background-image: url(...)").
 -->
-<section class="min-h-screen bg-gradient-to-b from-emerald-50 via-slate-100 to-emerald-100/70 px-4 py-6 text-slate-800">
+<section class="min-h-screen bg-slate-50 px-4 py-6 text-slate-800 sm:px-6 sm:py-8">
   <div class="mx-auto max-w-6xl">
 
     <!-- Report heading -->
-    <div class="mb-6 flex flex-wrap items-end justify-between gap-3 px-1">
-      <div>
+    <header class="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-7 sm:py-6">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-800">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+          </svg>
+        </span>
+        <div>
+          <p class="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-800">Church reporting</p>
         <div role="heading" aria-level="1" class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
           Stewardship Quarterly Report
         </div>
+          <p class="mt-1.5 text-sm text-slate-500">Record and review your church's stewardship activity.</p>
+        </div>
       </div>
-    </div>
+    </header>
 
     <!-- Period bar: year + quarters -->
-    <div class="flex flex-wrap items-end gap-4 rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur-sm">
+    <div class="flex flex-wrap items-end gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
       <label class="report-period-field">
         <span class="report-period-label">YEAR</span>
         <span class="sr-only">Year</span>
@@ -73,7 +83,7 @@
 
     <!-- Status note -->
     @if (statusNote && !isAnnual) {
-      <div class="mt-4 rounded-xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm backdrop-blur-sm">
+      <div class="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
         {{ statusNote }}
       </div>
     }
@@ -81,21 +91,21 @@
     <!-- Summary -->
     <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
       @for (p of monthlyFields; track p.particular_id) {
-        <div class="rounded-2xl border border-slate-200 bg-white/70 px-5 py-4 shadow-sm backdrop-blur-sm">
-          <div class="text-xs font-semibold text-emerald-800/75">
+        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Total {{ p.particulars_name }}
           </div>
-          <div class="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+          <div class="mt-2 text-2xl font-bold tracking-tight tabular-nums text-slate-900">
             ₱{{ monthlyTotal(p.particular_id) | number: '1.2-2' }}
           </div>
         </div>
       }
       @if (showPercent) {
-        <div class="rounded-2xl border border-slate-200 bg-white/70 px-5 py-4 shadow-sm backdrop-blur-sm">
-          <div class="text-xs font-semibold text-emerald-800/75">
+        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Members returning tithe
           </div>
-          <div class="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+          <div class="mt-2 text-2xl font-bold tracking-tight tabular-nums text-slate-900">
             {{ percentReturning | number: '1.1-1' }}%
           </div>
         </div>
@@ -104,8 +114,8 @@
 
     <!-- Accordion -->
     <div class="mt-6 space-y-4">
-      <details class="overflow-hidden rounded-2xl border border-slate-200 bg-white/60 shadow-[0_10px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm" open>
-        <summary class="flex cursor-pointer list-none items-center justify-between bg-emerald-900/5 px-6 py-4 text-base font-semibold text-slate-900 sm:px-8">
+      <details class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
+        <summary class="flex cursor-pointer list-none items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 sm:px-6">
           <span>Stewardship Activities</span>
           <span class="text-lg text-slate-500">▾</span>
         </summary>
@@ -115,15 +125,15 @@
             <div
               role="heading"
               aria-level="2"
-              class="flex items-center justify-between bg-emerald-900/5 px-6 py-3 text-sm font-semibold text-slate-700 sm:px-8"
+              class="flex items-center justify-between bg-white px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6"
             >
               <span>Reporting period</span>
               <span class="w-32 text-center">{{ periodLabel }}</span>
             </div>
 
             @for (f of fields; track f.particular_id) {
-              <div class="flex items-center justify-between gap-4 px-6 py-3 odd:bg-white/60 sm:px-8">
-                <label [attr.for]="'field-' + f.particular_id" class="text-sm text-slate-700">
+              <div class="flex items-center justify-between gap-4 border-t border-slate-100 px-5 py-3.5 even:bg-slate-50/60 sm:px-6">
+                <label [attr.for]="'field-' + f.particular_id" class="text-sm font-medium text-slate-700">
                   {{ f.particulars_name }}
                 </label>
 
@@ -147,8 +157,8 @@
               </div>
 
               @if (showPercent && f.particular_id === titheUnitsId) {
-                <div class="flex items-center justify-between gap-4 px-6 py-3 odd:bg-white/60 sm:px-8">
-                  <span class="text-sm text-slate-700">% of Members returning Tithe</span>
+                <div class="flex items-center justify-between gap-4 border-t border-slate-100 px-5 py-3.5 even:bg-slate-50/60 sm:px-6">
+                  <span class="text-sm font-medium text-slate-700">% of Members returning Tithe</span>
                   <span class="w-32 shrink-0 px-3 text-center font-semibold text-slate-900">
                     {{ percentReturning | number: '1.1-1' }}%
                   </span>
@@ -159,8 +169,8 @@
         </div>
       </details>
 
-      <details class="overflow-hidden rounded-2xl border border-slate-200 bg-white/60 shadow-[0_10px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm">
-        <summary class="flex cursor-pointer list-none items-center justify-between bg-emerald-900/5 px-6 py-4 text-base font-semibold text-slate-900 sm:px-8">
+      <details class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <summary class="flex cursor-pointer list-none items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 sm:px-6">
           <span>Offering and Tithes</span>
           <span class="text-lg text-slate-500">▾</span>
         </summary>
@@ -172,7 +182,7 @@
                 <div
                   role="heading"
                   aria-level="2"
-                  class="grid grid-cols-5 items-center gap-3 bg-emerald-900/5 px-6 py-4 text-sm font-semibold text-slate-700 sm:px-8"
+                  class="grid grid-cols-5 items-center gap-3 bg-white px-5 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6"
                 >
                   <div></div>
                   @if (isAnnual) {
@@ -188,7 +198,7 @@
                 </div>
 
                 @for (p of monthlyFields; track p.particular_id) {
-                  <div class="grid grid-cols-5 items-center gap-3 px-6 py-3 odd:bg-white/60 sm:px-8">
+                  <div class="grid grid-cols-5 items-center gap-3 border-t border-slate-100 px-5 py-3.5 even:bg-slate-50/60 sm:px-6">
                     <div class="text-sm font-medium text-slate-700">{{ p.particulars_name }}</div>
 
                     @if (isAnnual) {
@@ -235,12 +245,11 @@
           }
 
           @if (status === 'Draft') {
-            <button
+            <button app-button variant="submit" size="md"
               type="button"
-              style="border-radius: 0.25rem"
-              class="border border-emerald-700 bg-emerald-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800"
               (click)="submit()"
               [disabled]="isLoading || isSaving || isError || particulars.length === 0"
+              [loading]="isSaving"
             >
               Submit report
             </button>

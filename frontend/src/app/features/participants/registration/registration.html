@@ -1,121 +1,119 @@
-﻿<div class="registration-shell h-screen overflow-hidden bg-green-50">
-  <header class="bg-green-800 text-white shadow-lg">
-    <div class="mx-auto max-w-7xl px-6 py-3">
+<div class="fixed inset-0 z-[100] isolate flex min-h-dvh w-full flex-col overflow-y-auto bg-[#edf7f0] text-slate-800">
+  <div class="pointer-events-none absolute inset-0 z-0">
+    <img src="/assets/Misty.png" alt="" aria-hidden="true" class="h-full w-full object-cover object-center opacity-60">
+    <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(244,250,247,0.84)_0%,rgba(237,247,242,0.78)_48%,rgba(255,255,255,0.88)_100%)]"></div>
+  </div>
+
+  <header class="relative z-10 shrink-0 border-b border-emerald-100 bg-white/95 shadow-sm backdrop-blur-xl">
+    <div class="h-1 w-full bg-gradient-to-r from-sky-400 via-emerald-500 to-teal-400"></div>
+    <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
       <div class="flex items-center gap-4">
-        <img src="logo.png" alt="Northeast Luzon Mission logo" class="h-12 w-12 shrink-0 object-contain" />
-        <h1 class="text-2xl font-bold">Event Registration</h1>
+        <img src="logo.png" alt="Northeast Luzon Mission logo" class="h-11 w-11 shrink-0 object-contain" />
+        <h1 class="text-xl font-extrabold tracking-tight text-emerald-950 sm:text-2xl">Event Registration</h1>
       </div>
     </div>
   </header>
 
-  <main class="registration-main mx-auto max-w-7xl px-3 py-3 sm:px-6 lg:px-8">
-    <div class="registration-layout grid h-full grid-cols-1 items-stretch gap-3 lg:grid-cols-3 lg:gap-5">
-      <section class="event-summary min-h-0 lg:col-span-1">
-        <div class="event-summary-panel flex h-full flex-col overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg">
-          <div [ngClass]="selectedEvent ? ['bg-gradient-to-br', selectedEvent.banner, 'p-5', 'text-white'] : ['bg-gradient-to-br', 'from-green-700', 'to-green-900', 'p-5', 'text-white']">
-            <h2 class="text-xl font-bold leading-snug">
+  <main class="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+    <div class="grid flex-1 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(17rem,0.78fr)_minmax(0,1.7fr)] lg:gap-6">
+      <section class="min-w-0">
+        <div class="overflow-hidden rounded-3xl border border-white/90 bg-white/95 p-6 shadow-[0_12px_32px_rgba(39,91,77,0.1)] sm:p-7">
+          <div class="space-y-5">
+            <h2 class="text-2xl font-bold leading-tight tracking-tight text-slate-800 sm:text-[1.75rem]">
               {{ selectedEvent?.title || 'No Event Selected' }}
             </h2>
-          </div>
-
-          <div class="flex flex-1 flex-col p-5">
-            <p *ngIf="loadingEvent" class="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800" role="status">
+            <p *ngIf="loadingEvent" class="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800" role="status">
               Loading event details…
             </p>
-            <p *ngIf="eventError" class="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
+            <p *ngIf="eventError" class="rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">
               {{ eventError }}
             </p>
-            <div class="space-y-3 rounded-xl border border-green-100 bg-green-50 p-4 text-sm">
-              <div class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" /><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18" />
-                </svg>
-                <span class="font-semibold text-gray-800">{{ selectedEvent?.date || 'Not available' }}</span>
-              </div>
-
-              <div class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
-                </svg>
-                <span class="font-semibold text-gray-800">{{ eventTimeLabel }}</span>
-              </div>
-
-              <div class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-7-5.5-7-11a7 7 0 0114 0c0 5.5-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" />
-                </svg>
-                <span class="font-semibold text-gray-800">{{ selectedEvent?.venue || 'Not available' }}</span>
-              </div>
-
-              <div class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v5M10 4.5h4M5 21V12l7-5 7 5v9M3 21h18M10 21v-5h4v5" />
-                </svg>
-                <span class="font-semibold text-gray-800">{{ selectedEvent?.church || 'Not available' }}</span>
-              </div>
+            <div class="space-y-4 text-sm leading-5 text-slate-600">
+              <p class="flex min-w-0 items-start gap-3">
+                <i class="bi bi-clock mt-0.5 shrink-0 text-slate-400"></i>
+                <span>{{ selectedEvent?.date || 'Date not available' }}<span *ngIf="eventTimeLabel"> | {{ eventTimeLabel }}</span></span>
+              </p>
+              <p *ngIf="selectedEvent?.venue" class="flex min-w-0 items-start gap-3">
+                <i class="bi bi-geo-alt mt-0.5 shrink-0 text-slate-400"></i>
+                <span>{{ selectedEvent?.venue }}</span>
+              </p>
+              <p *ngIf="selectedEvent?.church" class="flex min-w-0 items-start gap-3">
+                <i class="bi bi-map mt-0.5 shrink-0 text-slate-400"></i>
+                <span>{{ selectedEvent?.church }}</span>
+              </p>
+              <p *ngIf="selectedEvent?.registrationChurch" class="flex min-w-0 items-start gap-3">
+                <i class="bi bi-building mt-0.5 shrink-0 text-slate-400"></i>
+                <span>Church: {{ selectedEvent?.registrationChurch }}</span>
+              </p>
+              <p *ngIf="selectedEvent?.createdBy" class="flex min-w-0 items-start gap-3">
+                <i class="bi bi-person mt-0.5 shrink-0 text-slate-400"></i>
+                <span>Created by {{ selectedEvent?.createdBy }}</span>
+              </p>
             </div>
-
-            <p class="event-description mt-4 text-sm leading-relaxed text-gray-600">
-              {{ selectedEvent?.description || 'Please return to the events page and select an event to register.' }}
-            </p>
+            <section class="border-t border-slate-100 pt-5">
+              <h3 class="text-lg font-bold text-slate-800">Announcement</h3>
+              <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-500">
+                {{ selectedEvent?.description || 'Please return to the events page and select an event to register.' }}
+              </p>
+            </section>
           </div>
         </div>
-
-        <a routerLink="/participants" class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-700 bg-white px-5 py-3 font-semibold text-green-800 no-underline shadow-sm transition duration-200 hover:bg-green-50 focus:outline-none focus:ring-4 focus:ring-green-200">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7M8 12h13" />
-          </svg>
-          Back
-        </a>
       </section>
 
-      <section class="registration-panel min-h-0 lg:col-span-2">
-        <div class="registration-card h-full overflow-hidden rounded-2xl bg-white p-4 shadow-md sm:p-6">
-          <h2 class="registration-heading mb-3 text-xl font-bold text-gray-800 sm:mb-4 sm:text-2xl">Participant Registration</h2>
+      <section class="min-w-0">
+        <div class="flex flex-col rounded-3xl border border-white/90 bg-white/95 p-5 shadow-[0_12px_32px_rgba(39,91,77,0.1)] sm:p-7">
+          <div class="mb-6 flex items-center gap-3 border-b border-slate-100 pb-5">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+              <i class="bi bi-person-vcard text-xl" aria-hidden="true"></i>
+            </span>
+            <div>
+              <h2 class="registration-heading text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Participant Registration</h2>
+              <p class="mt-1 text-sm text-slate-500">Enter the participant's details below.</p>
+            </div>
+          </div>
 
-          <form #registrationForm="ngForm" (ngSubmit)="onSubmit(registrationForm)" class="registration-form space-y-3 sm:space-y-5" novalidate>
+          <form #registrationForm="ngForm" (ngSubmit)="onSubmit(registrationForm)" class="flex flex-col gap-6" novalidate>
             <p *ngIf="errorVisible" role="alert" class="rounded-lg bg-red-50 p-3 text-sm text-red-700">
               {{ errorMessage }}
             </p>
-            <div class="registration-fields grid grid-cols-2 gap-2 sm:gap-3">
+            <div class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 sm:gap-y-5">
               <div>
-                <label for="first_name" class="label">First Name <span class="text-red-500">*</span></label>
-                <input id="first_name" name="first_name" type="text" [(ngModel)]="formData.first_name" placeholder="Enter first name" required class="field" />
+                <label for="first_name" class="mb-1.5 block text-xs font-semibold text-slate-700">First Name <span class="text-red-500">*</span></label>
+                <input id="first_name" name="first_name" type="text" [(ngModel)]="formData.first_name" placeholder="Enter first name" required class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15" />
               </div>
 
               <div>
-                <label for="last_name" class="label">Last Name <span class="text-red-500">*</span></label>
-                <input id="last_name" name="last_name" type="text" [(ngModel)]="formData.last_name" placeholder="Enter last name" required class="field" />
+                <label for="last_name" class="mb-1.5 block text-xs font-semibold text-slate-700">Last Name <span class="text-red-500">*</span></label>
+                <input id="last_name" name="last_name" type="text" [(ngModel)]="formData.last_name" placeholder="Enter last name" required class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15" />
               </div>
 
               <div>
-                <label for="middle_name" class="label">Middle Name <span class="font-normal text-gray-400">(Optional)</span></label>
-                <input id="middle_name" name="middle_name" type="text" [(ngModel)]="formData.middle_name" placeholder="Enter middle name" class="field" />
+                <label for="middle_name" class="mb-1.5 block text-xs font-semibold text-slate-700">Middle Name <span class="font-normal text-slate-400">(Optional)</span></label>
+                <input id="middle_name" name="middle_name" type="text" [(ngModel)]="formData.middle_name" placeholder="Enter middle name" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15" />
               </div>
 
               <div>
-                <label for="extension_name" class="label">Extension Name <span class="font-normal text-gray-400">(Optional)</span></label>
-                <input id="extension_name" name="extension_name" type="text" [(ngModel)]="formData.extension_name" placeholder="e.g., Jr., Sr., III" class="field" />
+                <label for="extension_name" class="mb-1.5 block text-xs font-semibold text-slate-700">Extension Name <span class="font-normal text-slate-400">(Optional)</span></label>
+                <input id="extension_name" name="extension_name" type="text" [(ngModel)]="formData.extension_name" placeholder="e.g., Jr., Sr., III" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15" />
               </div>
 
               <div>
-                <label for="age" class="label">Age <span class="text-red-500">*</span></label>
-                <input id="age" name="age" type="number" [(ngModel)]="formData.age" placeholder="Enter your age" min="1" max="120" required class="field" />
+                <label for="age" class="mb-1.5 block text-xs font-semibold text-slate-700">Age <span class="text-red-500">*</span></label>
+                <input id="age" name="age" type="number" [(ngModel)]="formData.age" placeholder="Enter your age" min="1" max="120" required class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15" />
               </div>
 
-              <div>
-                <label for="gender" class="label">Gender</label>
-                <select id="gender" name="gender" [(ngModel)]="formData.gender" required class="field">
+              <div class="sm:col-start-1">
+                <label for="gender" class="mb-1.5 block text-xs font-semibold text-slate-700">Gender</label>
+                <select id="gender" name="gender" [(ngModel)]="formData.gender" required class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15">
                   <option value="" disabled>Select gender</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
-                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
 
-            <div class="border-t pt-4">
-              <button type="submit" [disabled]="!selectedEvent || loadingEvent || saving" class="w-full rounded-lg bg-green-700 px-6 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-200 disabled:cursor-not-allowed disabled:opacity-50">
+            <div class="flex justify-end border-t border-slate-100 pt-4">
+              <button app-button variant="create" size="md" type="submit" [disabled]="!selectedEvent || loadingEvent || saving" [loading]="saving" class="!h-9 !min-w-40 !px-6 !text-sm">
                 {{ loadingEvent ? 'Loading event…' : 'Submit registration' }}
               </button>
             </div>
@@ -125,7 +123,7 @@
     </div>
   </main>
 
-  <div *ngIf="confirmModalVisible" class="modal flex">
+  <div *ngIf="confirmModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
     <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
       <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -140,10 +138,10 @@
         <span class="font-semibold text-green-700">{{ eventTitle }}</span>?
       </p>
 
-      <div class="mt-6 flex gap-3">
-        <button type="button" (click)="cancelSubmit()" class="btn-secondary" [disabled]="saving">Cancel</button>
-        <button type="button" (click)="confirmSubmit()" class="btn-primary" [disabled]="saving">
-          <span *ngIf="!saving">Submit</span>
+      <div class="mt-6 flex justify-center gap-3">
+        <button app-button variant="secondary" size="md" type="button" (click)="cancelSubmit()" class="!h-10 !min-w-28 !px-5 !text-sm" [disabled]="saving">No</button>
+        <button app-button variant="create" size="md" type="button" (click)="confirmSubmit()" class="!h-10 !min-w-28 !px-5 !text-sm" [disabled]="saving" [loading]="saving">
+          <span *ngIf="!saving">Yes</span>
           <span *ngIf="saving" class="inline-flex items-center justify-center gap-2">
             <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25" />
@@ -156,32 +154,21 @@
     </div>
   </div>
 
-  <div *ngIf="successModalVisible" class="modal flex">
-    <div class="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
-      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-
-      <h2 class="mt-4 text-xl font-bold text-gray-800">Registration Successful!</h2>
-
-      <p class="mt-2 text-sm leading-relaxed text-gray-500">
-        <span class="font-semibold text-gray-800">{{ fullName }}</span>
-        has been registered for
-        <span class="font-semibold text-green-700">{{ eventTitle }}</span>.
-      </p>
-
-      <p class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-800">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-        Saved &middot; Ref <span>{{ savedRef }}</span> &middot; <span>{{ savedTime }}</span>
-      </p>
-
-      <div class="mt-6 flex gap-3">
-        <button type="button" (click)="resetForm(registrationForm)" class="btn-secondary">Register Another</button>
-        <a routerLink="/participants" class="btn-primary no-underline">Done</a>
+  <div *ngIf="successModalVisible" class="fixed right-4 top-4 z-50 w-[calc(100%-2rem)] max-w-md" role="status" aria-live="polite">
+    <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,74,48,0.18)] sm:p-5">
+      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+        <i class="bi bi-check-lg text-xl" aria-hidden="true"></i>
+      </span>
+      <div class="min-w-0 flex-1">
+        <h2 class="font-bold text-slate-900">Registration successful</h2>
+        <p class="mt-1 text-sm leading-5 text-slate-600">
+          <span class="font-semibold text-slate-800">{{ fullName }}</span>
+          has been registered for
+          <span class="font-semibold text-emerald-800">{{ eventTitle }}</span>.
+        </p>
+        <p class="mt-2 text-xs font-medium text-emerald-800">
+          Saved · Ref {{ savedRef }} · {{ savedTime }}
+        </p>
       </div>
     </div>
   </div>

@@ -10,10 +10,15 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ReportService } from '../../../../core/services/report/report';
+import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
+import { Button } from '../../../../shared/components/button/button';
+import { QuarterStatus, resolveQuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
 
 import {
-  Department
+  Department,
+  PERSONAL_REPORT_DEPARTMENT_IDS,
+  PERSONAL_REPORT_GROUP_DEPARTMENT_ID
 } from '../../../../core/models/report.model';
 
 interface Monitoring {
@@ -26,17 +31,18 @@ interface Monitoring {
 interface QuarterMonitoring {
   progress: number | null;
   approved: boolean;
+  submitted: boolean;
 }
 
 @Component({
   selector: 'app-report-programs',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './report-programs.html',
-  styleUrls: ['./report-programs.css']
+  imports: [CommonModule, Button, QuarterStatus],
+  templateUrl: '../../../../shared/reports/report-programs/report-programs.html',
 })
 export class ReportPrograms implements OnInit {
   private readonly reportService = inject(ReportService);
+  private readonly auth = inject(AuthService);
   private readonly churchService = inject(ChurchService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -49,7 +55,8 @@ export class ReportPrograms implements OnInit {
 
   departments: Department[] = [];
 
-  private readonly personalReportDepartmentIds = new Set([16, 20, 22, 23]);
+  readonly personalReportGroupDepartmentId = PERSONAL_REPORT_GROUP_DEPARTMENT_ID;
+  private readonly personalReportDepartmentIds = new Set<number>(PERSONAL_REPORT_DEPARTMENT_IDS);
 
   private readonly loadingState = signal(false);
   get loading(): boolean {
@@ -62,6 +69,11 @@ export class ReportPrograms implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    if (this.isRepresentativePortal) {
+      this.resolveRepresentativeChurch();
+      return;
+    }
+
     this.route.paramMap.subscribe(pathParams => {
       const queryParams = this.route.snapshot.queryParamMap;
       this.districtId =
@@ -86,16 +98,47 @@ export class ReportPrograms implements OnInit {
     });
   }
 
+  get isRepresentativePortal(): boolean {
+    return this.router.url.startsWith('/representative');
+  }
+
   get reportDepartments(): Department[] {
+    if (this.isRepresentativePortal) {
+      return this.departments.filter(department =>
+        this.isRepresentativeReport(department)
+      );
+    }
+
     return this.departments.filter(department =>
       !this.isPersonalReportDepartment(department)
     );
   }
 
+  get representativeDepartments(): Department[] {
+    return this.reportDepartments;
+  }
+
   get personalReportDepartments(): Department[] {
+    if (this.isRepresentativePortal) {
+      return [];
+    }
+
     return this.departments.filter(department =>
       this.isPersonalReportDepartment(department)
     );
+  }
+
+  isRepresentativeReport(department: Department): boolean {
+    const name = String(department.department_name || '').trim().toLowerCase();
+    const excludedReports = [
+      'baptism',
+      'death',
+      'ministerial',
+      'evangelism',
+      'adventist'
+    ];
+
+    return !excludedReports.some(excluded => name.includes(excluded));
   }
 
   private isPersonalReportDepartment(department: Department): boolean {
@@ -114,6 +157,14 @@ export class ReportPrograms implements OnInit {
     }
 
     const portalPrefix = this.portalPrefix();
+    if (this.isRepresentativePortal) {
+      this.router.navigate([
+        '/representative/reports/particulars',
+        department.department_id
+      ]);
+      return;
+    }
+
     const departmentName = String(department.department_name || '').toLowerCase();
 
     const isBaptismOrDeath = department.department_id === 22
@@ -151,6 +202,11 @@ export class ReportPrograms implements OnInit {
   }
 
   backToReportDetails(): void {
+    if (this.isRepresentativePortal) {
+      this.router.navigate(['/representative/reports/programs']);
+      return;
+    }
+
     if (this.portalPrefix() === '/pastor') {
       this.router.navigate(['/pastor/reports/details']);
       return;
@@ -167,8 +223,12 @@ export class ReportPrograms implements OnInit {
     ]);
   }
 
-  private portalPrefix(): '/pastor' | '/assistant' | '/director' {
+  private portalPrefix(): '/pastor' | '/assistant' | '/director' | '/representative' {
     const url = this.router.url;
+
+    if (url.startsWith('/representative')) {
+      return '/representative';
+    }
 
     if (url.startsWith('/assistant')) {
       return '/assistant';
@@ -207,6 +267,74 @@ export class ReportPrograms implements OnInit {
     });
   }
 
+  private resolveRepresentativeChurch(): void {
+    const user = this.auth.getCurrentUser();
+
+    if (!user?.church_id) {
+      this.errorMessage =
+        'Your account does not have a church assigned. Please contact the administrator.';
+      return;
+    }
+
+    this.loading = true;
+    this.churchService.getAllChurches().subscribe({
+      next: response => {
+        const churches = Array.isArray(response.data) ? response.data : [];
+        const assignedChurch = churches.find(
+          church => Number(church.church_id) === Number(user.church_id)
+        );
+
+        if (!assignedChurch) {
+          this.loading = false;
+          this.errorMessage = 'Your assigned church could not be found.';
+          this.cdr.detectChanges();
+          return;
+        }
+
+        const districtId = Number(assignedChurch.parent_id ?? assignedChurch.church_id);
+        const district = churches.find(
+          church => Number(church.church_id) === districtId && church.parent_id === null
+        );
+
+        if (!district) {
+          this.loading = false;
+          this.errorMessage = 'The district for your assigned church could not be found.';
+          this.cdr.detectChanges();
+          return;
+        }
+
+        let reportChurch = assignedChurch;
+        if (assignedChurch.parent_id === null) {
+          const districtChurches = churches.filter(
+            church => Number(church.parent_id) === districtId
+          );
+
+          if (districtChurches.length !== 1) {
+            this.loading = false;
+            this.errorMessage = districtChurches.length === 0
+              ? 'No local church is assigned to this district.'
+              : 'Your account is assigned to a district with multiple churches. Please contact the administrator.';
+            this.cdr.detectChanges();
+            return;
+          }
+
+          reportChurch = districtChurches[0];
+        }
+
+        this.districtId = districtId;
+        this.districtName = district.name;
+        this.churchId = Number(reportChurch.church_id);
+        this.churchName = reportChurch.name;
+        this.loadDepartments();
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Unable to load church and district names.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   private loadDepartments(): void {
     this.loading = true;
     this.errorMessage = '';
@@ -233,10 +361,10 @@ export class ReportPrograms implements OnInit {
   }
 
   private readonly emptyMonitoring: Monitoring = {
-    q1: { progress: null, approved: false },
-    q2: { progress: null, approved: false },
-    q3: { progress: null, approved: false },
-    q4: { progress: null, approved: false }
+    q1: { progress: null, approved: false, submitted: false },
+    q2: { progress: null, approved: false, submitted: false },
+    q3: { progress: null, approved: false, submitted: false },
+    q4: { progress: null, approved: false, submitted: false }
   };
 
   getMonitoring(index: number): Monitoring {
@@ -251,6 +379,10 @@ export class ReportPrograms implements OnInit {
     return this.monitoringFor(department);
   }
 
+  getQuarterStatus(quarter: QuarterMonitoring) {
+    return resolveQuarterStatus(quarter);
+  }
+
   private monitoringFor(department: Department | undefined): Monitoring {
 
     if (!department) {
@@ -258,10 +390,26 @@ export class ReportPrograms implements OnInit {
     }
 
     return {
-      q1: { progress: department.q1_data_progress ?? null, approved: !!department.q1_approved },
-      q2: { progress: department.q2_data_progress ?? null, approved: !!department.q2_approved },
-      q3: { progress: department.q3_data_progress ?? null, approved: !!department.q3_approved },
-      q4: { progress: department.q4_data_progress ?? null, approved: !!department.q4_approved }
+      q1: {
+        progress: department.q1_data_progress ?? null,
+        approved: !!department.q1_approved,
+        submitted: !!department.q1_submitted
+      },
+      q2: {
+        progress: department.q2_data_progress ?? null,
+        approved: !!department.q2_approved,
+        submitted: !!department.q2_submitted
+      },
+      q3: {
+        progress: department.q3_data_progress ?? null,
+        approved: !!department.q3_approved,
+        submitted: !!department.q3_submitted
+      },
+      q4: {
+        progress: department.q4_data_progress ?? null,
+        approved: !!department.q4_approved,
+        submitted: !!department.q4_submitted
+      }
     };
   }
 

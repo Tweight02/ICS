@@ -7,6 +7,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { UserService } from '../../../../core/services/user/user-service';
 import { Pastor } from '../../../../core/models/pastor.model';
 import { Church } from '../../../../core/models/church.model';
+import { Button } from '../../../../shared/components/button/button';
 
 interface DistrictFilterOption {
   value: string;
@@ -16,9 +17,9 @@ interface DistrictFilterOption {
 @Component({
   selector: 'app-view-user',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, Button],
   templateUrl: './view-user.html',
-  styleUrl: './view-user.css',
+
 })
 export class ViewUser implements OnInit {
   private userService = inject(UserService);

@@ -282,10 +282,12 @@ class ReportSeeder extends Seeder
                             continue;
                         }
 
+                        $value = $this->valueFor($form, $particular, $churchId, $key, $quarter, $members, $counts);
                         $items[] = [
                             'particular_id' => $particular['id'],
                             'quarter_id' => $quarterId,
-                            'value' => $this->valueFor($form, $particular, $churchId, $key, $quarter, $members, $counts),
+                            'value' => $value,
+                            'manual_value' => $value,
                         ];
                     }
 
@@ -328,6 +330,7 @@ class ReportSeeder extends Seeder
             'particular_id' => $particularId,
             'quarter_id' => $quarterId,
             'value' => array_sum($months),
+            'manual_value' => array_sum($months),
         ], 'item_id');
 
         foreach ($months as $month => $amount) {

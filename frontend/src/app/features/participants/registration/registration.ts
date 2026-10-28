@@ -1,15 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { EventService } from '../../../core/services/events/events-api';
+import { Button } from '../../../shared/components/button/button';
+import { formatDateRange, formatTime } from '../../../shared/events/event.utils';
 
 type RegistrationEvent = {
   id: number;
   title: string;
-  banner: string;
   church: string;
+  registrationChurch: string;
+  createdBy: string;
   date: string;
   time: string;
   end: string;
@@ -29,12 +32,13 @@ type RegistrationFormData = {
 @Component({
   selector: 'app-registration',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, Button],
   templateUrl: './registration.html',
-  styleUrl: './registration.css',
 })
-export class Registration implements OnInit {
+export class Registration implements OnInit, OnDestroy {
   eventId: number | null = null;
+  private registrationAttribution: { church_id: number; registration_token: string } | undefined;
+  private successNotificationTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly selectedEventState = signal<RegistrationEvent | null>(null);
   get selectedEvent(): RegistrationEvent | null { return this.selectedEventState(); }
   set selectedEvent(value: RegistrationEvent | null) { this.selectedEventState.set(value); }
@@ -105,14 +109,28 @@ export class Registration implements OnInit {
     }
 
     this.eventId = id;
-    this.eventService.getPublicEventById(id).subscribe({
+    const churchId = Number(this.route.snapshot.queryParamMap.get('church_id'));
+    const registrationToken = this.route.snapshot.queryParamMap.get('registration_token');
+    if (Number.isInteger(churchId) && churchId > 0 && registrationToken) {
+      this.registrationAttribution = {
+        church_id: churchId,
+        registration_token: registrationToken,
+      };
+    }
+
+    this.eventService.getPublicEventById(id, this.registrationAttribution).subscribe({
       next: (event) => {
         this.selectedEvent = {
           id: event.id,
           title: event.title,
-          banner: 'from-green-700 to-green-900',
-          church: (event.scope ?? []).join(', ') || event.church_name || 'Not specified',
-          date: this.formatDate(event.start_date, event.end_date),
+          church: event.all_districts
+            ? 'All District of NELM'
+            : (event.scope ?? []).join(', ')
+            || event.church_name
+            || 'Not specified',
+          registrationChurch: event.registration_church_name ?? '',
+          createdBy: event.created_by ?? '',
+          date: formatDateRange(event.start_date, event.end_date),
           time: event.start_time,
           end: event.end_time,
           venue: event.location,
@@ -130,12 +148,10 @@ export class Registration implements OnInit {
     });
   }
 
-  private formatDate(start: string, end: string): string {
-    const startDate = new Date(`${start}T00:00:00`);
-    const startLabel = new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(startDate);
-    if (start === end) return startLabel;
-    const endDate = new Date(`${end}T00:00:00`);
-    return `${startLabel} – ${new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(endDate)}`;
+  ngOnDestroy(): void {
+    if (this.successNotificationTimeout) {
+      clearTimeout(this.successNotificationTimeout);
+    }
   }
 
   get eventTitle(): string {
@@ -144,7 +160,9 @@ export class Registration implements OnInit {
 
   get eventTimeLabel(): string {
     if (!this.selectedEvent) return 'Time not available';
-    return `${this.selectedEvent.time}${this.selectedEvent.end ? ` – ${this.selectedEvent.end}` : ''}`;
+    const start = formatTime(this.selectedEvent.time);
+    const end = formatTime(this.selectedEvent.end);
+    return start && end ? `${start}–${end}` : start || end;
   }
 
   onSubmit(form: NgForm): void {
@@ -169,7 +187,7 @@ export class Registration implements OnInit {
       const record = await firstValueFrom(this.eventService.registerPublicParticipant(this.eventId, {
         ...this.formData,
         age: Number(this.formData.age),
-      }));
+      }, this.registrationAttribution));
       const fullName = [
         this.formData.first_name,
         this.formData.middle_name,
@@ -183,8 +201,23 @@ export class Registration implements OnInit {
         hour: 'numeric',
         minute: '2-digit',
       });
+      this.formData = {
+        first_name: '',
+        last_name: '',
+        middle_name: '',
+        extension_name: '',
+        age: '',
+        gender: '',
+      };
       this.confirmModalVisible = false;
       this.successModalVisible = true;
+      if (this.successNotificationTimeout) {
+        clearTimeout(this.successNotificationTimeout);
+      }
+      this.successNotificationTimeout = setTimeout(() => {
+        this.successModalVisible = false;
+        this.successNotificationTimeout = null;
+      }, 5000);
     } catch (error: any) {
       console.error('Failed to save participant registration', error);
       this.errorMessage = error?.status === 422 && error?.error?.errors
@@ -197,16 +230,4 @@ export class Registration implements OnInit {
     }
   }
 
-  resetForm(form: NgForm): void {
-    form.resetForm();
-    this.formData = {
-      first_name: '',
-      last_name: '',
-      middle_name: '',
-      extension_name: '',
-      age: '',
-      gender: '',
-    };
-    this.successModalVisible = false;
-  }
 }
