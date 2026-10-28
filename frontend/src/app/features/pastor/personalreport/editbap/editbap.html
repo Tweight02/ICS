@@ -1,22 +1,22 @@
-<div class="min-h-screen bg-[#f4f7f6] px-5 pt-8 pb-12 text-[#18352c] max-[650px]:px-2.5 max-[650px]:pt-3.5 max-[650px]:pb-7">
+<div class="min-h-screen bg-[#f4f7f6] px-4 pt-4 pb-6 text-[#18352c] max-[650px]:px-2 max-[650px]:pt-2 max-[650px]:pb-4">
   <div class="mx-auto w-full max-w-[1050px] overflow-hidden rounded-[18px] border border-[#e1eae5] bg-white shadow-[0_15px_40px_rgba(17,65,47,0.08)]">
 
     <!-- Header -->
-    <header class="flex items-start justify-between gap-[11px] border-b border-[#e7eee9] bg-[linear-gradient(135deg,#fff,#f6faf7)] px-[34px] py-7 max-[650px]:flex-col max-[650px]:px-[18px] max-[650px]:py-[22px]">
+    <header class="flex items-start justify-between gap-2.5 border-b border-[#e7eee9] bg-[linear-gradient(135deg,#fff,#f6faf7)] px-6 py-4 max-[650px]:px-4 max-[650px]:py-3">
       <div>
-        <p class="mb-0 pt-2.5 text-[25px] font-extrabold tracking-[0.8px] text-[#16805b]">BAPTISM RECORDS</p>
-        <p class="mt-0 text-sm leading-[1.6] text-[#728279]">
+        <p class="mb-0 pt-0 text-[23px] font-extrabold tracking-[0.8px] text-[#16805b] max-[650px]:text-xl">BAPTISM RECORDS</p>
+        <p class="mt-1 text-[13px] leading-[1.5] text-[#728279]">
           Update the selected member's personal and baptism information.
         </p>
       </div>
     </header>
 
-    <div class="px-[34px] pt-7 pb-[34px] max-[650px]:px-[18px] max-[650px]:py-[22px]">
+    <div class="px-6 pt-4 pb-5 max-[650px]:px-4 max-[650px]:py-4">
 
       <!-- Loading -->
       <div
         *ngIf="loading"
-        class="p-[22px] text-center text-[#547064]"
+        class="p-4 text-center text-[#547064]"
         role="status">
         Loading baptism record...
       </div>
@@ -24,7 +24,7 @@
       <!-- Error -->
       <div
         *ngIf="!loading && errorMessage"
-        class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#f4c7c7] bg-[#fff3f2] px-[15px] py-3 text-[13px] leading-[1.5] text-[#a52b2b]"
+        class="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#f4c7c7] bg-[#fff3f2] px-3 py-2 text-[13px] leading-[1.5] text-[#a52b2b]"
         role="alert">
 
         <span>{{ errorMessage }}</span>
@@ -34,7 +34,7 @@
           variant="back"
           size="md"
           type="button"
-          class="cursor-pointer rounded-[7px] border !border-[#e5a8a8] !bg-white px-2.5 py-[7px] text-xs font-bold !text-[#8f2424] transition-colors hover:!border-[#e5a8a8] hover:!bg-[#ffe7e5] hover:!text-[#8f2424] motion-reduce:transition-none"
+          class="cursor-pointer rounded-[7px] border !border-[#e5a8a8] !bg-white px-2.5 py-1.5 text-xs font-bold !text-[#8f2424] transition-colors hover:!border-[#e5a8a8] hover:!bg-[#ffe7e5] hover:!text-[#8f2424] motion-reduce:transition-none"
           (click)="cancelEdit()">
           Back to Baptism Records
         </button>
@@ -43,7 +43,7 @@
       <!-- Success -->
       <div
         *ngIf="successMessage"
-        class="mb-5 rounded-[10px] border border-[#cce8d6] bg-[#f0faf3] px-[15px] py-3 text-[13px] leading-[1.5] text-[#176344]"
+        class="mb-3 rounded-[10px] border border-[#cce8d6] bg-[#f0faf3] px-3 py-2 text-[13px] leading-[1.5] text-[#176344]"
         role="status">
         {{ successMessage }}
       </div>
@@ -54,21 +54,21 @@
         (ngSubmit)="saveChanges(baptismForm.valid ?? false)">
 
         <!-- PERSONAL INFORMATION -->
-        <section class="[&+section]:mt-8 [&+section]:border-t [&+section]:border-[#e8efeb] [&+section]:pt-[29px]">
+        <section class="[&+section]:mt-5 [&+section]:border-t [&+section]:border-[#e8efeb] [&+section]:pt-4">
 
-          <div class="section-heading">
+          <div class="section-heading mb-3">
             <div>
               <h2 class="m-0 text-[17px] font-bold text-[#204738]">Personal Information</h2>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-x-[22px] gap-y-5 max-[650px]:grid-cols-1 max-[650px]:gap-4">
+          <div class="grid grid-cols-2 gap-x-4 gap-y-3 max-[650px]:grid-cols-1 max-[650px]:gap-3">
 
             <!-- NAME FIELDS: FOUR FIELDS IN ONE ROW -->
-            <div class="col-span-full grid w-full grid-cols-4 gap-3">
+            <div class="col-span-full grid w-full grid-cols-4 gap-2 max-[650px]:grid-cols-2">
 
               <!-- First Name -->
-              <div class="flex min-w-0 flex-col gap-2">
+              <div class="flex min-w-0 flex-col gap-1.5">
                 <label
                   class="text-xs font-bold text-[#3f5a4e]"
                   for="first_name">
@@ -76,7 +76,7 @@
                 </label>
 
                 <input
-                  class="w-full min-h-[43px] min-w-0 rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                  class="w-full min-h-[40px] min-w-0 rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
                   id="first_name"
                   name="first_name"
                   type="text"
@@ -86,7 +86,7 @@
               </div>
 
               <!-- Middle Name -->
-              <div class="flex min-w-0 flex-col gap-2">
+              <div class="flex min-w-0 flex-col gap-1.5">
                 <label
                   class="text-xs font-bold text-[#3f5a4e]"
                   for="middle_name">
@@ -94,7 +94,7 @@
                 </label>
 
                 <input
-                  class="w-full min-h-[43px] min-w-0 rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                  class="w-full min-h-[40px] min-w-0 rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
                   id="middle_name"
                   name="middle_name"
                   type="text"
@@ -103,7 +103,7 @@
               </div>
 
               <!-- Last Name -->
-              <div class="flex min-w-0 flex-col gap-2">
+              <div class="flex min-w-0 flex-col gap-1.5">
                 <label
                   class="text-xs font-bold text-[#3f5a4e]"
                   for="last_name">
@@ -111,7 +111,7 @@
                 </label>
 
                 <input
-                  class="w-full min-h-[43px] min-w-0 rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                  class="w-full min-h-[40px] min-w-0 rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
                   id="last_name"
                   name="last_name"
                   type="text"
@@ -121,7 +121,7 @@
               </div>
 
               <!-- Extension Name -->
-              <div class="flex min-w-0 flex-col gap-2">
+              <div class="flex min-w-0 flex-col gap-1.5">
                 <label
                   class="text-xs font-bold text-[#3f5a4e]"
                   for="extension_name">
@@ -129,7 +129,7 @@
                 </label>
 
                 <input
-                  class="w-full min-h-[43px] min-w-0 rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                  class="w-full min-h-[40px] min-w-0 rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
                   id="extension_name"
                   name="extension_name"
                   type="text"
@@ -141,13 +141,13 @@
             </div>
 
             <!-- Birthdate -->
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-1.5">
               <label class="text-xs font-bold text-[#3f5a4e]" for="birthdate">
                 Birthdate <span class="text-[#d44848]">*</span>
               </label>
 
               <input
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
                 id="birthdate"
                 name="birthdate"
                 type="date"
@@ -157,13 +157,13 @@
             </div>
 
             <!-- Gender -->
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-1.5">
               <label class="text-xs font-bold text-[#3f5a4e]" for="gender">
                 Gender <span class="text-[#d44848]">*</span>
               </label>
 
               <select
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
                 id="gender"
                 name="gender"
                 [(ngModel)]="baptism.gender"
@@ -179,13 +179,13 @@
             </div>
 
             <!-- Marital Status -->
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-1.5">
               <label class="text-xs font-bold text-[#3f5a4e]" for="marital_status">
                 Marital Status
               </label>
 
               <select
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
                 id="marital_status"
                 name="marital_status"
                 [(ngModel)]="baptism.marital_status">
@@ -203,13 +203,13 @@
             </div>
 
             <!-- Address -->
-            <div class="col-span-full flex min-w-0 flex-col gap-2 max-[650px]:col-auto">
+            <div class="col-span-full flex min-w-0 flex-col gap-1.5 max-[650px]:col-auto">
               <label class="text-xs font-bold text-[#3f5a4e]" for="address">
                 Address
               </label>
 
               <input
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
                 id="address"
                 name="address"
                 type="text"
@@ -221,24 +221,24 @@
         </section>
 
         <!-- BAPTISM INFORMATION -->
-        <section class="[&+section]:mt-8 [&+section]:border-t [&+section]:border-[#e8efeb] [&+section]:pt-[29px]">
+        <section class="[&+section]:mt-5 [&+section]:border-t [&+section]:border-[#e8efeb] [&+section]:pt-4">
 
-          <div class="section-heading">
+          <div class="section-heading mb-3">
             <div>
-              <h2>Baptism Information</h2>
+              <h2 class="m-0 text-[17px] font-bold text-[#204738]">Baptism Information</h2>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-x-[22px] gap-y-5 max-[650px]:grid-cols-1 max-[650px]:gap-4">
+          <div class="grid grid-cols-2 gap-x-4 gap-y-3 max-[650px]:grid-cols-1 max-[650px]:gap-3">
 
             <!-- Church -->
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-1.5">
               <label class="text-xs font-bold text-[#3f5a4e]" for="church_id">
                 Church <span class="text-[#d44848]">*</span>
               </label>
 
               <select
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
                 id="church_id"
                 name="church_id"
                 [(ngModel)]="baptism.church_id"
@@ -257,13 +257,13 @@
             </div>
 
             <!-- Quarter -->
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-1.5">
               <label class="text-xs font-bold text-[#3f5a4e]" for="quarter">
                 Quarter <span class="text-[#d44848]">*</span>
               </label>
 
               <select
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
                 id="quarter"
                 name="quarter"
                 [(ngModel)]="baptism.quarter"
@@ -277,13 +277,13 @@
             </div>
 
             <!-- Date of Baptism -->
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-1.5">
               <label class="text-xs font-bold text-[#3f5a4e]" for="date_of_baptism">
                 Date of Baptism <span class="text-[#d44848]">*</span>
               </label>
 
               <input
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
                 id="date_of_baptism"
                 name="date_of_baptism"
                 type="date"
@@ -294,13 +294,13 @@
             </div>
 
             <!-- Officiating Minister -->
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-1.5">
               <label class="text-xs font-bold text-[#3f5a4e]" for="officiating_minister">
                 Officiating Minister
               </label>
 
               <input
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
                 id="officiating_minister"
                 name="officiating_minister"
                 type="text"
@@ -309,13 +309,13 @@
             </div>
 
             <!-- Place of Baptism -->
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-1.5">
               <label class="text-xs font-bold text-[#3f5a4e]" for="place_of_baptism">
                 Place of Baptism
               </label>
 
               <input
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
                 id="place_of_baptism"
                 name="place_of_baptism"
                 type="text"
@@ -324,13 +324,13 @@
             </div>
 
             <!-- Baptism Status -->
-            <div class="flex min-w-0 flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-1.5">
               <label class="text-xs font-bold text-[#3f5a4e]" for="is_reclaimed">
                 Baptism Status
               </label>
 
               <select
-                class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
+                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
                 id="is_reclaimed"
                 name="is_reclaimed"
                 [(ngModel)]="baptism.is_reclaimed">
@@ -349,36 +349,35 @@
         </section>
 
         <!-- ACTION BUTTONS -->
-        <div class="mt-[34px] flex items-center justify-end gap-[11px] border-t border-[#e8efeb] pt-[23px] max-[650px]:flex-col-reverse">
+        <div class="mt-5 flex items-center justify-end gap-2 border-t border-[#e8efeb] pt-4 max-[650px]:flex-col-reverse">
 
-       <!-- Cancel Button -->
-<!-- Cancel Button -->
-<button
-  type="button"
-  class="inline-flex h-[30px] w-[140px] items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
-  [disabled]="saving"
-  (click)="cancelEdit()">
-  Cancel
-</button>
+          <!-- Cancel Button -->
+          <button
+            type="button"
+            class="inline-flex h-[30px] w-[140px] items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
+            [disabled]="saving"
+            (click)="cancelEdit()">
+            Cancel
+          </button>
 
           <!-- Save Changes Button -->
-    <button
-  app-button
-  variant="edit"
-  size="md"
-  type="submit"
-  [loading]="saving"
-  class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
-  [disabled]="saving || baptismForm.invalid">
+          <button
+            app-button
+            variant="edit"
+            size="md"
+            type="submit"
+            [loading]="saving"
+            class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
+            [disabled]="saving || baptismForm.invalid">
 
-  <span *ngIf="!saving">
-    Save Changes
-  </span>
+            <span *ngIf="!saving">
+              Save Changes
+            </span>
 
-  <span *ngIf="saving">
-    Saving...
-  </span>
-</button>
+            <span *ngIf="saving">
+              Saving...
+            </span>
+          </button>
 
         </div>
       </form>
