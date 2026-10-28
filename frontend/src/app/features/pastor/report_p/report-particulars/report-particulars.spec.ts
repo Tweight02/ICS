@@ -151,12 +151,11 @@ describe('ReportParticulars', () => {
     const program = component.getSelectedProgram()!;
     expect(component.isStewardshipReport).toBe(true);
     expect(component.getVisibleSections(program).map(section => section.program_name))
-      .toEqual(['STEWARDSHIP']);
+      .toEqual(['STEWARDSHIP', 'OFFERING AND TITHES']);
 
-    component.selectStewardshipTab('offering');
     fixture.detectChanges();
-    expect(component.getVisibleSections(program).map(section => section.program_name))
-      .toEqual(['OFFERING AND TITHES']);
+    expect(fixture.nativeElement.textContent).toContain('STEWARDSHIP');
+    expect(fixture.nativeElement.textContent).toContain('OFFERING AND TITHES');
     expect(component.getStewardshipTotal('offering')).toBe(1200);
     expect(component.getStewardshipTotal('tithe')).toBe(3400);
     expect(component.getQuarterMonthNames(component.getSelectedQuarter()!))
