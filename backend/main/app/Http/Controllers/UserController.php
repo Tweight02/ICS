@@ -495,8 +495,12 @@ class UserController extends Controller
                     : null,
             ],
         ]);
+<<<<<<< Updated upstream
     }
     
+=======
+}
+>>>>>>> Stashed changes
     // GET /api/users/{id}
     public function show($id)
     {
@@ -520,11 +524,15 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
+<<<<<<< Updated upstream
             'data'    => array_merge($user->toArray(), [
                 'district' => $district
                     ? ['id' => (int) $district->church_id, 'name' => $district->name]
                     : null,
             ]),
+=======
+            'data'    => $user,
+>>>>>>> Stashed changes
         ]);
     }
 }
