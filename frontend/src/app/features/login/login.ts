@@ -11,7 +11,7 @@ import { AuthService } from '../../core/services/auth/auth-service';
 @Component({
   imports: [ReactiveFormsModule],
   selector: 'app-login',
-  styleUrl: './login.css',
+
   templateUrl: './login.html',
 })
 export class Login {
@@ -21,6 +21,9 @@ export class Login {
 
   loading = signal(false);
   error = signal<string | null>(null);
+
+  // Controls the eye button on the password field.
+  showPassword = signal(false);
 
   credentials = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -55,7 +58,7 @@ export class Login {
         // Navigate according to the authenticated user's role.
         switch (response.user.role) {
           case 'pastor':
-            this.router.navigate(['/pastor/reports/details']);
+            this.router.navigate(['/pastor/view-representatives']);
             break;
 
           case 'representative':

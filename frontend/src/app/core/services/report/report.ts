@@ -18,6 +18,35 @@ export class ReportService {
 
   private readonly apiUrl = 'http://127.0.0.1:8000/api';
 
+  createReportTemplate(payload: {
+    department_id: number;
+    program_name: string;
+    section_name: string;
+    particular_items: string[];
+  }): Observable<{
+    message: string;
+    data: {
+      program_id: number;
+      section_id: number;
+      particulars: Array<{
+        particular_id: number;
+        particular_name: string;
+      }>;
+    };
+  }> {
+    return this.http.post<{
+      message: string;
+      data: {
+        program_id: number;
+        section_id: number;
+        particulars: Array<{
+          particular_id: number;
+          particular_name: string;
+        }>;
+      };
+    }>(`${this.apiUrl}/assistant/report-templates`, payload);
+  }
+
   getDepartments(churchId: number): Observable<Department[]> {
     return this.http.get<Department[]>(
       `${this.apiUrl}/churches/${churchId}/departments`
@@ -48,24 +77,26 @@ export class ReportService {
   endorseDepartmentReport(
     churchId: number,
     departmentId: number,
+    programId: number,
     year: number | string,
     quarter: string
   ): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(
       `${this.apiUrl}/churches/${churchId}/departments/${departmentId}/report/endorse`,
-      { year, quarter }
+      { program_id: programId, year, quarter }
     );
   }
 
   approveDepartmentReport(
     churchId: number,
     departmentId: number,
+    programId: number,
     year: number | string,
     quarter: string
   ): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(
       `${this.apiUrl}/churches/${churchId}/departments/${departmentId}/report/approve`,
-      { year, quarter }
+      { program_id: programId, year, quarter }
     );
   }
 
@@ -96,6 +127,25 @@ export class ReportService {
         quarter_id: quarterId,
         church_id: churchId,
         department_id: departmentId,
+        details: details.trim()
+      }
+    );
+  }
+
+  addPersonalReportComment(
+    churchId: number,
+    departmentId: number,
+    year: number,
+    quarter: string,
+    details: string
+  ): Observable<{ message: string; data: ReportComment }> {
+    return this.http.post<{ message: string; data: ReportComment }>(
+      `${this.apiUrl}/comments`,
+      {
+        church_id: churchId,
+        department_id: departmentId,
+        year,
+        quarter,
         details: details.trim()
       }
     );

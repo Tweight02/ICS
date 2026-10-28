@@ -1,26 +1,42 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  Input,
+  OnChanges,
   OnInit,
+  OnDestroy,
   ChangeDetectorRef,
+  ElementRef,
   inject,
-  signal
+  NgZone,
+  signal,
+  SimpleChanges,
+  ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReportService } from '../../../../core/services/report/report';
+import { CommentReadStateService } from '../../../../core/services/report/comment-read-state';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { UserRole } from '../../../../core/models/user.model';
+import { SaveReportItem } from '../../../../core/models/report.model';
+import { Button } from '../../../../shared/components/button/button';
+import { ReportPeriodSelector } from '../../../../shared/reports/period-selector/report-period-selector';
+import Swal from 'sweetalert2';
 
 interface QuarterRecord {
   quarter_id: number;
   quarter?: string;
   year?: number | string;
   value: number | string | null;
+  participant_count?: number;
+  completed_event_count?: number;
+  combined_value?: number | null;
   date_submitted?: string | null;
   district_endorse?: string | null;
   mission_approve: string | null;
+  monthly_values?: Record<string, number | null>;
 }
 
 interface Quarter {
@@ -49,9 +65,16 @@ interface Program {
 }
 
 interface Report {
-  department?: { department_name?: string };
+  department?: { department_id?: number; department_name?: string };
   programs: Program[];
 }
+
+type StewardshipTab = 'activities' | 'offering';
+
+const STEWARDSHIP_MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 interface ReportComment {
   comment_id: number;
@@ -75,23 +98,32 @@ interface QuarterRef {
 @Component({
   selector: 'app-report-particulars',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './report-particulars.html',
-  styleUrl: './report-particulars.css'
+  imports: [CommonModule, FormsModule, Button, ReportPeriodSelector],
+  templateUrl: '../../../../shared/reports/report-particulars/report-particulars.html'
 })
-export class ReportParticulars implements OnInit {
+export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
+  expandFirstSection = true;
+  showInputsWhenReadOnly = false;
+  autoSaveStatus: 'idle' | 'pending' | 'saving' | 'saved' | 'error' = 'idle';
+
+  @ViewChild('commentMessages')
+  private commentMessages?: ElementRef<HTMLUListElement>;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly reportService = inject(ReportService);
+  private readonly commentReadState = inject(CommentReadStateService);
   private readonly churchService = inject(ChurchService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly ngZone = inject(NgZone);
   private readonly auth = inject(AuthService);
 
-  churchId = 0;
-  churchName = '';
-  districtId = 0;
-  districtName = '';
-  departmentId = 0;
+  @Input() embedded = false;
+  @Input() churchId = 0;
+  @Input() churchName = '';
+  @Input() districtId = 0;
+  @Input() districtName = '';
+  @Input() departmentId = 0;
   report: Report | null = null;
 
   availableQuarters: Quarter[] = [];
@@ -100,6 +132,7 @@ export class ReportParticulars implements OnInit {
   selectedYear: number | null = null;
   selectedQuarterId: number | null = null;
   selectedProgramId: number | null = null;
+  activeStewardshipTab: StewardshipTab = 'activities';
 
   isAnnualView = false;
   private readonly loadingState = signal(false);
@@ -118,7 +151,6 @@ export class ReportParticulars implements OnInit {
     this.savingActionState.set(value);
   }
   errorMessage = '';
-  successMessage = '';
 
   comments: ReportComment[] = [];
   private readonly commentsLoadingState = signal(false);
@@ -139,12 +171,37 @@ export class ReportParticulars implements OnInit {
   }
 
   currentUserRole: UserRole | null = null;
+  currentUserId = 0;
+  mobileCommentsOpen = false;
+  private commentPollingTimer: ReturnType<typeof setInterval> | null = null;
+  private commentsRequestInFlight = false;
+  private readonly commentPollingIntervalMs = 5000;
 
   ngOnInit(): void {
     const user = this.auth.getCurrentUser();
     this.currentUserRole = user?.role ?? null;
+    this.currentUserId = Number(user?.user_id) || 0;
 
-    this.route.paramMap.subscribe(() => this.readRoute());
+    if (this.embedded) {
+      this.loadReport();
+    } else {
+      this.route.paramMap.subscribe(() => this.readRoute());
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (
+      this.embedded &&
+      !changes['departmentId']?.firstChange &&
+      this.departmentId > 0 &&
+      this.churchId > 0
+    ) {
+      this.loadReport();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopCommentPolling();
   }
 
   get canComment(): boolean {
@@ -158,6 +215,20 @@ export class ReportParticulars implements OnInit {
 
   get canApprove(): boolean {
     return ['assistant', 'administrative assistant'].includes(this.normalizedUserRole);
+  }
+
+  get canEditDepartmentReport(): boolean {
+    return this.embedded &&
+      [16, 20].includes(this.departmentId) &&
+      ['pastor', 'district pastor'].includes(this.normalizedUserRole);
+  }
+
+  canSubmitSelectedQuarter(): boolean {
+    return true;
+  }
+
+  get commentUnavailableMessage(): string {
+    return 'View only. Comments cannot be added from this account.';
   }
 
   private get normalizedUserRole(): string {
@@ -359,6 +430,86 @@ export class ReportParticulars implements OnInit {
     ) ?? null;
   }
 
+  get isStewardshipReport(): boolean {
+    return Number(this.report?.department?.department_id ?? this.departmentId) === 14;
+  }
+
+  getVisibleSections(program: Program): Section[] {
+    if (!this.isStewardshipReport) {
+      return program.sections;
+    }
+
+    return program.sections.filter(section =>
+      this.isOfferingSection(section) === (this.activeStewardshipTab === 'offering')
+    );
+  }
+
+  selectStewardshipTab(tab: StewardshipTab): void {
+    this.activeStewardshipTab = tab;
+  }
+
+  getStewardshipTotal(type: 'offering' | 'tithe'): number {
+    const sections = this.getSelectedProgram()?.sections ?? [];
+    const quarter = this.getSelectedQuarter();
+
+    return sections
+      .filter(section => this.isOfferingSection(section))
+      .flatMap(section => section.particulars)
+      .filter(particular => particular.particular_name.toLowerCase().includes(type))
+      .reduce((total, particular) => {
+        const records = this.isAnnualView
+          ? particular.quarters.filter(record => Number(record.year) === this.selectedYear)
+          : quarter
+            ? [this.getParticularQuarterRecord(particular, quarter)].filter(
+                (record): record is QuarterRecord => record !== null
+              )
+            : [];
+
+        return total + records.reduce((subtotal, record) => {
+          const value = Number(record.value);
+          return Number.isFinite(value) ? subtotal + value : subtotal;
+        }, 0);
+      }, 0);
+  }
+
+  private isOfferingSection(section: Section): boolean {
+    const name = (section.program_name ?? section.section_name ?? '').toLowerCase();
+    return name.includes('offering') || name.includes('tithe');
+  }
+
+  isStewardshipMonthlySection(section: Section): boolean {
+    return this.isStewardshipReport && this.isOfferingSection(section);
+  }
+
+  getQuarterMonthNames(quarter: Quarter): string[] {
+    const quarterNumber = this.quarterNumber(quarter.quarter);
+    const firstMonthIndex = (quarterNumber - 1) * 3;
+    return STEWARDSHIP_MONTHS.slice(firstMonthIndex, firstMonthIndex + 3);
+  }
+
+  updateStewardshipMonth(record: QuarterRecord, month: string, value: number | string | null): void {
+    const monthValue = value === '' || value === null ? null : Number(value);
+    record.monthly_values = { ...(record.monthly_values ?? {}), [month]: monthValue };
+    record.value = Object.values(record.monthly_values).reduce<number>(
+      (total, amount) => total + (amount ?? 0),
+      0
+    );
+  }
+
+  updateReportStewardshipMonth(
+    _particular: Particular,
+    _quarter: Quarter,
+    record: QuarterRecord,
+    month: string,
+    value: number | string | null
+  ): void {
+    this.updateStewardshipMonth(record, month, value);
+  }
+
+  getStewardshipMonthValue(record: QuarterRecord, month: string): number | null {
+    return record.monthly_values?.[month] ?? null;
+  }
+
   getParticularQuarterRecord(
     particular: Particular,
     quarter: Quarter
@@ -366,6 +517,17 @@ export class ReportParticulars implements OnInit {
     return particular.quarters?.find(record =>
       this.matchesQuarter(record, quarter)
     ) ?? null;
+  }
+
+  updateReportValue(
+    _particular: Particular,
+    _quarter: Quarter,
+    value: number | string | null
+  ): void {
+    const record = this.getParticularQuarterRecord(_particular, _quarter);
+    if (record) {
+      record.value = value;
+    }
   }
 
   private hasFlag(value: unknown): boolean {
@@ -449,59 +611,157 @@ export class ReportParticulars implements OnInit {
     return this.getParticularQuarterRecord(particular, quarter)?.value ?? null;
   }
 
-  loadComments(): void {
-    this.commentsLoading = true;
-    this.commentsError = '';
-    this.cdr.detectChanges();
+  loadComments(silent = false): void {
+    if (this.commentsRequestInFlight) return;
+
+    this.commentsRequestInFlight = true;
+    if (!silent) {
+      this.commentsLoading = true;
+      this.commentsError = '';
+      this.cdr.detectChanges();
+    }
+
+    const previousVisibleIds = new Set(
+      this.getVisibleComments().map(comment => comment.comment_id)
+    );
 
     this.reportService
       .getDepartmentComments(this.churchId, this.departmentId)
       .subscribe({
         next: (response: any) => {
           const list = response?.data ?? response;
-          this.comments = Array.isArray(list) ? list : [];
+          const nextComments: ReportComment[] = Array.isArray(list) ? list : [];
+          const wasNearBottom = this.isCommentListNearBottom();
+          const hasNewVisibleComment = nextComments.some(comment =>
+            !previousVisibleIds.has(comment.comment_id) &&
+            this.getVisibleQuarters().some(quarter =>
+              this.matchesQuarter(comment, quarter)
+            )
+          );
+
+          this.comments = nextComments;
           this.commentsLoading = false;
+          this.commentsError = '';
+          this.commentsRequestInFlight = false;
           this.cdr.detectChanges();
+          if (this.mobileCommentsOpen && hasNewVisibleComment && wasNearBottom) {
+            this.markVisibleCommentsRead();
+            this.scrollCommentMessagesToLatest();
+          }
+          this.startCommentPolling();
         },
         error: (error: any) => {
-          this.commentsError =
-            error?.error?.message || 'Unable to load comments.';
-          this.commentsLoading = false;
-          this.cdr.detectChanges();
+          this.commentsRequestInFlight = false;
+          if (!silent) {
+            this.commentsError =
+              error?.error?.message || 'Unable to load comments.';
+            this.commentsLoading = false;
+            this.cdr.detectChanges();
+          }
+          this.startCommentPolling();
         }
       });
+  }
+
+  private startCommentPolling(): void {
+    if (this.commentPollingTimer) return;
+
+    this.commentPollingTimer = this.ngZone.runOutsideAngular(() =>
+      setInterval(() => {
+        if (typeof document === 'undefined' || !document.hidden) {
+          this.loadComments(true);
+        }
+      }, this.commentPollingIntervalMs)
+    );
+  }
+
+  private stopCommentPolling(): void {
+    if (!this.commentPollingTimer) return;
+
+    clearInterval(this.commentPollingTimer);
+    this.commentPollingTimer = null;
   }
 
   getVisibleComments(): ReportComment[] {
     const quarters = this.getVisibleQuarters();
 
     return this.comments
-      .filter(comment => {
-        const matchesVisibleQuarter = quarters.some(
-          quarter => this.matchesQuarter(comment, quarter)
-        );
-
-        return matchesVisibleQuarter &&
-          (!this.canApprove || this.isAssistantComment(comment));
-      })
+      .filter(comment =>
+        quarters.some(quarter => this.matchesQuarter(comment, quarter))
+      )
       .sort(
         (a, b) =>
-          String(b.date_commented).localeCompare(String(a.date_commented)) ||
-          b.comment_id - a.comment_id
+          String(a.date_commented).localeCompare(String(b.date_commented)) ||
+          a.comment_id - b.comment_id
       );
-  }
-
-  private isAssistantComment(comment: ReportComment): boolean {
-    return ['assistant', 'administrative assistant'].includes(
-      String(comment.commenter_role ?? '')
-        .toLowerCase()
-        .trim()
-        .replace(/[_-]/g, ' ')
-    );
   }
 
   getCommentStatus(): 'commented' | 'none' {
     return this.getVisibleComments().length > 0 ? 'commented' : 'none';
+  }
+
+  isOwnComment(comment: ReportComment): boolean {
+    return comment.commented_by === this.currentUserId;
+  }
+
+  openComments(): void {
+    this.mobileCommentsOpen = true;
+    this.markVisibleCommentsRead();
+    this.cdr.detectChanges();
+    this.scrollCommentMessagesToLatest();
+    this.loadComments(true);
+  }
+
+  closeComments(): void {
+    this.mobileCommentsOpen = false;
+  }
+
+  getUnreadCommentCount(): number {
+    return this.commentReadState.getUnreadCount(
+      this.comments,
+      this.currentUserId,
+      this.churchId,
+      this.departmentId
+    );
+  }
+
+  private markVisibleCommentsRead(): void {
+    this.commentReadState.markAsRead(
+      this.getVisibleComments(),
+      this.currentUserId,
+      this.churchId,
+      this.departmentId
+    );
+  }
+
+  onCommentMessagesScroll(): void {
+    if (
+      this.mobileCommentsOpen &&
+      this.isCommentListNearBottom() &&
+      this.getUnreadCommentCount() > 0
+    ) {
+      this.markVisibleCommentsRead();
+      this.cdr.detectChanges();
+    }
+  }
+
+  private isCommentListNearBottom(): boolean {
+    const messages = this.commentMessages?.nativeElement;
+
+    return !messages ||
+      messages.scrollHeight - messages.scrollTop - messages.clientHeight < 64;
+  }
+
+  private scrollCommentMessagesToLatest(): void {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const messages = this.commentMessages?.nativeElement;
+
+        if (this.mobileCommentsOpen && messages) {
+          messages.scrollTop = messages.scrollHeight;
+        }
+      });
+    });
   }
 
   getCommentQuarterLabel(comment: ReportComment): string {
@@ -593,7 +853,6 @@ export class ReportParticulars implements OnInit {
 
     this.savingComment = true;
     this.errorMessage = '';
-    this.successMessage = '';
 
     this.reportService
       .addComment(quarterId, this.churchId, this.departmentId, details)
@@ -607,13 +866,74 @@ export class ReportParticulars implements OnInit {
 
           this.newComment = '';
           this.savingComment = false;
-          this.successMessage = 'Comment published.';
+          this.showSuccess('Comment published.');
           this.cdr.detectChanges();
+          this.scrollCommentMessagesToLatest();
         },
         error: (error: any) => {
           this.savingComment = false;
           this.errorMessage =
             error?.error?.message || 'Unable to save comment.';
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  submitPersonalReport(): void {
+    const quarter = this.getSelectedQuarter();
+
+    if (!this.canEditDepartmentReport || this.isAnnualView || !quarter || this.savingAction) {
+      return;
+    }
+
+    if (this.isQuarterApproved(quarter)) {
+      this.errorMessage = 'This report has already been approved and cannot be edited.';
+      return;
+    }
+
+    const items: SaveReportItem[] = [];
+    for (const program of this.report?.programs ?? []) {
+      for (const section of program.sections ?? []) {
+        for (const particular of section.particulars ?? []) {
+          const record = this.getParticularQuarterRecord(particular, quarter);
+          if (!record) continue;
+
+          const value = record.value === null || record.value === ''
+            ? null
+            : Number(record.value);
+          if (value !== null && (!Number.isFinite(value) || value < 0)) {
+            this.errorMessage = `Enter a valid non-negative value for ${particular.particular_name}.`;
+            return;
+          }
+
+          items.push({
+            particular_id: particular.particular_id,
+            quarter_id: quarter.quarter_id,
+            value,
+            ...(record.monthly_values ? { monthly_values: record.monthly_values } : {})
+          });
+        }
+      }
+    }
+
+    if (items.length === 0) {
+      this.errorMessage = 'No report items are available to submit.';
+      return;
+    }
+
+    this.savingAction = true;
+    this.errorMessage = '';
+    this.reportService
+      .saveDepartmentReport(this.churchId, this.departmentId, items, true)
+      .subscribe({
+        next: response => {
+          this.savingAction = false;
+          this.showSuccess(response?.message || 'Report submitted.');
+          this.loadReport();
+        },
+        error: error => {
+          this.savingAction = false;
+          this.errorMessage = error?.error?.message || 'Unable to submit report.';
           this.cdr.detectChanges();
         }
       });
@@ -635,9 +955,10 @@ export class ReportParticulars implements OnInit {
     }
 
     const quarter = this.getSelectedQuarter();
+    const program = this.getSelectedProgram();
 
-    if (this.isAnnualView || !quarter || this.savingAction) {
-      this.errorMessage = 'Select a quarter first.';
+    if (this.isAnnualView || !quarter || !program || this.savingAction) {
+      this.errorMessage = 'Select a report program and quarter first.';
       return;
     }
 
@@ -648,29 +969,31 @@ export class ReportParticulars implements OnInit {
 
     this.savingAction = true;
     this.errorMessage = '';
-    this.successMessage = '';
 
     const request = action === 'endorse'
       ? this.reportService.endorseDepartmentReport(
           this.churchId,
           this.departmentId,
+          program.program_id,
           quarter.year,
           quarter.quarter
         )
       : this.reportService.approveDepartmentReport(
           this.churchId,
           this.departmentId,
+          program.program_id,
           quarter.year,
           quarter.quarter
         );
 
     request.subscribe({
       next: response => {
-        this.successMessage =
+        this.showSuccess(
           response?.message ||
           (action === 'endorse'
             ? 'Report endorsed for the administrative assistant.'
-            : 'Report approved.');
+            : 'Report approved.')
+        );
         this.savingAction = false;
         this.loadReport();
       },
@@ -686,12 +1009,30 @@ export class ReportParticulars implements OnInit {
     });
   }
 
+  private showSuccess(message: string): void {
+    void Swal.fire({
+      icon: 'success',
+      title: 'Success',
+      text: message,
+      confirmButtonColor: '#047857'
+    });
+  }
+
   private clearMessages(): void {
     this.errorMessage = '';
-    this.successMessage = '';
   }
 
   backToPrograms(): void {
+    if (this.portalPrefix() === '/pastor') {
+      this.router.navigate(['/pastor/reports/details']);
+      return;
+    }
+
+    if (this.route.snapshot.queryParamMap.get('return_to') === 'monitoring') {
+      this.router.navigate([`${this.portalPrefix()}/reports`]);
+      return;
+    }
+
     if (this.districtId && this.churchId) {
       this.router.navigate([
         `${this.portalPrefix()}/reports/programs`,

@@ -20,16 +20,10 @@ export class SidebarService {
       // DISTRICT PASTOR
       case 'pastor':
         return [
-{
-  label: 'Reports',
-  route: '/pastor/reports/details',
-  icon: 'bi-bar-chart'
-},
-
-          {
-            label: 'Personal Report',
-            route: '/pastor/baptism',
-            icon: 'bi-droplet'
+           {
+            label: 'Representatives',
+            route: '/pastor/view-representatives',
+            icon: 'bi-people'
           },
           {
             label: 'Events',
@@ -37,40 +31,34 @@ export class SidebarService {
             icon: 'bi-calendar-event'
           },
           {
-            label: 'Representatives',
-            route: '/pastor/view-representatives',
-            icon: 'bi-people'
+              label: 'Reports',
+              route: '/pastor/reports/details',
+             icon: 'bi-bar-chart'
           }
-          
         ];
 
       // CHURCH REPRESENTATIVE
       case 'representative':
         return [
           {
-            label: 'Reports',
-            route: '/representative/reports/programs',
-            icon: 'bi-bar-chart'
-          },
-          {
             label: 'Events',
             route: '/representative/events',
             icon: 'bi-calendar-event'
           },
           {
-            label: 'Stewardship',
-            route: '/representative/stewardship',
-            icon: 'bi-cash-coin'
-          },
+            label: 'Reports',
+            route: '/representative/reports/programs',
+            icon: 'bi-bar-chart'
+          }
         ];
 
       // ADMINISTRATIVE ASSISTANT
       case 'assistant':
         return [
-          {
-            label: 'Reports',
-            route: '/assistant/reports',
-            icon: 'bi-bar-chart'
+           {
+            label: 'Pastors',
+            route: '/assistant/view-user',
+            icon: 'bi-person'
           },
           {
             label: 'Events',
@@ -78,9 +66,9 @@ export class SidebarService {
             icon: 'bi-calendar-event'
           },
           {
-            label: 'Pastors',
-            route: '/assistant/view-user',
-            icon: 'bi-person'
+            label: 'Reports',
+            route: '/assistant/reports',
+            icon: 'bi-bar-chart'
           }
         ];
 
@@ -88,21 +76,16 @@ export class SidebarService {
       case 'director':
         return [
           {
-            label: 'Dashboard',
-            route: '/director',
-            icon: 'bi-house',
-            exact: true
+            label: 'Events',
+            route: '/director/events',
+            icon: 'bi-calendar-event'
           },
           {
             label: 'Reports',
             route: '/director/reports',
             icon: 'bi-bar-chart'
-          },
-          {
-            label: 'Events',
-            route: '/director/events',
-            icon: 'bi-calendar-event'
           }
+          
         ];
 
       // EVENTS REPRESENTATIVE

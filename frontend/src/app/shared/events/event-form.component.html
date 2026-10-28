@@ -1,0 +1,371 @@
+  <div class="shrink-0">
+    <a *ngIf="isEdit || step === 1" app-button variant="back" size="sm" [routerLink]="cancelLink()" class="self-start">
+      <i class="bi bi-chevron-left"></i> Back
+    </a>
+    <button *ngIf="!isEdit && step === 2" app-button variant="back" size="sm" type="button" (click)="step = 1" class="self-start">
+      <i class="bi bi-chevron-left"></i> Back
+    </button>
+</div>
+
+  <br>
+
+  <!-- Header: title on the left, progress + extra action on the right -->
+  <div class="shrink-0 flex items-start justify-between gap-4">
+    <div>
+      <!-- <p class="text-[11px] font-bold tracking-wide uppercase text-[#1b4d3e]">{{ eyebrow() }}</p> -->
+       <br>
+      <h1 class="text-[26px] leading-8 font-bold text-gray-900 tracking-tight">{{ title() }}</h1>
+      <p class="text-sm text-gray-500">{{ subtitle() }}</p>
+    </div>
+
+    <div class="flex items-center gap-3 shrink-0">
+      <button *ngIf="isEdit && step === 2" app-button variant="edit" size="md" type="button" (click)="changeParticulars()"
+              class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-[#1b4d3e] bg-white hover:bg-gray-50 transition">
+        <i class="bi bi-arrow-left-right"></i> Change particulars
+      </button>
+
+      <!-- Progress (two steps, always visible) -->
+      <div class="hidden md:flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-[#1b4d3e] text-white text-xs font-bold flex items-center justify-center">
+            <i *ngIf="step === 2" class="bi bi-check-lg"></i><ng-container *ngIf="step === 1">1</ng-container>
+          </span>
+          <div class="leading-tight">
+            <p class="text-xs font-bold text-gray-900">{{ canChooseDepartment ? 'Department & particulars' : 'Your department & particulars' }}</p>
+            <p class="text-[10px] text-gray-500">{{ step1Caption() }}</p>
+          </div>
+        </div>
+        <i class="bi bi-chevron-right text-gray-400"></i>
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center"
+                [ngClass]="step === 2 ? 'bg-[#1b4d3e] text-white' : 'bg-gray-200 text-gray-600'">2</span>
+          <div class="leading-tight">
+            <p class="text-xs font-bold" [ngClass]="step === 2 ? 'text-gray-900' : 'text-gray-500'">Event details</p>
+            <p class="text-[10px] text-gray-500">{{ step === 2 ? 'Current step' : 'Up next' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <br>
+      <!-- ===================== FOOTER 2: Apenas Next / Create ===================== -->
+    <div shellFooter class="flex items-center justify-between gap-4">
+      <p class="flex-1 text-center text-xs" [ngClass]="hintIsError() ? 'text-red-600 font-semibold' : 'text-gray-500'" aria-live="polite">{{ hint() }}</p>
+
+      <button *ngIf="step === 1" app-button variant="create" size="md" type="button" (click)="next()">
+        Next <i class="bi bi-arrow-right"></i>
+      </button>
+      <button *ngIf="step === 2" app-button [variant]="isEdit ? 'edit' : 'create'" size="md" type="button" (click)="submit()" [disabled]="saving" [loading]="saving">
+        <i class="bi" [ngClass]="saving ? 'bi-hourglass-split' : 'bi-check-lg'"></i>
+        {{ saving ? 'Saving…' : (isEdit ? 'Update event' : 'Create event') }}
+      </button>
+    </div>
+
+  <br>
+
+  <!-- Loading / error while opening an event to edit -->
+  <div *ngIf="loadingExisting" class="flex-1 min-h-0 bg-white border border-gray-200 rounded-xl animate-pulse"></div>
+  <div *ngIf="loadError" class="shrink-0 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex items-center gap-2">
+    <i class="bi bi-exclamation-triangle"></i> {{ loadError }}
+  </div>
+
+  <!-- ===================== STEP 1 ===================== -->
+  <div *ngIf="step === 1 && !loadingExisting && !loadError" class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[430px_1fr] gap-3">
+    <div class="flex flex-col gap-3 min-h-0 overflow-y-auto [scrollbar-width:thin]">
+      <div *ngIf="canChooseDepartment && !isEdit"
+           class="flex-1 min-h-0 flex flex-col bg-white border rounded-xl p-4 shadow-sm"
+           [ngClass]="tried1 && !deptId ? 'border-red-300' : 'border-gray-200'">
+        <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
+          <i class="bi bi-layers text-[#1b4d3e]"></i> Select department *
+        </h3>
+        <p class="text-[11px] mt-1 mb-2" [ngClass]="tried1 && !deptId ? 'text-red-600' : 'text-gray-500'">
+          {{ tried1 && !deptId ? 'Choose one department to continue.' : 'Select one department. Its particulars appear on the right.' }}
+        </p>
+        <div class="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-0.5 content-start pr-1">
+          <div *ngIf="loadingDepartments" class="sm:col-span-2 space-y-2" aria-label="Loading departments">
+            <div *ngFor="let s of [1,2,3,4,5]" class="h-7 bg-gray-100 rounded animate-pulse"></div>
+          </div>
+          <div *ngIf="departmentError" class="sm:col-span-2 text-sm text-red-600" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> {{ departmentError }}
+            <button type="button" (click)="loadDepartments()" class="ml-1 font-semibold underline">Try again</button>
+          </div>
+          <p *ngIf="!loadingDepartments && !departmentError && departments.length === 0" class="sm:col-span-2 text-sm text-gray-500">
+            No departments are available.
+          </p>
+          <label *ngFor="let department of departments"
+                 class="!flex w-full min-w-0 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] leading-tight cursor-pointer transition"
+                 [ngClass]="deptId === department.department_id ? 'bg-emerald-50 font-semibold text-gray-900' : 'text-gray-700 hover:bg-gray-50'">
+            <input type="radio" name="eventDepartment" class="h-4 w-4 shrink-0 accent-[#1b4d3e]"
+                   [checked]="deptId === department.department_id"
+                   (change)="selectDepartment(department.department_id)" />
+            <span class="min-w-0 break-words">{{ department.department_name }}</span>
+          </label>
+        </div>
+      </div>
+
+      <div *ngIf="!canChooseDepartment || isEdit"
+           class="flex-1 min-h-0 flex flex-col bg-white border rounded-xl p-4 shadow-sm border-gray-200">
+        <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
+          <i class="bi bi-layers text-[#1b4d3e]"></i> {{ canChooseDepartment ? 'Event department' : 'Assigned department' }}
+        </h3>
+        <div class="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-950">
+          {{ deptName() || (departmentError ? 'Department unavailable' : 'Loading department…') }}
+        </div>
+        <p *ngIf="departmentError" class="mt-2 text-sm text-red-600" role="alert">
+          {{ departmentError }}
+          <button type="button" (click)="loadUser()" class="ml-1 font-semibold underline">Try again</button>
+        </p>
+      </div>
+    </div>
+
+    <div class="min-h-0 flex flex-col bg-white border rounded-xl p-4 shadow-sm"
+         [ngClass]="tried1 && deptId && !selectedParticularIds.length ? 'border-red-300' : 'border-gray-200'">
+      <div class="shrink-0 flex items-center justify-between">
+        <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
+          <i class="bi bi-list-check text-[#1b4d3e]"></i> Select particulars *
+        </h3>
+        <span class="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
+          {{ selectedParticularIds.length }} selected
+        </span>
+      </div>
+      <p class="shrink-0 text-[11px] mt-1 mb-3" [ngClass]="tried1 && deptId && !selectedParticularIds.length ? 'text-red-600' : 'text-gray-500'">
+        <ng-container *ngIf="!deptId">Choose a department on the left to see its particulars.</ng-container>
+        <ng-container *ngIf="deptId">{{ deptName() }} · {{ tried1 && !selectedParticularIds.length ? 'Choose at least one report particular to continue.' : 'Choose attendance items and event purposes to include in the report.' }}</ng-container>
+      </p>
+
+      <div class="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] space-y-2 pr-1">
+        <div *ngIf="!deptId" class="h-full flex flex-col items-center justify-center text-center text-gray-400 py-8">
+          <i class="bi bi-arrow-left-circle text-3xl"></i>
+          <p class="text-sm mt-2">Pick a department first</p>
+        </div>
+        <div *ngIf="loadingPrograms" class="space-y-2">
+          <div *ngFor="let s of [1,2,3]" class="h-10 bg-gray-100 rounded-lg animate-pulse"></div>
+        </div>
+        <p *ngIf="programsError" class="text-sm text-red-600 flex items-center gap-2">
+          <i class="bi bi-exclamation-triangle"></i> {{ programsError }}
+          <button type="button" (click)="loadPrograms(deptId!)" class="font-semibold underline">Try again</button>
+        </p>
+        <p *ngIf="deptId && !loadingPrograms && !programsError && getVisiblePrograms().length === 0" class="text-sm text-amber-700">
+          No attendance or event-purpose particulars are available for this department.
+        </p>
+        <details *ngFor="let p of getVisiblePrograms()" class="group border border-gray-200 rounded-lg overflow-hidden">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-gray-50 px-4 py-2.5 text-xs font-bold text-gray-900 uppercase">
+            <span>{{ p.program_name }}</span>
+            <i class="bi bi-chevron-down text-gray-500 transition-transform group-open:rotate-180"></i>
+          </summary>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 bg-white px-3 py-3">
+            <label *ngFor="let particular of getVisibleParticulars(p)"
+                   class="!flex w-full min-w-0 items-start gap-2.5 rounded-lg px-2 py-1.5 text-sm leading-5 text-gray-700 transition-colors hover:bg-emerald-50"
+                   [class.cursor-pointer]="canSelectParticular(particular)"
+                   [class.cursor-not-allowed]="!canSelectParticular(particular)"
+                   [class.opacity-50]="!canSelectParticular(particular)">
+              <input type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-[#1b4d3e]"
+                     [checked]="isParticularSelected(particular.particular_id)"
+                     [disabled]="!canSelectParticular(particular)"
+                     (change)="toggleParticular(particular)" />
+              <span class="min-w-0 break-words">
+                {{ particular.particular_name }}
+                <small *ngIf="particularCountType(particular) as countType" class="ml-1 text-[10px] text-gray-500">
+                  · {{ countType }}{{ countType === 'completed event' ? '' : 's' }}
+                </small>
+              </span>
+            </label>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== STEP 2 ===================== -->
+  <div *ngIf="step === 2 && !loadingExisting && !loadError" class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-3">
+    <!-- Left: what, when, notes -->
+    <div class="flex flex-col gap-3 min-h-0 overflow-y-auto [scrollbar-width:thin]">
+      <div class="shrink-0 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-calendar-plus text-[#1b4d3e]"></i> Event information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label for="title" class="block text-[11px] font-semibold text-gray-800 mb-1">Event title *</label>
+            <input id="title" type="text" [ngModel]="form.title" (ngModelChange)="updateFormField('title', $event)" (blur)="touch('title')" placeholder="Annual Youth Leadership Camp"
+                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('title')" />
+            <p class="text-[11px] mt-1" [ngClass]="fieldError('title') ? 'text-red-600' : 'text-gray-400'">{{ fieldError('title') || 'Use a clear title that participants will recognize.' }}</p>
+          </div>
+          <div>
+            <label for="location" class="block text-[11px] font-semibold text-gray-800 mb-1">Location *</label>
+            <div class="relative">
+              <input id="location" type="text" [ngModel]="form.location" (ngModelChange)="updateFormField('location', $event)" (blur)="touch('location')" placeholder="District Campsite"
+                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 pr-9 focus:ring-2 focus:outline-none" [ngClass]="inputClass('location')" />
+              <i class="bi bi-geo-alt absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+            <p class="text-[11px] mt-1" [ngClass]="fieldError('location') ? 'text-red-600' : 'text-gray-400'">{{ fieldError('location') || 'Where will people meet?' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="shrink-0 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-clock text-[#1b4d3e]"></i> Date &amp; time</h3>
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-3">
+          <div>
+            <label for="start_date" class="block text-[11px] font-semibold text-gray-800 mb-1">Start date *</label>
+            <input id="start_date" type="date" [ngModel]="form.start_date" (ngModelChange)="updateFormField('start_date', $event)" (blur)="touch('start_date')"
+                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('start_date')" />
+            <p *ngIf="fieldError('start_date')" class="text-[11px] mt-1 text-red-600">{{ fieldError('start_date') }}</p>
+          </div>
+          <div>
+            <label for="end_date" class="block text-[11px] font-semibold text-gray-800 mb-1">End date *</label>
+            <input id="end_date" type="date" [ngModel]="form.end_date" (ngModelChange)="updateFormField('end_date', $event)" (blur)="touch('end_date')" [min]="form.start_date"
+                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('end_date')" />
+            <p *ngIf="fieldError('end_date')" class="text-[11px] mt-1 text-red-600">{{ fieldError('end_date') }}</p>
+          </div>
+          <div>
+            <label for="start_time" class="block text-[11px] font-semibold text-gray-800 mb-1">Start time *</label>
+            <input id="start_time" type="time" [ngModel]="form.start_time" (ngModelChange)="updateFormField('start_time', $event)" (blur)="touch('start_time')"
+                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('start_time')" />
+            <p *ngIf="fieldError('start_time')" class="text-[11px] mt-1 text-red-600">{{ fieldError('start_time') }}</p>
+          </div>
+          <div>
+            <label for="end_time" class="block text-[11px] font-semibold text-gray-800 mb-1">End time *</label>
+            <input id="end_time" type="time" [ngModel]="form.end_time" (ngModelChange)="updateFormField('end_time', $event)" (blur)="touch('end_time')"
+                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('end_time')" />
+            <p *ngIf="fieldError('end_time')" class="text-[11px] mt-1 text-red-600">{{ fieldError('end_time') }}</p>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400 mt-2">Times are in Philippine Standard Time (UTC+8).</p>
+      </div>
+
+      <div class="flex-1 min-h-[96px] flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <h3 class="shrink-0 font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-journal-text text-[#1b4d3e]"></i> Announcement</h3>
+        <textarea [ngModel]="form.notes" (ngModelChange)="updateFormField('notes', $event)" aria-label="Notes" placeholder="Include information that helps your team prepare for the event."
+                  class="flex-1 min-h-0 mt-2 w-full text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-[#1b4d3e] focus:outline-none"></textarea>
+      </div>
+    </div>
+
+    <!-- Right: who is invited + summary -->
+    <div class="flex flex-col gap-3 min-h-0 overflow-y-auto [scrollbar-width:thin]">
+      <!-- A) Church representative: the church is fixed -->
+      <div *ngIf="config.coverage === 'church'" class="shrink-0 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-building text-[#1b4d3e]"></i> Church assignment</h3>
+        <label class="block text-[11px] font-semibold text-gray-800 mt-3 mb-1">Church *</label>
+        <div class="relative">
+          <input type="text" [value]="userChurchName || 'Your assigned church'" disabled aria-label="Church (locked)"
+                 class="w-full text-sm bg-gray-50 text-gray-500 border border-gray-200 rounded-lg px-3 py-2 pr-9 cursor-not-allowed" />
+          <i class="bi bi-lock absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        </div>
+        <p class="text-[11px] text-gray-500 mt-1.5">This is your assigned church. Church representatives cannot change this value.</p>
+      </div>
+
+      <!-- B) Assistant: districts (accordion) -->
+      <div *ngIf="config.coverage === 'districts'" class="flex-1 min-h-0 flex flex-col bg-white border rounded-xl shadow-sm overflow-hidden"
+           [ngClass]="tried2 && coverageError() ? 'border-red-300' : 'border-gray-200'">
+        <button type="button" (click)="districtsOpen = !districtsOpen" [attr.aria-expanded]="districtsOpen"
+                class="shrink-0 w-full px-4 py-3 flex items-center justify-between gap-3 text-left" [ngClass]="selectedDistrictCount() ? 'bg-emerald-50' : 'bg-white'">
+          <span class="min-w-0">
+            <span class="flex items-center gap-2 text-sm font-bold text-gray-900"><i class="bi bi-map text-[#1b4d3e]"></i> District coverage *</span>
+            <span class="block text-xs text-emerald-800 truncate mt-0.5">{{ districtSummary() }}</span>
+          </span>
+          <span class="flex items-center gap-2 shrink-0 text-xs text-gray-600">
+            {{ selectedDistrictCount() }} of {{ districts.length }}
+            <i class="bi" [ngClass]="districtsOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          </span>
+        </button>
+
+        <div *ngIf="districtsOpen" class="flex-1 min-h-0 flex flex-col gap-2 px-4 pb-3 pt-2">
+          <div class="relative shrink-0">
+            <input type="text" [(ngModel)]="districtSearch" placeholder="Search districts" aria-label="Search districts"
+                   class="w-full text-sm bg-white border border-gray-300 rounded-lg px-3 py-1.5 pr-9 focus:ring-2 focus:ring-[#1b4d3e] focus:outline-none" />
+            <i class="bi bi-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+          </div>
+          <button type="button" (click)="toggleAllDistricts()" [disabled]="districts.length === 0"
+                  class="self-start shrink-0 text-xs font-semibold text-[#1b4d3e] hover:underline disabled:text-gray-400 disabled:no-underline">
+            {{ allDistrictsSelected() ? 'Deselect all districts' : 'Select all districts' }}
+          </button>
+
+          <div class="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] pr-1">
+            <div class="grid grid-cols-1 gap-0.5">
+            <label *ngFor="let d of filteredDistricts()"
+                   class="!flex w-full min-w-0 items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm leading-5 text-gray-700 transition-colors hover:bg-emerald-50 cursor-pointer">
+              <input type="checkbox" class="h-4 w-4 accent-[#1b4d3e] shrink-0" [checked]="d.selected" (change)="toggleDistrict(d)" />
+              <span class="min-w-0 break-words">{{ d.name }}</span>
+            </label>
+            </div>
+            <p *ngIf="districtsError" class="text-xs text-red-600 mt-2">
+              {{ districtsError }}
+              <button type="button" (click)="loadDistricts()" class="font-semibold underline">Try again</button>
+            </p>
+            <p *ngIf="filteredDistricts().length === 0" class="text-xs text-gray-400 py-2">No district matches “{{ districtSearch }}”.</p>
+          </div>
+
+          <p class="shrink-0 text-[11px]" [ngClass]="tried2 && coverageError() ? 'text-red-600' : 'text-gray-500'">
+            {{ tried2 && coverageError() ? coverageError() : 'All checked districts are included. The first checked district in this list anchors the reporting quarter.' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- C) District pastor: churches of the assigned district -->
+      <div *ngIf="config.coverage === 'churches'" class="flex-1 min-h-0 flex flex-col bg-white border rounded-xl p-4 shadow-sm"
+           [ngClass]="tried2 && coverageError() ? 'border-red-300' : 'border-gray-200'">
+        <h3 class="shrink-0 font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-buildings text-[#1b4d3e]"></i> District &amp; churches</h3>
+        <div class="shrink-0 mt-3">
+          <p class="mb-1 text-[11px] font-semibold text-gray-600">Your assigned district</p>
+          <div class="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2.5 text-sm font-semibold text-emerald-950">
+            <i class="bi bi-geo-alt text-emerald-800" aria-hidden="true"></i>
+            <span class="min-w-0 truncate">{{ userChurchName || 'District unavailable' }}</span>
+          </div>
+        </div>
+        <div class="shrink-0 mt-4 mb-2 flex items-center justify-between gap-2">
+          <span class="text-xs font-bold text-gray-800">{{ isEdit ? 'Assigned church' : 'Select churches *' }}</span>
+          <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">{{ selectedChurchCount() }} of {{ churches.length }} selected</span>
+        </div>
+        <label *ngIf="!isEdit && churches.length" class="mb-2 flex cursor-pointer items-center gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-2.5 text-xs font-semibold text-emerald-950 transition hover:bg-emerald-50">
+          <input type="checkbox" class="h-4 w-4 shrink-0 accent-[#1b4d3e]" [checked]="allChurchesSelected()" (change)="toggleAllChurches()" />
+          <span>Select all churches</span>
+        </label>
+
+        <div class="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] space-y-1.5 pr-1">
+          <div *ngIf="loadingChurches" class="space-y-2"><div *ngFor="let s of [1,2,3]" class="h-9 bg-gray-100 rounded animate-pulse"></div></div>
+          <p *ngIf="churchesError" class="text-xs text-red-600 flex items-center gap-2">
+            <i class="bi bi-exclamation-triangle"></i> {{ churchesError }}
+            <button type="button" (click)="loadChurches()" class="font-semibold underline">Try again</button>
+          </p>
+          <label *ngFor="let c of churches"
+                 class="flex w-full cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition"
+                 [ngClass]="c.selected ? 'border-emerald-200 bg-emerald-50/60' : 'border-transparent hover:border-gray-200 hover:bg-gray-50'">
+            <input *ngIf="isEdit" type="radio" name="church" class="mt-0.5 h-4 w-4 shrink-0 accent-[#1b4d3e]" [checked]="c.selected" (change)="toggleChurch(c)" />
+            <input *ngIf="!isEdit" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-[#1b4d3e]" [checked]="c.selected" (change)="toggleChurch(c)" />
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm font-semibold leading-5 text-gray-900">{{ c.name }}</span>
+              <span *ngIf="c.sub" class="mt-0.5 block truncate text-[11px] leading-4 text-gray-500">{{ c.sub }}</span>
+            </span>
+          </label>
+        </div>
+        <p *ngIf="tried2 && coverageError()" class="shrink-0 text-[11px] text-red-600 mt-1.5">{{ coverageError() }}</p>
+        <p *ngIf="!(tried2 && coverageError())" class="shrink-0 text-[11px] text-gray-500 mt-1.5">Choose one or more churches in your assigned district. Each selected church gets its own event entry.</p>
+      </div>
+
+      <!-- Selection summary (accordion) -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col overflow-hidden"
+           [ngClass]="config.coverage === 'church' ? 'flex-1 min-h-0' : 'shrink-0'">
+        <button type="button" (click)="summaryOpen = !summaryOpen" [attr.aria-expanded]="summaryOpen"
+                class="shrink-0 w-full px-4 py-3 flex items-center justify-between text-left">
+          <span class="flex items-center gap-2 text-sm font-bold text-gray-900"><i class="bi bi-clipboard-check text-[#1b4d3e]"></i> Selection summary</span>
+          <span class="flex items-center gap-2 text-xs text-gray-500">
+            <i class="bi" [ngClass]="summaryOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          </span>
+        </button>
+        <div *ngIf="summaryOpen" class="px-4 pb-3 overflow-y-auto [scrollbar-width:thin] text-sm"
+             [ngClass]="config.coverage === 'church' ? 'flex-1 min-h-0' : 'max-h-[170px]'">
+          <p class="text-[11px] uppercase text-gray-500">Department</p>
+          <p class="font-bold text-gray-900">{{ deptName() || '—' }}</p>
+          <p class="text-xs text-gray-600 mt-1">{{ selectedParticularIds.length }} particular{{ selectedParticularIds.length === 1 ? '' : 's' }} selected</p>
+          <div *ngFor="let g of summaryGroups()" class="mt-2.5 pt-2.5 border-t border-gray-100">
+            <p class="text-[11px] uppercase text-gray-500">{{ g.name }}</p>
+            <p *ngFor="let item of g.items" class="text-xs text-gray-800 mt-0.5">{{ item }}</p>
+          </div>
+          <button type="button" (click)="changeParticulars()"
+                  class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-[#1b4d3e] bg-white hover:bg-gray-50">
+            <i class="bi bi-arrow-left-right"></i> Change particulars
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,361 @@
+<main class="mx-auto max-w-6xl px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
+	<header class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+		<div>
+			<a app-button variant="back" size="sm" routerLink="/assistant/view-user" class="mb-4">
+				<svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none"
+					stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+					aria-hidden="true">
+					<path d="M12 5l-5 5 5 5" />
+				</svg>
+				Back
+			</a>
+			<div class="flex items-center gap-3">
+				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#0F4A30]"
+					aria-hidden="true">
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd"
+							d="M10 18s6-4.8 6-9.5a6 6 0 10-12 0C4 13.2 10 18 10 18zm0-7a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+							clip-rule="evenodd" />
+					</svg>
+				</div>
+				<h1 class="text-xl font-bold tracking-tight text-slate-950">District Pastor Assignments</h1>
+			</div>
+		</div>
+	</header>
+
+	@if (loadError()) {
+	<div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800"
+		role="alert">
+		<span>{{ loadError() }}</span>
+		<button type="button" (click)="loadAssignments()"
+			class="font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700">Retry</button>
+	</div>
+	}
+
+	<!-- Filter -->
+	<section class="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label="Filter districts">
+		<div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+
+			<!-- District filter (opens downward) -->
+			<div class="relative w-full sm:max-w-sm" (focusout)="onFilterFocusOut($event)">
+				<label for="district-filter" class="mb-1 block text-sm font-medium text-slate-700">Filter by
+					district</label>
+				<button id="district-filter" type="button" role="combobox" aria-haspopup="listbox"
+					aria-controls="district-filter-list" [attr.aria-expanded]="filterOpen()"
+					[disabled]="loading() || assignments().length === 0" (click)="toggleFilter()"
+					(keydown)="onFilterTriggerKeydown($event)"
+					class="flex min-h-[2.25rem] w-full items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-left text-sm leading-snug text-slate-900 transition enabled:hover:border-emerald-400 focus:border-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/25 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
+					<span class="break-words" [class.text-slate-500]="!selectedDistrictId()">{{ selectedDistrictLabel()
+						}}</span>
+					<svg class="h-4 w-4 shrink-0 text-slate-500 transition-transform" [class.rotate-180]="filterOpen()"
+						viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+						<path fill-rule="evenodd"
+							d="M5.3 7.3a1 1 0 011.4 0L10 10.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 010-1.4z"
+							clip-rule="evenodd" />
+					</svg>
+				</button>
+
+				@if (filterOpen()) {
+				<div
+					class="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-slate-200 bg-white shadow-lg">
+					<div class="border-b border-slate-100 p-2">
+						<input id="district-filter-search" type="text" autocomplete="off" spellcheck="false"
+							placeholder="Search district..." aria-label="Search districts" [value]="filterQuery()"
+							(input)="onFilterInput($any($event.target).value)" (keydown)="onFilterKeydown($event)"
+							class="h-8 w-full rounded border border-slate-300 px-2.5 text-sm placeholder:text-slate-400 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
+					</div>
+					<ul id="district-filter-list" role="listbox" aria-label="Districts"
+						(mousedown)="$event.preventDefault()" class="max-h-52 overflow-auto py-1 text-sm">
+						@for (o of filteredDistrictOptions(); track o.value; let i = $index) {
+						<li role="option" [id]="'district-filter-opt-' + i"
+							[attr.aria-selected]="o.value === selectedDistrictId()" (click)="selectDistrictFilter(o)"
+							(mouseenter)="activeIndex.set(i)"
+							class="flex cursor-pointer items-start justify-between gap-2 px-3 py-1.5 leading-snug text-slate-800"
+							[class.bg-emerald-50]="i === activeIndex()"
+							[class.font-semibold]="o.value === selectedDistrictId()">
+							<span class="break-words">{{ o.label }}</span>
+							@if (o.value === selectedDistrictId()) {
+							<svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" viewBox="0 0 20 20"
+								fill="currentColor" aria-hidden="true">
+								<path fill-rule="evenodd"
+									d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"
+									clip-rule="evenodd" />
+							</svg>
+							}
+						</li>
+						} @empty {
+						<li role="presentation" class="px-3 py-2 text-slate-500">No districts found.</li>
+						}
+					</ul>
+				</div>
+				}
+			</div>
+
+			@if (!loading()) {
+			<p class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+				@if (selectedDistrictId()) {
+				<button type="button" (click)="clearFilter()"
+					class="rounded-full px-2 py-0.5 font-medium text-emerald-800 underline underline-offset-2 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200">Clear
+					filter</button>
+				}
+				<span class="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-800 ring-1 ring-amber-100">{{
+					vacantDistricts().length }} vacant</span>
+				<span
+					class="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-800 ring-1 ring-emerald-100">{{
+					pastors().length }} active pastors</span>
+			</p>
+			}
+		</div>
+	</section>
+
+	<!-- Current assignments -->
+	<section aria-labelledby="assignment-list-heading">
+		@if (loading()) {
+		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" role="status"
+			aria-label="Loading assignments">
+			@for (n of [1, 2, 3, 4, 5, 6]; track n) {
+			<div class="h-12 animate-pulse rounded-lg border border-slate-200 bg-slate-100"></div>
+			}
+		</div>
+		} @else if (!loadError() && assignments().length === 0) {
+		<p class="py-6 text-center text-sm text-slate-600">No districts are available.</p>
+		} @else if (!loadError()) {
+		<div class="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+			@for (assignment of visibleAssignments(); track assignment.church_id) {
+			@if (assignment.pastor_user_id === null) {
+			<!-- Vacant district -->
+			<button type="button" (click)="openTransfer(assignment)"
+				[attr.aria-label]="'Open pastor assignment for ' + assignment.district_name"
+				class="group flex w-full items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/50 min-h-[3rem] px-2.5 py-2 text-left shadow-sm transition hover:border-amber-300 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]">
+				<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-700"
+					aria-hidden="true">
+					<svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd"
+							d="M10 18s6-4.8 6-9.5a6 6 0 10-12 0C4 13.2 10 18 10 18zm0-7a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+							clip-rule="evenodd" />
+					</svg>
+				</div>
+				<div class="flex min-w-0 flex-1 flex-col justify-center">
+					<h3 class="m-0 break-words text-xs font-semibold leading-4 text-slate-950">{{
+						assignment.district_name }}</h3>
+					<p class="m-0 mt-0.5 text-[10px] font-medium leading-[14px] text-amber-700">No pastor assigned</p>
+				</div>
+			</button>
+			} @else {
+			<!-- Assigned district: selectable to change its pastor -->
+			<button type="button" (click)="openTransfer(assignment)"
+				[attr.aria-label]="'Open pastor assignment for ' + assignment.district_name"
+				class="group flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white min-h-[3rem] px-2.5 py-2 text-left shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30]">
+				<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700"
+					aria-hidden="true">
+					<svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd"
+							d="M10 18s6-4.8 6-9.5a6 6 0 10-12 0C4 13.2 10 18 10 18zm0-7a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+							clip-rule="evenodd" />
+					</svg>
+				</div>
+				<div class="flex min-w-0 flex-1 flex-col justify-center">
+					<h3 class="m-0 break-words text-xs font-semibold leading-4 text-slate-950">{{
+						assignment.district_name }}</h3>
+					<p class="m-0 mt-0.5 break-words text-[10px] leading-[14px] text-slate-600">{{ assignment.pastor_name }}</p>
+				</div>
+			</button>
+			}
+			}
+		</div>
+		}
+	</section>
+
+	<!-- Assign / change / transfer modal -->
+	@if (transferTarget(); as target) {
+	<div class="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-slate-900/50 p-3 sm:p-4 [.app-main.sidebar-expanded_&]:left-[235px] [.app-main.sidebar-collapsed_&]:left-[76px] [@media(max-width:768px)]:[.app-main.sidebar-collapsed_&]:left-0"
+		(click)="closeTransfer()">
+		<div id="transfer-dialog" role="dialog" aria-modal="true" aria-labelledby="transfer-title"
+			aria-describedby="transfer-desc" tabindex="-1" (click)="$event.stopPropagation()"
+			(keydown)="onModalKeydown($event)"
+			class="my-auto flex max-h-[90dvh] w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none">
+
+			<!-- Header -->
+			<div class="flex items-start gap-3 border-b border-slate-200 p-4">
+				<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700"
+					aria-hidden="true">
+					<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd"
+							d="M10 18s6-4.8 6-9.5a6 6 0 10-12 0C4 13.2 10 18 10 18zm0-7a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+							clip-rule="evenodd" />
+					</svg>
+				</div>
+				<div class="min-w-0 flex-1">
+					<h2 id="transfer-title" class="break-words text-base font-semibold leading-snug text-slate-950">
+						{{ target.pastor_user_id === null ? 'Assign a pastor to' : 'Change the pastor of' }} {{
+						target.district_name }}
+					</h2>
+					<p id="transfer-desc" class="mt-0.5 text-xs text-slate-500">When both districts have a pastor, they
+						will swap districts.</p>
+				</div>
+				<button type="button" (click)="closeTransfer()" [disabled]="saving()" aria-label="Close"
+					class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:opacity-50">
+					<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+						<path fill-rule="evenodd"
+							d="M4.3 4.3a1 1 0 011.4 0L10 8.6l4.3-4.3a1 1 0 111.4 1.4L11.4 10l4.3 4.3a1 1 0 01-1.4 1.4L10 11.4l-4.3 4.3a1 1 0 01-1.4-1.4L8.6 10 4.3 5.7a1 1 0 010-1.4z"
+							clip-rule="evenodd" />
+					</svg>
+				</button>
+			</div>
+
+			<!-- Body -->
+			<div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
+
+				@if (selectedPastor(); as sp) {
+
+				<div>
+					<span class="mb-1 block text-sm font-medium text-slate-700">Selected pastor</span>
+					<div
+						class="flex items-center gap-3 rounded-lg border border-emerald-600 bg-emerald-50 px-3 py-2 ring-1 ring-emerald-600">
+						<span class="min-w-0 flex-1">
+							<span class="block break-words text-sm font-semibold text-slate-900">{{ sp.full_name
+								}}</span>
+							@if (selectedPastorFrom(); as cur) {
+							<span class="block break-words text-xs text-amber-700">Currently in {{ cur.district_name
+								}}</span>
+							} @else {
+							<span class="block text-xs text-emerald-700">Unassigned</span>
+							}
+						</span>
+						<button type="button" (click)="clearPastor()" [disabled]="saving()"
+							class="shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold text-emerald-800 underline-offset-2 transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:opacity-50">
+							Change
+						</button>
+					</div>
+				</div>
+				} @else {
+				<div>
+					<label for="pastor-search" class="mb-1 block text-sm font-medium text-slate-700">{{
+						target.pastor_user_id === null ? 'Active pastor' : 'New pastor' }} <span
+							class="text-red-700">*</span></label>
+					<input id="pastor-search" type="text" autocomplete="off" spellcheck="false"
+						placeholder="Search pastor..." [value]="pastorQuery()"
+						(input)="onPastorSearch($any($event.target).value)" [disabled]="saving()"
+						class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm placeholder:text-slate-400 focus:border-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/25 disabled:bg-slate-100" />
+				</div>
+
+				<div class="max-h-56 overflow-auto rounded-lg border border-slate-200">
+					<table class="w-full min-w-[28rem] divide-y divide-slate-200 text-left text-sm">
+						<thead class="sticky top-0 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+							<tr>
+								<th scope="col" class="w-12 px-3 py-2 text-center">Select</th>
+								<th scope="col" class="px-3 py-2">Pastor</th>
+								<th scope="col" class="px-3 py-2">Current district</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-slate-100">
+							@for (p of filteredPastors(); track p.user_id) {
+							@let current = pastorDistricts().get(p.user_id);
+							@let isHere = target.pastor_user_id === p.user_id;
+							<tr class="transition-colors" [class.cursor-pointer]="!isHere"
+								[class.hover:bg-emerald-50]="!isHere" [class.opacity-60]="isHere"
+								(click)="!isHere && !saving() && selectPastor(p)">
+								<td class="px-3 py-2 text-center">
+									<input type="radio" name="transfer-pastor"
+										[attr.aria-label]="'Select ' + p.full_name" [disabled]="saving() || isHere"
+										[checked]="selectedPastorId() === p.user_id" (change)="selectPastor(p)"
+										(click)="$event.stopPropagation()"
+										class="h-4 w-4 accent-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed" />
+								</td>
+								<td class="px-3 py-2 font-medium text-slate-900">
+									<span class="break-words">{{ p.full_name }}</span>
+								</td>
+								<td class="px-3 py-2">
+									@if (isHere) {
+									<span class="text-slate-500">Already assigned to this district</span>
+									} @else if (current) {
+									<span class="break-words text-amber-700">{{ current.district_name }}</span>
+									} @else {
+									<span class="text-emerald-700">Unassigned</span>
+									}
+								</td>
+							</tr>
+							} @empty {
+							<tr>
+								<td colspan="3" class="px-3 py-6 text-center text-sm text-slate-500">
+									{{ pastors().length === 0 ? 'There are no active pastors available.' : 'No pastors match your search.' }}
+								</td>
+							</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				}
+
+				<div aria-live="polite">
+					@if (preview(); as pv) {
+					<div class="rounded-lg border border-amber-200 bg-amber-50 p-3">
+						<p class="mb-2 break-words text-xs font-semibold uppercase tracking-wide text-amber-800">{{ pv.title }}</p>
+
+						<div class="grid grid-cols-1 items-stretch gap-2"
+							[class]="pv.moves.length === 2 ? 'sm:grid-cols-[1fr_auto_1fr]' : ''">
+							@for (m of pv.moves; track m.pastor; let i = $index) {
+							@if (i === 1) {
+							<div class="flex items-center justify-center text-amber-700" aria-hidden="true">
+								<svg class="h-5 w-5 rotate-90 sm:rotate-0" viewBox="0 0 20 20" fill="none"
+									stroke="currentColor" stroke-width="2" stroke-linecap="round"
+									stroke-linejoin="round">
+									<path d="M4 7h11l-3-3M16 13H5l3 3" />
+								</svg>
+							</div>
+							}
+							<div class="min-w-0 rounded-md bg-white p-2.5 ring-1 ring-amber-200">
+								<div class="mb-2 flex items-center gap-2">
+									<span
+										class="min-w-0 break-words text-sm font-semibold leading-snug text-slate-900">{{
+										m.pastor }}</span>
+								</div>
+								<div class="space-y-1 text-xs">
+									<div class="flex items-baseline gap-2">
+										<span
+											class="w-9 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">From</span>
+										<span class="min-w-0 break-words text-slate-700" [class.italic]="!m.from">{{
+											m.from ?? 'Unassigned' }}</span>
+									</div>
+									<div class="flex items-baseline gap-2">
+										<span
+											class="w-9 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">To</span>
+										<span class="min-w-0 break-words font-semibold"
+											[class]="m.to ? 'text-emerald-800' : 'italic text-amber-800'">{{ m.to ??
+											'Unassigned' }}</span>
+									</div>
+								</div>
+							</div>
+							}
+						</div>
+
+						@if (pv.note) {
+						<p class="mt-2 break-words text-xs text-amber-900">{{ pv.note }}</p>
+						}
+					</div>
+					}
+				</div>
+			</div>
+
+			<!-- Footer -->
+			<div class="flex flex-col-reverse gap-3 border-t border-slate-200 p-4 sm:flex-row sm:justify-end">
+				<button type="button" (click)="closeTransfer()" [disabled]="saving()"
+					class="inline-flex h-9 items-center justify-center !rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60">
+					Cancel
+				</button>
+				<button app-button variant="submit" size="md" type="button" (click)="submitTransfer()" [disabled]="!selectedPastor() || saving()" [loading]="saving()"
+					class="inline-flex h-9 items-center justify-center !rounded-md bg-[#0F4A30] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0B3925] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+					@if (saving()) {
+					<svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+					</svg>
+					}
+					{{ saving() ? 'Saving...' : (target.pastor_user_id !== null ? 'Change pastor' :
+					(selectedPastorFrom() ? 'Transfer pastor' : 'Assign pastor')) }}
+				</button>
+			</div>
+		</div>
+	</div>
+	}
+</main>

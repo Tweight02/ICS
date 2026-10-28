@@ -1,187 +1,155 @@
-<ng-template #monitoringCell let-value>
-  @if (value.approved) {
-    <span class="check">✓</span>
-  } @else if (value.progress > 0) {
-    <div class="progress-wrapper">
-      <span class="percentage">{{ value.progress }}%</span>
-      <div class="progress-bar">
-        <div class="progress-value" [style.width.%]="value.progress"></div>
+<div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+  <div class="mx-auto max-w-7xl">
+    <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">Church reports</p>
+        <h1 class="text-3xl font-bold tracking-tight text-emerald-950 sm:text-4xl">
+          {{ district()?.name || 'District Reports' }}
+        </h1>
+        <p *ngIf="district()?.address" class="mt-1 text-sm font-medium text-emerald-900/70">
+          {{ district()?.address }}
+        </p>
       </div>
-    </div>
-  } @else {
-    <span class="dash">–</span>
-  }
-</ng-template>
 
-<div class="details-page">
-
-  <!-- HEADER -->
-  <section class="details-header">
-
-    <div class="header-left">
-
-      @if (district) {
-
-        <span class="eyebrow">
-          DISTRICT
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-medium text-emerald-900/70">
+          <strong class="mr-1 text-emerald-950">{{ churches().length }}</strong>
+          {{ churches().length === 1 ? 'Church' : 'Churches' }}
         </span>
+        <button type="button" (click)="openPersonalReport()"
+          class="group inline-flex min-h-11 items-center gap-3 !rounded-full border border-emerald-700/80 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-950/10 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-900 hover:shadow-lg hover:shadow-emerald-950/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.98]"
+          style="border-radius: 9999px !important">
+          <span class="grid h-8 w-8 place-items-center rounded-lg bg-white/15 ring-1 ring-inset ring-white/15 transition group-hover:bg-white/20"
+            aria-hidden="true">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="3.25" />
+              <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+              <path d="M19 5v4M17 7h4" />
+            </svg>
+          </span>
+          <span class="whitespace-nowrap">Personal Report</span>
+        </button>
+      </div>
+    </header>
 
-        <h1>
-          {{ district.name }}
-        </h1>
-
-        @if (district.address) {
-          
-        }
-
-      } @else {
-
-        <span class="eyebrow">
-          DISTRICT REPORTS
-        </span>
-
-        <h1>
-          District Reports
-        </h1>
-
-      }
-
+    <div *ngIf="errorMessage()" role="alert"
+      class="mb-4 flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <span>{{ errorMessage() }}</span>
+      <button type="button" (click)="loadChurches()"
+        class="shrink-0 font-semibold underline underline-offset-2 hover:text-red-900">
+        Retry
+      </button>
     </div>
 
-    <!-- CHURCH COUNT -->
-    <div class="church-stat">
-
-      <strong>
-        {{ churches.length }}
-      </strong>
-
-      <span>
-        Churches / Companies
-      </span>
-
+    <div *ngIf="loadingChurches()"
+      class="mx-auto flex w-fit items-center gap-3 rounded-2xl border border-emerald-900/10 bg-white px-8 py-6 text-emerald-900 shadow-sm">
+      <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"
+        aria-hidden="true"></span>
+      <span class="text-sm font-medium">Loading churches...</span>
     </div>
 
-  </section>
+    <section *ngIf="!loadingChurches() && !errorMessage() && churches().length > 0"
+      class="space-y-2">
+      <article *ngFor="let church of churches()"
+        class="overflow-hidden rounded-lg border border-slate-200/80 bg-white/85 transition hover:border-emerald-900/20">
+        <button type="button"
+          (click)="toggleChurch(church)"
+          [attr.aria-expanded]="isChurchOpen(church.church_id)"
+          [attr.aria-controls]="'church-departments-' + church.church_id"
+          class="relative flex min-h-12 w-full items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-emerald-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 sm:px-3.5"
+          [ngClass]="isChurchOpen(church.church_id) ? 'bg-slate-50' : 'bg-white'">
+          <span class="absolute inset-y-0 left-0 w-1 transition"
+            [ngClass]="isChurchOpen(church.church_id) ? 'bg-emerald-600' : 'bg-transparent'"></span>
+          <span class="flex min-w-0 items-center gap-2.5">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-emerald-50 text-emerald-800"
+              aria-hidden="true">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+                <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01" />
+              </svg>
+            </span>
+            <span class="block truncate text-sm font-semibold leading-5 text-slate-900">{{ church.name }}</span>
+          </span>
+          <svg class="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200"
+            [ngClass]="isChurchOpen(church.church_id) ? 'rotate-180 text-emerald-700' : ''"
+            viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 7.5l5 5 5-5" />
+          </svg>
+        </button>
 
+        <div *ngIf="isChurchOpen(church.church_id)"
+          [attr.id]="'church-departments-' + church.church_id"
+          class="border-t border-slate-200 bg-white px-2 py-2 sm:px-3">
+                <div *ngIf="loadingChurchDepartments()[church.church_id]"
+                  class="flex items-center justify-center gap-3 py-6 text-sm text-emerald-900/70">
+                  <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"
+                    aria-hidden="true"></span>
+                  Loading departments...
+                </div>
 
-  <!-- MONITORING TABLE -->
-  <section class="monitoring-card">
+                <div *ngIf="churchDepartmentErrors()[church.church_id]" role="alert"
+                  class="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  <span>{{ churchDepartmentErrors()[church.church_id] }}</span>
+                  <button type="button" (click)="loadChurchDepartments(church)"
+                    class="shrink-0 font-semibold underline underline-offset-2 hover:text-red-900">
+                    Retry
+                  </button>
+                </div>
 
-    <div class="table-wrapper">
+                <div *ngIf="!loadingChurchDepartments()[church.church_id]
+                  && !churchDepartmentErrors()[church.church_id]
+                  && churchDepartments()[church.church_id]?.length"
+                  class="overflow-x-auto">
+                  <table class="w-full min-w-[540px] border-collapse text-left">
+                    <thead class="border-b border-slate-200 bg-slate-50 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th scope="col" class="w-[36%] px-3 py-2">Department</th>
+                        <th *ngFor="let quarter of quarterKeys" scope="col" class="px-2 py-2 text-center">
+                          {{ quarter.toUpperCase() }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      <tr *ngFor="let department of getReportDepartments(churchDepartments()[church.church_id])"
+                        class="group cursor-pointer transition hover:bg-emerald-50/60"
+                        (click)="openDepartment(church, department)">
+                        <th scope="row" class="px-3 py-2 text-left text-xs font-medium text-slate-700 group-hover:text-emerald-800">
+                          {{ department.department_name }}
+                        </th>
+                        <td *ngFor="let quarter of quarterKeys" class="px-2 py-2 text-center">
+                          <app-quarter-status
+                            [label]="getQuarterStatus(department, quarter).label"
+                            [tone]="getQuarterStatus(department, quarter).tone">
+                          </app-quarter-status>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
 
-      <table class="monitoring-table">
+                <p *ngIf="!loadingChurchDepartments()[church.church_id]
+                  && !churchDepartmentErrors()[church.church_id]
+                  && getReportDepartments(churchDepartments()[church.church_id] ?? []).length === 0"
+                  class="py-5 text-center text-sm text-slate-500">
+                  No department reports are available for this church.
+                </p>
+        </div>
+      </article>
+    </section>
 
-        <thead>
-          <tr>
-
-            <th class="church-column">
-              Church
-            </th>
-
-            <th>
-              Q1
-            </th>
-
-            <th>
-              Q2
-            </th>
-
-            <th>
-              Q3
-            </th>
-
-            <th>
-              Q4
-            </th>
-
-          </tr>
-        </thead>
-
-
-        <tbody>
-
-          <!-- ERROR -->
-          @if (errorMessage) {
-
-            <tr>
-
-              <td
-                colspan="5"
-                class="message-cell error"
-              >
-                {{ errorMessage }}
-              </td>
-
-            </tr>
-
-          }
-
-          @else if (loadingChurches) {
-
-            <tr>
-              <td colspan="5" class="message-cell">
-                Loading churches...
-              </td>
-            </tr>
-
-          }
-
-          <!-- EMPTY -->
-          @else if (churches.length === 0) {
-
-            <tr>
-
-              <td
-                colspan="5"
-                class="message-cell"
-              >
-                No churches or companies
-                found for this district.
-              </td>
-
-            </tr>
-
-          }
-
-          <!-- DATA -->
-          @else {
-            @for (church of churches; track church.church_id) {
-              <tr
-                class="church-row"
-                tabindex="0"
-                (click)="openChurch(church)"
-                (keydown.enter)="openChurch(church)">
-                <td>{{ church.name }}</td>
-                <td class="quarter-cell">
-                  <ng-container
-                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q1 }">
-                  </ng-container>
-                </td>
-                <td class="quarter-cell">
-                  <ng-container
-                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q2 }">
-                  </ng-container>
-                </td>
-                <td class="quarter-cell">
-                  <ng-container
-                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q3 }">
-                  </ng-container>
-                </td>
-                <td class="quarter-cell">
-                  <ng-container
-                    *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q4 }">
-                  </ng-container>
-                </td>
-              </tr>
-            }
-          }
-
-        </tbody>
-
-      </table>
-
+    <div *ngIf="!loadingChurches() && !errorMessage() && churches().length === 0"
+      class="mx-auto max-w-md rounded-2xl border border-emerald-900/10 bg-white px-6 py-10 text-center shadow-sm">
+      <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700/10 text-emerald-700">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-emerald-950">No Churches Found</h2>
+      <p class="mt-1 text-sm text-emerald-900/70">No churches or companies were found for this district.</p>
     </div>
-
-  </section>
-
+  </div>
 </div>

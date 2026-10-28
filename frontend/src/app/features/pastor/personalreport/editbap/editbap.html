@@ -1,0 +1,356 @@
+<div class="min-h-screen bg-[#f4f7f6] px-5 pt-8 pb-12 text-[#18352c] max-[650px]:px-2.5 max-[650px]:pt-3.5 max-[650px]:pb-7">
+  <div class="mx-auto w-full max-w-[1050px] overflow-hidden rounded-[18px] border border-[#e1eae5] bg-white shadow-[0_15px_40px_rgba(17,65,47,0.08)]">
+
+    <!-- Header -->
+    <header class="flex items-start justify-between gap-[11px] border-b border-[#e7eee9] bg-[linear-gradient(135deg,#fff,#f6faf7)] px-[34px] py-7 max-[650px]:flex-col max-[650px]:px-[18px] max-[650px]:py-[22px]">
+      <div>
+        <p class="mb-0 pt-2.5 text-[25px] font-extrabold tracking-[0.8px] text-[#16805b]"> BAPTISM RECORDS</p>
+        <p class="mt-0 text-sm leading-[1.6] text-[#728279]">
+          Update the selected member's personal and baptism information.
+        </p>
+      </div>
+
+    </header>
+
+    <div class="px-[34px] pt-7 pb-[34px] max-[650px]:px-[18px] max-[650px]:py-[22px]">
+
+      <!-- Loading -->
+      <div
+        *ngIf="loading"
+        class="p-[22px] text-center text-[#547064]"
+        role="status">
+        Loading baptism record...
+      </div>
+
+      <!-- Error -->
+      <div
+        *ngIf="!loading && errorMessage"
+        class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#f4c7c7] bg-[#fff3f2] px-[15px] py-3 text-[13px] leading-[1.5] text-[#a52b2b]"
+        role="alert">
+
+        <span>{{ errorMessage }}</span>
+
+        <button app-button variant="back" size="md"
+          type="button"
+          class="cursor-pointer rounded-[7px] border border-[#e5a8a8] bg-white px-2.5 py-[7px] text-xs font-bold text-[#8f2424] hover:bg-[#ffe7e5]"
+          (click)="cancelEdit()">
+          Back to Baptism Records
+        </button>
+      </div>
+
+      <!-- Success -->
+      <div
+        *ngIf="successMessage"
+        class="mb-5 rounded-[10px] border border-[#cce8d6] bg-[#f0faf3] px-[15px] py-3 text-[13px] leading-[1.5] text-[#176344]"
+        role="status">
+        {{ successMessage }}
+      </div>
+<form
+  *ngIf="!loading && baptism.baptism_id"
+  #baptismForm="ngForm"
+  (ngSubmit)="saveChanges(baptismForm.valid ?? false)">
+  
+        <!-- PERSONAL INFORMATION -->
+        <section class="[&+section]:mt-8 [&+section]:border-t [&+section]:border-[#e8efeb] [&+section]:pt-[29px]">
+
+          <div class="mb-[22px] flex items-center gap-[13px]">
+      
+
+            <div>
+              <h2 class="m-0 text-[17px] font-bold text-[#204738]">Personal Information</h2>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-x-[22px] gap-y-5 max-[650px]:grid-cols-1 max-[650px]:gap-4">
+
+            <!-- First Name -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="first_name">
+                First Name <span class="text-[#d44848">*</span>
+              </label>
+
+              <input class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="first_name"
+                name="first_name"
+                type="text"
+                [(ngModel)]="baptism.first_name"
+                required
+                maxlength="100" />
+            </div>
+
+            <!-- Middle Name -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="middle_name">
+                Middle Name
+              </label>
+
+              <input class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="middle_name"
+                name="middle_name"
+                type="text"
+                [(ngModel)]="baptism.middle_name"
+                maxlength="100" />
+            </div>
+
+            <!-- Last Name -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="last_name">
+                Last Name <span class="text-[#d44848">*</span>
+              </label>
+
+              <input class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="last_name"
+                name="last_name"
+                type="text"
+                [(ngModel)]="baptism.last_name"
+                required
+                maxlength="100" />
+            </div>
+
+            <!-- Extension Name -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="extension_name">
+                Extension Name
+              </label>
+
+              <input class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="extension_name"
+                name="extension_name"
+                type="text"
+                [(ngModel)]="baptism.extension_name"
+                placeholder="Jr., Sr., III"
+                maxlength="30" />
+            </div>
+
+            <!-- Birthdate -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="birthdate">
+                Birthdate <span class="text-[#d44848">*</span>
+              </label>
+
+              <input class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="birthdate"
+                name="birthdate"
+                type="date"
+                [(ngModel)]="baptism.birthdate"
+                [max]="today"
+                required />
+            </div>
+
+            <!-- Gender -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="gender">
+                Gender <span class="text-[#d44848">*</span>
+              </label>
+
+              <select class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="gender"
+                name="gender"
+                [(ngModel)]="baptism.gender"
+                required>
+
+                <option value="" disabled>
+                  Select gender
+                </option>
+
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <!-- Marital Status -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="marital_status">
+                Marital Status
+              </label>
+
+              <select class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="marital_status"
+                name="marital_status"
+                [(ngModel)]="baptism.marital_status">
+
+                <option value="">
+                  Select marital status
+                </option>
+
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Widowed">Widowed</option>
+                <option value="Divorced">Divorced</option>
+                <option value="Separated">Separated</option>
+              </select>
+            </div>
+
+            <!-- Address -->
+            <div class="col-span-full flex min-w-0 flex-col gap-2 max-[650px]:col-auto">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="address">Address</label>
+
+              <input class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="address"
+                name="address"
+                type="text"
+                [(ngModel)]="baptism.address"
+                maxlength="255" />
+            </div>
+
+          </div>
+        </section>
+
+        <!-- BAPTISM INFORMATION -->
+        <section class="[&+section]:mt-8 [&+section]:border-t [&+section]:border-[#e8efeb] [&+section]:pt-[29px]">
+
+          <div class="mb-[22px] flex items-center gap-[13px]">
+          
+
+            <div>
+              <h2 class="m-0 text-[17px] font-bold text-[#204738]">Baptism Information</h2>
+          
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-x-[22px] gap-y-5 max-[650px]:grid-cols-1 max-[650px]:gap-4">
+
+            <!-- Church -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="church_id">
+                Church <span class="text-[#d44848">*</span>
+              </label>
+
+              <select class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="church_id"
+                name="church_id"
+                [(ngModel)]="baptism.church_id"
+                required>
+
+                <option
+                  [ngValue]="null"
+                  disabled>
+                  Select church
+                </option>
+
+                <option
+                  *ngFor="let church of churches"
+                  [ngValue]="church.church_id">
+                  {{ church.name }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Quarter -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="quarter">
+                Quarter <span class="text-[#d44848">*</span>
+              </label>
+
+              <select class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="quarter"
+                name="quarter"
+                [(ngModel)]="baptism.quarter"
+                required>
+
+                <option value="Q1">Q1</option>
+                <option value="Q2">Q2</option>
+                <option value="Q3">Q3</option>
+                <option value="Q4">Q4</option>
+              </select>
+            </div>
+
+            <!-- Date of Baptism -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="date_of_baptism">
+                Date of Baptism <span class="text-[#d44848">*</span>
+              </label>
+
+              <input class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="date_of_baptism"
+                name="date_of_baptism"
+                type="date"
+                [(ngModel)]="baptism.date_of_baptism"
+                [max]="today"
+                [min]="baptism.birthdate || null"
+                required />
+            </div>
+
+            <!-- Officiating Minister -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="officiating_minister">
+                Officiating Minister
+              </label>
+
+              <input class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="officiating_minister"
+                name="officiating_minister"
+                type="text"
+                [(ngModel)]="baptism.officiating_minister"
+                maxlength="150" />
+            </div>
+
+            <!-- Place of Baptism -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="place_of_baptism">
+                Place of Baptism
+              </label>
+
+              <input class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="place_of_baptism"
+                name="place_of_baptism"
+                type="text"
+                [(ngModel)]="baptism.place_of_baptism"
+                maxlength="255" />
+            </div>
+
+            <!-- Baptism Status -->
+            <div class="flex min-w-0 flex-col gap-2">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="is_reclaimed">
+                Baptism Status
+              </label>
+
+              <select class="w-full min-h-[43px] rounded-[9px] border border-[#d9e4dd] bg-white px-3 py-2.5 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10 placeholder:text-[#9daaa2]"
+                id="is_reclaimed"
+                name="is_reclaimed"
+                [(ngModel)]="baptism.is_reclaimed">
+
+                <option [ngValue]="false">
+                  Newly Baptized
+                </option>
+
+                <option [ngValue]="true">
+                  Reclaimed Member
+                </option>
+              </select>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ACTION BUTTONS -->
+        <div class="mt-[34px] flex items-center justify-end gap-[11px] border-t border-[#e8efeb] pt-[23px] max-[650px]:flex-col-reverse">
+
+          <button
+            type="button"
+            class="min-w-[130px] cursor-pointer rounded-[9px] border border-[#d3dfd7] bg-white px-[18px] py-[11px] text-[13px] font-bold text-[#52675b] transition hover:bg-[#f5f8f6] disabled:cursor-not-allowed disabled:opacity-60 max-[650px]:w-full"
+            [disabled]="saving"
+            (click)="cancelEdit()">
+            Cancel
+          </button>
+
+          <button
+            app-button variant="edit" size="md"
+            type="submit" [loading]="saving"
+            class="min-w-[130px] cursor-pointer rounded-[9px] border border-[#116a49] bg-[#11754e] px-[18px] py-[11px] text-[13px] font-bold text-white transition hover:-translate-y-px hover:bg-[#0d5f3f] disabled:cursor-not-allowed disabled:opacity-60 max-[650px]:w-full"
+            [disabled]="saving || baptismForm.invalid">
+
+            <span *ngIf="!saving">
+              Save Changes
+            </span>
+
+            <span *ngIf="saving">
+              Saving...
+            </span>
+          </button>
+
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

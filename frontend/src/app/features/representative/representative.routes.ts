@@ -1,10 +1,18 @@
 import { Routes } from '@angular/router';
+import { EVENTS_ROUTES } from './events/events.routes';
+
 
 export const RepresentativeRoute: Routes = [
+  {
+    path: 'profile',
+    redirectTo: '/profile',
+    pathMatch: 'full'
+  },
+
   // Default route
   {
     path: '',
-    redirectTo: 'reports/programs',
+    redirectTo: '',
     pathMatch: 'full'
   },
 
@@ -12,7 +20,7 @@ export const RepresentativeRoute: Routes = [
   {
     path: 'reports/programs',
     loadComponent: () =>
-      import('./report_c/report-programs/report-programs')
+      import('../pastor/report_p/report-programs/report-programs')
         .then(m => m.ReportPrograms)
   },
 
@@ -28,5 +36,16 @@ export const RepresentativeRoute: Routes = [
     loadComponent: () =>
       import('../representative/stewardship/stewardship')
         .then(m => m.Stewardship)
+  },
+
+  // ==============================
+  // EVENTS (Adicionados aqui diretamente)
+  // ==============================
+ {
+    path: 'events',
+    children: EVENTS_ROUTES
   }
+
+
+
 ];

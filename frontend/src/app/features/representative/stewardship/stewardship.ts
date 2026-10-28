@@ -1,11 +1,16 @@
-import { Component } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { DecimalPipe } from '@angular/common';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-
-// UI only: everything below is sample data held in the component.
-// Nothing is saved or loaded from a server yet.
-
-type Status = 'Draft' | 'Submitted' | 'Endorsed' | 'Approved';
+import { Button } from '../../../shared/components/button/button';
+import { firstValueFrom, Observable } from 'rxjs';
+import {
+  StewardshipActionResponse,
+  StewardshipReportData,
+  StewardshipReportSnapshot,
+  StewardshipService,
+  StewardshipStatus,
+} from '../../../core/services/stewardship/stewardship.service';
 
 interface Particular {
   particular_id: number;
@@ -23,21 +28,25 @@ const MONTHLY_PARTICULARS = ['offering', 'tithes'];
 @Component({
   selector: 'app-stewardship',
   standalone: true,
-  imports: [FormsModule, DecimalPipe],
+  imports: [FormsModule, DecimalPipe, Button],
   templateUrl: './stewardship.html',
 })
 export class Stewardship {
-  readonly mission = 'Northeast Luzon Mission';
-  readonly programName = 'Stewardship Quarterly Report';
-
-  // Sample: replace with the logged-in church representative's church.
-  readonly church = { name: 'LOGAC', district: 'Sample District' };
+  church = { name: '', district: '' };
 
   readonly quarters = [1, 2, 3, 4];
 
+  readonly years = (() => {
+    const y = new Date().getFullYear();
+    return [y - 2, y - 1, y];
+  })();
+
+  year = new Date().getFullYear();
+
+  /** 1-4 for a quarter, 0 for the read-only Annual view. */
   quarter = Math.ceil((new Date().getMonth() + 1) / 3);
 
-  status: Status = 'Draft';
+  status: StewardshipStatus = 'Draft';
   dateSubmitted = '';
 
   // Columns (the program's particulars)
@@ -50,29 +59,22 @@ export class Stewardship {
   // This church's entries
   values: Record<number, number | null> = {}; // particular_id -> value
   monthly: Record<number, (number | null)[]> = {}; // particular_id -> value for each month of the quarter
+  annualReports: Record<number, StewardshipReportData> = {};
 
   message = '';
   isError = false;
   saved = false; // true once a change has been saved automatically
+  isLoading = false;
+  isSaving = false;
 
-  constructor() {
-    this.setParticulars(
-      [
-        'No. of Church Members',
-        'No. of STW Seminar conducted',
-        'No. of STW Promotion conducted',
-        'No. of Families visited & given STW awareness program',
-        'No. of Certification Seminars conducted on Basic STW Educator',
-        'No. of Pastors/Local church leaders as basic STW educator',
-        'No. of STW sermons preached on Biblical Stewardship',
-        'No. of Tithe Giving Units',
-        'No. of church members practicing Combine Offering Plan',
-        'Number of members participating in regular giving',
-        'Number of notable challenges or success stories',
-        'Offering',
-        'Tithes',
-      ].map((particulars_name, i) => ({ particular_id: i + 1, particulars_name })),
-    );
+  private loadedYear = this.year;
+  private loadedQuarter = this.quarter;
+  private loadSequence = 0;
+  private dirty = false;
+  private saveTimer: ReturnType<typeof setTimeout> | undefined;
+  private operationQueue: Promise<void> = Promise.resolve();
+
+  constructor(private readonly stewardshipService: StewardshipService) {
     this.load();
   }
 
@@ -88,18 +90,21 @@ export class Stewardship {
     return this.monthNumbers.map((m) => MONTH_NAMES[m - 1]);
   }
 
-  /** The report's year is the year it was submitted (the current year until then). */
-  get year(): number {
-    return this.dateSubmitted ? Number(this.dateSubmitted.slice(0, 4)) : new Date().getFullYear();
+  get isAnnual(): boolean {
+    return this.quarter === 0;
   }
 
-  /** The church can only edit while the report is a draft. */
+  get periodLabel(): string {
+    return this.isAnnual ? 'Annual' : `Q${this.quarter}`;
+  }
+
+  /** The church can only edit while the report is a draft, and never in the Annual view. */
   get isLocked(): boolean {
-    return this.status !== 'Draft';
+    return this.isAnnual || this.status !== 'Draft';
   }
 
   get showPercent(): boolean {
-    return this.membersId !== null && this.titheUnitsId !== null;
+    return !this.isAnnual && this.membersId !== null && this.titheUnitsId !== null;
   }
 
   /** % of members returning tithe = tithe giving units / church members * 100. */
@@ -144,96 +149,140 @@ export class Stewardship {
 
   /** Total of one monthly particular (Offering or Tithes) for the quarter. */
   monthlyTotal(particularId: number): number {
+    if (this.isAnnual) return this.annualTotal(particularId);
     return (this.monthly[particularId] ?? []).reduce<number>((sum, v) => sum + (v ?? 0), 0);
   }
 
-  // ---- Actions (change local state only) ----
+  // ---- Annual view (read-only, adds up the four saved quarters) ----
 
-  /** A different quarter is a different report: show what was saved for it. */
+  /** Sum of a single-value particular across Q1-Q4. */
+  annualField(particularId: number): number {
+    return this.quarters.reduce(
+      (sum, q) => sum + (this.annualReports[q]?.values?.[particularId] ?? 0),
+      0,
+    );
+  }
+
+  /** Offering or Tithes total for one quarter. */
+  annualQuarterTotal(particularId: number, q: number): number {
+    const months = this.annualReports[q]?.monthly?.[particularId] ?? [];
+    return months.reduce<number>((sum, v) => sum + (v ?? 0), 0);
+  }
+
+  /** Offering or Tithes total for the whole year. */
+  annualTotal(particularId: number): number {
+    return this.quarters.reduce((sum, q) => sum + this.annualQuarterTotal(particularId, q), 0);
+  }
+
+  // ---- Actions ----
+
+  /** A different quarter is a different report: load it from the API. */
   onPeriodChange(): void {
+    this.flushPendingSave();
     this.message = '';
     this.load();
   }
 
-  /** Called when any box changes: saves it automatically. */
+  /** Called when any box changes: save a snapshot automatically. */
   onFieldChange(): void {
-    if (this.isLocked) return;
+    if (this.isLocked || this.isLoading || this.loadedQuarter === 0) return;
     this.message = '';
-    // Wait one tick so ngModel has stored the new value before saving.
-    setTimeout(() => {
-      this.persist();
-      this.saved = true;
-    });
+    this.saved = false;
+    this.dirty = true;
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => this.flushPendingSave(), 400);
   }
 
   submit(): void {
-    if (!this.hasData()) {
-      this.setMessage('Enter your report values before submitting.', true);
-      return;
-    }
-    this.status = 'Submitted';
-    this.dateSubmitted = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, local time
-    this.persist();
-    this.setMessage('Report submitted.', false);
+    if (this.isLoading || this.isLocked) return;
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = undefined;
+    this.fillEmptyWithZero();
+    this.dirty = false;
+    const snapshot = this.createSnapshot(this.year, this.quarter);
+    this.enqueueOperation(
+      () => this.stewardshipService.submitReport(snapshot),
+      this.periodKey(this.year, this.quarter),
+      (response) => {
+        this.status = response.status;
+        this.dateSubmitted = response.dateSubmitted ?? '';
+        this.saved = true;
+        this.setMessage(response.message, false);
+      },
+    );
   }
 
   /** Lets the church edit again, only until the district endorses it. */
   reopen(): void {
-    if (this.status !== 'Submitted') return;
-    this.status = 'Draft';
-    this.dateSubmitted = '';
-    this.persist();
-    this.setMessage('Reopened for editing.', false);
+    if (this.status !== 'Submitted' || this.isLoading) return;
+    this.enqueueOperation(
+      () => this.stewardshipService.reopenReport(this.year, this.quarter),
+      this.periodKey(this.year, this.quarter),
+      (response) => {
+        this.status = response.status;
+        this.dateSubmitted = '';
+        this.saved = true;
+        this.setMessage(response.message, false);
+      },
+    );
   }
 
   // ---- Helpers ----
 
-  // Stand-in for the backend: keeps the report in this browser so it survives a refresh.
-  // Replace persist() and load() with API calls later.
-  private get storageKey(): string {
-    return `stewardship:${this.church.name}:q${this.quarter}`;
-  }
-
-  private persist(): void {
-    try {
-      localStorage.setItem(
-        this.storageKey,
-        JSON.stringify({
-          values: this.values,
-          monthly: this.monthly,
-          status: this.status,
-          dateSubmitted: this.dateSubmitted,
-        }),
-      );
-    } catch {
-      // Storage unavailable: nothing to do.
-    }
-  }
-
   private load(): void {
+    const sequence = ++this.loadSequence;
+    const requestedYear = this.year;
+    const requestedQuarter = this.quarter;
+    this.isLoading = true;
+    this.isSaving = false;
     this.values = {};
     this.monthly = this.blankMonthly();
+    this.annualReports = {};
     this.status = 'Draft';
     this.dateSubmitted = '';
     this.saved = false;
-    try {
-      const raw = localStorage.getItem(this.storageKey);
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      this.values = data.values ?? {};
-      this.monthly = { ...this.monthly, ...(data.monthly ?? {}) };
-      this.status = data.status ?? 'Draft';
-      this.dateSubmitted = data.dateSubmitted ?? '';
-    } catch {
-      // Unreadable saved data: start blank.
-    }
+    this.stewardshipService.getReport(requestedYear, requestedQuarter).subscribe({
+      next: (response) => {
+        if (sequence !== this.loadSequence) return;
+        this.church = {
+          name: response.church.name,
+          district: response.church.district ?? '',
+        };
+        this.setParticulars(response.particulars.map((particular) => ({
+          particular_id: particular.particular_id,
+          particulars_name: particular.particular_name,
+        })));
+        this.loadedYear = requestedYear;
+        this.loadedQuarter = requestedQuarter;
+        if (requestedQuarter === 0) {
+          this.annualReports = response.reports ?? {};
+        } else if (response.report) {
+          this.applyReport(response.report);
+        }
+        this.isLoading = false;
+      },
+      error: (error: unknown) => {
+        if (sequence !== this.loadSequence) return;
+        this.isLoading = false;
+        this.setMessage(this.errorMessage(error), true);
+      },
+    });
   }
 
-  private hasData(): boolean {
-    return (
-      this.fields.some((f) => this.values[f.particular_id] != null) ||
-      this.monthlyFields.some((p) => this.monthly[p.particular_id]?.some((v) => v != null))
-    );
+  /** A box counts as filled once it has a number (0 is fine; empty is not). */
+  private isFilled(v: number | null | undefined): boolean {
+    return v !== null && v !== undefined && !Number.isNaN(v);
+  }
+
+  /** Any box left empty is submitted as 0. */
+  private fillEmptyWithZero(): void {
+    for (const f of this.fields) {
+      if (!this.isFilled(this.values[f.particular_id])) this.values[f.particular_id] = 0;
+    }
+    for (const p of this.monthlyFields) {
+      const months = this.monthly[p.particular_id] ?? [null, null, null];
+      this.monthly[p.particular_id] = months.map((v) => (this.isFilled(v) ? v : 0));
+    }
   }
 
   private setParticulars(list: Particular[]): void {
@@ -253,6 +302,79 @@ export class Stewardship {
 
   private isMonthly(p: Particular): boolean {
     return MONTHLY_PARTICULARS.includes(p.particulars_name.trim().toLowerCase());
+  }
+
+  private applyReport(report: StewardshipReportData): void {
+    this.values = { ...this.values, ...report.values };
+    this.monthly = { ...this.monthly, ...report.monthly };
+    this.status = report.status;
+    this.dateSubmitted = report.dateSubmitted ?? '';
+  }
+
+  private flushPendingSave(): void {
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = undefined;
+    if (!this.dirty || this.loadedQuarter === 0) return;
+
+    this.dirty = false;
+    const year = this.loadedYear;
+    const quarter = this.loadedQuarter;
+    const snapshot = this.createSnapshot(year, quarter);
+    this.enqueueOperation(
+      () => this.stewardshipService.saveReport(snapshot),
+      this.periodKey(year, quarter),
+      (response) => {
+        this.saved = true;
+        this.setMessage(response.message, false);
+      },
+    );
+  }
+
+  private createSnapshot(year: number, quarter: number): StewardshipReportSnapshot {
+    return {
+      year,
+      quarter,
+      values: this.fields.map((field) => ({
+        particular_id: field.particular_id,
+        value: this.values[field.particular_id],
+      })),
+      monthly: this.monthlyFields.map((field) => ({
+        particular_id: field.particular_id,
+        values: [...(this.monthly[field.particular_id] ?? [null, null, null])],
+      })),
+    };
+  }
+
+  private enqueueOperation(
+    request: () => Observable<StewardshipActionResponse>,
+    key: string,
+    onSuccess: (response: StewardshipActionResponse) => void,
+  ): void {
+    this.isSaving = true;
+    this.operationQueue = this.operationQueue.then(async () => {
+      try {
+        const response = await firstValueFrom(request());
+        if (this.periodKey(this.year, this.quarter) === key) onSuccess(response);
+      } catch (error: unknown) {
+        if (this.periodKey(this.year, this.quarter) === key) {
+          this.setMessage(this.errorMessage(error), true);
+        }
+      } finally {
+        if (this.periodKey(this.year, this.quarter) === key) this.isSaving = false;
+      }
+    });
+  }
+
+  private periodKey(year: number, quarter: number): string {
+    return `${year}:q${quarter}`;
+  }
+
+  private errorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
+      return error.error.message;
+    }
+
+    return 'Unable to load or save the stewardship report. Please try again.';
   }
 
   private setMessage(text: string, error: boolean): void {

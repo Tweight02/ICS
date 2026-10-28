@@ -1,0 +1,198 @@
+<div class="min-h-screen bg-transparent px-4 py-4 text-slate-800 sm:px-6 sm:py-5 lg:px-8">
+  <div class="mx-auto max-w-7xl">
+
+    <header class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+      <h1 class="!text-lg font-semibold tracking-tight text-slate-900 sm:!text-xl">Report monitoring</h1>
+      <button app-button variant="create" size="md"
+          *ngIf="isAssistantPortal"
+          type="button"
+          (click)="createReportTemplate()"
+          class="!min-h-9">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <path d="M10 3v14M3 10h14" />
+          </svg>
+          New report
+      </button>
+    </header>
+
+    <!-- Error -->
+    <div
+      *ngIf="errorMessage()"
+      role="alert"
+      class="mb-4 flex items-center justify-between gap-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <span class="font-medium">{{ errorMessage() }}</span>
+      <button
+        type="button"
+        (click)="loadDistricts()"
+        class="rounded-md border border-red-300 bg-white px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-100">
+        Retry
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loadingDistricts()" class="flex justify-center py-20">
+      <app-running-loader></app-running-loader>
+    </div>
+
+    <section
+      *ngIf="!loadingDistricts() && districts().length > 0"
+      class="mb-3">
+      <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex h-10 w-full items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 transition focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/15 sm:max-w-xs">
+          <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="10.8" cy="10.8" r="6.8" />
+            <path d="m16 16 4.2 4.2" />
+          </svg>
+          <input
+            type="search"
+            aria-label="Search districts"
+            placeholder="Search districts"
+            autocomplete="off"
+            class="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 [&::-webkit-search-cancel-button]:hidden"
+            [value]="searchTerm()"
+            (input)="updateSearch($event)"
+          />
+          <button
+            *ngIf="searchTerm()"
+            type="button"
+            aria-label="Clear search"
+            (click)="clearSearch()"
+            class="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-700">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="m5 5 10 10M15 5 5 15" />
+            </svg>
+          </button>
+        </div>
+
+        <dl class="flex items-center self-start divide-x divide-slate-200 text-xs text-slate-600 sm:self-auto">
+          <div class="pr-3"><dt class="sr-only">Districts</dt><dd><span class="font-semibold tabular-nums text-slate-900">{{ districtCount() }}</span> districts</dd></div>
+          <div class="pl-3"><dt class="sr-only">Churches</dt><dd><span class="font-semibold tabular-nums text-slate-900">{{ churchCount() }}</span> churches</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- Districts -->
+    <section
+      *ngIf="!loadingDistricts() && filteredDistricts().length > 0"
+      class="space-y-1.5">
+
+      <div *ngFor="let district of filteredDistricts()" class="overflow-hidden rounded-lg border border-slate-200/80 bg-white/85 transition hover:border-emerald-900/20">
+
+        <!-- District row -->
+        <button
+          type="button"
+          (click)="toggleDistrict(district.church_id)"
+          [attr.aria-expanded]="isDistrictOpen(district.church_id)"
+          class="relative flex min-h-11 w-full items-center justify-between gap-2.5 px-3 py-1.5 text-left transition hover:bg-emerald-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 sm:px-3.5"
+          [ngClass]="isDistrictOpen(district.church_id) ? 'bg-slate-50' : 'bg-white'">
+          <span
+            class="absolute inset-y-0 left-0 w-1 transition"
+            [ngClass]="isDistrictOpen(district.church_id) ? 'bg-emerald-600' : 'bg-transparent'"></span>
+          <span class="flex min-w-0 items-center gap-2.5">
+            <span class="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-emerald-50 text-emerald-800" aria-hidden="true">
+              <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 17V8l7-4 7 4v9M7 17v-5h6v5" />
+              </svg>
+            </span>
+            <span class="min-w-0">
+              <span class="block truncate text-sm font-semibold leading-5 text-slate-900">{{ district.name }}</span>
+              <span class="block text-[11px] leading-4 text-slate-500">{{ district.church_count ?? 0 }} churches</span>
+            </span>
+          </span>
+
+          <span class="flex shrink-0 items-center">
+            <svg
+              class="h-4 w-4 text-slate-400 transition-transform duration-200"
+              [ngClass]="{ 'rotate-180 text-emerald-700': isDistrictOpen(district.church_id) }"
+              viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 7.5l5 5 5-5" />
+            </svg>
+          </span>
+        </button>
+
+        <div *ngIf="isDistrictOpen(district.church_id)" class="border-t border-slate-200 bg-white px-2 py-2 sm:px-3">
+
+          <div *ngIf="loadingDistrictChurches()[district.church_id]" class="flex justify-center py-8">
+            <app-running-loader size="small"></app-running-loader>
+          </div>
+
+          <div
+            *ngIf="!loadingDistrictChurches()[district.church_id] && districtChurches()[district.church_id]?.length"
+            class="overflow-x-auto">
+            <table class="w-full min-w-[540px] border-collapse text-left">
+              <thead class="border-b border-slate-200 bg-slate-50 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                <tr class="border-b border-slate-200">
+                  <th scope="col" class="w-[36%] px-2.5 py-1.5">Church</th>
+                  <th *ngFor="let quarterKey of quarterKeys" scope="col" class="px-1.5 py-1.5 text-center">{{ quarterKey }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr
+                  *ngFor="let church of districtChurches()[district.church_id]"
+                  role="link"
+                  tabindex="0"
+                  [attr.aria-label]="'Open report for ' + church.name"
+                  (click)="openChurch(district.church_id, church.church_id)"
+                  (keydown.enter)="openChurch(district.church_id, church.church_id)"
+                  (keydown.space)="openChurch(district.church_id, church.church_id); $event.preventDefault()"
+                  class="group cursor-pointer transition hover:bg-slate-50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700">
+                  <th scope="row" class="px-2.5 py-1 text-left">
+                    <span class="text-[11px] font-medium leading-4 text-slate-700 transition group-hover:text-emerald-800 sm:text-xs">
+                      {{ church.name }}
+                    </span>
+                  </th>
+                  <td *ngFor="let quarterKey of quarterKeys" class="px-1.5 py-1 text-center" [attr.title]="quarterKey.toUpperCase() + ' status'">
+                    <ng-container *ngIf="getQuarterStatus(church, quarterKey) as status; else noStatus">
+                      <app-quarter-status
+                        class="inline-flex min-w-[4.25rem] justify-center text-[9px] font-medium leading-none"
+                        [label]="status.tone === 'complete' ? null : status.status"
+                        [tone]="status.tone">
+                      </app-quarter-status>
+                    </ng-container>
+                    <ng-template #noStatus>
+                      <span class="text-xs text-slate-400">—</span>
+                    </ng-template>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            *ngIf="!loadingDistrictChurches()[district.church_id] && (!districtChurches()[district.church_id] || districtChurches()[district.church_id].length === 0)"
+            class="px-5 py-8 text-center text-sm text-slate-500">
+            No churches found for this district.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Empty: no districts -->
+    <div
+      *ngIf="!loadingDistricts() && !errorMessage() && districts().length === 0"
+      class="flex flex-col items-center rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+      <div class="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-slate-100 text-slate-500" aria-hidden="true">
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+        </svg>
+      </div>
+      <h2 class="text-base font-semibold text-slate-900">No Districts Available</h2>
+      <p class="mt-1 text-sm text-slate-500">There are currently no districts to report.</p>
+    </div>
+
+    <!-- Empty: no search results -->
+    <div
+      *ngIf="!loadingDistricts() && districts().length > 0 && filteredDistricts().length === 0"
+      class="flex flex-col items-center rounded-xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+      <h2 class="text-base font-semibold text-slate-900">No matching districts</h2>
+      <p class="mt-1 text-sm text-slate-500">Try a different district name.</p>
+      <button
+        type="button"
+        (click)="clearSearch()"
+        class="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
+        Clear search
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -1,82 +1,125 @@
-<div class="fixed inset-0 overflow-y-auto text-slate-800 antialiased">
+<div class="relative isolate min-h-[100svh] overflow-x-clip bg-[#0d3325] font-sans text-white antialiased">
 
-  <!-- Full-screen background -->
+  <!-- Photo + scrims -->
   <img
     src="/assets/mountain.png"
     alt=""
     aria-hidden="true"
-    class="fixed inset-0 h-full w-full object-cover"
+    class="fixed inset-0 -z-[2] h-full w-full object-cover object-center"
   />
+  <div class="pointer-events-none fixed inset-0 -z-[1] [background:linear-gradient(90deg,rgba(5,40,27,0.9)_0%,rgba(5,40,27,0.72)_45%,rgba(5,40,27,0.36)_100%)]"></div>
+  <div class="pointer-events-none fixed inset-0 -z-[1] [background:linear-gradient(0deg,rgba(3,22,15,0.46)_0%,transparent_50%,rgba(3,22,15,0.16)_100%)]"></div>
 
-  <main class="relative z-10 flex min-h-full items-center justify-center">
-    <div class="w-full max-w-sm rounded-2xl bg-white/30 p-8 shadow-xl ring-1 ring-white/40 backdrop-blur-md">
+  <main class="mx-auto grid min-h-[100svh] w-full max-w-[80rem] box-border items-center gap-[clamp(2.5rem,6vw,5rem)] px-[clamp(1.25rem,5vw,4rem)] py-[clamp(2rem,5vh,3.5rem)] min-[721px]:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] min-[901px]:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] min-[721px]:gap-8 min-[901px]:gap-20 max-[720px]:gap-8 max-[720px]:px-5 max-[720px]:py-8 max-[420px]:gap-6 max-[420px]:px-4 max-[420px]:py-6">
 
-      <div class="mx-auto mb-6 flex justify-center">
+    <!-- Brand, headline, system intro -->
+    <section class="mx-auto flex w-full max-w-[38rem] flex-col items-center text-center [text-shadow:0_2px_18px_rgba(0,0,0,0.28)] max-[720px]:max-w-[34rem]">
+
+      <span class="inline-flex">
         <img
           src="/assets/logo.png"
           alt="Northeast Luzon Mission"
-          class="brand-logo h-24 w-auto rounded-lg"
+          class="block h-[clamp(7rem,15vh,11rem)] w-auto object-contain [filter:drop-shadow(0_4px_16px_rgba(0,0,0,0.2))] max-[720px]:h-[6.5rem]"
         />
-      </div>
+      </span>
 
-      <h1 class="text-center text-xl font-semibold text-slate-900">
+      <h1 class="mt-6 text-balance text-[clamp(2.5rem,4.5vw,4.25rem)] font-semibold leading-[1.04] tracking-tight drop-shadow-[0_2px_24px_rgba(0,0,0,0.35)] max-[720px]:mt-4 max-[720px]:text-[clamp(2rem,9vw,3rem)]">
         Northeast Luzon Mission
       </h1>
 
-      <p class="mt-1 text-center text-sm text-slate-700">Sign in to your account</p>
+      <div class="mt-8 h-px w-14 shrink-0 bg-white/50 max-[720px]:mt-[1.4rem]" aria-hidden="true"></div>
 
-      <form class="mt-8 space-y-5" [formGroup]="credentials" (ngSubmit)="submit()" novalidate>
+      <!-- System intro -->
+      <p class="mt-6 max-w-[34rem] text-pretty text-[clamp(1rem,1.45vw,1.2rem)] leading-relaxed text-white/90 drop-shadow-[0_1px_12px_rgba(0,0,0,0.4)] max-[720px]:mt-4 max-[720px]:text-base">
+        The Integrated Communication System (ICS) is a web-based platform for the Northeast Luzon Mission that brings ministry reporting, event coordination, and notifications together in one place.
+      </p>
+    </section>
+
+    <!-- Glass card -->
+    <section class="box-border w-full max-w-[26rem] justify-self-end rounded-3xl border border-white/30 bg-[linear-gradient(145deg,rgba(255,255,255,0.16),rgba(7,48,33,0.78)_45%,rgba(5,40,27,0.88))] p-[clamp(1.5rem,3vw,2.25rem)] shadow-[0_24px_64px_rgba(0,0,0,0.3)] backdrop-blur-[18px] backdrop-saturate-[140%] max-[720px]:mx-auto max-[720px]:max-w-[30rem] max-[420px]:rounded-[1.25rem] max-[420px]:p-[1.35rem]">
+
+      <h2 class="login-card-title text-2xl font-semibold tracking-tight">Sign in to your account</h2>
+
+      <form class="mt-7 space-y-5 max-[420px]:mt-[1.35rem]" [formGroup]="credentials" (ngSubmit)="submit()" novalidate>
 
         @if (error()) {
-          <div role="alert" class="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+          <div role="alert" class="login-error rounded-xl border border-red-300/50 bg-red-500/25 px-3.5 py-2.5 text-sm text-red-50">
             {{ error() }}
           </div>
         }
 
         <div>
-          <label for="email" class="block text-sm font-medium text-slate-900">Email</label>
+          <label for="email" class="login-label block text-sm font-medium text-white/95">Email</label>
           <input
             id="email" type="email" autocomplete="email" formControlName="email"
             placeholder="you@example.com"
             [class.border-red-400]="email.invalid && email.touched"
-            class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm placeholder-slate-400 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            class="login-input mt-2 block h-12 w-full rounded-xl border border-white/30 bg-white/15 px-4 text-base text-white placeholder-white/60 transition focus:border-white/70 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 motion-reduce:transition-none sm:text-sm [-webkit-text-fill-color:white] [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s]"
           />
           @if (email.touched && email.invalid) {
-            <p class="mt-1.5 text-sm text-red-600">
+            <p class="login-field-error mt-2 text-sm text-red-200">
               {{ email.hasError('required') ? 'Email is required.' : 'Enter a valid email address.' }}
             </p>
           }
         </div>
 
         <div>
-          <div class="flex items-center justify-between">
-            <label for="password" class="block text-sm font-medium text-slate-900">Password</label>
-            <a href="#" class="text-sm font-medium text-brand-700 hover:text-brand-600 hover:underline">Forgot password?</a>
+          <label for="password" class="login-label block text-sm font-medium text-white/95">Password</label>
+          <div class="login-password-wrap relative mt-2">
+            <input
+              id="password" [type]="showPassword() ? 'text' : 'password'"
+              autocomplete="current-password" formControlName="password"
+              placeholder="••••••••"
+              [class.border-red-400]="password.invalid && password.touched"
+              class="login-input block h-12 w-full rounded-xl border border-white/30 bg-white/15 pl-4 pr-12 text-base text-white placeholder-white/60 transition focus:border-white/70 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 motion-reduce:transition-none sm:text-sm [-webkit-text-fill-color:white] [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s]"
+            />
+            <button
+              type="button"
+              (click)="showPassword.set(!showPassword())"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+              [attr.aria-pressed]="showPassword()"
+              class="login-password-toggle absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-white/75 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/60 motion-reduce:transition-none"
+            >
+              @if (showPassword()) {
+                <!-- eye-off -->
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A9.8 9.8 0 0112 5c5 0 8.5 4.3 9.5 7a11.7 11.7 0 01-2.6 3.9M6.2 6.2A11.7 11.7 0 002.5 12c1 2.7 4.5 7 9.5 7a9.7 9.7 0 004-.9" />
+                </svg>
+              } @else {
+                <!-- eye -->
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 12C3.5 9.3 7 5 12 5s8.5 4.3 9.5 7c-1 2.7-4.5 7-9.5 7s-8.5-4.3-9.5-7z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              }
+            </button>
           </div>
-          <input
-            id="password" type="password" autocomplete="current-password" formControlName="password"
-            placeholder="••••••••"
-            [class.border-red-400]="password.invalid && password.touched"
-            class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm placeholder-slate-400 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-          />
           @if (password.touched && password.invalid) {
-            <p class="mt-1.5 text-sm text-red-600">Password is required.</p>
+            <p class="login-field-error mt-2 text-sm text-red-200">Password is required.</p>
           }
         </div>
 
-        <label class="flex items-center gap-2 text-sm text-slate-900">
-          <input type="checkbox" formControlName="remember" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
-          Remember me
-        </label>
+        <div class="flex items-center justify-start gap-4 text-sm max-[420px]:gap-3 max-[420px]:text-[0.8rem]">
+          <label class="login-remember flex cursor-pointer items-center gap-2.5">
+            <input
+              type="checkbox" formControlName="remember"
+              class="h-4 w-4 rounded border-white/50 bg-white/10 accent-[#edbd46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            />
+            Remember me
+          </label>
+        </div>
 
         <button
-  type="submit"
-  [disabled]="loading()"
-  class="w-full rounded-lg bg-green-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
->
-  {{ loading() ? 'Signing in…' : 'Login' }}
-</button>
+          type="submit"
+          [disabled]="loading()"
+          class="login-submit group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-green-950 shadow-lg shadow-black/25 transition hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-green-950 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 motion-reduce:transition-none"
+        >
+          {{ loading() ? 'Signing in…' : 'Login' }}
+          <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </button>
       </form>
-    </div>
+    </section>
   </main>
 </div>

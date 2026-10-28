@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { ReportService } from '../../../../core/services/report/report';
-import { ReportPrograms } from './report-programs';
+import { ReportPrograms } from '../../../pastor/report_p/report-programs/report-programs';
 
 describe('ReportPrograms', () => {
   let component: ReportPrograms;
@@ -22,16 +23,23 @@ describe('ReportPrograms', () => {
       church_id: 1
     });
 
-    getDepartments = vi.fn().mockReturnValue(of([{
-      department_id: 4,
-      department_name: 'Youth',
-      q1_approved: false,
-      q1_data_progress: 50,
-      q2_approved: true,
-      q2_data_progress: 100,
-      q3_approved: false,
-      q3_data_progress: 0
-    }]));
+    getDepartments = vi.fn().mockReturnValue(of([
+      {
+        department_id: 4,
+        department_name: 'Youth',
+        q1_approved: false,
+        q1_data_progress: 50,
+        q2_approved: true,
+        q2_data_progress: 100,
+        q3_approved: true,
+        q3_data_progress: 0
+      },
+      { department_id: 16, department_name: 'Ministerial & Evangelism' },
+      { department_id: 20, department_name: 'Adventist Mission' },
+      { department_id: 22, department_name: 'Baptism Record' },
+      { department_id: 23, department_name: 'Death Record' },
+      { department_id: 30, department_name: 'Other Department' }
+    ]));
     const getAllChurches = vi.fn().mockReturnValue(of({
       success: true,
       data: [
@@ -43,10 +51,17 @@ describe('ReportPrograms', () => {
     await TestBed.configureTestingModule({
       imports: [ReportPrograms],
       providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({})),
+            snapshot: { queryParamMap: convertToParamMap({}) }
+          }
+        },
         { provide: AuthService, useValue: { getCurrentUser } },
         { provide: ChurchService, useValue: { getAllChurches } },
         { provide: ReportService, useValue: { getDepartments } },
-        { provide: Router, useValue: { navigate: vi.fn() } }
+        { provide: Router, useValue: { url: '/representative/reports/programs', navigate: vi.fn() } }
       ]
     }).compileComponents();
 
@@ -66,20 +81,53 @@ describe('ReportPrograms', () => {
     expect(component.districtName).toBe('Batanes');
   });
 
-  it('shows quarter data progress separately from approval', () => {
+  it('shows quarter review states without progress percentages in the table', () => {
     const monitoring = component.getMonitoring(0);
 
-    expect(monitoring.q1).toEqual({ progress: 50, approved: false });
-    expect(monitoring.q2).toEqual({ progress: 100, approved: true });
+    expect(monitoring.q1).toEqual({ progress: 50, approved: false, submitted: false });
+    expect(monitoring.q2).toEqual({ progress: 100, approved: true, submitted: false });
 
     const quarterCells = Array.from(
-      fixture.nativeElement.querySelectorAll('tbody tr td')
-    ).slice(1) as HTMLTableCellElement[];
-    expect(quarterCells.map(cell => cell.textContent.trim())).toEqual([
-      '50%',
-      '✓',
-      '—',
-      '—'
-    ]);
+      fixture.nativeElement.querySelectorAll('tbody tr')[0].querySelectorAll('td')
+    ) as HTMLTableCellElement[];
+    expect(quarterCells[0].textContent).toContain('Needs completion');
+    expect(quarterCells[0].textContent).not.toContain('%');
+    expect(quarterCells[1].textContent.trim()).toBe('✓');
+    expect(quarterCells[1].querySelector('[aria-label="Approved"]')).not.toBeNull();
+    expect(quarterCells[2].textContent.trim()).toBe('✓');
+    expect(quarterCells[3].textContent.trim()).toBe('-');
+  });
+
+  it('shows submitted progress and an explicit review status in the table', () => {
+    const youth = component.departments.find(department => department.department_name === 'Youth');
+    expect(youth).toBeDefined();
+    youth!.q1_submitted = true;
+    expect(component.getMonitoring(0).q1).toEqual({
+      progress: 50,
+      approved: false,
+      submitted: true
+    });
+  });
+
+  it('shows all departments except pastor personal report departments', () => {
+    expect(component.representativeDepartments.map(department => department.department_id)).toEqual([4, 30]);
+  });
+
+  it('shows report status in the table without a separate notification banner', () => {
+    const quarterCell = fixture.nativeElement.querySelector('tbody tr td:nth-child(2)') as HTMLTableCellElement;
+    expect(quarterCell.textContent).toContain('Needs completion');
+    expect(quarterCell.textContent).not.toContain('%');
+    expect(fixture.nativeElement.querySelector('[aria-live="polite"]')).toBeNull();
+  });
+
+  it('maps submitted state into the quarter monitoring data', () => {
+    const youth = component.departments.find(department => department.department_name === 'Youth');
+    expect(youth).toBeDefined();
+    youth!.q1_submitted = true;
+    expect(component.getMonitoring(0).q1).toEqual({
+      progress: 50,
+      approved: false,
+      submitted: true
+    });
   });
 });

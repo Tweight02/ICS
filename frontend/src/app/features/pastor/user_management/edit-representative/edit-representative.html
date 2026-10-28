@@ -1,0 +1,272 @@
+
+<div
+    class="-m-3 min-h-screen w-[calc(100%+1.5rem)] bg-[linear-gradient(135deg,rgba(255,255,255,0.82),rgba(245,252,250,0.68),rgba(255,255,255,0.78)),url(/assets/images/mountain-bg.png)] bg-cover bg-center bg-no-repeat p-3 text-slate-900 sm:-m-4 sm:w-[calc(100%+2rem)] sm:p-4 md:-m-6 md:w-[calc(100%+3rem)] md:bg-fixed md:p-6">
+
+    <section
+        class="mx-auto min-h-[calc(100vh-1.5rem)] w-full max-w-6xl overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-slate-200 sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)]">
+
+        <div class="h-1.5 bg-gradient-to-r from-emerald-700 via-teal-500 to-emerald-400" aria-hidden="true"></div>
+
+        <div class="min-h-full">
+            <div class="p-5 sm:p-6 lg:p-8">
+
+                @if (loading()) {
+                    <div class="h-[460px] animate-pulse space-y-4" aria-busy="true" aria-label="Loading representative">
+                        <div class="flex items-center gap-3 border-b border-slate-200 pb-4">
+                            <div class="h-12 w-12 rounded-xl bg-slate-200"></div>
+                            <div class="space-y-2">
+                                <div class="h-6 w-56 rounded bg-slate-200"></div>
+                                <div class="h-4 w-32 rounded bg-slate-100"></div>
+                            </div>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div class="h-14 rounded bg-slate-100"></div>
+                            <div class="h-14 rounded bg-slate-100"></div>
+                            <div class="h-14 rounded bg-slate-100"></div>
+                            <div class="h-14 rounded bg-slate-100"></div>
+                        </div>
+                        <div class="h-14 rounded bg-slate-100"></div>
+                        <div class="h-14 rounded bg-slate-100"></div>
+                    </div>
+                } @else if (loadFailed()) {
+                    <div class="py-12 text-center">
+                        <h2 class="text-lg font-semibold text-slate-900">Unable to load representative</h2>
+                        <p class="mt-1 text-sm text-slate-500">{{ error() }}</p>
+                        <button
+                            type="button"
+                            (click)="loadRepresentative()"
+                            class="mt-5 h-9 !rounded-md bg-emerald-800 px-4 text-sm font-semibold text-white transition hover:bg-emerald-900">
+                            Try again
+                        </button>
+                    </div>
+                } @else {
+                    <a app-button variant="back" size="sm"
+                        routerLink="/pastor/view-representatives" class="mb-4">
+                        <svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 5l-5 5 5 5" />
+                        </svg>
+                        Back
+                    </a>
+
+                    <form [formGroup]="form" (ngSubmit)="save()" novalidate class="space-y-4">
+
+                        <!-- Header -->
+                        <header class="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="flex items-center gap-3">
+                                <div>
+                                    <h1 class="text-2xl font-bold tracking-tight text-slate-950">Edit representative account</h1>
+                                    <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-800 ring-1 ring-emerald-100">
+                                            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M10 18s6-4.8 6-9.5a6 6 0 10-12 0C4 13.2 10 18 10 18zm0-7a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span class="sr-only">Church:</span>{{ churchName() || 'Not assigned' }}
+                                        </span>
+                                        @if (status() === 'inactive') {
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600 ring-1 ring-slate-200">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-slate-400" aria-hidden="true"></span>Inactive
+                                            </span>
+                                        } @else {
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700 ring-1 ring-emerald-100">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>Active
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (!editing()) {
+                                <button app-button variant="edit" size="md"
+                                    type="button"
+                                    (click)="startEdit()"
+                                    class="!rounded-md">
+                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path d="M13.6 2.6a2 2 0 112.8 2.8l-8.7 8.7-3.7.9.9-3.7 8.7-8.7z" />
+                                    </svg>
+                                    Edit profile
+                                </button>
+                            } @else {
+                                <span class="inline-flex items-center gap-1.5 self-start rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200 sm:self-auto" role="status">
+                                    <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true"></span>
+                                    Editing
+                                </span>
+                            }
+                        </header>
+
+                        @if (error()) {
+                            <div class="flex gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
+                                <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 2a1 1 0 00-1 1v4a1 1 0 102 0V9a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                <span>{{ error() }}</span>
+                            </div>
+                        }
+
+                        <!-- Personal information -->
+                        <div class="space-y-3">
+                            <h5 class="flex items-center gap-2 font-semibold uppercase tracking-wider text-emerald-700">
+                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+                                </svg>
+                                Personal information
+                                <span class="h-px flex-1 bg-gradient-to-r from-emerald-100 to-transparent" aria-hidden="true"></span>
+                            </h5>
+
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label for="first_name" class="mb-1 block text-sm font-medium text-slate-800">First name <span class="text-rose-600">*</span></label>
+                                    <input id="first_name" formControlName="first_name" type="text" autocomplete="given-name"
+                                        [class.border-red-500]="invalid('first_name')"
+                                        class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 [&.ng-invalid.ng-touched]:border-red-500" />
+                                    @if (serverError('first_name')) {
+                                        <p class="mt-1 text-xs text-rose-600">{{ serverError('first_name') }}</p>
+                                    }
+                                </div>
+                                <div>
+                                    <label for="last_name" class="mb-1 block text-sm font-medium text-slate-800">Last name <span class="text-rose-600">*</span></label>
+                                    <input id="last_name" formControlName="last_name" type="text" autocomplete="family-name"
+                                        [class.border-red-500]="invalid('last_name')"
+                                        class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 [&.ng-invalid.ng-touched]:border-red-500" />
+                                    @if (serverError('last_name')) {
+                                        <p class="mt-1 text-xs text-rose-600">{{ serverError('last_name') }}</p>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label for="middle_name" class="mb-1 block text-sm font-medium text-slate-800">Middle name <span class="font-normal text-slate-500">(optional)</span></label>
+                                    <input id="middle_name" formControlName="middle_name" type="text" autocomplete="additional-name"
+                                        [class.border-red-500]="invalid('middle_name')"
+                                        class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500" />
+                                    @if (serverError('middle_name')) {
+                                        <p class="mt-1 text-xs text-rose-600">{{ serverError('middle_name') }}</p>
+                                    }
+                                </div>
+                                <div>
+                                    <label for="extension_name" class="mb-1 block text-sm font-medium text-slate-800">Suffix <span class="font-normal text-slate-500">(optional)</span></label>
+                                    <input id="extension_name" formControlName="extension_name" type="text" placeholder="Jr., Sr., III"
+                                        [class.border-red-500]="invalid('extension_name')"
+                                        class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition placeholder:text-slate-400 enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500" />
+                                    @if (serverError('extension_name')) {
+                                        <p class="mt-1 text-xs text-rose-600">{{ serverError('extension_name') }}</p>
+                                    }
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="birthdate" class="mb-1 block text-sm font-medium text-slate-800">Birthdate <span class="text-rose-600">*</span></label>
+                                <input id="birthdate" formControlName="birthdate" type="date" autocomplete="bday"
+                                    [class.border-red-500]="invalid('birthdate')"
+                                    class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 [&.ng-invalid.ng-touched]:border-red-500" />
+                                @if (serverError('birthdate')) {
+                                    <p class="mt-1 text-xs text-rose-600">{{ serverError('birthdate') }}</p>
+                                }
+                            </div>
+
+                            <div>
+                                <label for="gender" class="mb-1 block text-sm font-medium text-slate-800">Gender <span class="text-rose-600">*</span></label>
+                                <select id="gender" formControlName="gender"
+                                    [class.border-red-500]="invalid('gender')"
+                                    class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 [&.ng-invalid.ng-touched]:border-red-500">
+                                    <option value="" disabled>Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                @if (serverError('gender')) {
+                                    <p class="mt-1 text-xs text-rose-600">{{ serverError('gender') }}</p>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Assignment -->
+                        <div class="space-y-3 pt-1">
+                            <div>
+                                <label for="church_id" class="mb-1 block text-sm font-medium text-slate-800">Church <span class="text-rose-600">*</span></label>
+                                <select id="church_id" formControlName="church_id"
+                                    [class.border-red-500]="invalid('church_id')"
+                                    class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 [&.ng-invalid.ng-touched]:border-red-500">
+                                    @for (church of churches(); track church.church_id) {
+                                        <option [ngValue]="church.church_id">{{ church.name }}</option>
+                                    }
+                                </select>
+                                @if (loadingChurches()) {
+                                    <p class="mt-1 text-xs text-slate-500">Loading churches...</p>
+                                }
+                                @if (churchLoadError()) {
+                                    <p class="mt-1 text-xs text-rose-600">{{ churchLoadError() }}</p>
+                                }
+                                @if (serverError('church_id')) {
+                                    <p class="mt-1 text-xs text-rose-600">{{ serverError('church_id') }}</p>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Account -->
+                        <div class="space-y-3 pt-1">
+                            <h5 class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700">
+                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M2.9 6.3A2 2 0 014.8 5h10.4a2 2 0 011.9 1.3L10 10.6 2.9 6.3z" />
+                                    <path d="M2 8.2V14a2 2 0 002 2h12a2 2 0 002-2V8.2l-8 4.8-8-4.8z" />
+                                </svg>
+                                Account
+                                <span class="h-px flex-1 bg-gradient-to-r from-emerald-100 to-transparent" aria-hidden="true"></span>
+                            </h5>
+
+                            <div>
+                                <label for="email" class="mb-1 block text-sm font-medium text-slate-800">Email address <span class="text-rose-600">*</span></label>
+                                <input id="email" formControlName="email" type="email" autocomplete="email"
+                                    [class.border-red-500]="invalid('email')"
+                                    class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 [&.ng-invalid.ng-touched]:border-red-500" />
+                                @if (serverError('email')) {
+                                    <p class="mt-1 text-xs text-rose-600">{{ serverError('email') }}</p>
+                                }
+                            </div>
+
+                            <div>
+                                <label for="password" class="mb-1 block text-sm font-medium text-slate-800">New password <span class="font-normal text-slate-500">(optional)</span></label>
+                                <input id="password" formControlName="password" type="password" autocomplete="new-password" placeholder="Leave blank to keep current"
+                                    [class.border-red-500]="invalid('password')"
+                                    class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition placeholder:text-slate-400 enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 [&.ng-invalid.ng-touched]:border-red-500" />
+                                @if (serverError('password')) {
+                                    <p class="mt-1 text-xs text-rose-600">{{ serverError('password') }}</p>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <footer class="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                            @if (!editing()) {
+                                @if (status() === 'inactive') {
+                                    <button type="button" (click)="activateRepresentative()" [disabled]="activating()"
+                                        class="h-9 !rounded-md border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-60">
+                                        {{ activating() ? 'Activating…' : 'Activate account' }}
+                                    </button>
+                                } @else {
+                                    <button app-button variant="delete" size="md" type="button" (click)="removeRepresentative()" [disabled]="deleting()" [loading]="deleting()"
+                                        class="!rounded-md">
+                                        {{ deleting() ? 'Deactivating…' : 'Deactivate account' }}
+                                    </button>
+                                }
+                            }
+
+                            @if (editing()) {
+                                <div class="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
+                                    <button app-button variant="secondary" size="md" type="button" (click)="cancelEdit()" [disabled]="saving()"
+                                        class="!rounded-md">
+                                        Cancel
+                                    </button>
+                                    <button app-button variant="edit" size="md" type="submit" [disabled]="saving()" [loading]="saving()"
+                                        class="!rounded-md">
+                                        {{ saving() ? 'Saving…' : 'Save changes' }}
+                                    </button>
+                                </div>
+                            }
+                        </footer>
+                    </form>
+                }
+            </div>
+        </div>
+    </section>
+</div>

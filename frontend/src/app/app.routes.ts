@@ -12,10 +12,13 @@ export const routes: Routes = [
         .then(m => m.Login)
   },
 
-  // {
-  //   path: '',
-  //   redirectTo: 'representative/reports',
-  // },
+  {
+    path: 'profile',
+    loadComponent: () =>
+      import('./features/profile/profile')
+        .then(m => m.ProfileComponent)
+  },
+
 
 
   /* ==============================
@@ -59,25 +62,26 @@ export const routes: Routes = [
      REPRESENTATIVE
   ============================== */
 
-  {
+    {
     path: 'representative',
-    children: [
-      {
-        path: '',
-        loadChildren: () =>
-          import('./features/representative/representative.routes')
-            .then(m => m.RepresentativeRoute)
-      }
-    ]
+    loadChildren: () =>
+      import('./features/representative/representative.routes')
+        .then(m => m.RepresentativeRoute)
   },
 
+    {
+      path: 'participants',
+      loadChildren: () =>
+        import('./features/participants/participant.routes')
+          .then(m => m.PARTICIPANT_ROUTES)
+    },
 
   {
     path: '',
-    redirectTo:'login',
-    pathMatch:'full'
-
+    redirectTo: 'login',
+    pathMatch: 'full'
   }
+
 
 
 ];

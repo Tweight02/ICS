@@ -11,13 +11,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
+import { RunningLoader } from '../../../../shared/components/running-loader/running-loader';
+import { Button } from '../../../../shared/components/button/button';
+import { QuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
 
 @Component({
   selector: 'app-reports-details',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './reports-details.html',
-  styleUrl: './reports-details.css'
+  imports: [CommonModule, RunningLoader, Button, QuarterStatus],
+  templateUrl: '../../../../shared/reports/reports-details/reports-details.html'
 })
 export class ReportsDetails implements OnInit {
 

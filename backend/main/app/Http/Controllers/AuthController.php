@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,11 +17,13 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('email', $credentials['email'])->first();
+        $user = User::where('email', $credentials['email'])
+            ->where('status', 'active')
+            ->first();
 
         // Same message for unknown email and wrong password to avoid user enumeration.
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
@@ -37,10 +38,10 @@ class AuthController extends Controller
         $token = $user->createToken('angular-app')->plainTextToken;
 
         return response()->json([
-            'message'    => 'Login successful.',
+            'message' => 'Login successful.',
             'token_type' => 'Bearer',
-            'token'      => $token,
-            'user'       => $user,
+            'token' => $token,
+            'user' => $user,
         ]);
     }
 

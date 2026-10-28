@@ -1,0 +1,135 @@
+<ng-template #quarterCell let-quarter>
+  <div class="flex min-h-12 items-center justify-center">
+    <span *ngIf="getQuarterStatus(quarter).tone === 'approved'; else statusLabel"
+      class="text-sm font-bold text-emerald-700"
+      role="img"
+      aria-label="Approved"
+      title="Approved">✓</span>
+    <ng-template #statusLabel>
+      <app-quarter-status
+        [label]="getQuarterStatus(quarter).label"
+        [tone]="getQuarterStatus(quarter).tone">
+      </app-quarter-status>
+    </ng-template>
+  </div>
+</ng-template>
+
+<div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+  <div class="mx-auto max-w-7xl">
+    <header class="relative isolate mb-4 overflow-hidden rounded-xl border border-white/80 bg-emerald-50 shadow-sm shadow-emerald-950/10">
+      <img src="/assets/Misty.png" alt="" aria-hidden="true"
+        class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-60">
+      <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/90 to-emerald-100/45"></div>
+      <div class="relative flex min-h-20 flex-col justify-center gap-2 p-4 sm:min-h-24 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3">
+        <div class="min-w-0">
+      <button *ngIf="!isRepresentativePortal" app-button variant="back" size="sm" type="button" (click)="backToReportDetails()" class="mb-2">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 5l-5 5 5 5" />
+        </svg>
+        Back to churches
+      </button>
+          <h1 class="truncate text-xl font-bold tracking-tight text-emerald-950 sm:text-2xl">
+            {{ churchName || 'Department Reports' }}
+          </h1>
+          <p class="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-emerald-900/70 sm:text-sm">
+            <svg class="h-4 w-4 shrink-0 text-emerald-700" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M10 18s6-4.1 6-10a6 6 0 1 0-12 0c0 5.9 6 10 6 10Z" />
+              <circle cx="10" cy="8" r="2" />
+            </svg>
+            {{ districtName || 'District overview' }}
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <div *ngIf="errorMessage" role="alert"
+      class="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <span aria-hidden="true">⚠</span>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <div *ngIf="loading"
+      class="mx-auto flex w-fit flex-col items-center gap-3 rounded-2xl border border-emerald-900/10 bg-white px-10 py-8 text-emerald-900 shadow-sm">
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-700"></div>
+      <p class="text-sm font-medium">Loading departments...</p>
+    </div>
+
+    <section
+      *ngIf="!loading && !errorMessage && (reportDepartments.length > 0 || personalReportDepartments.length > 0)"
+      class="overflow-hidden rounded-2xl border border-white/80 bg-white/95 shadow-[0_14px_40px_rgba(15,48,38,0.10)] backdrop-blur">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[760px] border-collapse text-sm">
+          <thead class="bg-emerald-950/[0.025] text-[10px] font-bold uppercase tracking-[0.16em] text-black">
+            <tr>
+              <th scope="col" class="w-[40%] min-w-[220px] border-b border-emerald-950/5 px-5 py-3.5 text-left sm:px-7">Department</th>
+              <th scope="col" class="min-w-[135px] border-b border-emerald-950/5 px-3 py-3.5 text-center">Q1</th>
+              <th scope="col" class="min-w-[135px] border-b border-emerald-950/5 px-3 py-3.5 text-center">Q2</th>
+              <th scope="col" class="min-w-[135px] border-b border-emerald-950/5 px-3 py-3.5 text-center">Q3</th>
+              <th scope="col" class="min-w-[135px] border-b border-emerald-950/5 px-3 py-3.5 text-center">Q4</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-emerald-950/[0.06]">
+            <tr *ngFor="let department of reportDepartments; let i = index; trackBy: trackDepartment"
+              class="group cursor-pointer transition-colors odd:bg-white even:bg-emerald-950/[0.012] hover:bg-emerald-50/75 focus-within:bg-emerald-50"
+              (click)="openDepartment(department)">
+              <th scope="row" class="px-5 py-3 text-left sm:px-7">
+                <span class="flex items-center gap-3">
+                  <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-100/70 text-emerald-800 shadow-sm transition group-hover:border-emerald-200 group-hover:from-white group-hover:to-emerald-50">
+                    <i class="bi text-[17px]" [ngClass]="getDepartmentIcon(department.department_name)" aria-hidden="true"></i>
+                  </span>
+                  <span class="font-semibold leading-5 text-emerald-950 transition group-hover:text-emerald-800">{{ department.department_name }}</span>
+                  <svg class="ml-auto h-4 w-4 shrink-0 text-emerald-900/20 transition group-hover:translate-x-0.5 group-hover:text-emerald-700"
+                    viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  </svg>
+                </span>
+              </th>
+              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q1 }"></ng-container></td>
+              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q2 }"></ng-container></td>
+              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q3 }"></ng-container></td>
+              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q4 }"></ng-container></td>
+            </tr>
+
+            <tr *ngIf="personalReportDepartments.length > 0" class="border-t border-emerald-950/10 bg-emerald-50/60">
+              <th colspan="5" class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800 sm:px-7">
+                Personal reports
+              </th>
+            </tr>
+
+            <tr *ngFor="let department of personalReportDepartments; let i = index; trackBy: trackDepartment"
+              class="group cursor-pointer transition-colors odd:bg-white even:bg-emerald-950/[0.012] hover:bg-emerald-50/75 focus-within:bg-emerald-50"
+              (click)="openDepartment(department)">
+              <th scope="row" class="px-5 py-3 text-left sm:px-7">
+                <span class="flex items-center gap-3">
+                  <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-100/70 text-emerald-800 shadow-sm transition group-hover:border-emerald-200 group-hover:from-white group-hover:to-emerald-50">
+                    <i class="bi text-[17px]" [ngClass]="getDepartmentIcon(department.department_name)" aria-hidden="true"></i>
+                  </span>
+                  <span class="font-semibold leading-5 text-emerald-950 transition group-hover:text-emerald-800">{{ department.department_name }}</span>
+                  <svg class="ml-auto h-4 w-4 shrink-0 text-emerald-900/20 transition group-hover:translate-x-0.5 group-hover:text-emerald-700"
+                    viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M8 5l5 5-5 5" />
+                  </svg>
+                </span>
+              </th>
+              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getPersonalMonitoring(i).q1 }"></ng-container></td>
+              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getPersonalMonitoring(i).q2 }"></ng-container></td>
+              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getPersonalMonitoring(i).q3 }"></ng-container></td>
+              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getPersonalMonitoring(i).q4 }"></ng-container></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div *ngIf="!loading && !errorMessage && reportDepartments.length === 0 && personalReportDepartments.length === 0"
+      class="mx-auto max-w-md rounded-2xl border border-white/80 bg-white/90 px-6 py-10 text-center shadow-lg shadow-emerald-950/5 backdrop-blur">
+      <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700/10 text-2xl text-emerald-700">
+        <i class="bi bi-clipboard-x" aria-hidden="true"></i>
+      </div>
+      <h2 class="text-lg font-semibold text-emerald-950">No Reports Available</h2>
+      <p class="mt-1 text-sm text-emerald-900/70">There are currently no department reports for this church.</p>
+    </div>
+  </div>
+</div>

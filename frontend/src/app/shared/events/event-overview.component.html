@@ -1,0 +1,184 @@
+<div class="w-full px-4 pt-4 sm:px-6">
+  <a app-button variant="back" size="sm" [routerLink]="[config.basePath]" class="self-start">
+    <i class="bi bi-chevron-left"></i> Back
+  </a>
+</div>
+
+<div class="mx-auto mt-3 flex w-full max-w-[1400px] flex-col gap-3 px-4 pb-5 sm:px-6 lg:gap-4">
+  <header class="relative isolate overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-5 shadow-[0_8px_24px_rgba(39,91,77,0.07)] sm:rounded-3xl sm:p-8">
+    <img src="/assets/Misty.png" alt="" aria-hidden="true" class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-50">
+    <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white/95 via-white/90 to-white"></div>
+    <div class="relative z-10">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="min-w-0 break-words text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
+          {{ event?.title || 'Event overview' }}
+        </h1>
+        <a *ngIf="config.canManage && canManageEvent" app-button variant="event-edit" size="md"
+           [routerLink]="[config.basePath, eventId, 'edit']" class="shrink-0">
+          <i class="bi bi-pencil" aria-hidden="true"></i> Edit event
+        </a>
+      </div>
+      <div *ngIf="event">
+        <div class="mt-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+          <span class="text-xs font-semibold text-slate-600">{{ statusLabel(status) }}</span>
+          <span *ngIf="periodLabel" class="text-xs font-medium text-slate-500">{{ periodLabel }}</span>
+          <span *ngIf="config.badge" class="rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-emerald-900">
+            {{ config.badge }}
+          </span>
+        </div>
+        <div class="mt-1">
+          <div class="space-y-2 text-sm text-slate-600 sm:text-base">
+            <p *ngIf="dateRange || timeRange" class="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <i class="bi bi-clock text-slate-500"></i>
+              <span *ngIf="dateRange">{{ dateRange }}</span>
+              <span *ngIf="dateRange && timeRange" aria-hidden="true">|</span>
+              <span *ngIf="timeRange">{{ timeRange }}</span>
+            </p>
+            <p *ngIf="event.location" class="flex items-start gap-2">
+              <i class="bi bi-geo-alt mt-0.5 text-slate-500"></i>
+              <span>{{ event.location }}</span>
+            </p>
+            <p *ngIf="coverage.title !== 'Coverage'" class="flex items-start gap-2">
+              <i class="bi bi-map mt-0.5 text-slate-500"></i>
+              <span>{{ coverage.text }}</span>
+            </p>
+            <p *ngIf="event.created_by" class="flex items-start gap-2">
+              <i class="bi bi-person mt-0.5 text-slate-500"></i>
+              <span>Created by {{ event.created_by }}</span>
+            </p>
+          </div>
+        </div>
+        <section class="pt-4">
+          <h2 class="text-lg font-bold text-slate-800">Announcement</h2>
+          <p class="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{{ event.notes || 'No synopsis was added for this event.' }}</p>
+        </section>
+      </div>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="flex flex-col gap-4" role="status" aria-live="polite">
+    <p class="text-sm text-gray-600">Loading event details…</p>
+    <div class="h-36 animate-pulse rounded-2xl border border-emerald-100 bg-white/80"></div>
+    <div class="h-64 animate-pulse rounded-2xl border border-emerald-100 bg-white/80"></div>
+  </div>
+
+  <div *ngIf="!loading && errorMsg" class="flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    <span class="flex items-center gap-2"><i class="bi bi-exclamation-triangle"></i>{{ errorMsg }}</span>
+    <button type="button" (click)="load()" class="shrink-0 font-semibold underline">Try again</button>
+  </div>
+
+  <ng-container *ngIf="event">
+
+    <div class="grid min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,0.48fr)]">
+      <div class="flex min-w-0 flex-col gap-5">
+        <section class="flex min-h-[18rem] flex-col rounded-3xl border border-emerald-100 bg-white/90 p-5 shadow-[0_8px_24px_rgba(39,91,77,0.06)] sm:p-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 class="flex items-center gap-2 text-lg font-bold text-gray-900">
+                <i class="bi bi-list-check text-emerald-800"></i> Selected particulars
+              </h2>
+              <p class="mt-1 text-sm text-gray-500">
+                <ng-container *ngIf="departmentName">{{ departmentName }} · </ng-container>
+                {{ particularCount }} particular{{ particularCount === 1 ? '' : 's' }} selected
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-5 flex-1 space-y-3 overflow-y-auto [scrollbar-width:thin]">
+            <div *ngFor="let g of groups" class="overflow-hidden rounded-2xl border border-emerald-100">
+              <button type="button" (click)="toggleGroup(g)" [attr.aria-expanded]="g.expanded"
+                      class="flex w-full items-center justify-between gap-3 bg-emerald-50/70 px-4 py-3 text-left transition hover:bg-emerald-100/70">
+                <span class="flex items-center gap-3 text-sm font-bold text-gray-900">
+                  <i class="bi text-emerald-800" [ngClass]="g.expanded ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                  {{ g.name }}
+                </span>
+                <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-emerald-900">{{ g.items.length }} selected</span>
+              </button>
+              <div *ngIf="g.expanded" class="space-y-2 bg-white px-5 py-4">
+                <p *ngFor="let item of g.items" class="flex items-start gap-3 text-sm leading-relaxed text-gray-700">
+                  <i class="bi bi-check-circle-fill mt-0.5 text-emerald-700"></i>{{ item }}
+                </p>
+                <p *ngIf="g.items.length === 0" class="text-sm text-gray-500">No particulars were selected for this group.</p>
+              </div>
+            </div>
+            <p *ngIf="groups.length === 0" class="rounded-2xl bg-gray-50 p-5 text-sm text-gray-500">No program group is available for this event.</p>
+          </div>
+        </section>
+
+      </div>
+
+      <aside class="flex min-w-0 flex-col gap-5">
+        <section class="rounded-3xl border border-emerald-100 bg-white/90 p-5 shadow-[0_8px_24px_rgba(39,91,77,0.06)] sm:p-6">
+          <h2 class="flex items-center gap-2 text-lg font-bold text-gray-900">
+            <i class="bi bi-people text-emerald-800"></i> Participants
+          </h2>
+          <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-xl bg-gray-50 p-3">
+              <p class="text-lg font-extrabold text-gray-900">{{ stats.total }}</p>
+              <p class="mt-0.5 text-[11px] font-medium text-gray-500">Listed</p>
+            </div>
+            <div class="rounded-xl bg-emerald-50 p-3">
+              <p class="text-lg font-extrabold text-emerald-900">{{ stats.confirmed }}</p>
+              <p class="mt-0.5 text-[11px] font-medium text-gray-600">Confirmed</p>
+            </div>
+            <div class="rounded-xl bg-amber-50 p-3">
+              <p class="text-lg font-extrabold text-amber-900">{{ stats.pending }}</p>
+              <p class="mt-0.5 text-[11px] font-medium text-gray-600">Pending</p>
+            </div>
+          </div>
+          <a app-button variant="view-participants" size="md" [routerLink]="[config.basePath, eventId, 'participants']" class="mt-4 w-full justify-center">
+            <i class="bi bi-arrow-right"></i> View participants
+          </a>
+
+          <div *ngIf="canShareRegistrationLink" class="mt-5 border-t border-gray-100 pt-5">
+            <label for="event-registration-link" class="block text-sm font-semibold text-gray-800">Participant registration link</label>
+            <div *ngIf="registrationLink; else generateChurchRegistrationLink" class="mt-2 flex gap-2">
+              <input id="event-registration-link" type="text" readonly [value]="registrationLink"
+                     class="min-w-0 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs text-gray-700" />
+              <button type="button" (click)="copyRegistrationLink()"
+                      class="shrink-0 rounded-xl bg-[#1b4d3e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#143c30]">
+                <i class="bi bi-copy"></i> Copy
+              </button>
+            </div>
+            <ng-template #generateChurchRegistrationLink>
+              <button type="button" (click)="generateRegistrationLink()" [disabled]="registrationLinkLoading"
+                      class="mt-2 rounded-xl bg-[#1b4d3e] px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-[#143c30] disabled:cursor-wait disabled:opacity-60">
+                {{ registrationLinkLoading ? 'Generating…' : 'Generate church registration link' }}
+              </button>
+            </ng-template>
+            <p class="mt-2 text-xs leading-relaxed text-gray-500">Share this link with participants. Their registration will be assigned to your church and report.</p>
+            <p *ngIf="registrationLinkMessage" class="mt-2 text-xs font-semibold text-emerald-800" aria-live="polite">{{ registrationLinkMessage }}</p>
+          </div>
+        </section>
+
+        <div *ngIf="config.canManage && canManageEvent" class="flex justify-end">
+          <button app-button variant="danger-outline" size="md" type="button" (click)="askDelete()">
+            <i class="bi bi-trash"></i> Delete event
+          </button>
+        </div>
+
+        <div *ngIf="config.readOnlyNote" class="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <i class="bi bi-lock text-base"></i>
+          <p>{{ config.readOnlyNote }}</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+</div>
+
+<div *ngIf="confirmDelete" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" (click)="cancelDelete()">
+  <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="delete-event-title">
+    <div class="flex items-start gap-3">
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-50 text-red-600"><i class="bi bi-trash"></i></span>
+      <div>
+        <h3 id="delete-event-title" class="font-bold text-gray-900">Delete this event?</h3>
+        <p class="mt-1 text-sm text-gray-600">“{{ event?.title }}” and its participant list will be removed. This cannot be undone.</p>
+        <p *ngIf="deleteError" class="mt-2 text-xs text-red-600">{{ deleteError }}</p>
+      </div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button app-button variant="primary" size="md" type="button" (click)="cancelDelete()" [disabled]="deleting">Keep event</button>
+      <button app-button variant="delete" size="md" type="button" (click)="doDelete()" [disabled]="deleting">{{ deleting ? 'Deleting…' : 'Yes, delete' }}</button>
+    </div>
+  </div>
+</div>

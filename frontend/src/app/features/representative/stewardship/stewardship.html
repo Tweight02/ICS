@@ -2,171 +2,270 @@
   Note: headings are <div role="heading"> and buttons carry an inline border-radius on purpose.
   The project also loads Bootstrap's global styles, which are unlayered and would otherwise
   override Tailwind on h1/h2, p, ul, label and button.
+
+  Background: the soft green gradient below stands in for the mountain photo.
+  To use a photo, add it as a background-image on this <section> (e.g. style="background-image: url(...)").
 -->
-<section class="mx-auto max-w-4xl px-4 py-6 text-slate-900">
-  <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-    <!-- Header -->
-    <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 px-6 py-5 sm:px-8">
-      <div>
-        <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ mission }}</div>
-        <div role="heading" aria-level="1" class="mt-1 text-xl font-semibold text-slate-900">
+<section class="min-h-screen bg-slate-50 px-4 py-6 text-slate-800 sm:px-6 sm:py-8">
+  <div class="mx-auto max-w-6xl">
+
+    <!-- Report heading -->
+    <header class="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-7 sm:py-6">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-800">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+          </svg>
+        </span>
+        <div>
+          <p class="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-800">Church reporting</p>
+        <div role="heading" aria-level="1" class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
           Stewardship Quarterly Report
         </div>
+          <p class="mt-1.5 text-sm text-slate-500">Record and review your church's stewardship activity.</p>
+        </div>
       </div>
-      <span class="rounded-full px-3 py-1 text-xs font-semibold" [class]="statusClass">{{ status }}</span>
-    </div>
+    </header>
 
-    <!-- Report details -->
-    <div class="grid grid-cols-2 gap-x-6 gap-y-4 border-b border-slate-200 px-6 py-5 sm:px-8 md:grid-cols-4">
-      <div>
-        <div class="text-xs text-slate-500">Church</div>
-        <div class="mt-1 font-semibold uppercase">{{ church.name }}</div>
-      </div>
-
-      <div>
-        <div class="text-xs text-slate-500">District</div>
-        <div class="mt-1 font-semibold">{{ church.district }}</div>
-      </div>
-
-      <div>
-        <div class="text-xs text-slate-500"><label for="quarter">Quarter</label></div>
+    <!-- Period bar: year + quarters -->
+    <div class="flex flex-wrap items-end gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+      <label class="report-period-field">
+        <span class="report-period-label">YEAR</span>
+        <span class="sr-only">Year</span>
         <select
-          id="quarter"
-          class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200"
-          [(ngModel)]="quarter"
+          id="year"
+          class="report-period-year-select"
+          [(ngModel)]="year"
           (ngModelChange)="onPeriodChange()"
         >
-          @for (q of quarters; track q) {
-            <option [ngValue]="q">Quarter {{ q }}</option>
+          @for (y of years; track y) {
+            <option [ngValue]="y">{{ y }}</option>
           }
         </select>
-      </div>
+      </label>
 
-      <div>
-        <div class="text-xs text-slate-500">Year</div>
-        <div class="mt-1 font-semibold">{{ year }}</div>
+      <div class="report-period-field">
+        <span class="report-period-label">QUARTER</span>
+        <div role="group" aria-label="Quarter" class="report-period-quarter-group">
+          @for (q of quarters; track q) {
+            <button
+              type="button"
+              class="report-period-quarter-button"
+              [class.active]="quarter === q"
+              [attr.aria-pressed]="quarter === q"
+              (click)="quarter = q; onPeriodChange()"
+            >
+              Q{{ q }}
+            </button>
+          }
+          <button
+            type="button"
+            class="report-period-quarter-button annual"
+            [class.active]="isAnnual"
+            [attr.aria-pressed]="isAnnual"
+            (click)="quarter = 0; onPeriodChange()"
+          >
+            Annual
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Status -->
-    @if (statusNote) {
-      <div class="border-b border-slate-200 bg-slate-50 px-6 py-2.5 text-sm text-slate-600 sm:px-8">{{ statusNote }}</div>
+    @if (isLoading) {
+      <div class="mt-4 text-sm text-slate-600" role="status">Loading stewardship report…</div>
+    }
+    @if (message && (isError || isAnnual)) {
+      <div class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        {{ message }}
+      </div>
+    }
+
+    <!-- Status note -->
+    @if (statusNote && !isAnnual) {
+      <div class="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+        {{ statusNote }}
+      </div>
     }
 
     <!-- Summary -->
-    <div class="grid grid-cols-1 divide-y divide-slate-200 border-b border-slate-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
       @for (p of monthlyFields; track p.particular_id) {
-        <div class="px-6 py-4 sm:px-8">
-          <div class="text-xs text-slate-500">Total {{ p.particulars_name }}</div>
-          <div class="mt-1 text-lg font-semibold">₱{{ monthlyTotal(p.particular_id) | number: '1.2-2' }}</div>
+        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Total {{ p.particulars_name }}
+          </div>
+          <div class="mt-2 text-2xl font-bold tracking-tight tabular-nums text-slate-900">
+            ₱{{ monthlyTotal(p.particular_id) | number: '1.2-2' }}
+          </div>
         </div>
       }
       @if (showPercent) {
-        <div class="px-6 py-4 sm:px-8">
-          <div class="text-xs text-slate-500">Members returning tithe</div>
-          <div class="mt-1 text-lg font-semibold">{{ percentReturning | number: '1.1-1' }}%</div>
+        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Members returning tithe
+          </div>
+          <div class="mt-2 text-2xl font-bold tracking-tight tabular-nums text-slate-900">
+            {{ percentReturning | number: '1.1-1' }}%
+          </div>
         </div>
       }
     </div>
 
-    <!-- Stewardship activities -->
-    <div class="border-b border-slate-200 px-6 py-6 sm:px-8">
-      <div role="heading" aria-level="2" class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
-        Stewardship activities
-      </div>
-      <div class="grid grid-cols-1 gap-x-10 md:grid-cols-2">
-        @for (f of fields; track f.particular_id) {
-          <div class="flex items-center justify-between gap-4 border-b border-slate-100 py-2.5">
-            <label [attr.for]="'field-' + f.particular_id" class="text-sm text-slate-700">{{ f.particulars_name }}</label>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              [id]="'field-' + f.particular_id"
-              class="w-28 shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-right text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-              [(ngModel)]="values[f.particular_id]"
-              (ngModelChange)="onFieldChange()"
-              [disabled]="isLocked"
-            />
-          </div>
+    <!-- Accordion -->
+    <div class="mt-6 space-y-4">
+      <details class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
+        <summary class="flex cursor-pointer list-none items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 sm:px-6">
+          <span>Stewardship Activities</span>
+          <span class="text-lg text-slate-500">▾</span>
+        </summary>
 
-          @if (showPercent && f.particular_id === titheUnitsId) {
-            <div class="flex items-center justify-between gap-4 border-b border-slate-100 py-2.5">
-              <span class="text-sm text-slate-700">% of Members returning Tithe</span>
-              <span class="w-28 shrink-0 px-3 text-right font-semibold">{{ percentReturning | number: '1.1-1' }}%</span>
+        <div class="border-t border-slate-200">
+          <div class="px-0">
+            <div
+              role="heading"
+              aria-level="2"
+              class="flex items-center justify-between bg-white px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6"
+            >
+              <span>Reporting period</span>
+              <span class="w-32 text-center">{{ periodLabel }}</span>
             </div>
-          }
-        }
-      </div>
-    </div>
 
-    <!-- Offering and Tithes -->
-    <div class="border-b border-slate-200 px-6 py-6 sm:px-8">
-      <div role="heading" aria-level="2" class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-        Offering and Tithes
-      </div>
-      <div class="overflow-x-auto">
-        <div class="min-w-[560px]">
-          <div class="grid grid-cols-5 gap-3 pb-2 text-xs text-slate-500">
-            <div></div>
-            @for (label of monthLabels; track label) {
-              <div class="text-right">{{ label }}</div>
-            }
-            <div class="text-right">Total</div>
-          </div>
+            @for (f of fields; track f.particular_id) {
+              <div class="flex items-center justify-between gap-4 border-t border-slate-100 px-5 py-3.5 even:bg-slate-50/60 sm:px-6">
+                <label [attr.for]="'field-' + f.particular_id" class="text-sm font-medium text-slate-700">
+                  {{ f.particulars_name }}
+                </label>
 
-          @for (p of monthlyFields; track p.particular_id) {
-            <div class="grid grid-cols-5 items-center gap-3 border-t border-slate-100 py-2.5">
-              <div class="text-sm font-medium text-slate-700">{{ p.particulars_name }}</div>
-              @for (label of monthLabels; track label; let i = $index) {
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-right text-slate-900 focus:border-blue-600 focus:outline-2 focus:outline-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-                  [(ngModel)]="monthly[p.particular_id][i]"
-                  (ngModelChange)="onFieldChange()"
-                  [disabled]="isLocked"
-                  [attr.aria-label]="p.particulars_name + ' ' + label"
-                />
+                @if (isAnnual) {
+                  <span class="w-32 shrink-0 px-3 text-center font-semibold text-slate-900">
+                    {{ annualField(f.particular_id) | number: '1.0-0' }}
+                  </span>
+                } @else {
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    [id]="'field-' + f.particular_id"
+                    class="w-32 shrink-0 rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-center text-slate-900 focus:border-emerald-600 focus:outline-2 focus:outline-emerald-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                    [(ngModel)]="values[f.particular_id]"
+                    (ngModelChange)="onFieldChange()"
+                    [disabled]="isLocked"
+                  />
+                }
+
+              </div>
+
+              @if (showPercent && f.particular_id === titheUnitsId) {
+                <div class="flex items-center justify-between gap-4 border-t border-slate-100 px-5 py-3.5 even:bg-slate-50/60 sm:px-6">
+                  <span class="text-sm font-medium text-slate-700">% of Members returning Tithe</span>
+                  <span class="w-32 shrink-0 px-3 text-center font-semibold text-slate-900">
+                    {{ percentReturning | number: '1.1-1' }}%
+                  </span>
+                </div>
               }
-              <div class="text-right font-semibold">₱{{ monthlyTotal(p.particular_id) | number: '1.2-2' }}</div>
-            </div>
-          }
+            }
+          </div>
         </div>
-      </div>
+      </details>
+
+      <details class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <summary class="flex cursor-pointer list-none items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 sm:px-6">
+          <span>Offering and Tithes</span>
+          <span class="text-lg text-slate-500">▾</span>
+        </summary>
+
+        <div class="border-t border-slate-200">
+          <div class="px-0">
+            <div class="overflow-x-auto">
+              <div class="min-w-[640px]">
+                <div
+                  role="heading"
+                  aria-level="2"
+                  class="grid grid-cols-5 items-center gap-3 bg-white px-5 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6"
+                >
+                  <div></div>
+                  @if (isAnnual) {
+                    @for (q of quarters; track q) {
+                      <div class="text-center">Q{{ q }}</div>
+                    }
+                  } @else {
+                    @for (label of monthLabels; track label) {
+                      <div class="text-center">{{ label }}</div>
+                    }
+                    <div class="text-center">Total</div>
+                  }
+                </div>
+
+                @for (p of monthlyFields; track p.particular_id) {
+                  <div class="grid grid-cols-5 items-center gap-3 border-t border-slate-100 px-5 py-3.5 even:bg-slate-50/60 sm:px-6">
+                    <div class="text-sm font-medium text-slate-700">{{ p.particulars_name }}</div>
+
+                    @if (isAnnual) {
+                      @for (q of quarters; track q) {
+                        <div class="text-center font-semibold text-slate-900">
+                          ₱{{ annualQuarterTotal(p.particular_id, q) | number: '1.2-2' }}
+                        </div>
+                      }
+                    } @else {
+                      @for (label of monthLabels; track label; let i = $index) {
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          class="w-full rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-center text-slate-900 focus:border-emerald-600 focus:outline-2 focus:outline-emerald-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                          [(ngModel)]="monthly[p.particular_id][i]"
+                          (ngModelChange)="onFieldChange()"
+                          [disabled]="isLocked"
+                          [attr.aria-label]="p.particulars_name + ' ' + label"
+                        />
+                      }
+                      <div class="text-center font-semibold text-slate-900">
+                        ₱{{ monthlyTotal(p.particular_id) | number: '1.2-2' }}
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
     </div>
 
     <!-- Footer: sign-off and actions -->
-    <div class="flex flex-wrap items-center justify-between gap-4 rounded-b-xl bg-slate-50 px-6 py-4 sm:px-8">
-      <span class="text-sm text-slate-500">{{ saveLabel }}</span>
+    @if (!isAnnual) {
+      <div class="mt-6 flex flex-wrap items-center justify-between gap-4 px-1">
+        <span class="text-sm text-emerald-900/70">{{ saveLabel }}</span>
 
-      <div class="flex flex-wrap items-center gap-3">
-        @if (message) {
-          <span class="text-sm" [class]="isError ? 'text-red-700' : 'text-green-700'">{{ message }}</span>
-        }
+        <div class="flex flex-wrap items-center gap-3">
+          @if (message && !isError) {
+            <span class="text-sm" [class]="isError ? 'text-red-700' : 'text-emerald-700'">{{ message }}</span>
+          }
 
-        @if (status === 'Draft') {
-          <button
-            type="button"
-            style="border-radius: 0.5rem"
-            class="border border-blue-700 bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800"
-            (click)="submit()"
-          >
-            Submit report
-          </button>
-        } @else if (status === 'Submitted') {
-          <button
-            type="button"
-            style="border-radius: 0.5rem"
-            class="border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-100"
-            (click)="reopen()"
-          >
-            Edit report
-          </button>
-        }
+          @if (status === 'Draft') {
+            <button app-button variant="submit" size="md"
+              type="button"
+              (click)="submit()"
+              [disabled]="isLoading || isSaving || isError || particulars.length === 0"
+              [loading]="isSaving"
+            >
+              Submit report
+            </button>
+          } @else if (status === 'Submitted') {
+            <button
+              type="button"
+              style="border-radius: 0.25rem"
+              class="border border-white/70 bg-white/80 px-6 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-white"
+              (click)="reopen()"
+              [disabled]="isLoading || isSaving"
+            >
+              Edit report
+            </button>
+          }
+        </div>
       </div>
-    </div>
+    }
   </div>
 </section>

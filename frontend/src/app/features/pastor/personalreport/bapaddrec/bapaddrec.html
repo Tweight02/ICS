@@ -1,279 +1,311 @@
-<div class="form-page">
-
-  <div class="form-card">
+<div class="flex min-h-screen items-start justify-center bg-[#f5f7fa] px-4 py-6 max-[576px]:p-3">
+  <div class="mx-auto w-full max-w-[540px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.06)] max-[576px]:max-w-full max-[576px]:rounded-[10px]">
 
     <!-- Header -->
-    <div class="form-header">
-      <div>
-        <h1>Add Baptism Record</h1>
-      </div>
+    <div class="rounded-t-xl border-b border-[#e9edf2] bg-white px-6 py-5 max-[576px]:px-[18px] max-[576px]:py-4">
+      <h1 class="m-0 text-[22px] font-semibold leading-[1.4] text-slate-800 max-[576px]:text-xl">Add Baptism Record</h1>
     </div>
 
     <!-- Form -->
-    <form
-      #baptismForm="ngForm"
-      (ngSubmit)="saveBaptism()">
+    <form #baptismForm="ngForm" (ngSubmit)="saveBaptism()">
+      <div class="px-6 py-[22px] max-[576px]:p-[18px]">
+        <div class="grid w-full grid-cols-1 gap-4 max-[576px]:gap-[14px]">
 
-      <div class="form-body">
+          <!-- NAME FIELDS: FOUR FIELDS IN ONE ROW -->
+          <div
+            class="col-span-full grid w-full grid-cols-4 gap-3 max-[576px]:grid-cols-2">
 
-        <div class="form-grid">
+            <!-- First Name -->
+            <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+              <label for="first_name">First Name</label>
+              <input
+                id="first_name"
+                type="text"
+                name="first_name"
+                class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                [(ngModel)]="baptism.first_name"
+                placeholder="First name"
+                autocomplete="given-name"
+                required>
+            </div>
 
-          <!-- First Name -->
-          <div class="form-group">
-            <label for="first_name">
-              First Name
-            </label>
+            <!-- Middle Name -->
+            <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+              <label for="middle_name">Middle Name</label>
+              <input
+                id="middle_name"
+                type="text"
+                name="middle_name"
+                class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                [(ngModel)]="baptism.middle_name"
+                placeholder="Middle name"
+                autocomplete="additional-name">
+            </div>
 
-            <input
-              id="first_name"
-              type="text"
-              name="first_name"
-              class="form-control"
-              [(ngModel)]="baptism.first_name"
-              placeholder="First name"
-              autocomplete="given-name"
-              required>
+            <!-- Last Name -->
+            <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+              <label for="last_name">Last Name</label>
+              <input
+                id="last_name"
+                type="text"
+                name="last_name"
+                class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                [(ngModel)]="baptism.last_name"
+                placeholder="Last name"
+                autocomplete="family-name"
+                required>
+            </div>
+
+            <!-- Extension Name -->
+            <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+              <label for="extension_name">Extension Name</label>
+              <input
+                id="extension_name"
+                type="text"
+                name="extension_name"
+                class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                [(ngModel)]="baptism.extension_name"
+                placeholder="Jr., Sr., III, IV, etc.">
+            </div>
+
           </div>
 
-          <!-- Middle Name -->
-          <div class="form-group">
-            <label for="middle_name">
-              Middle Name
-            </label>
+          <!-- Church: Searchable Dropdown -->
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+            <label for="church_search">Church</label>
 
+            <div
+              class="relative w-full"
+              #churchDropdown
+              [class.open]="churchDropdownOpen">
+
+              <div class="relative flex w-full items-center">
+
+                <!-- Search Icon -->
+                <svg
+                  class="pointer-events-none absolute left-[13px] top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-slate-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="m20 20-4-4"></path>
+                </svg>
+
+                <!-- Search Input -->
+                <input
+                  id="church_search"
+                  type="text"
+                  class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 w-full cursor-text pl-10 pr-11"
+                  [value]="churchDropdownOpen ? churchSearch : getSelectedChurchName()"
+                  (focus)="openChurchDropdown()"
+                  (input)="onChurchSearch($event)"
+                  [placeholder]="churchesLoading
+                    ? 'Loading district churches...'
+                    : churches.length === 0
+                      ? 'No churches assigned to your district'
+                      : 'Search or select church'"
+                  autocomplete="off"
+                  [disabled]="churchesLoading || churches.length === 0"
+                  aria-label="Search churches"
+                  aria-autocomplete="list"
+                  [attr.aria-expanded]="churchDropdownOpen"
+                  (keydown.escape)="closeChurchDropdown()">
+
+                <!-- Dropdown Arrow -->
+                <button
+                  type="button"
+                  class="absolute right-[5px] top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:transition-transform"
+                  (click)="toggleChurchDropdown()"
+                  [disabled]="churchesLoading || churches.length === 0"
+                  aria-label="Toggle church dropdown">
+
+                  <svg [class.rotate-180]="churchDropdownOpen"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+
+              </div>
+
+              <!-- Church Options -->
+              <div
+                class="absolute left-0 right-0 top-[calc(100%+5px)] z-[1050] max-h-[220px] overflow-y-auto rounded-lg border border-slate-300 bg-white p-[5px] shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
+                *ngIf="churchDropdownOpen"
+                role="listbox">
+
+                <button
+                  type="button"
+                  class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-blue-50 focus-visible:bg-blue-50 focus-visible:outline-none"
+                  role="option"
+                  *ngFor="let church of filteredChurches"
+                  [class.bg-blue-50]="sameChurch(church.church_id, baptism.church_id)" [class.text-blue-700]="sameChurch(church.church_id, baptism.church_id)"
+                  [attr.aria-selected]="sameChurch(church.church_id, baptism.church_id)"
+                  (click)="selectChurch(church)">
+                  {{ church.name }}
+                </button>
+
+                <div
+                  class="p-3 text-center text-[13px] text-slate-500"
+                  *ngIf="filteredChurches.length === 0">
+                  No churches found.
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Preserve Angular church_id binding and validation -->
             <input
-              id="middle_name"
-              type="text"
-              name="middle_name"
-              class="form-control"
-              [(ngModel)]="baptism.middle_name"
-              placeholder="Middle name"
-              autocomplete="additional-name">
-          </div>
-
-          <!-- Last Name -->
-          <div class="form-group">
-            <label for="last_name">
-              Last Name
-            </label>
-
-            <input
-              id="last_name"
-              type="text"
-              name="last_name"
-              class="form-control"
-              [(ngModel)]="baptism.last_name"
-              placeholder="Last name"
-              autocomplete="family-name"
-              required>
-          </div>
-
-          <!-- Extension Name -->
-          <div class="form-group">
-            <label for="extension_name">
-              Extension Name
-            </label>
-
-            <input
-              id="extension_name"
-              type="text"
-              name="extension_name"
-              class="form-control"
-              [(ngModel)]="baptism.extension_name"
-              placeholder="Jr., Sr., III, IV, etc.">
-          </div>
-
-          <!-- Church -->
-          <div class="form-group">
-            <label for="church_id">
-              Church
-            </label>
-
-            <select
-              id="church_id"
-              class="form-control"
+              type="hidden"
               name="church_id"
               [(ngModel)]="baptism.church_id"
               required>
-
-              <option
-                [ngValue]="null"
-                disabled>
-                {{
-                  churches.length === 0
-                    ? 'Loading churches...'
-                    : 'Select church'
-                }}
-              </option>
-
-              <option
-                *ngFor="let church of churches"
-                [ngValue]="church.church_id">
-                {{ church.name }}
-              </option>
-
-            </select>
-
-            <small
-              *ngIf="churches.length === 0"
-              class="form-help">
-              No churches loaded. Please make sure the Laravel server is running.
-            </small>
           </div>
 
           <!-- Quarter -->
-          <div class="form-group">
-            <label for="quarter">
-              Quarter
-            </label>
-
-            <input
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+            <label for="quarter">Quarter</label>
+            <select
               id="quarter"
-              type="text"
+              class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 appearance-none pr-[38px] bg-no-repeat bg-[length:16px_16px] bg-[right_12px_center] [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
               name="quarter"
-              class="form-control"
               [(ngModel)]="baptism.quarter"
-              placeholder="Enter quarter"
               required>
+
+              <option value="" disabled>Select quarter</option>
+              <option value="Q1">Q1</option>
+              <option value="Q2">Q2</option>
+              <option value="Q3">Q3</option>
+              <option value="Q4">Q4</option>
+            </select>
+          </div>
+
+          <!-- Baptism Status -->
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+            <label for="is_reclaimed">Baptism Status</label>
+            <select
+              id="is_reclaimed"
+              class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 appearance-none pr-[38px] bg-no-repeat bg-[length:16px_16px] bg-[right_12px_center] [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
+              name="is_reclaimed"
+              [(ngModel)]="baptism.is_reclaimed"
+              required>
+
+              <option [ngValue]="null" disabled>
+                Select baptism status
+              </option>
+              <option [ngValue]="false">Newly Baptized</option>
+              <option [ngValue]="true">Reclaimed Member</option>
+            </select>
           </div>
 
           <!-- Address -->
-          <div class="form-group">
-            <label for="address">
-              Address
-            </label>
-
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+            <label for="address">Address</label>
             <input
               id="address"
               type="text"
               name="address"
-              class="form-control"
+              class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.address"
               placeholder="Enter complete address">
           </div>
 
           <!-- Birthdate -->
-          <div class="form-group">
-            <label for="birthdate">
-              Birthdate
-            </label>
-
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+            <label for="birthdate">Birthdate</label>
             <input
               id="birthdate"
               type="date"
               name="birthdate"
-              class="form-control"
+              class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.birthdate"
               (change)="calculateAge()"
+              [max]="today"
               required>
           </div>
 
           <!-- Date of Baptism -->
-          <div class="form-group">
-            <label for="date_of_baptism">
-              Date of Baptism
-            </label>
-
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+            <label for="date_of_baptism">Date of Baptism</label>
             <input
               id="date_of_baptism"
               type="date"
               name="date_of_baptism"
-              class="form-control"
+              class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.date_of_baptism"
+              [max]="today"
               required>
           </div>
 
           <!-- Officiating Minister -->
-          <div class="form-group">
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
             <label for="officiating_minister">
               Officiating Minister
             </label>
-
             <input
               id="officiating_minister"
               type="text"
               name="officiating_minister"
-              class="form-control"
+              class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.officiating_minister"
               placeholder="Enter minister's name">
           </div>
 
           <!-- Place of Baptism -->
-          <div class="form-group">
-            <label for="place_of_baptism">
-              Place of Baptism
-            </label>
-
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+            <label for="place_of_baptism">Place of Baptism</label>
             <input
               id="place_of_baptism"
               type="text"
               name="place_of_baptism"
-              class="form-control"
+              class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.place_of_baptism"
               placeholder="Enter place of baptism">
           </div>
 
           <!-- Gender -->
-          <div class="form-group">
-            <label for="gender">
-              Gender
-            </label>
-
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+            <label for="gender">Gender</label>
             <select
               id="gender"
-              class="form-control"
+              class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 appearance-none pr-[38px] bg-no-repeat bg-[length:16px_16px] bg-[right_12px_center] [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
               name="gender"
               [(ngModel)]="baptism.gender"
               required>
 
-              <option
-                [ngValue]="null"
-                disabled>
-                Select gender
-              </option>
-
-              <option value="Female">
-                Female
-              </option>
-
-              <option value="Male">
-                Male
-              </option>
-
+              <option [ngValue]="null" disabled>Select gender</option>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
             </select>
           </div>
 
           <!-- Marital Status -->
-          <div class="form-group">
-            <label for="marital_status">
-              Marital
-            </label>
-
+          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+            <label for="marital_status">Marital Status</label>
             <select
               id="marital_status"
-              class="form-control"
+              class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 appearance-none pr-[38px] bg-no-repeat bg-[length:16px_16px] bg-[right_12px_center] [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
               name="marital_status"
               [(ngModel)]="baptism.marital_status"
               required>
 
-              <option
-                [ngValue]="null"
-                disabled>
+              <option [ngValue]="null" disabled>
                 Select marital status
               </option>
-
-              <option value="Single">
-                Single
-              </option>
-
-              <option value="Married">
-                Married
-              </option>
-
-              <option value="Widowed">
-                Widowed
-              </option>
-
+              <option value="Single">Single</option>
+              <option value="Married">Married</option>
+              <option value="Widowed">Widowed</option>
             </select>
           </div>
 
@@ -281,26 +313,23 @@
       </div>
 
       <!-- Footer -->
-      <div class="form-footer">
-
+      <div class="flex items-center justify-end gap-2.5 rounded-b-xl border-t border-[#e9edf2] bg-[#fafbfc] px-6 py-4 max-[576px]:px-[18px] max-[576px]:py-[14px]">
         <button
           type="button"
-          routerLink="/pastor/deathbap"
-          class="cancel-button">
+          class="min-h-[38px] cursor-pointer rounded-[7px] border border-slate-300 bg-white px-[18px] py-[9px] text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-100"
+          (click)="cancelForm()">
           Cancel
         </button>
 
         <button
-          type="submit"
-          class="save-button"
+          app-button variant="submit" size="md"
+          type="submit" [loading]="saving"
+          class="min-h-[38px] cursor-pointer rounded-[7px] border border-emerald-700 bg-emerald-700 px-[18px] py-[9px] text-[13px] font-medium text-white transition-colors hover:border-emerald-800 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-[0.55]"
           [disabled]="saving || baptismForm.invalid">
           {{ saving ? 'Saving...' : 'Save' }}
         </button>
-
       </div>
 
     </form>
-
   </div>
-
 </div>

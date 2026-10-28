@@ -77,6 +77,15 @@ Before relying on a package's API, confirm its installed version:
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
 
+=== tests rules ===
+
+# Test Enforcement
+
+- Test every code change by adding or updating a test.
+- Run the affected tests and ensure they pass.
+- Test the changed behavior and its important failure modes, but do not add tests beyond them.
+- Read the `testing-best-practices` skill before writing tests.
+
 === laravel/core rules ===
 
 # Do Things the Laravel Way
