@@ -42,9 +42,7 @@ class QuarterlyReportDataSeeder extends Seeder
         }
 
         $programIds = $programs->pluck('program_id')->all();
-        $programNames = $programs->pluck('program_name', 'program_id');
         $churchIds = $churches->pluck('church_id')->all();
-        $pendingApprovalExampleChurchId = (int) $churches->first()->church_id;
         $particularsByProgram = [];
 
         DB::table('programs as sections')
@@ -96,66 +94,43 @@ class QuarterlyReportDataSeeder extends Seeder
             $quarters,
             $quarterIdsWithItems,
             $particularsByProgram,
-            $programNames,
-            $pendingApprovalExampleChurchId,
             $reportingYear,
             $lastQuarter,
             $today,
             &$seeded
         ): void {
-            $previousQuarterApproval = [];
-            $previousQuarterNumber = [];
+            $q3WorkflowIndex = 0;
 
             foreach ($quarters as $quarter) {
                 $quarterNumber = $this->quarterNumber((string) $quarter->quarter);
 
-                if ($quarterNumber === null || $quarterNumber > $lastQuarter) {
+                if ($quarterNumber === null || $quarterNumber > $lastQuarter || $quarterNumber === 4) {
                     continue;
                 }
 
-                $scopeKey = "{$quarter->church_id}|{$quarter->program_id}";
-                $canApprove = $quarterNumber === 1
-                    || (($previousQuarterNumber[$scopeKey] ?? null) === $quarterNumber - 1
-                        && ($previousQuarterApproval[$scopeKey] ?? false));
-
                 if ($quarterIdsWithItems->has($quarter->quarter_id) || $quarter->date_submitted !== null
                     || $quarter->district_endorse !== null || $quarter->mission_approve !== null) {
-                    $previousQuarterNumber[$scopeKey] = $quarterNumber;
-                    $previousQuarterApproval[$scopeKey] = $quarter->mission_approve !== null;
-
                     continue;
                 }
 
                 $particulars = $particularsByProgram[$quarter->program_id] ?? [];
 
                 if ($particulars === []) {
-                    $previousQuarterNumber[$scopeKey] = $quarterNumber;
-                    $previousQuarterApproval[$scopeKey] = false;
-
                     continue;
                 }
 
                 $key = "{$quarter->church_id}|{$quarter->program_id}|{$reportingYear}|{$quarterNumber}";
-                $isPendingApprovalExample =
-                    (int) $quarter->church_id === $pendingApprovalExampleChurchId
-                    && ($programNames[$quarter->program_id] ?? null) === 'AY Quarterly Report'
-                    && $quarterNumber === 1;
+                $q3IsEndorsed = $quarterNumber === 3 && $q3WorkflowIndex++ % 2 === 0;
                 $quarterEnd = Carbon::create($reportingYear, $quarterNumber * 3, 1)->endOfMonth();
-                $submitted = $quarterEnd->lt($today) && (
-                    $this->score("{$key}|submitted") < $this->submissionRate($quarterNumber)
-                );
-                $endorsed = $submitted && (
-                    $this->score("{$key}|endorsed") < 82
-                );
-                $approved = $endorsed && $canApprove && ! $isPendingApprovalExample
-                    && $this->score("{$key}|approved") < 74;
+                $submitted = $quarterNumber <= 2 || $q3IsEndorsed;
+                $endorsed = $quarterNumber <= 2 || $q3IsEndorsed;
+                $approved = $quarterNumber <= 2;
                 $dates = $this->statusDates($key, $quarterEnd, $today, $submitted, $endorsed, $approved);
 
                 DB::table('quarters')
                     ->where('quarter_id', $quarter->quarter_id)
                     ->update($dates);
 
-                $progress = $submitted ? 100 : 25 + ($this->score("{$key}|progress") % 56);
                 $items = [];
                 $moneyItems = [];
                 $membership = $this->membershipForQuarter(
@@ -165,10 +140,6 @@ class QuarterlyReportDataSeeder extends Seeder
                 );
 
                 foreach ($particulars as $particular) {
-                    if (! $submitted && $this->score("{$key}|item|{$particular->particular_id}") >= $progress) {
-                        continue;
-                    }
-
                     $name = (string) $particular->particular_name;
                     $value = $this->valueFor($name, $key, $membership);
 
@@ -221,12 +192,10 @@ class QuarterlyReportDataSeeder extends Seeder
                 }
 
                 $seeded++;
-                $previousQuarterNumber[$scopeKey] = $quarterNumber;
-                $previousQuarterApproval[$scopeKey] = $approved;
             }
         });
 
-        $this->command?->info("Quarterly sample reports created: {$seeded} for {$year} through Q{$lastQuarter}.");
+        $this->command?->info("Quarterly sample reports created: {$seeded} for {$year} through Q3.");
     }
 
     private function quarterNumber(string $quarter): ?int
@@ -234,16 +203,6 @@ class QuarterlyReportDataSeeder extends Seeder
         return preg_match('/(?:Q|QUARTER\s*)?([1-4])/i', $quarter, $matches)
             ? (int) $matches[1]
             : null;
-    }
-
-    private function submissionRate(int $quarter): int
-    {
-        return match ($quarter) {
-            1 => 92,
-            2 => 86,
-            3 => 65,
-            default => 45,
-        };
     }
 
     /**

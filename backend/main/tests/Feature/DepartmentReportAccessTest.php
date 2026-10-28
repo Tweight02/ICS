@@ -154,6 +154,114 @@ test('pastors can access all department reports and see personal report departme
         ->assertOk();
 });
 
+test('pastors can load and save district-owned personal reports', function () {
+    $fixture = departmentReportAccessFixture();
+    $districtId = $fixture['churchId'];
+    $childChurchId = DB::table('churches')->insertGetId([
+        'name' => 'Personal Report Child Church',
+        'address' => 'District Address',
+        'parent_id' => $districtId,
+    ]);
+    $reportDetails = [];
+
+    foreach ([16, 20] as $departmentId) {
+        $programId = DB::table('programs')->insertGetId([
+            'department_id' => $departmentId,
+            'program_name' => "Personal Report Program {$departmentId}",
+            'parent_id' => null,
+        ]);
+        $sectionId = DB::table('programs')->insertGetId([
+            'department_id' => $departmentId,
+            'program_name' => 'Activities',
+            'parent_id' => $programId,
+        ]);
+        $particularId = DB::table('particulars')->insertGetId([
+            'program_id' => $sectionId,
+            'particular_name' => 'Attendance',
+        ]);
+        DB::table('quarters')->insert([
+            'church_id' => $childChurchId,
+            'program_id' => $programId,
+            'year' => '2025',
+            'quarter' => 'Q1',
+            'date_submitted' => null,
+            'district_endorse' => null,
+            'mission_approve' => null,
+        ]);
+        $reportDetails[$departmentId] = compact('programId', 'particularId');
+    }
+
+    foreach ([16, 20] as $departmentId) {
+        $url = "/api/churches/{$districtId}/departments/{$departmentId}/report";
+        $this->actingAs($fixture['pastor'], 'sanctum')
+            ->getJson($url)
+            ->assertOk();
+
+        $expectedYearCount = collect(['2025', (string) now()->year])
+            ->unique()
+            ->count();
+        expect(DB::table('quarters')
+            ->where('church_id', $districtId)
+            ->where('program_id', $reportDetails[$departmentId]['programId'])
+            ->count())->toBe($expectedYearCount * 4);
+    }
+
+    $quarterId = DB::table('quarters')
+        ->where('church_id', $districtId)
+        ->where('program_id', $reportDetails[16]['programId'])
+        ->where('year', (string) now()->year)
+        ->where('quarter', 'Q1')
+        ->value('quarter_id');
+    $this->postJson('/api/churches/'.$districtId.'/departments/16/report/save', [
+        'items' => [[
+            'particular_id' => $reportDetails[16]['particularId'],
+            'quarter_id' => $quarterId,
+            'value' => 7,
+        ]],
+    ])->assertOk();
+
+    $this->assertDatabaseHas('particular_items', [
+        'particular_id' => $reportDetails[16]['particularId'],
+        'quarter_id' => $quarterId,
+        'manual_value' => 7,
+        'value' => 7,
+    ]);
+});
+
+test('only the assigned pastor can access district-owned personal reports', function () {
+    $fixture = departmentReportAccessFixture();
+    $otherDistrictId = DB::table('churches')->insertGetId([
+        'name' => 'Other Report District',
+        'address' => 'Other Address',
+        'parent_id' => null,
+    ]);
+    $otherPastor = departmentReportAccessUser(
+        $otherDistrictId,
+        16,
+        'pastor',
+        'other-district-pastor'
+    );
+    $assistant = departmentReportAccessUser(
+        $fixture['churchId'],
+        16,
+        'assistant',
+        'district-report-assistant'
+    );
+
+    $url = "/api/churches/{$fixture['churchId']}/departments/16/report";
+    $saveUrl = $url.'/save';
+
+    $this->actingAs($otherPastor, 'sanctum')
+        ->getJson($url)
+        ->assertForbidden();
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson($url)
+        ->assertForbidden();
+    $this->actingAs($assistant, 'sanctum')
+        ->postJson($saveUrl, ['items' => []])
+        ->assertForbidden();
+});
+
 test('baptism and death department rows use the personal records page', function () {
     $fixture = departmentReportAccessFixture();
 

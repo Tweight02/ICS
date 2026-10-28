@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-test('quarterly report seeder creates reports through the current quarter and is idempotent', function () {
+test('quarterly report seeder creates approved Q1 and Q2, mixed Q3, and empty Q4 reports', function () {
     Carbon::setTestNow('2026-10-26 12:00:00');
     config(['app.reporting_year' => '2026']);
 
@@ -20,6 +20,11 @@ test('quarterly report seeder creates reports through the current quarter and is
     ]);
     $churchId = DB::table('churches')->insertGetId([
         'name' => 'Seeder Test Church',
+        'address' => 'Nueva Vizcaya',
+        'parent_id' => $districtId,
+    ]);
+    $secondChurchId = DB::table('churches')->insertGetId([
+        'name' => 'Second Seeder Test Church',
         'address' => 'Nueva Vizcaya',
         'parent_id' => $districtId,
     ]);
@@ -46,52 +51,54 @@ test('quarterly report seeder creates reports through the current quarter and is
 
     $this->seed(QuarterlyReportDataSeeder::class);
 
-    $this->assertDatabaseCount('particular_items', 4);
+    $this->assertDatabaseCount('particular_items', 6);
     $this->assertSame(
-        4,
+        6,
         DB::table('quarters')
             ->join('particular_items', 'particular_items.quarter_id', '=', 'quarters.quarter_id')
-            ->where('quarters.church_id', $churchId)
+            ->whereIn('quarters.church_id', [$churchId, $secondChurchId])
             ->distinct()
             ->count('quarters.quarter_id')
     );
-    $q4Id = DB::table('quarters')
-        ->where('church_id', $churchId)
+
+    $approvedEarlyQuarters = DB::table('quarters')
+        ->whereIn('church_id', [$churchId, $secondChurchId])
+        ->whereIn('quarter', ['Q1', 'Q2'])
+        ->where('year', '2026');
+    $this->assertSame(4, (clone $approvedEarlyQuarters)->whereNotNull('date_submitted')->count());
+    $this->assertSame(4, (clone $approvedEarlyQuarters)->whereNotNull('district_endorse')->count());
+    $this->assertSame(4, (clone $approvedEarlyQuarters)->whereNotNull('mission_approve')->count());
+
+    $q3Reports = DB::table('quarters')
+        ->whereIn('church_id', [$churchId, $secondChurchId])
+        ->where('program_id', $programId)
+        ->where('quarter', 'Q3')
+        ->where('year', '2026');
+    $this->assertSame(1, (clone $q3Reports)->whereNotNull('district_endorse')->count());
+    $this->assertSame(1, (clone $q3Reports)->whereNull('date_submitted')->count());
+    $this->assertSame(2, DB::table('particular_items')
+        ->whereIn('quarter_id', (clone $q3Reports)->select('quarter_id'))
+        ->count());
+
+    $q4Reports = DB::table('quarters')
+        ->whereIn('church_id', [$churchId, $secondChurchId])
         ->where('program_id', $programId)
         ->where('quarter', 'Q4')
-        ->value('quarter_id');
-    $q4Value = DB::table('particular_items')
-        ->where('quarter_id', $q4Id)
-        ->where('particular_id', $particularId)
-        ->value('value');
-
-    expect($q4Value)->toBeGreaterThan(0);
+        ->where('year', '2026');
+    $this->assertSame(2, (clone $q4Reports)
+        ->whereNull('date_submitted')
+        ->whereNull('district_endorse')
+        ->whereNull('mission_approve')
+        ->count());
+    $this->assertSame(0, DB::table('particular_items')
+        ->whereIn('quarter_id', (clone $q4Reports)->select('quarter_id'))
+        ->count());
     $this->assertDatabaseHas('quarters', [
         'church_id' => $churchId,
         'program_id' => $programId,
         'quarter' => 'Q1',
         'year' => '2026',
-        'mission_approve' => null,
     ]);
-    $q1Approval = DB::table('quarters')
-        ->where('church_id', $churchId)
-        ->where('program_id', $programId)
-        ->where('quarter', 'Q1')
-        ->value('mission_approve');
-    $q2Approval = DB::table('quarters')
-        ->where('church_id', $churchId)
-        ->where('program_id', $programId)
-        ->where('quarter', 'Q2')
-        ->value('mission_approve');
-    $q3Approval = DB::table('quarters')
-        ->where('church_id', $churchId)
-        ->where('program_id', $programId)
-        ->where('quarter', 'Q3')
-        ->value('mission_approve');
-
-    $this->assertNull($q1Approval);
-    $this->assertNull($q2Approval);
-    $this->assertNull($q3Approval);
     $this->assertDatabaseHas('quarters', [
         'church_id' => $churchId,
         'program_id' => $programId,
@@ -102,7 +109,7 @@ test('quarterly report seeder creates reports through the current quarter and is
 
     $this->seed(QuarterlyReportDataSeeder::class);
 
-    $this->assertDatabaseCount('particular_items', 4);
+    $this->assertDatabaseCount('particular_items', 6);
     $this->assertSame(
         0,
         DB::table('quarters')

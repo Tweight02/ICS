@@ -217,6 +217,14 @@ class ReportController extends Controller
             return $denied;
         }
 
+        if ($denied = $this->pastorDistrictPersonalReportAccessDenied(
+            $request,
+            (int) $churchId,
+            (int) $departmentId
+        )) {
+            return $denied;
+        }
+
         $church = DB::table('churches')
             ->where('church_id', $churchId)
             ->first();
@@ -242,6 +250,13 @@ class ReportController extends Controller
             ->whereNull('parent_id')
             ->orderBy('program_id')
             ->get();
+
+        $this->ensurePastorDistrictPersonalReportQuarters(
+            $request,
+            (int) $churchId,
+            (int) $departmentId,
+            $programs
+        );
 
         $participantCounts = DB::query()
             ->fromSub(ReportParticipantCoverage::counts(), 'participant_counts')
@@ -391,6 +406,14 @@ class ReportController extends Controller
     ) {
         if ($denied = $this->departmentAccessDenied(
             $request,
+            (int) $departmentId
+        )) {
+            return $denied;
+        }
+
+        if ($denied = $this->pastorDistrictPersonalReportAccessDenied(
+            $request,
+            (int) $churchId,
             (int) $departmentId
         )) {
             return $denied;
@@ -1425,6 +1448,113 @@ class ReportController extends Controller
             'assistant',
             'administrative assistant',
         ], true);
+    }
+
+    private function pastorDistrictPersonalReportAccessDenied(
+        Request $request,
+        int $churchId,
+        int $departmentId
+    ): ?JsonResponse {
+        if (! in_array($departmentId, [16, 20], true)) {
+            return null;
+        }
+
+        $targetChurch = DB::table('churches')
+            ->where('church_id', $churchId)
+            ->first(['church_id', 'parent_id']);
+
+        if (! $targetChurch || $targetChurch->parent_id !== null) {
+            return null;
+        }
+
+        $user = $request->user();
+        if (
+            ! $user ||
+            ! $this->isPastorRole($this->normalizeRole((string) ($user->role ?? '')))
+        ) {
+            return response()->json([
+                'message' => 'District-level personal reports are available to the assigned pastor only.',
+            ], 403);
+        }
+
+        $assignedChurch = DB::table('churches')
+            ->where('church_id', $user->church_id)
+            ->first(['church_id', 'parent_id']);
+        $assignedDistrictId = $assignedChurch
+            ? (int) ($assignedChurch->parent_id ?? $assignedChurch->church_id)
+            : 0;
+
+        if ($assignedDistrictId !== $churchId) {
+            return response()->json([
+                'message' => 'You can only access the personal reports for your assigned district.',
+            ], 403);
+        }
+
+        return null;
+    }
+
+    private function ensurePastorDistrictPersonalReportQuarters(
+        Request $request,
+        int $districtId,
+        int $departmentId,
+        $programs
+    ): void {
+        $user = $request->user();
+        if (
+            ! $user ||
+            ! $this->isPastorRole($this->normalizeRole((string) ($user->role ?? ''))) ||
+            ! in_array($departmentId, [16, 20], true)
+        ) {
+            return;
+        }
+
+        $district = DB::table('churches')
+            ->where('church_id', $districtId)
+            ->whereNull('parent_id')
+            ->exists();
+        if (! $district) {
+            return;
+        }
+
+        $years = DB::table('quarters')
+            ->join('programs', 'programs.program_id', '=', 'quarters.program_id')
+            ->join('churches', 'churches.church_id', '=', 'quarters.church_id')
+            ->where('programs.department_id', $departmentId)
+            ->where('churches.parent_id', $districtId)
+            ->distinct()
+            ->pluck('quarters.year')
+            ->map(static fn ($year) => (string) $year)
+            ->push((string) now()->year)
+            ->unique()
+            ->values();
+
+        DB::transaction(function () use ($districtId, $programs, $years): void {
+            foreach ($programs as $program) {
+                foreach ($years as $year) {
+                    foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarterName) {
+                        $exists = DB::table('quarters')
+                            ->where('church_id', $districtId)
+                            ->where('program_id', $program->program_id)
+                            ->where('year', $year)
+                            ->where('quarter', $quarterName)
+                            ->exists();
+                        if ($exists) {
+                            continue;
+                        }
+
+                        DB::table('quarters')->insert([
+                            'church_id' => $districtId,
+                            'program_id' => $program->program_id,
+                            'year' => $year,
+                            'quarter' => $quarterName,
+                            'date_submitted' => null,
+                            'district_endorse' => null,
+                            'mission_approve' => null,
+                        ]);
+                    }
+                }
+            }
+        });
     }
 
     private function departmentAccessDenied(
