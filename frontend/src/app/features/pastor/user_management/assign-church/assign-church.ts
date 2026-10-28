@@ -156,8 +156,13 @@ export class AssignChurch implements OnInit {
     this.loadAssignments();
   }
 
-  loadAssignments(): void {
-    this.loading.set(true);
+  /**
+   * @param silent when true, refresh in the background without showing the loading skeleton.
+   */
+  loadAssignments(silent = false): void {
+    if (!silent) {
+      this.loading.set(true);
+    }
     this.loadError.set('');
 
     forkJoin({
@@ -198,6 +203,25 @@ export class AssignChurch implements OnInit {
         all.push(...response.data);
         return all;
       }, [])
+    );
+  }
+
+  /** Applies a successful transfer to local state immediately, without waiting for a refetch. */
+  private applyTransfers(transfers: { user_id: number; church_id: number }[]): void {
+    const moved = new Map(transfers.map((transfer) => [transfer.user_id, transfer.church_id]));
+    const representatives = this.representatives().map((representative) =>
+      moved.has(representative.user_id)
+        ? { ...representative, church_id: moved.get(representative.user_id)! }
+        : representative
+    );
+
+    this.representatives.set(representatives);
+    this.assignments.update((list) =>
+      list.map((assignment) => ({
+        ...assignment,
+        representative:
+          representatives.find((representative) => representative.church_id === assignment.church_id) ?? null,
+      }))
     );
   }
 
@@ -428,10 +452,14 @@ export class AssignChurch implements OnInit {
         finalize(() => this.saving.set(false))
       )
       .subscribe({
-        next: async (response) => {
+        next: (response) => {
+          // Apply the change right away; the toast must not block the UI update.
           this.saving.set(false);
+          this.applyTransfers(transfers);
           this.closeAssignment();
-          await Swal.fire({
+
+          // Fire-and-forget: do not await the toast.
+          void Swal.fire({
             toast: true,
             position: 'top-end',
             icon: 'success',
@@ -447,7 +475,9 @@ export class AssignChurch implements OnInit {
             timer: 3500,
             timerProgressBar: true,
           });
-          this.loadAssignments();
+
+          // Background refresh to sync with the server, without the loading skeleton.
+          this.loadAssignments(true);
         },
         error: async (error) => {
           console.error('Failed to assign representative:', error);

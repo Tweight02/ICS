@@ -201,7 +201,7 @@
       <!-- Actions -->
       <div class="flex flex-col-reverse gap-2 pt-3 sm:flex-row sm:justify-end">
         <a app-button variant="secondary" size="md" routerLink="/assistant/view-user">Cancel</a>
-        <button app-button variant="create" size="md" type="submit" [disabled]="isSubmitting || isLoadingDistricts || districts.length === 0" [loading]="isSubmitting" class="!rounded-lg sm:min-w-36">
+        <button app-button variant="create" size="md" type="submit" [disabled]="isSubmitting || isLoadingDistricts || districts.length === 0" [loading]="isSubmitting" class="!rounded-md sm:min-w-36">
           {{ isSubmitting ? 'Creating…' : 'Create pastor' }}
         </button>
       </div>
