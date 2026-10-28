@@ -40,7 +40,7 @@
                         </div>
 
                         @if (!editing()) {
-                        <button app-button variant="edit" size="md" type="button" (click)="enableEdit()" class="!rounded-md">
+                        <button app-button variant="edit" size="md" type="button" (click)="enableEdit()" class="!rounded-md !border-emerald-700 !bg-emerald-700 !text-white shadow-sm hover:!bg-emerald-800 focus-visible:!ring-2 focus-visible:!ring-emerald-300 disabled:!opacity-60">
                             <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M13.6 2.6a2 2 0 112.8 2.8l-8.7 8.7-3.7.9.9-3.7 8.7-8.7z" /></svg>
                             Edit profile
                         </button>
@@ -136,7 +136,7 @@
                         @if (editing()) {
                         <div class="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
                             <button type="button" (click)="cancelEdit()" [disabled]="saving()" class="h-9 !rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60">Cancel</button>
-                            <button app-button variant="edit" size="md" type="submit" [disabled]="saving()" [loading]="saving()" class="!rounded-md">
+                            <button app-button variant="edit" size="md" type="submit" [disabled]="saving()" [loading]="saving()" class="!rounded-md !border-emerald-700 !bg-emerald-700 !text-white shadow-sm hover:!bg-emerald-800 focus-visible:!ring-2 focus-visible:!ring-emerald-300 disabled:!opacity-60">
                                 @if (!saving()) {
                                 <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd" /></svg>
                                 }
