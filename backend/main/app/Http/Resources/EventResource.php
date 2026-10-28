@@ -15,12 +15,24 @@ class EventResource extends JsonResource
         $user = EventUser::fromRequest($request);
         $quarter = $this->quarterDetails();
         $church = EventsOrg::church((int) $this->church_id);
+        $creator = $this->createdBy()->first(['users.first_name', 'users.last_name']);
         $particulars = $this->particulars()->with('program')->get();
         $districts = $this->districts()->get(['churches.church_id as id', 'churches.name']);
-        $total = $this->participants_count ?? $this->participants()->count();
-        $confirmed = $this->confirmed_count ?? $this->participants()
-            ->whereRaw('LOWER(registration_status) = ?', ['confirmed'])->count();
+        $allDistrictsSelected = $districts->isNotEmpty()
+            && $districts->count() === EventsOrg::districts()->count();
+        $participantQuery = $this->participants();
+        if ($user->role === 'church_representative') {
+            $participantQuery->where('church_id', $user->churchId ?? 0);
+        }
+        $total = $user->role === 'church_representative'
+            ? (clone $participantQuery)->count()
+            : ($this->participants_count ?? $participantQuery->count());
+        $confirmed = $user->role === 'church_representative'
+            ? (clone $participantQuery)->whereRaw('LOWER(registration_status) = ?', ['confirmed'])->count()
+            : ($this->confirmed_count ?? $participantQuery
+                ->whereRaw('LOWER(registration_status) = ?', ['confirmed'])->count());
         $can = Event::canChange($user, $this->resource);
+        $canConfirmParticipants = $user->role === 'church_representative';
         $isDistrict = $church && ! $church->district_id;
         if ($districts->isEmpty() && $isDistrict) {
             $districts = collect([(object) ['id' => $church->id, 'name' => $church->name]]);
@@ -65,15 +77,20 @@ class EventResource extends JsonResource
                     'id' => (int) $district->id,
                     'name' => $district->name,
                 ])->values(),
+                'all_districts' => $allDistrictsSelected,
             ],
             'church_id' => (int) $this->church_id,
             'church_name' => $church->name ?? null,
+            'created_by' => $creator
+                ? trim($creator->first_name . ' ' . $creator->last_name)
+                : null,
             'organized_by' => null,
             'participants' => ['total' => $total, 'confirmed' => $confirmed, 'pending' => $total - $confirmed],
             'abilities' => [
                 'update' => $can,
                 'delete' => $can,
                 'manage_participants' => $can,
+                'confirm_participants' => $canConfirmParticipants,
             ],
         ];
     }

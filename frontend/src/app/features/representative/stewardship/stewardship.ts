@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { DecimalPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Button } from '../../../shared/components/button/button';
 import { firstValueFrom, Observable } from 'rxjs';
 import {
   StewardshipActionResponse,
@@ -27,7 +28,7 @@ const MONTHLY_PARTICULARS = ['offering', 'tithes'];
 @Component({
   selector: 'app-stewardship',
   standalone: true,
-  imports: [FormsModule, DecimalPipe],
+  imports: [FormsModule, DecimalPipe, Button],
   templateUrl: './stewardship.html',
 })
 export class Stewardship {

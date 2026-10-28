@@ -263,6 +263,13 @@ class DeathController extends Controller
             return null;
         }
 
+        if (
+            in_array($role, ['director', 'assistant', 'administrative assistant'], true)
+            && (int) $user->department_id !== 16
+        ) {
+            return null;
+        }
+
         $assignedChurch = DB::table('churches')
             ->where('church_id', $user->church_id)
             ->first(['church_id', 'parent_id']);

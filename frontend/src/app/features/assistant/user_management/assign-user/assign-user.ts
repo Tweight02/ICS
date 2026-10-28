@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 import { AssignablePastor, DistrictPastorAssignment } from '../../../../core/models/pastor.model';
 import { UserService } from '../../../../core/services/user/user-service';
+import { Button } from '../../../../shared/components/button/button';
 
 interface FilterOption {
   value: string;
@@ -24,9 +25,9 @@ interface TransferPreview {
 }
 
 @Component({
-  imports: [RouterLink],
+  imports: [RouterLink, Button],
   selector: 'app-assign-user',
-  styleUrl: './assign-user.css',
+
   templateUrl: './assign-user.html',
 })
 export class AssignUser implements OnInit {

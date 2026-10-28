@@ -140,7 +140,59 @@ describe('ReportParticulars', () => {
     expect(component).toBeTruthy();
   });
 
-  it('shows stewardship sections and totals in the dedicated report tabs', () => {
+  it('keeps program selectors unfilled while identifying the selected program', () => {
+    const buttons = fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
+    const programButton = Array.from(buttons)
+      .find(button => button.textContent.trim() === 'Program')!;
+
+    expect(programButton.getAttribute('aria-pressed')).toBe('true');
+    expect(programButton.classList.contains('bg-emerald-700')).toBe(false);
+    expect(programButton.classList.contains('shadow-md')).toBe(false);
+  });
+
+  it('hides the saved confirmation after five seconds', () => {
+    vi.useFakeTimers();
+    component.autoSaveStatus = 'saved';
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('All changes saved');
+
+    vi.advanceTimersByTime(4999);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('All changes saved');
+
+    vi.advanceTimersByTime(1);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('All changes saved');
+    vi.useRealTimers();
+  });
+
+  it('hides the already-approved warning after five seconds', () => {
+    vi.useFakeTimers();
+    component.report!.programs[0].program_name = 'AY Quarterly Report';
+    for (const particular of component.report!.programs[0].sections[0].particulars) {
+      particular.quarters[0].mission_approve = '2026-10-28';
+    }
+
+    component.saveReport();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent)
+      .toContain('The Q1 report for AY Quarterly Report has already been approved.');
+
+    vi.advanceTimersByTime(4999);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent)
+      .toContain('The Q1 report for AY Quarterly Report has already been approved.');
+
+    vi.advanceTimersByTime(1);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent)
+      .not.toContain('The Q1 report for AY Quarterly Report has already been approved.');
+    vi.useRealTimers();
+  });
+
+  it('shows stewardship and offering sections together in one report view', () => {
     component.departmentId = 14;
     component.report!.department!.department_id = 14;
     component.report!.programs[0].sections = [
@@ -181,18 +233,21 @@ describe('ReportParticulars', () => {
     const program = component.getSelectedProgram()!;
     expect(component.isStewardshipReport).toBe(true);
     expect(component.getVisibleSections(program).map(section => section.program_name))
-      .toEqual(['STEWARDSHIP']);
+      .toEqual(['STEWARDSHIP', 'OFFERING AND TITHES']);
 
-    component.selectStewardshipTab('offering');
     fixture.detectChanges();
-    expect(component.getVisibleSections(program).map(section => section.program_name))
-      .toEqual(['OFFERING AND TITHES']);
+    expect(fixture.nativeElement.textContent).toContain('STEWARDSHIP');
+    expect(fixture.nativeElement.textContent).toContain('OFFERING AND TITHES');
+    expect(fixture.nativeElement.querySelector('[role="tablist"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Total Offering');
+    expect(fixture.nativeElement.textContent).toContain('Total Tithes');
     expect(component.getStewardshipTotal('offering')).toBe(1200);
     expect(component.getStewardshipTotal('tithe')).toBe(3400);
     expect(component.getQuarterMonthNames(component.getSelectedQuarter()!))
       .toEqual(['January', 'February', 'March']);
     expect(fixture.nativeElement.textContent).toContain('January');
-    expect(fixture.nativeElement.querySelectorAll('input[type="number"]')).toHaveLength(6);
+    expect(fixture.nativeElement.querySelectorAll('details[open]')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelectorAll('input[type="number"]')).toHaveLength(7);
   });
 
   it('loads and saves reports for the local church assigned to the representative district', () => {
@@ -208,11 +263,92 @@ describe('ReportParticulars', () => {
 
     expect(saveDepartmentReport).toHaveBeenCalledOnce();
     expect(saveDepartmentReport.mock.calls[0][2]).toEqual([
-      { particular_id: 7, quarter_id: 9, value: 0 },
-      { particular_id: 8, quarter_id: 9, value: 0 },
-      { particular_id: 13, quarter_id: 19, value: 0 }
+      { particular_id: 7, quarter_id: 9, value: 0, value_includes_participants: true },
+      { particular_id: 8, quarter_id: 9, value: 0, value_includes_participants: true },
+      { particular_id: 13, quarter_id: 19, value: 0, value_includes_participants: true }
     ]);
     expect(saveDepartmentReport.mock.calls[0][3]).toBe(true);
+  });
+
+  it('blocks submission until every item in the previous quarter is approved', () => {
+    const programs = component.report!.programs;
+    programs.forEach((program, programIndex) => {
+      for (const section of program.sections) {
+        for (const particular of section.particulars) {
+          particular.quarters.push({
+            quarter_id: 20 + programIndex,
+            quarter: 'Q2',
+            year: 2026,
+            value: null,
+            mission_approve: null
+          });
+        }
+      }
+    });
+    component.availableQuarters = [
+      { quarter_id: 9, quarter: 'Q1', year: 2026 },
+      { quarter_id: 20, quarter: 'Q2', year: 2026 }
+    ];
+    component.selectedQuarterId = 20;
+    fixture.detectChanges();
+
+    expect(component.canSubmitSelectedQuarter()).toBe(false);
+    const submitButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).find(button => button.textContent.includes('Submit report'));
+    expect(submitButton?.disabled).toBe(true);
+    expect(fixture.nativeElement.textContent)
+      .toContain('The previous quarter must be approved before submitting this report.');
+    component.saveReport();
+    expect(saveDepartmentReport).not.toHaveBeenCalled();
+    expect(component.errorMessage)
+      .toBe('The previous quarter must be approved before submitting this report.');
+
+    for (const program of programs) {
+      for (const section of program.sections) {
+        for (const particular of section.particulars) {
+          particular.quarters[0].mission_approve = '2026-03-01';
+        }
+      }
+    }
+
+    expect(component.canSubmitSelectedQuarter()).toBe(true);
+    component.saveReport();
+    expect(saveDepartmentReport).toHaveBeenCalledOnce();
+  });
+
+  it('requires the prior year Q4 to be approved before Q1 when that report exists', () => {
+    component.report!.programs.forEach((program, programIndex) => {
+      for (const section of program.sections) {
+        for (const particular of section.particulars) {
+          particular.quarters.push({
+            quarter_id: 30 + programIndex,
+            quarter: 'Q4',
+            year: 2025,
+            value: null,
+            mission_approve: null
+          });
+        }
+      }
+    });
+    component.availableQuarters = [
+      { quarter_id: 30, quarter: 'Q4', year: 2025 },
+      { quarter_id: 9, quarter: 'Q1', year: 2026 }
+    ];
+    component.selectedYear = 2026;
+    component.selectedQuarterId = 9;
+
+    expect(component.canSubmitSelectedQuarter()).toBe(false);
+
+    for (const program of component.report!.programs) {
+      for (const section of program.sections) {
+        for (const particular of section.particulars) {
+          particular.quarters[1].mission_approve = '2025-12-01';
+        }
+      }
+    }
+
+    expect(component.canSubmitSelectedQuarter()).toBe(true);
   });
 
   it('preserves values already entered in another program when submitting', () => {
@@ -223,11 +359,72 @@ describe('ReportParticulars', () => {
     expect(saveDepartmentReport.mock.calls[0][2]).toContainEqual({
       particular_id: 13,
       quarter_id: 19,
-      value: 6
+      value: 6,
+      value_includes_participants: true
     });
   });
 
-  it('starts section accordions collapsed and allows multiple sections to stay open', () => {
+  it('shows the participant-inclusive total and prevents lowering it below confirmed participants', () => {
+    const report = {
+      department: { department_id: 3, department_name: 'Youth' },
+      programs: [{
+        program_id: 5,
+        program_name: 'Program',
+        sections: [{
+          program_id: 6,
+          program_name: 'Section',
+          particulars: [
+            {
+              particular_id: 7,
+              particular_name: 'Attendance',
+              quarters: [{
+                quarter_id: 9,
+                quarter: 'Q1',
+                year: 2026,
+                value: 6,
+                participant_count: 1,
+                combined_value: 7,
+                mission_approve: null
+              }]
+            },
+            {
+              particular_id: 8,
+              particular_name: 'Outreach',
+              quarters: [{
+                quarter_id: 9,
+                quarter: 'Q1',
+                year: 2026,
+                value: null,
+                participant_count: 0,
+                combined_value: null,
+                mission_approve: null
+              }]
+            }
+          ]
+        }]
+      }]
+    };
+    getDepartmentReport.mockReturnValue(of(report));
+    component.loadReport();
+
+    const particular = component.report!.programs[0].sections[0].particulars[0];
+    const quarter = component.getSelectedQuarter()!;
+    const record = particular.quarters[0];
+    expect(record.value).toBe(7);
+
+    component.setQuarterValue(particular, quarter, 0);
+    expect(record.value).toBe(1);
+
+    component.saveReport();
+    expect(saveDepartmentReport.mock.calls[0][2]).toContainEqual({
+      particular_id: 7,
+      quarter_id: 9,
+      value: 1,
+      value_includes_participants: true
+    });
+  });
+
+  it('opens the first section by default and allows multiple sections to stay open', () => {
     const accordions = Array.from(
       fixture.nativeElement.querySelectorAll('details')
     ) as HTMLDetailsElement[];
@@ -235,12 +432,8 @@ describe('ReportParticulars', () => {
     const summary = details.querySelector('summary') as HTMLElement;
 
     expect(summary.textContent).toContain('Section');
-    expect(details.open).toBe(false);
-
-    summary.click();
-    fixture.detectChanges();
-
     expect(details.open).toBe(true);
+    expect(nextDetails.open).toBe(false);
     expect(details.querySelectorAll('input[type="number"]')).toHaveLength(2);
 
     (nextDetails.querySelector('summary') as HTMLElement).click();
@@ -312,6 +505,21 @@ describe('ReportParticulars', () => {
     expect(component.mobileCommentsOpen).toBe(false);
   });
 
+  it('closes the comments panel when clicking outside it', () => {
+    component.openMobileComments();
+    fixture.detectChanges();
+
+    const backdrop = fixture.nativeElement.querySelector(
+      '[data-testid="comments-backdrop"]'
+    ) as HTMLButtonElement;
+    expect(backdrop).toBeTruthy();
+
+    backdrop.click();
+    fixture.detectChanges();
+
+    expect(component.mobileCommentsOpen).toBe(false);
+  });
+
   it('scrolls to the latest visible comment when opening the chathead', () => {
     component.comments = [{
       comment_id: 11,
@@ -360,9 +568,9 @@ describe('ReportParticulars', () => {
   });
 
   it('keeps approved quarter values visible in disabled inputs', async () => {
+    const particulars = component.report!.programs[0].sections[0].particulars;
     const details = fixture.nativeElement.querySelector('details') as HTMLDetailsElement;
     details.open = true;
-    const particulars = component.report!.programs[0].sections[0].particulars;
     for (const [index, particular] of particulars.entries()) {
       particular.quarters[0].value = index === 0 ? 15 : 0;
       particular.quarters[0].mission_approve = '2026-10-13';

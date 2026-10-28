@@ -170,6 +170,7 @@ class QuarterlyReportDataSeeder extends Seeder
                     }
 
                     $name = (string) $particular->particular_name;
+                    $value = $this->valueFor($name, $key, $membership);
 
                     if (in_array(strtolower($name), ['offering', 'tithes'], true)) {
                         $moneyItems[] = $particular;
@@ -180,7 +181,8 @@ class QuarterlyReportDataSeeder extends Seeder
                     $items[] = [
                         'particular_id' => $particular->particular_id,
                         'quarter_id' => $quarter->quarter_id,
-                        'value' => $this->valueFor($name, $key, $membership),
+                        'value' => $value,
+                        'manual_value' => $value,
                     ];
                 }
 
@@ -191,10 +193,12 @@ class QuarterlyReportDataSeeder extends Seeder
                     if (in_array(strtolower($name), ['offering', 'tithes'], true)) {
                         $moneyItems[] = $particular;
                     } else {
+                        $value = $this->valueFor($name, $key, $membership);
                         $items[] = [
                             'particular_id' => $particular->particular_id,
                             'quarter_id' => $quarter->quarter_id,
-                            'value' => $this->valueFor($name, $key, $membership),
+                            'value' => $value,
+                            'manual_value' => $value,
                         ];
                     }
                 }
@@ -403,6 +407,7 @@ class QuarterlyReportDataSeeder extends Seeder
             'particular_id' => $particularId,
             'quarter_id' => $quarterId,
             'value' => $quarterItemValue,
+            'manual_value' => $quarterItemValue,
         ], 'item_id');
 
         foreach ($months as $month) {

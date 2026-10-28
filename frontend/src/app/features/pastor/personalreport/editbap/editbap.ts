@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, timeout } from 'rxjs/operators';
 import Swal from 'sweetalert2';
+import { Button } from '../../../../shared/components/button/button';
 
 interface Church {
   church_id: number;
@@ -39,9 +40,9 @@ interface BaptismForm {
 @Component({
   selector: 'app-editbap',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Button],
   templateUrl: './editbap.html',
-  styleUrl: './editbap.css'
+
 })
 export class EditbapComponent implements OnInit {
   private readonly http = inject(HttpClient);

@@ -18,6 +18,7 @@ final class EventUser
         public string $role,
         public ?int $churchId,
         public ?int $districtId,
+        public ?int $departmentId,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -44,7 +45,9 @@ final class EventUser
             default => null,
         };
 
-        return new self($id, $name, (string) ($u->email ?? ''), $role, $churchId, $districtId);
+        $departmentId = ! empty($u->department_id) ? (int) $u->department_id : null;
+
+        return new self($id, $name, (string) ($u->email ?? ''), $role, $churchId, $districtId, $departmentId);
     }
 
     /** Your stored role names (several spellings) -> the 4 module roles. */

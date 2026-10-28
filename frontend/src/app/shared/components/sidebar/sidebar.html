@@ -1,114 +1,121 @@
-<aside class="sidebar d-flex flex-column" [class.collapsed]="collapsed">
+<aside
+  id="primary-navigation"
+  class="fixed inset-y-0 left-0 z-[1000] flex flex-col overflow-hidden border-r border-white/10 bg-[#123b32] text-white shadow-[8px_0_24px_rgba(15,35,29,0.16)] transition-[width,transform] duration-300 ease-in-out max-lg:shadow-[8px_0_24px_rgba(15,35,29,0.2)]"
+  [ngClass]="{
+    'w-[76px]': collapsed,
+    'w-[235px]': !collapsed,
+    'max-lg:w-[235px]': true,
+    'max-lg:translate-x-[-100%] max-lg:shadow-none': collapsed
+  }"
+>
+  <img
+    src="/assets/mountain.png"
+    alt=""
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 h-full w-full object-cover object-[58%_center] opacity-100"
+  />
+  <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(9,53,43,0.94),rgba(12,54,44,0.88)_48%,rgba(8,42,35,0.96))]"></div>
 
-  <!-- ===================== BRAND ===================== -->
-  <div class="sidebar-brand d-flex align-items-center gap-2">
-
+  <header
+    class="relative flex min-h-[84px] items-center gap-3 border-b border-white/10 px-4"
+    [class.justify-center]="collapsed"
+    [class.!px-2]="collapsed"
+  >
     <img
       src="/assets/logo.png"
       alt="NELM logo"
-      class="brand-logo"
+      class="h-15 w-15 shrink-0  p-1 object-contain "
     />
-
-    <div class="brand-text lh-1">
-      <div class="brand-title">
-        Northeast Luzon Mission
-      </div>
+    <div class="min-w-0" [class.hidden]="collapsed">
+      <p class="m-0 mt-0.5 font-serif text-[13px] font-semibold leading-tight text-white">
+        NorthEast Luzon Mission
+      </p>
     </div>
+  </header>
 
-  </div>
-
-
-  <!-- ===================== ROLE ===================== -->
-  <div class="role-wrap px-3 mt-3">
-
-    <div class="role-pill d-flex align-items-center gap-2">
-
-      <span class="role-dot"></span>
-
-      <span>{{ roleName }}</span>
-
-    </div>
-
-  </div>
-
-
-  <!-- ===================== MENU ===================== -->
-  <nav class="nav flex-column gap-1 px-3 mt-4 flex-grow-1">
+  <nav
+    aria-label="Main navigation"
+    class="relative flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-5"
+    [class.!px-2.5]="collapsed"
+  >
 
     @for (item of menuItems; track item.route) {
-
       <a
-        class="nav-link sidebar-link d-flex align-items-center gap-2"
+        class="group relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium !text-white/75 !no-underline outline-none transition-colors duration-150 before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-emerald-300 before:opacity-0 before:transition-opacity hover:!bg-white/[0.07] hover:!text-white focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-200"
+        [class.justify-center]="collapsed"
+        [class.!px-0]="collapsed"
         [routerLink]="item.route"
-        routerLinkActive="active"
+        routerLinkActive="!bg-white/[0.13] !text-white !font-semibold before:!opacity-100"
         [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+        ariaCurrentWhenActive="page"
         [attr.title]="collapsed ? item.label : null"
       >
-
         @if (item.icon) {
-          <i class="bi {{ item.icon }}"></i>
+          <span
+            class="grid h-8 w-8 shrink-0 place-items-center rounded-md text-[17px] text-white/75 transition-colors group-hover:text-white"
+          >
+            <i class="bi {{ item.icon }}" aria-hidden="true"></i>
+          </span>
         }
-
-        <span class="nav-label">
-          {{ item.label }}
-        </span>
-
+        <span class="truncate" [class.hidden]="collapsed">{{ item.label }}</span>
       </a>
-
     }
-
   </nav>
 
-  <div class="sidebar-bottom py-3">
-
+  <footer class="relative border-t border-white/10 p-3" [class.!p-2]="collapsed">
     @if (user) {
-
-      <div class="user-row d-flex align-items-center gap-2 mb-3">
-
-        <div class="user-avatar">
-          {{ userInitials }}
-        </div>
-
-        <div class="user-info lh-sm overflow-hidden">
-
-          <div class="user-name text-truncate">
-            {{ userName }}
-          </div>
-
-        </div>
-
-      </div>
-
+      <a
+        class="flex min-w-0 items-center gap-3 rounded-lg px-2 py-2 text-white !no-underline outline-none transition-colors hover:!bg-white/[0.07]  focus-visible:ring-2 focus-visible:ring-emerald-200"
+        [class.justify-center]="collapsed"
+        [class.!px-0]="collapsed"
+        routerLink="/profile"
+        [attr.title]="collapsed ? 'Edit profile' : null"
+        aria-label="Open profile settings"
+      >
+        <span class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-emerald-100 text-xs font-bold text-emerald-950 ring-2 ring-white/15">
+          @if (user.profile_image) {
+            <img [src]="profileImageUrl" alt="" class="h-full w-full object-cover" />
+          } @else {
+            {{ userInitials }}
+          }
+        </span>
+        <span class="min-w-0 flex-1" [class.hidden]="collapsed">
+          <span class="block truncate text-xs font-semibold text-white">{{ userName }}</span>
+          <span class="mt-1 block truncate text-[10px] text-white/55">{{ roleName }}</span>
+        </span>
+        <i class="bi bi-gear text-xs text-white/40" [class.hidden]="collapsed" aria-hidden="true"></i>
+      </a>
     }
 
-
-    <!-- LOGOUT -->
     <button
       type="button"
-      class="btn logout-btn d-flex align-items-center gap-2 p-0"
+      class="mt-1 flex min-h-10 w-full items-center gap-3 !rounded-lg px-2 text-[13px] font-medium text-white/65 transition-colors hover:bg-rose-400/50 hover:text-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
+      [class.justify-center]="collapsed"
+      [class.!px-0]="collapsed"
       (click)="logout()"
       [attr.title]="collapsed ? 'Log out' : null"
     >
-
-      <i class="bi bi-box-arrow-left"></i>
-
-      <span>
-        Log out
+      <span class="grid h-8 w-8 shrink-0 place-items-center text-base">
+        <i class="bi bi-box-arrow-left" aria-hidden="true"></i>
       </span>
-
+      <span [class.hidden]="collapsed">Log out</span>
     </button>
-
-  </div>
-
+  </footer>
 </aside>
 
 <button
   type="button"
-  class="sidebar-floating-toggle"
-  [class.collapsed]="collapsed"
+  class="fixed top-6 z-[1100] hidden h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-emerald-900 shadow-md transition-[left,background-color] duration-300 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 max-lg:top-5 max-lg:flex"
+  [ngClass]="{
+    'left-[57px]': collapsed,
+    'left-[216px]': !collapsed,
+    'max-lg:left-2': collapsed,
+    'max-lg:left-[216px]': !collapsed
+  }"
   (click)="toggleSidebar()"
   [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
   [attr.aria-expanded]="!collapsed"
+  aria-controls="primary-navigation"
 >
-  <i class="bi bi-list" aria-hidden="true"></i>
+  <i class="bi" [ngClass]="collapsed ? 'bi-list' : 'bi-chevron-left'" aria-hidden="true"></i>
 </button>

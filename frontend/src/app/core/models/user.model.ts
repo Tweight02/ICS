@@ -21,6 +21,7 @@ export interface User {
   birthdate?: string | null;
   gender?: string | null;
   email: string;
+  profile_image?: string | null;
   role: UserRole;
   status?: 'active' | 'inactive';
   department_id?: number;

@@ -6,6 +6,8 @@ use App\Http\Requests\EventRequest;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
 use App\Support\EventParticulars;
+use App\Support\EventDepartments;
+use App\Support\EventRegistrationAttribution;
 use App\Support\EventUser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -13,6 +15,15 @@ use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
+    public function departments(Request $request)
+    {
+        $user = EventUser::fromRequest($request);
+
+        return response()->json([
+            'data' => EventDepartments::selectableFor($user->role)->get(),
+        ]);
+    }
+
     public function index(Request $request)
     {
         $request->validate([
@@ -68,19 +79,52 @@ class EventController extends Controller
         return new EventResource($this->find($request, $event));
     }
 
+    public function registrationLink(Request $request, int $event)
+    {
+        $user = EventUser::fromRequest($request);
+        abort_unless($user->role === 'church_representative' && $user->churchId, 403);
+
+        $event = $this->find($request, $event);
+        EventRegistrationAttribution::quarterId((int) $event->quarter_id, $user->churchId);
+
+        return response()->json([
+            'data' => [
+                'church_id' => $user->churchId,
+                'registration_token' => EventRegistrationAttribution::token(
+                    (int) $event->event_id,
+                    $user->churchId
+                ),
+            ],
+        ]);
+    }
+
     public function store(EventRequest $request)
     {
-        $event = DB::transaction(function () use ($request) {
-            $event = Event::create($this->eventData($request));
-            $event->createdBy()->attach(EventUser::fromRequest($request)->id);
-            $event->particulars()->sync($request->validated('particular_ids'));
-            if (EventUser::fromRequest($request)->role === 'assistant') {
-                $event->districts()->sync($request->validated('district_ids'));
+        $user = EventUser::fromRequest($request);
+        $churchIds = $user->role === 'district_pastor'
+            ? $request->validated('church_ids')
+            : [null];
+
+        $events = DB::transaction(function () use ($request, $user, $churchIds) {
+            $events = collect();
+            foreach ($churchIds as $churchId) {
+                $event = Event::create($this->eventData($request, $churchId === null ? null : (int) $churchId));
+                $event->createdBy()->attach($user->id);
+                $event->particulars()->sync($request->validated('particular_ids'));
+                if ($user->role === 'assistant') {
+                    $event->districts()->sync($request->validated('district_ids'));
+                }
+                $events->push($event);
             }
 
-            return $event;
+            return $events;
         });
-        return (new EventResource($event))->response()->setStatusCode(201);
+
+        if ($events->count() === 1) {
+            return (new EventResource($events->first()))->response()->setStatusCode(201);
+        }
+
+        return EventResource::collection($events)->response()->setStatusCode(201);
     }
 
     public function update(EventRequest $request, int $event)
@@ -109,19 +153,20 @@ class EventController extends Controller
         return response()->noContent();
     }
 
-    private function eventData(EventRequest $request): array
+    private function eventData(EventRequest $request, ?int $targetChurchId = null): array
     {
         $user = EventUser::fromRequest($request);
         $churchId = match ($user->role) {
             'church_representative' => $user->churchId,
-            'district_pastor' => (int) $request->validated('church_ids')[0],
+            'district_pastor' => $targetChurchId ?? (int) $request->validated('church_ids')[0],
             'assistant' => (int) $request->validated('district_ids')[0],
             default => null,
         };
 
+        $departmentId = $request->departmentId();
         $programId = EventParticulars::rootProgramId(
             $request->validated('particular_ids'),
-            $request->validated('department_id')
+            $departmentId
         );
         abort_unless($programId, 422, 'Choose particulars from one program in the selected department.');
         $eventDate = Carbon::createFromFormat('!Y-m-d', $request->validated('start_date'));

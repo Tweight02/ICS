@@ -8,11 +8,48 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    public function update_profile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $data = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'extension_name' => 'nullable|string|max:50',
+            'birthdate' => 'required|date|before:today',
+            'gender' => 'required|string|in:male,female,other',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($user->user_id, 'user_id'),
+            ],
+            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        unset($data['profile_image']);
+
+        $previousImage = $user->profile_image;
+        if ($request->hasFile('profile_image')) {
+            $data['profile_image'] = $request->file('profile_image')->store('profiles', 'public');
+        }
+
+        $user->update($data);
+        if ($request->hasFile('profile_image') && $previousImage) {
+            Storage::disk('public')->delete($previousImage);
+        }
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => $user->refresh(),
+        ]);
+    }
+
     // =========================================================
     // CREATE USER
     // =========================================================
@@ -463,15 +500,31 @@ class UserController extends Controller
     // GET /api/users/{id}
     public function show($id)
     {
-        $user = User::select([
-            'user_id', 'department_id', 'church_id',
-            'first_name', 'middle_name', 'last_name', 'extension_name',
-            'email', 'role',
-        ])->findOrFail($id);
+        $user = User::query()
+            ->with([
+                'church:church_id,name,parent_id',
+                'church.parent:church_id,name',
+                'department:department_id,department_name',
+            ])
+            ->select([
+                'user_id', 'department_id', 'church_id',
+                'first_name', 'middle_name', 'last_name', 'extension_name',
+                'email', 'role',
+            ])
+            ->findOrFail($id);
+
+        $isPastor = strtolower(trim((string) $user->role)) === 'pastor';
+        $district = $isPastor
+            ? ($user->church?->parent ?? $user->church)
+            : null;
 
         return response()->json([
             'success' => true,
-            'data'    => $user,
+            'data'    => array_merge($user->toArray(), [
+                'district' => $district
+                    ? ['id' => (int) $district->church_id, 'name' => $district->name]
+                    : null,
+            ]),
         ]);
     }
 }

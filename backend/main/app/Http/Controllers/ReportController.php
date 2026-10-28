@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\ReportMonitoringService;
+use App\Support\ReportParticipantCoverage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -158,10 +159,11 @@ class ReportController extends Controller
                 $query->where('department_id', $user->department_id);
 
                 if ($this->isDirectorOrAssistant($user)) {
-                    $query->orWhereIn(
-                        'department_id',
-                        self::PERSONAL_REPORT_DEPARTMENT_IDS
-                    );
+                    if ((int) $user->department_id === 16) {
+                        $query->orWhereIn('department_id', self::PERSONAL_REPORT_DEPARTMENT_IDS);
+                    } else {
+                        $query->whereNotIn('department_id', self::PERSONAL_REPORT_DEPARTMENT_IDS);
+                    }
                 }
             })
             ->orderBy('department_name')
@@ -177,6 +179,10 @@ class ReportController extends Controller
                 'q2_approved' => $approvals[$department->department_id]['q2_approved'] ?? false,
                 'q3_approved' => $approvals[$department->department_id]['q3_approved'] ?? false,
                 'q4_approved' => $approvals[$department->department_id]['q4_approved'] ?? false,
+                'q1_endorsed' => $approvals[$department->department_id]['q1_endorsed'] ?? false,
+                'q2_endorsed' => $approvals[$department->department_id]['q2_endorsed'] ?? false,
+                'q3_endorsed' => $approvals[$department->department_id]['q3_endorsed'] ?? false,
+                'q4_endorsed' => $approvals[$department->department_id]['q4_endorsed'] ?? false,
                 'q1_submitted' => $approvals[$department->department_id]['q1_submitted'] ?? false,
                 'q2_submitted' => $approvals[$department->department_id]['q2_submitted'] ?? false,
                 'q3_submitted' => $approvals[$department->department_id]['q3_submitted'] ?? false,
@@ -237,6 +243,24 @@ class ReportController extends Controller
             ->orderBy('program_id')
             ->get();
 
+        $participantCounts = DB::query()
+            ->fromSub(ReportParticipantCoverage::counts(), 'participant_counts')
+            ->join('quarters', 'quarters.quarter_id', '=', 'participant_counts.quarter_id')
+            ->join('programs as report_programs', 'report_programs.program_id', '=', 'quarters.program_id')
+            ->where('quarters.church_id', $churchId)
+            ->where('report_programs.department_id', $departmentId)
+            ->select(
+                'participant_counts.quarter_id',
+                'participant_counts.particular_id',
+                'participant_counts.participant_count'
+            )
+            ->get()
+            ->keyBy(fn ($row) => $row->quarter_id.':'.$row->particular_id);
+        $completedEventCounts = ReportParticipantCoverage::completedEventCounts(
+            (int) $churchId,
+            (int) $departmentId
+        );
+
         $reportPrograms = [];
 
         foreach ($programs as $program) {
@@ -277,11 +301,18 @@ class ReportController extends Controller
                         (string) $particular->particular_name
                     );
                     $particularQuarters = $quarters->map(
-                        function ($quarter) use ($particular, $supportsMonthlyValues) {
+                        function ($quarter) use ($particular, $supportsMonthlyValues, $participantCounts, $completedEventCounts) {
                             $savedItem = DB::table('particular_items')
                                 ->where('particular_id', $particular->particular_id)
                                 ->where('quarter_id', $quarter->quarter_id)
                                 ->first();
+                            $participantCount = (int) (
+                                $participantCounts[$quarter->quarter_id.':'.$particular->particular_id]->participant_count ?? 0
+                            );
+                            $eventCount = (int) (
+                                $completedEventCounts[$quarter->quarter_id.':'.$particular->particular_id] ?? 0
+                            );
+                            $manualValue = $savedItem ? $savedItem->manual_value : null;
                             $quarterData = [
                                 'quarter_id' => (int) $quarter->quarter_id,
                                 'quarter' => $quarter->quarter,
@@ -289,7 +320,12 @@ class ReportController extends Controller
                                 'date_submitted' => $quarter->date_submitted,
                                 'district_endorse' => $quarter->district_endorse,
                                 'mission_approve' => $quarter->mission_approve,
-                                'value' => $savedItem ? $savedItem->value : null,
+                                'value' => $manualValue,
+                                'participant_count' => $participantCount,
+                                'completed_event_count' => $eventCount,
+                                'combined_value' => $manualValue === null && $participantCount === 0 && $eventCount === 0
+                                    ? null
+                                    : (float) ($manualValue ?? 0) + $participantCount + $eventCount,
                             ];
 
                             if ($supportsMonthlyValues) {
@@ -365,12 +401,75 @@ class ReportController extends Controller
             'items.*.particular_id' => ['required', 'integer'],
             'items.*.quarter_id' => ['required', 'integer'],
             'items.*.value' => ['nullable', 'numeric', 'min:0'],
+            'items.*.value_includes_participants' => ['sometimes', 'boolean'],
             'items.*.monthly_values' => ['sometimes', 'array'],
             'items.*.monthly_values.*' => ['nullable', 'numeric', 'min:0'],
             'submitted' => ['sometimes', 'boolean'],
         ]);
+        $completedEventCounts = ReportParticipantCoverage::completedEventCounts(
+            (int) $churchId,
+            (int) $departmentId
+        );
 
         $submitted = (bool) ($validated['submitted'] ?? false);
+
+        $user = $request->user();
+        if ($submitted && $user && $this->isRepresentativeRole($user)) {
+            $targetQuarterIds = collect($validated['items'])
+                ->pluck('quarter_id')
+                ->unique()
+                ->values();
+            $targetQuarters = DB::table('quarters')
+                ->join('programs', 'programs.program_id', '=', 'quarters.program_id')
+                ->where('quarters.church_id', $churchId)
+                ->where('programs.department_id', $departmentId)
+                ->whereNull('programs.parent_id')
+                ->whereIn('quarters.quarter_id', $targetQuarterIds)
+                ->get(['quarters.year', 'quarters.quarter']);
+            $programCount = DB::table('programs')
+                ->where('department_id', $departmentId)
+                ->whereNull('parent_id')
+                ->count();
+
+            foreach ($targetQuarters as $targetQuarter) {
+                $quarterNumber = $this->getQuarterNumber($targetQuarter->quarter);
+                if ($quarterNumber === null) {
+                    continue;
+                }
+
+                $previousQuarterNumber = $quarterNumber === 1
+                    ? 4
+                    : $quarterNumber - 1;
+                $previousYear = $quarterNumber === 1
+                    ? (int) $targetQuarter->year - 1
+                    : $targetQuarter->year;
+                $previousQuarterIds = $this->departmentQuarterIds(
+                    (int) $churchId,
+                    (int) $departmentId,
+                    $previousYear,
+                    $previousQuarterNumber
+                );
+                if ($quarterNumber === 1 && $previousQuarterIds === []) {
+                    continue;
+                }
+
+                $previousQuarters = DB::table('quarters')
+                    ->whereIn('quarter_id', $previousQuarterIds)
+                    ->get(['mission_approve']);
+
+                if (
+                    count($previousQuarterIds) !== $programCount ||
+                    $previousQuarters->count() !== $programCount ||
+                    $previousQuarters->contains(
+                        fn ($quarter) => ! $this->isApproved($quarter->mission_approve)
+                    )
+                ) {
+                    return response()->json([
+                        'message' => 'The previous quarter must be approved before submitting this report.',
+                    ], 422);
+                }
+            }
+        }
 
         DB::beginTransaction();
 
@@ -484,6 +583,32 @@ class ReportController extends Controller
                         : null;
                 }
 
+                $participantCount = ReportParticipantCoverage::countFor(
+                    (int) $item['quarter_id'],
+                    (int) $item['particular_id']
+                );
+                $eventCount = (int) (
+                    $completedEventCounts[$item['quarter_id'].':'.$item['particular_id']] ?? 0
+                );
+                $inputValue = $submitted && $item['value'] === null
+                    ? 0
+                    : $item['value'];
+                $valueIncludesParticipants = (bool) ($item['value_includes_participants'] ?? false)
+                    && $monthlyValues === null;
+
+                if ($valueIncludesParticipants) {
+                    $automaticValue = $participantCount + $eventCount;
+                    $manualValue = $inputValue === null && $automaticValue === 0
+                        ? null
+                        : max(0, (int) ($inputValue ?? $automaticValue) - $automaticValue);
+                } else {
+                    $manualValue = $inputValue;
+                }
+
+                $combinedValue = $manualValue === null && $participantCount === 0 && $eventCount === 0
+                    ? null
+                    : (int) ($manualValue ?? 0) + $participantCount + $eventCount;
+
                 $existing = DB::table('particular_items')
                     ->where('particular_id', $item['particular_id'])
                     ->where('quarter_id', $item['quarter_id'])
@@ -494,17 +619,15 @@ class ReportController extends Controller
                     DB::table('particular_items')
                         ->where('item_id', $existing->item_id)
                         ->update([
-                            'value' => $submitted && $item['value'] === null
-                                ? 0
-                                : $item['value'],
+                            'manual_value' => $manualValue,
+                            'value' => $combinedValue,
                         ]);
                 } else {
                     $itemId = DB::table('particular_items')->insertGetId([
                         'particular_id' => $item['particular_id'],
                         'quarter_id' => $item['quarter_id'],
-                        'value' => $submitted && $item['value'] === null
-                            ? 0
-                            : $item['value'],
+                        'manual_value' => $manualValue,
+                        'value' => $combinedValue,
                     ]);
                 }
 
@@ -535,12 +658,24 @@ class ReportController extends Controller
                     ->pluck('quarter_id')
                     ->unique()
                     ->values();
+                $wasPreviouslySubmitted = DB::table('quarters')
+                    ->whereIn('quarter_id', $quarterIds)
+                    ->whereNotNull('date_submitted')
+                    ->exists();
 
                 DB::table('quarters')
                     ->whereIn('quarter_id', $quarterIds)
                     ->update([
                         'date_submitted' => now()->toDateString(),
                     ]);
+
+                $this->recordReportWorkflowComment(
+                    (int) $quarterIds->first(),
+                    (int) $churchId,
+                    (int) $departmentId,
+                    (int) $request->user()->user_id,
+                    $wasPreviouslySubmitted ? 'Report resubmitted.' : 'Report submitted.'
+                );
             }
 
             DB::commit();
@@ -582,6 +717,24 @@ class ReportController extends Controller
         }
 
         return null;
+    }
+
+    private function recordReportWorkflowComment(
+        int $quarterId,
+        int $churchId,
+        int $departmentId,
+        int $userId,
+        string $details
+    ): void {
+        DB::table('comments')->insert([
+            'quarter_id' => $quarterId,
+            'church_id' => $churchId,
+            'department_id' => $departmentId,
+            'commented_by' => $userId,
+            'details' => $details,
+            'status' => 'commented',
+            'date_commented' => now()->toDateString(),
+        ]);
     }
 
     private function supportsMonthlyStewardshipValues(
@@ -965,6 +1118,7 @@ class ReportController extends Controller
         }
 
         $data = $request->validate([
+            'program_id' => ['required', 'integer'],
             'year' => ['required'],
             'quarter' => ['required', 'string'],
         ]);
@@ -977,9 +1131,17 @@ class ReportController extends Controller
             ], 422);
         }
 
-        $quarterIds = $this->departmentQuarterIds(
+        $programId = (int) $data['program_id'];
+        if (! $this->isDepartmentReportProgram($programId, $departmentId)) {
+            return response()->json([
+                'message' => 'The selected report program does not belong to this department.',
+            ], 404);
+        }
+
+        $quarterIds = $this->programQuarterIds(
             $churchId,
             $departmentId,
+            $programId,
             $data['year'],
             $quarterNumber
         );
@@ -1016,18 +1178,34 @@ class ReportController extends Controller
 
         $today = now()->toDateString();
 
-        DB::table('quarters')
-            ->whereIn('quarter_id', $quarterIds)
-            ->whereNull('date_submitted')
-            ->update([
-                'date_submitted' => $today,
-            ]);
+        DB::transaction(function () use (
+            $quarterIds,
+            $churchId,
+            $departmentId,
+            $user,
+            $today
+        ): void {
+            DB::table('quarters')
+                ->whereIn('quarter_id', $quarterIds)
+                ->whereNull('date_submitted')
+                ->update([
+                    'date_submitted' => $today,
+                ]);
 
-        DB::table('quarters')
-            ->whereIn('quarter_id', $quarterIds)
-            ->update([
-                'district_endorse' => $today,
-            ]);
+            DB::table('quarters')
+                ->whereIn('quarter_id', $quarterIds)
+                ->update([
+                    'district_endorse' => $today,
+                ]);
+
+            $this->recordReportWorkflowComment(
+                (int) $quarterIds[0],
+                $churchId,
+                $departmentId,
+                (int) $user->user_id,
+                'Report endorsed.'
+            );
+        });
 
         return response()->json([
             'message' => 'Report endorsed. The administrative assistant can now review it.',
@@ -1062,6 +1240,7 @@ class ReportController extends Controller
         }
 
         $data = $request->validate([
+            'program_id' => ['required', 'integer'],
             'year' => ['required'],
             'quarter' => ['required', 'string'],
         ]);
@@ -1074,9 +1253,17 @@ class ReportController extends Controller
             ], 422);
         }
 
-        $quarterIds = $this->departmentQuarterIds(
+        $programId = (int) $data['program_id'];
+        if (! $this->isDepartmentReportProgram($programId, $departmentId)) {
+            return response()->json([
+                'message' => 'The selected report program does not belong to this department.',
+            ], 404);
+        }
+
+        $quarterIds = $this->programQuarterIds(
             $churchId,
             $departmentId,
+            $programId,
             $data['year'],
             $quarterNumber
         );
@@ -1091,21 +1278,17 @@ class ReportController extends Controller
             ->whereIn('quarter_id', $quarterIds)
             ->get();
 
-        $programCount = DB::table('programs')
-            ->where('department_id', $departmentId)
-            ->whereNull('parent_id')
-            ->count();
-
         for ($previousQuarterNumber = 1; $previousQuarterNumber < $quarterNumber; $previousQuarterNumber++) {
-            $previousQuarterIds = $this->departmentQuarterIds(
+            $previousQuarterIds = $this->programQuarterIds(
                 $churchId,
                 $departmentId,
+                $programId,
                 $data['year'],
                 $previousQuarterNumber
             );
 
             if (
-                count($previousQuarterIds) !== $programCount ||
+                count($previousQuarterIds) !== 1 ||
                 DB::table('quarters')
                     ->whereIn('quarter_id', $previousQuarterIds)
                     ->whereNull('mission_approve')
@@ -1129,11 +1312,26 @@ class ReportController extends Controller
             ], 422);
         }
 
-        DB::table('quarters')
-            ->whereIn('quarter_id', $quarterIds)
-            ->update([
-                'mission_approve' => now()->toDateString(),
-            ]);
+        DB::transaction(function () use (
+            $quarterIds,
+            $churchId,
+            $departmentId,
+            $user
+        ): void {
+            DB::table('quarters')
+                ->whereIn('quarter_id', $quarterIds)
+                ->update([
+                    'mission_approve' => now()->toDateString(),
+                ]);
+
+            $this->recordReportWorkflowComment(
+                (int) $quarterIds[0],
+                $churchId,
+                $departmentId,
+                (int) $user->user_id,
+                'Report approved.'
+            );
+        });
 
         return response()->json([
             'message' => 'Report approved successfully.',
@@ -1170,6 +1368,41 @@ class ReportController extends Controller
             ->map(fn ($id) => (int) $id)
             ->values()
             ->all();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function programQuarterIds(
+        int $churchId,
+        int $departmentId,
+        int $programId,
+        mixed $year,
+        int $quarterNumber
+    ): array {
+        return DB::table('quarters')
+            ->where('church_id', $churchId)
+            ->where('program_id', $programId)
+            ->where('year', (string) $year)
+            ->get()
+            ->filter(fn ($quarter) =>
+                $this->getQuarterNumber($quarter->quarter) === $quarterNumber
+            )
+            ->pluck('quarter_id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    private function isDepartmentReportProgram(
+        int $programId,
+        int $departmentId
+    ): bool {
+        return DB::table('programs')
+            ->where('program_id', $programId)
+            ->where('department_id', $departmentId)
+            ->whereNull('parent_id')
+            ->exists();
     }
 
     private function normalizeRole(string $role): string
@@ -1228,12 +1461,23 @@ class ReportController extends Controller
             return null;
         }
 
+        if (
+            $this->isDirectorOrAssistant($user)
+            && in_array($departmentId, self::PERSONAL_REPORT_DEPARTMENT_IDS, true)
+            && (int) $user->department_id !== 16
+        ) {
+            return response()->json([
+                'message' => 'Only Ministerial & Evangelism assistants and directors can access personal report departments.',
+            ], 403);
+        }
+
         if ((int) $user->department_id === $departmentId) {
             return null;
         }
 
         if (
             $this->isDirectorOrAssistant($user)
+            && (int) $user->department_id === 16
             && in_array($departmentId, self::PERSONAL_REPORT_DEPARTMENT_IDS, true)
         ) {
             return null;

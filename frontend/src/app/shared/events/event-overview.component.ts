@@ -1,9 +1,10 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Inject, Input, OnInit, signal } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { timeout } from 'rxjs';
 import { EventService } from '../../core/services/events/events-api';
 import { EventOverviewConfig } from './events.config';
+import { Button } from '../components/button/button';
 import {
   EventStatus,
   ProgramGroup,
@@ -17,7 +18,7 @@ import {
 @Component({
   selector: 'app-event-overview',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, Button],
   templateUrl: './event-overview.component.html',
 })
 export class EventOverviewComponent implements OnInit {
@@ -59,6 +60,18 @@ export class EventOverviewComponent implements OnInit {
   get deleteError(): string { return this.deleteErrorState(); }
   set deleteError(value: string) { this.deleteErrorState.set(value); }
 
+  private readonly registrationLinkMessageState = signal('');
+  get registrationLinkMessage(): string { return this.registrationLinkMessageState(); }
+  set registrationLinkMessage(value: string) { this.registrationLinkMessageState.set(value); }
+
+  private readonly registrationLinkState = signal('');
+  get registrationLink(): string { return this.registrationLinkState(); }
+  set registrationLink(value: string) { this.registrationLinkState.set(value); }
+
+  private readonly registrationLinkLoadingState = signal(false);
+  get registrationLinkLoading(): boolean { return this.registrationLinkLoadingState(); }
+  set registrationLinkLoading(value: boolean) { this.registrationLinkLoadingState.set(value); }
+
   readonly statusClass = statusClass;
   readonly statusLabel = statusLabel;
 
@@ -68,10 +81,55 @@ export class EventOverviewComponent implements OnInit {
       && this.event?.abilities?.manage_participants === true;
   }
 
+  get canShareRegistrationLink(): boolean {
+    return this.event?.abilities?.confirm_participants === true;
+  }
+
+  generateRegistrationLink(): void {
+    if (this.registrationLinkLoading) return;
+    this.registrationLinkLoading = true;
+    this.registrationLinkMessage = '';
+
+    this.eventService.getEventRegistrationLink(this.eventId).subscribe({
+      next: (attribution) => {
+        const url = new URL('/participants/registration', this.document.baseURI);
+        url.searchParams.set('event', String(this.eventId));
+        url.searchParams.set('church_id', String(attribution.church_id));
+        url.searchParams.set('registration_token', attribution.registration_token);
+        this.registrationLink = url.toString();
+        this.registrationLinkLoading = false;
+      },
+      error: (error) => {
+        console.error('Failed to generate church registration link', error);
+        this.registrationLinkMessage = error?.error?.message
+          ?? 'Could not generate a registration link for your church.';
+        this.registrationLinkLoading = false;
+      },
+    });
+  }
+
+  async copyRegistrationLink(): Promise<void> {
+    if (!this.registrationLink) return;
+    const clipboard = this.document.defaultView?.navigator.clipboard;
+    if (!clipboard) {
+      this.registrationLinkMessage = 'Clipboard access is unavailable. Select and copy the link above.';
+      return;
+    }
+
+    try {
+      await clipboard.writeText(this.registrationLink);
+      this.registrationLinkMessage = 'Registration link copied.';
+    } catch (error) {
+      console.error('Failed to copy event registration link', error);
+      this.registrationLinkMessage = 'Could not copy the link. Select and copy it manually.';
+    }
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private eventService: EventService,
+    @Inject(DOCUMENT) private document: Document,
   ) {}
 
   ngOnInit(): void {
@@ -195,7 +253,7 @@ export class EventOverviewComponent implements OnInit {
     if (districts.length) {
       return {
         title: districts.length === 1 ? 'District' : 'Districts',
-        text: districts.join(', '),
+        text: e?.scope?.all_districts ? 'All District of NELM' : districts.join(', '),
       };
     }
     if (churches.length) return { title: 'Church', text: churches[0] };

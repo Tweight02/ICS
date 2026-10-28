@@ -3,6 +3,12 @@ import { EVENTS_ROUTES } from './events/events.routes';
 
 
 export const RepresentativeRoute: Routes = [
+  {
+    path: 'profile',
+    redirectTo: '/profile',
+    pathMatch: 'full'
+  },
+
   // Default route
   {
     path: '',
@@ -14,7 +20,7 @@ export const RepresentativeRoute: Routes = [
   {
     path: 'reports/programs',
     loadComponent: () =>
-      import('./report_c/report-programs/report-programs')
+      import('../pastor/report_p/report-programs/report-programs')
         .then(m => m.ReportPrograms)
   },
 

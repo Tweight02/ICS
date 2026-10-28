@@ -1,4 +1,5 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, HostListener, inject, OnInit } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { Router, RouterOutlet } from '@angular/router';
 
 import { SidebarComponent } from './shared/components/sidebar/sidebar';
@@ -10,12 +11,12 @@ import { AuthService } from './core/services/auth/auth-service';
 
   imports: [
     RouterOutlet,
-    SidebarComponent
+    SidebarComponent,
+    NgClass
   ],
 
   templateUrl: './app.html',
 
-  styleUrl: './app.css'
 })
 export class App implements OnInit{
   
@@ -42,7 +43,21 @@ export class App implements OnInit{
   |--------------------------------------------------------------------------
   */
 
-  collapsed = false;
+  private compactViewport = this.isCompactViewport();
+  collapsed = this.compactViewport;
+
+  @HostListener('window:resize')
+  onViewportResize(): void {
+    const compactViewport = this.isCompactViewport();
+    if (compactViewport === this.compactViewport) return;
+
+    this.compactViewport = compactViewport;
+    this.collapsed = compactViewport;
+  }
+
+  private isCompactViewport(): boolean {
+    return typeof window !== 'undefined' && window.innerWidth <= 1024;
+  }
 
 
   /*
@@ -62,6 +77,10 @@ export class App implements OnInit{
       && !this.router.url.startsWith('/assistant/new-user')
       && !this.router.url.startsWith('/pastor/new-representative');
 
+  }
+
+  get isLoginPage(): boolean {
+    return this.router.url.startsWith('/login');
   }
 
 

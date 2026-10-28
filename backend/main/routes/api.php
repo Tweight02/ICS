@@ -40,6 +40,11 @@ Route::get('/user', function (Request $request) {
     return response()->json($request->user());
 })->middleware('auth:sanctum');
 
+Route::post('/profile', [
+    UserController::class,
+    'update_profile',
+])->middleware('auth:sanctum');
+
 /*
 |--------------------------------------------------------------------------
 | USERS & SAMPLES
@@ -207,9 +212,11 @@ Route::get('/public/events/{event}', [PublicEventController::class, 'show'])->wh
 Route::post('/public/events/{event}/participants', [PublicEventController::class, 'register'])->whereNumber('event');
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/event-departments', [EventController::class, 'departments']);
     Route::get('/events', [EventController::class, 'index']);
     Route::post('/events', [EventController::class, 'store']);
     Route::get('/events/{event}', [EventController::class, 'show'])->whereNumber('event');
+    Route::post('/events/{event}/registration-link', [EventController::class, 'registrationLink'])->whereNumber('event');
     Route::put('/events/{event}', [EventController::class, 'update'])->whereNumber('event');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->whereNumber('event');
 

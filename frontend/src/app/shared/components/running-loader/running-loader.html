@@ -1,5 +1,10 @@
-<div class="running-loader" [class.running-loader-small]="size === 'small'" aria-hidden="true">
-  <svg viewBox="30 14 140 142" class="running-loader-svg">
+<div
+  class="block h-[5.5rem] w-[5.5rem] shrink-0"
+  [class.!h-12]="size === 'small'"
+  [class.!w-12]="size === 'small'"
+  aria-hidden="true"
+>
+  <svg viewBox="30 14 140 142" class="block h-full w-full overflow-visible motion-reduce:[&>animateTransform]:hidden">
     <ellipse class="fill-black" cx="102" cy="153" rx="58" ry="3" opacity=".12"></ellipse>
     <rect class="fill-emerald-700" x="52" y="92" width="12" height="48" rx="3"></rect>
     <rect class="fill-white" x="55" y="94" width="2.5" height="44" rx="1.2" opacity=".18"></rect>

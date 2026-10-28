@@ -9,9 +9,10 @@ import Swal from 'sweetalert2';
 import { UserService } from '../../../../core/services/user/user-service';
 import { Church } from '../../../../core/models/church.model';
 import { RouterLink } from '@angular/router';
+import { Button } from '../../../../shared/components/button/button';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, Button],
   selector: 'app-new-user',
   templateUrl: './new-user.html',
 })

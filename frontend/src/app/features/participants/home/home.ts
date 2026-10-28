@@ -14,6 +14,7 @@ interface PublicEvent {
   description: string;
   church_name: string | null;
   scope: string[];
+  registration_open: boolean;
   banner: string;
 }
 
@@ -28,7 +29,6 @@ const BANNERS = [
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './home.html',
-  styleUrl: './home.css',
 })
 export class Home implements OnInit, OnDestroy {
   readonly events = signal<PublicEvent[]>([]);
