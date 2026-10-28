@@ -9,7 +9,6 @@
           Update the selected member's personal and baptism information.
         </p>
       </div>
-
     </header>
 
     <div class="form-content">
@@ -45,17 +44,16 @@
         role="status">
         {{ successMessage }}
       </div>
-<form
-  *ngIf="!loading && baptism.baptism_id"
-  #baptismForm="ngForm"
-  (ngSubmit)="saveChanges(baptismForm.valid ?? false)">
-  
+
+      <form
+        *ngIf="!loading && baptism.baptism_id"
+        #baptismForm="ngForm"
+        (ngSubmit)="saveChanges(baptismForm.valid ?? false)">
+
         <!-- PERSONAL INFORMATION -->
         <section class="form-section">
 
           <div class="section-heading">
-      
-
             <div>
               <h2>Personal Information</h2>
             </div>
@@ -63,63 +61,70 @@
 
           <div class="form-grid">
 
-            <!-- First Name -->
-            <div class="form-field">
-              <label for="first_name">
-                First Name <span>*</span>
-              </label>
+            <!-- NAME FIELDS: FOUR FIELDS IN ONE ROW -->
+            <div
+              class="name-fields-row"
+              style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; grid-column: 1 / -1; width: 100%;">
 
-              <input
-                id="first_name"
-                name="first_name"
-                type="text"
-                [(ngModel)]="baptism.first_name"
-                required
-                maxlength="100" />
-            </div>
+              <!-- First Name -->
+              <div class="form-field" style="min-width: 0;">
+                <label for="first_name">
+                  First Name <span>*</span>
+                </label>
 
-            <!-- Middle Name -->
-            <div class="form-field">
-              <label for="middle_name">
-                Middle Name
-              </label>
+                <input
+                  id="first_name"
+                  name="first_name"
+                  type="text"
+                  [(ngModel)]="baptism.first_name"
+                  required
+                  maxlength="100" />
+              </div>
 
-              <input
-                id="middle_name"
-                name="middle_name"
-                type="text"
-                [(ngModel)]="baptism.middle_name"
-                maxlength="100" />
-            </div>
+              <!-- Middle Name -->
+              <div class="form-field" style="min-width: 0;">
+                <label for="middle_name">
+                  Middle Name
+                </label>
 
-            <!-- Last Name -->
-            <div class="form-field">
-              <label for="last_name">
-                Last Name <span>*</span>
-              </label>
+                <input
+                  id="middle_name"
+                  name="middle_name"
+                  type="text"
+                  [(ngModel)]="baptism.middle_name"
+                  maxlength="100" />
+              </div>
 
-              <input
-                id="last_name"
-                name="last_name"
-                type="text"
-                [(ngModel)]="baptism.last_name"
-                required
-                maxlength="100" />
-            </div>
+              <!-- Last Name -->
+              <div class="form-field" style="min-width: 0;">
+                <label for="last_name">
+                  Last Name <span>*</span>
+                </label>
 
-            <!-- Extension Name -->
-            <div class="form-field">
-              <label for="extension_name">
-                Extension Name
-              </label>
+                <input
+                  id="last_name"
+                  name="last_name"
+                  type="text"
+                  [(ngModel)]="baptism.last_name"
+                  required
+                  maxlength="100" />
+              </div>
 
-              <input
-                id="extension_name"
-                name="extension_name"
-                type="text"
-                [(ngModel)]="baptism.extension_name"
-                placeholder="Jr., Sr., III"
-                maxlength="30" />
+              <!-- Extension Name -->
+              <div class="form-field" style="min-width: 0;">
+                <label for="extension_name">
+                  Extension Name
+                </label>
+
+                <input
+                  id="extension_name"
+                  name="extension_name"
+                  type="text"
+                  [(ngModel)]="baptism.extension_name"
+                  placeholder="Jr., Sr., III"
+                  maxlength="30" />
+              </div>
+
             </div>
 
             <!-- Birthdate -->
@@ -200,11 +205,8 @@
         <section class="form-section">
 
           <div class="section-heading">
-          
-
             <div>
               <h2>Baptism Information</h2>
-          
             </div>
           </div>
 

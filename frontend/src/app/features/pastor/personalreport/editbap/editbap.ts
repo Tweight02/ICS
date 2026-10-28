@@ -475,8 +475,24 @@ export class EditbapComponent implements OnInit {
       });
   }
 
-  // Cancel editing without saving.
-  cancelEdit(): void {
-    this.router.navigate(['/pastor/deathbap']);
-  }
+  // Cancel editing with SweetAlert confirmation.
+cancelEdit(): void {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Cancel Editing Record?',
+    text: 'Your unsaved baptism information will be discarded.',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Cancel',
+    cancelButtonText: 'Continue Editing',
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#165b32',
+    reverseButtons: false,
+    focusCancel: true,
+    allowOutsideClick: false
+  }).then((result) => {
+    if (result.isConfirmed) {
+      this.router.navigate(['/pastor/deathbap']);
+    }
+  });
+}
 }
