@@ -508,24 +508,25 @@ export class BapaddrecComponent implements OnInit {
   /**
    * Cancel adding a baptism record.
    */
-  cancelForm(): void {
-    Swal.fire({
-      icon: 'warning',
-      iconColor: '#dc3545',
-      title: 'Cancel Adding Record?',
-      text: 'Your unsaved baptism information will be discarded.',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Cancel',
-      cancelButtonText: 'Continue Editing',
-      confirmButtonColor: '#dc3545',
-      cancelButtonColor: '#14532d',
-      reverseButtons: true,
-      customClass: this.swalCustomClass
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.navigateBackToReport();
-      }
-    });
-  }
-
+cancelForm(): void {
+  Swal.fire({
+    icon: 'warning',
+    iconColor: '#b7791f',
+    title: 'Cancel adding record?',
+    text: 'Unsaved baptism information will be discarded.',
+    showCancelButton: true,
+    confirmButtonText: 'Discard Record',
+    cancelButtonText: 'Continue Editing',
+    confirmButtonColor: '#b42318',
+    cancelButtonColor: '#0c502f',
+    reverseButtons: true,
+    focusCancel: true,
+    allowOutsideClick: false,
+    customClass: this.swalCustomClass
+  }).then((result) => {
+    if (result.isConfirmed) {
+      this.navigateBackToReport();
+    }
+  });
+}
 }

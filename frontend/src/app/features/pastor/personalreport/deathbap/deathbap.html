@@ -759,22 +759,26 @@
         <!-- Modal Footer -->
         <div class="flex items-center justify-between gap-4 border-t border-[#e8edf4] bg-white px-7 py-[17px] max-[640px]:px-4 max-[640px]:py-[14px]">
           <div class="ml-auto flex items-center justify-end gap-2.5">
+<button
+  app-button
+  variant="edit"
+  size="md"
+  *ngIf="!isReadOnly"
+  type="button"
+  class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
+  (click)="editSelectedBaptism()">
+  Edit Record
+</button>
 
-            <button app-button variant="edit" size="md"
-              *ngIf="!isReadOnly"
-              type="button"
-              class="min-w-[120px] cursor-pointer rounded-[9px] border border-[#0c502f] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#0c502f] transition-colors hover:bg-[#0c502f] hover:text-white motion-reduce:transition-none"
-              (click)="editSelectedBaptism()">
-              Edit Record
-            </button>
-
-            <button app-button variant="done" size="md"
-              type="button"
-              class="min-w-[100px] cursor-pointer rounded-[9px] border border-[#084d23] bg-[#0c502f] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:border-[#044f06] hover:bg-[#5d835e] motion-reduce:transition-none"
-              (click)="closeBaptismModal()">
-              Close
-            </button>
-
+<button
+  app-button
+  variant="done"
+  size="md"
+  type="button"
+  class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
+  (click)="closeBaptismModal()">
+  Close
+</button>
           </div>
         </div>
       </div>
