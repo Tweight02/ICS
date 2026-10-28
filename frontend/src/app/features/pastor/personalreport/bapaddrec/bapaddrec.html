@@ -70,108 +70,112 @@
 
           </div>
 
-          <!-- Church: Searchable Dropdown -->
-          <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
-            <label for="church_search">Church</label>
+      <!-- Church: Searchable Dropdown -->
+<div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+  <label for="church_search">Church</label>
 
-            <div
-              class="relative w-full"
-              #churchDropdown
-              [class.open]="churchDropdownOpen">
+  <div
+    class="relative w-full"
+    #churchDropdown
+    [class.open]="churchDropdownOpen">
 
-              <div class="relative flex w-full items-center">
+    <!-- Search Input Container -->
+    <div class="relative w-full">
 
-                <!-- Search Icon -->
-                <svg
-                  class="pointer-events-none absolute left-[13px] top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-slate-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  aria-hidden="true">
-                  <circle cx="11" cy="11" r="7"></circle>
-                  <path d="m20 20-4-4"></path>
-                </svg>
+      <!-- Search Icon -->
+      <svg
+        class="pointer-events-none absolute left-[13px] top-1/2 z-10 !h-4 !w-4 -translate-y-1/2 !text-[#64748b]"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#64748b"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="m20 20-4-4"></path>
+      </svg>
 
-                <!-- Search Input -->
-                <input
-                  id="church_search"
-                  type="text"
-                  class="box-border block h-[42px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-3 py-[9px] text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 w-full cursor-text pl-10 pr-11"
-                  [value]="churchDropdownOpen ? churchSearch : getSelectedChurchName()"
-                  (focus)="openChurchDropdown()"
-                  (input)="onChurchSearch($event)"
-                  [placeholder]="churchesLoading
-                    ? 'Loading district churches...'
-                    : churches.length === 0
-                      ? 'No churches assigned to your district'
-                      : 'Search or select church'"
-                  autocomplete="off"
-                  [disabled]="churchesLoading || churches.length === 0"
-                  aria-label="Search churches"
-                  aria-autocomplete="list"
-                  [attr.aria-expanded]="churchDropdownOpen"
-                  (keydown.escape)="closeChurchDropdown()">
+      <!-- Search Input -->
+      <input
+        id="church_search"
+        type="text"
+        class="box-border block h-[42px] w-full cursor-text rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 !py-[9px] !pl-10 !pr-11 text-sm text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+        [value]="churchDropdownOpen ? churchSearch : getSelectedChurchName()"
+        (focus)="openChurchDropdown()"
+        (input)="onChurchSearch($event)"
+        [placeholder]="churchesLoading
+          ? 'Loading district churches...'
+          : churches.length === 0
+            ? 'No churches assigned to your district'
+            : 'Search or select church'"
+        autocomplete="off"
+        [disabled]="churchesLoading || churches.length === 0"
+        aria-label="Search churches"
+        aria-autocomplete="list"
+        [attr.aria-expanded]="churchDropdownOpen"
+        (keydown.escape)="closeChurchDropdown()">
 
-                <!-- Dropdown Arrow -->
-                <button
-                  type="button"
-                  class="absolute right-[5px] top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:transition-transform"
-                  (click)="toggleChurchDropdown()"
-                  [disabled]="churchesLoading || churches.length === 0"
-                  aria-label="Toggle church dropdown">
+      <!-- Dropdown Arrow -->
+      <button
+        type="button"
+        class="absolute right-[5px] top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+        (click)="toggleChurchDropdown()"
+        [disabled]="churchesLoading || churches.length === 0"
+        aria-label="Toggle church dropdown">
 
-                  <svg [class.rotate-180]="churchDropdownOpen"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true">
-                    <path d="m6 9 6 6 6-6"></path>
-                  </svg>
-                </button>
+        <svg
+          class="h-[18px] w-[18px] transition-transform duration-200"
+          [class.rotate-180]="churchDropdownOpen"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true">
+          <path d="m6 9 6 6 6-6"></path>
+        </svg>
+      </button>
 
-              </div>
+    </div>
 
-              <!-- Church Options -->
-              <div
-                class="absolute left-0 right-0 top-[calc(100%+5px)] z-[1050] max-h-[220px] overflow-y-auto rounded-lg border border-slate-300 bg-white p-[5px] shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
-                *ngIf="churchDropdownOpen"
-                role="listbox">
+    <!-- Church Options -->
+    <div
+      *ngIf="churchDropdownOpen"
+      class="absolute left-0 right-0 top-[calc(100%+5px)] z-[1050] max-h-[220px] overflow-y-auto rounded-lg border border-slate-300 bg-white p-[5px] shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
+      role="listbox">
 
-                <button
-                  type="button"
-                  class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-blue-50 focus-visible:bg-blue-50 focus-visible:outline-none"
-                  role="option"
-                  *ngFor="let church of filteredChurches"
-                  [class.bg-blue-50]="sameChurch(church.church_id, baptism.church_id)" [class.text-blue-700]="sameChurch(church.church_id, baptism.church_id)"
-                  [attr.aria-selected]="sameChurch(church.church_id, baptism.church_id)"
-                  (click)="selectChurch(church)">
-                  {{ church.name }}
-                </button>
+      <button
+        *ngFor="let church of filteredChurches"
+        type="button"
+        class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-emerald-50 focus-visible:bg-emerald-50 focus-visible:outline-none"
+        role="option"
+        [class.bg-emerald-50]="sameChurch(church.church_id, baptism.church_id)"
+        [class.text-emerald-800]="sameChurch(church.church_id, baptism.church_id)"
+        [attr.aria-selected]="sameChurch(church.church_id, baptism.church_id)"
+        (click)="selectChurch(church)">
+        {{ church.name }}
+      </button>
 
-                <div
-                  class="p-3 text-center text-[13px] text-slate-500"
-                  *ngIf="filteredChurches.length === 0">
-                  No churches found.
-                </div>
+      <div
+        *ngIf="filteredChurches.length === 0"
+        class="p-3 text-center text-[13px] text-slate-500">
+        No churches found.
+      </div>
 
-              </div>
-            </div>
+    </div>
+  </div>
 
-            <!-- Preserve Angular church_id binding and validation -->
-            <input
-              type="hidden"
-              name="church_id"
-              [(ngModel)]="baptism.church_id"
-              required>
-          </div>
+  <!-- Preserve Angular church_id binding and validation -->
+  <input
+    type="hidden"
+    name="church_id"
+    [(ngModel)]="baptism.church_id"
+    required>
+</div>
 
           <!-- Quarter -->
           <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1.5 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
@@ -314,20 +318,24 @@
 
       <!-- Footer -->
       <div class="flex items-center justify-end gap-2.5 rounded-b-xl border-t border-[#e9edf2] bg-[#fafbfc] px-6 py-4 max-[576px]:px-[18px] max-[576px]:py-[14px]">
-        <button
-          type="button"
-          class="min-h-[38px] cursor-pointer rounded-[7px] border border-slate-300 bg-white px-[18px] py-[9px] text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-100"
-          (click)="cancelForm()">
-          Cancel
-        </button>
+      <!-- Cancel Button -->
+<button
+  type="button"
+  class="inline-flex h-[30px] w-[140px] items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] !opacity-100 transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed motion-reduce:transition-none max-[650px]:w-full"
+  (click)="cancelForm()">
+  Cancel
+</button>
 
-        <button
-          app-button variant="submit" size="md"
-          type="submit" [loading]="saving"
-          class="min-h-[38px] cursor-pointer rounded-[7px] border border-emerald-700 bg-emerald-700 px-[18px] py-[9px] text-[13px] font-medium text-white transition-colors hover:border-emerald-800 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-[0.55]"
-          [disabled]="saving || baptismForm.invalid">
-          {{ saving ? 'Saving...' : 'Save' }}
-        </button>
+<!-- Save Button -->
+<button
+  app-button
+  variant="submit"
+  size="md"
+  type="submit"
+  class="inline-flex h-[30px] w-[140px] items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] !opacity-100 transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:!opacity-100 motion-reduce:transition-none max-[650px]:w-full"
+  [disabled]="saving || baptismForm.invalid">
+  {{ saving ? 'Saving...' : 'Save' }}
+</button>
       </div>
 
     </form>
