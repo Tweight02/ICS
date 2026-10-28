@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import { Representative } from '../../../../core/models/representative.model';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { RepresentativeService, PaginatedRepresentatives } from '../../../../core/services/representative/representative-service';
+import { Button } from '../../../../shared/components/button/button';
 
 interface ChurchAssignment {
   church_id: number;
@@ -32,9 +33,9 @@ interface AssignmentPreview {
 }
 
 @Component({
-  imports: [RouterLink],
+  imports: [RouterLink, Button],
   selector: 'app-assign-church',
-  styleUrl: './assign-church.css',
+
   templateUrl: './assign-church.html',
 })
 export class AssignChurch implements OnInit {

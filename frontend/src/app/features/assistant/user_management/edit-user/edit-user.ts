@@ -6,12 +6,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { UserService } from '../../../../core/services/user/user-service';
+import { Button } from '../../../../shared/components/button/button';
 import { Pastor } from '../../../../core/models/pastor.model';
 import { Department } from '../../../../core/models/department.model';
 import Swal from 'sweetalert2';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, Button],
   selector: 'app-edit-user',
   templateUrl: './edit-user.html',
 })

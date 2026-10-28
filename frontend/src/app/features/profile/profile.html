@@ -1,90 +1,90 @@
-<main class="profile-page">
-  <div class="profile-content">
-    <button type="button" class="profile-back" (click)="goBack()">
+<main class="min-h-screen p-[clamp(1rem,3vw,2.5rem)] text-[#18362b] max-[600px]:px-3 max-[600px]:py-4">
+  <div class="mx-auto w-full max-w-[900px]">
+    <button app-button variant="back" size="md" type="button" (click)="goBack()" class="mb-4 inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-[0.9rem] font-bold text-[#176d4d] no-underline hover:text-[#0d5138]">
       <i class="bi bi-arrow-left" aria-hidden="true"></i>
       Back
     </button>
 
-    <header class="profile-heading">
-      <p class="profile-eyebrow">Account settings</p>
-      <h1>Your profile</h1>
-      <p>Keep your personal information and profile photo up to date.</p>
+    <header class="mb-5">
+      <p class="mb-[0.35rem] text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-[#218653]">Account settings</p>
+      <h1 class="m-0 text-[clamp(1.8rem,4vw,2.4rem)] font-extrabold tracking-[-0.04em] text-[#164638]">Your profile</h1>
+      <p class="mt-[0.4rem] mb-0 text-[#60766a]">Keep your personal information and profile photo up to date.</p>
     </header>
 
-    <div *ngIf="loading()" class="profile-message" role="status">Loading your profile…</div>
+    <div *ngIf="loading()" class="overflow-hidden rounded-[1.25rem] border border-[#dcebe2] bg-white p-6 text-[#60766a] shadow-[0_12px_32px_rgba(22,70,56,0.08)]" role="status">Loading your profile…</div>
 
-    <form *ngIf="!loading()" [formGroup]="form" (ngSubmit)="submit()" class="profile-card">
-      <section class="profile-photo-section" aria-labelledby="profile-photo-heading">
-        <div class="profile-avatar">
+    <form *ngIf="!loading()" [formGroup]="form" (ngSubmit)="submit()" class="overflow-hidden rounded-[1.25rem] border border-[#dcebe2] bg-white shadow-[0_12px_32px_rgba(22,70,56,0.08)]">
+      <section class="flex items-center gap-5 border-b border-[#e7f0ea] bg-[linear-gradient(110deg,#fff,#f6fbf7)] p-[clamp(1.25rem,3vw,2rem)] max-[600px]:items-start max-[600px]:gap-[0.9rem]" aria-labelledby="profile-photo-heading">
+        <div class="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full border-[3px] border-white bg-[#e4f3e9] text-[1.7rem] font-extrabold text-[#176d4d] shadow-[0_0_0_1px_#d6e9dc,0_5px_15px_rgba(22,70,56,0.12)] max-[600px]:h-[4.5rem] max-[600px]:w-[4.5rem]">
           <img
             *ngIf="imagePreview() || profileImageUrl"
             [src]="imagePreview() || profileImageUrl"
-            alt="Profile photo preview" />
+            alt="Profile photo preview" class="h-full w-full object-cover" />
           <span *ngIf="!imagePreview() && !profileImageUrl" aria-hidden="true">
             {{ form.controls.first_name.value.charAt(0) }}{{ form.controls.last_name.value.charAt(0) }}
           </span>
         </div>
-        <div class="profile-photo-copy">
-          <h2 id="profile-photo-heading">Profile photo</h2>
-          <p>Use a clear JPG, PNG, or WebP image. Maximum size: 2 MB.</p>
-          <label class="profile-upload">
+        <div>
+          <h2 id="profile-photo-heading" class="m-0 text-[1.05rem] font-bold text-[#164638]">Profile photo</h2>
+          <p class="mt-[0.35rem] mb-0 text-[0.83rem] text-[#718078]">Use a clear JPG, PNG, or WebP image. Maximum size: 2 MB.</p>
+          <label class="mt-[0.85rem] inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[0.65rem] border border-[#cfe5d6] bg-[#f2faf4] px-[0.9rem] py-2 text-[0.85rem] font-bold text-[#176d4d] hover:bg-[#e7f5eb]">
             <i class="bi bi-camera" aria-hidden="true"></i>
             {{ selectedFile() ? 'Choose another photo' : 'Upload photo' }}
-            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileChange($event)" />
+            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileChange($event)" class="hidden" />
           </label>
-          <span *ngIf="selectedFile()" class="profile-file-name">{{ selectedFile()?.name }}</span>
+          <span *ngIf="selectedFile()" class="ml-[0.65rem] inline-block text-[0.78rem] text-[#718078] max-[600px]:mt-[0.45rem] max-[600px]:ml-0 max-[600px]:block max-[600px]:[overflow-wrap:anywhere]">{{ selectedFile()?.name }}</span>
         </div>
       </section>
 
-      <div *ngIf="errorMessage()" class="profile-alert profile-alert-error" role="alert">
+      <div *ngIf="errorMessage()" class="mx-6 mt-4 rounded-[0.7rem] border border-[#f3c7c7] bg-[#fff5f5] px-4 py-[0.8rem] text-[0.88rem] text-[#a32929]" role="alert">
         {{ errorMessage() }}
       </div>
-      <div *ngIf="successMessage()" class="profile-alert profile-alert-success" role="status">
+      <div *ngIf="successMessage()" class="mx-6 mt-4 rounded-[0.7rem] border border-[#cce8d4] bg-[#f0faf2] px-4 py-[0.8rem] text-[0.88rem] text-[#176d4d]" role="status">
         {{ successMessage() }}
       </div>
 
-      <section class="profile-fields" aria-labelledby="profile-info-heading">
-        <div class="profile-section-heading">
-          <h2 id="profile-info-heading">Personal information</h2>
-          <p>Fields marked required must be filled in.</p>
+      <section class="grid grid-cols-2 gap-[1.15rem] p-[clamp(1.25rem,3vw,2rem)] max-[600px]:grid-cols-1 max-[600px]:gap-[0.9rem]" aria-labelledby="profile-info-heading">
+        <div class="col-span-full mb-[0.15rem] max-[600px]:col-auto">
+          <h2 id="profile-info-heading" class="m-0 text-[1.05rem] font-bold text-[#164638]">Personal information</h2>
+          <p class="mt-[0.35rem] mb-0 text-[0.83rem] text-[#718078]">Fields marked required must be filled in.</p>
         </div>
 
-        <label class="profile-field">
-          <span>First name <b>*</b></span>
-          <input type="text" formControlName="first_name" autocomplete="given-name" />
-          <small *ngIf="form.controls.first_name.touched && form.controls.first_name.invalid">Enter your first name.</small>
+        <label class="grid min-w-0 gap-[0.4rem] text-[0.84rem] font-semibold text-[#355a4b]">
+          <span>First name <b class="text-[#218653]">*</b></span>
+          <input type="text" formControlName="first_name" autocomplete="given-name" class="min-h-[2.8rem] w-full rounded-[0.65rem] border border-[#d7e6dc] bg-[#f8fbf9] px-3 py-[0.65rem] text-[#18362b] focus:border-[#36a16b] focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-[#36a16b]/15" />
+          <small *ngIf="form.controls.first_name.touched && form.controls.first_name.invalid" class="text-[0.76rem] font-medium text-[#a32929]">Enter your first name.</small>
         </label>
 
-        <label class="profile-field">
+        <label class="grid min-w-0 gap-[0.4rem] text-[0.84rem] font-semibold text-[#355a4b]">
           <span>Middle name</span>
-          <input type="text" formControlName="middle_name" autocomplete="additional-name" />
+          <input type="text" formControlName="middle_name" autocomplete="additional-name" class="min-h-[2.8rem] w-full rounded-[0.65rem] border border-[#d7e6dc] bg-[#f8fbf9] px-3 py-[0.65rem] text-[#18362b] focus:border-[#36a16b] focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-[#36a16b]/15" />
         </label>
 
-        <label class="profile-field">
-          <span>Last name <b>*</b></span>
-          <input type="text" formControlName="last_name" autocomplete="family-name" />
-          <small *ngIf="form.controls.last_name.touched && form.controls.last_name.invalid">Enter your last name.</small>
+        <label class="grid min-w-0 gap-[0.4rem] text-[0.84rem] font-semibold text-[#355a4b]">
+          <span>Last name <b class="text-[#218653]">*</b></span>
+          <input type="text" formControlName="last_name" autocomplete="family-name" class="min-h-[2.8rem] w-full rounded-[0.65rem] border border-[#d7e6dc] bg-[#f8fbf9] px-3 py-[0.65rem] text-[#18362b] focus:border-[#36a16b] focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-[#36a16b]/15" />
+          <small *ngIf="form.controls.last_name.touched && form.controls.last_name.invalid" class="text-[0.76rem] font-medium text-[#a32929]">Enter your last name.</small>
         </label>
 
-        <label class="profile-field">
+        <label class="grid min-w-0 gap-[0.4rem] text-[0.84rem] font-semibold text-[#355a4b]">
           <span>Extension</span>
-          <input type="text" formControlName="extension_name" placeholder="Jr., Sr., III" />
+          <input type="text" formControlName="extension_name" placeholder="Jr., Sr., III" class="min-h-[2.8rem] w-full rounded-[0.65rem] border border-[#d7e6dc] bg-[#f8fbf9] px-3 py-[0.65rem] text-[#18362b] focus:border-[#36a16b] focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-[#36a16b]/15" />
         </label>
 
-        <label class="profile-field profile-field-wide">
-          <span>Email address <b>*</b></span>
-          <input type="email" formControlName="email" autocomplete="email" />
-          <small *ngIf="form.controls.email.touched && form.controls.email.invalid">Enter a valid email address.</small>
+        <label class="col-span-full grid min-w-0 gap-[0.4rem] text-[0.84rem] font-semibold text-[#355a4b] max-[600px]:col-auto">
+          <span>Email address <b class="text-[#218653]">*</b></span>
+          <input type="email" formControlName="email" autocomplete="email" class="min-h-[2.8rem] w-full rounded-[0.65rem] border border-[#d7e6dc] bg-[#f8fbf9] px-3 py-[0.65rem] text-[#18362b] focus:border-[#36a16b] focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-[#36a16b]/15" />
+          <small *ngIf="form.controls.email.touched && form.controls.email.invalid" class="text-[0.76rem] font-medium text-[#a32929]">Enter a valid email address.</small>
         </label>
 
-        <label class="profile-field">
+        <label class="grid min-w-0 gap-[0.4rem] text-[0.84rem] font-semibold text-[#355a4b]">
           <span>Birthdate <b>*</b></span>
-          <input type="date" formControlName="birthdate" autocomplete="bday" />
+          <input type="date" formControlName="birthdate" autocomplete="bday" class="min-h-[2.8rem] w-full rounded-[0.65rem] border border-[#d7e6dc] bg-[#f8fbf9] px-3 py-[0.65rem] text-[#18362b] focus:border-[#36a16b] focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-[#36a16b]/15" />
         </label>
 
-        <label class="profile-field">
-          <span>Gender <b>*</b></span>
-          <select formControlName="gender">
+        <label class="grid min-w-0 gap-[0.4rem] text-[0.84rem] font-semibold text-[#355a4b]">
+          <span>Gender <b class="text-[#218653]">*</b></span>
+          <select formControlName="gender" class="min-h-[2.8rem] w-full rounded-[0.65rem] border border-[#d7e6dc] bg-[#f8fbf9] px-3 py-[0.65rem] text-[#18362b] focus:border-[#36a16b] focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-[#36a16b]/15">
             <option value="" disabled>Select gender</option>
             <option value="female">Female</option>
             <option value="male">Male</option>
@@ -93,8 +93,8 @@
         </label>
       </section>
 
-      <footer class="profile-actions">
-        <button type="submit" [disabled]="saving()">
+      <footer class="flex justify-end border-t border-[#e7f0ea] bg-[#fbfdfb] px-[clamp(1.25rem,3vw,2rem)] py-4">
+        <button app-button variant="submit" size="md" type="submit" [disabled]="saving()" [loading]="saving()" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-[0.7rem] bg-[linear-gradient(120deg,#218653,#176d4d)] px-5 py-[0.65rem] font-bold text-white shadow-[0_5px_13px_rgba(23,109,77,0.18)] hover:bg-[#145b40] disabled:cursor-wait disabled:opacity-65">
           <i class="bi bi-check2" aria-hidden="true"></i>
           {{ saving() ? 'Saving…' : 'Save changes' }}
         </button>

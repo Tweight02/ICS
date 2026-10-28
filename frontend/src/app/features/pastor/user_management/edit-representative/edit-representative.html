@@ -40,10 +40,8 @@
                         </button>
                     </div>
                 } @else {
-                    <a
-                        routerLink="/pastor/view-representatives"
-                        style="border-radius: 9999px"
-                        class="group mb-4 inline-flex items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2 text-sm font-medium tracking-widest text-white !no-underline shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)] transition hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700 hover:shadow-[0_16px_24px_-8px_rgba(6,78,59,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
+                    <a app-button variant="back" size="sm"
+                        routerLink="/pastor/view-representatives" class="mb-4">
                         <svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M12 5l-5 5 5 5" />
                         </svg>
@@ -78,10 +76,10 @@
                             </div>
 
                             @if (!editing()) {
-                                <button
+                                <button app-button variant="edit" size="md"
                                     type="button"
                                     (click)="startEdit()"
-                                    class="inline-flex h-9 items-center justify-center gap-1.5 !rounded-md bg-emerald-800 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
+                                    class="!rounded-md">
                                     <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                         <path d="M13.6 2.6a2 2 0 112.8 2.8l-8.7 8.7-3.7.9.9-3.7 8.7-8.7z" />
                                     </svg>
@@ -246,8 +244,8 @@
                                         {{ activating() ? 'Activating…' : 'Activate account' }}
                                     </button>
                                 } @else {
-                                    <button type="button" (click)="removeRepresentative()" [disabled]="deleting()"
-                                        class="h-9 !rounded-md border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60">
+                                    <button app-button variant="delete" size="md" type="button" (click)="removeRepresentative()" [disabled]="deleting()" [loading]="deleting()"
+                                        class="!rounded-md">
                                         {{ deleting() ? 'Deactivating…' : 'Deactivate account' }}
                                     </button>
                                 }
@@ -255,17 +253,12 @@
 
                             @if (editing()) {
                                 <div class="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
-                                    <button type="button" (click)="cancelEdit()" [disabled]="saving()"
-                                        class="h-9 !rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60">
+                                    <button app-button variant="secondary" size="md" type="button" (click)="cancelEdit()" [disabled]="saving()"
+                                        class="!rounded-md">
                                         Cancel
                                     </button>
-                                    <button type="submit" [disabled]="saving()"
-                                        class="inline-flex h-9 items-center justify-center gap-1.5 !rounded-md bg-emerald-800 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-60">
-                                        @if (!saving()) {
-                                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd" />
-                                            </svg>
-                                        }
+                                    <button app-button variant="edit" size="md" type="submit" [disabled]="saving()" [loading]="saving()"
+                                        class="!rounded-md">
                                         {{ saving() ? 'Saving…' : 'Save changes' }}
                                     </button>
                                 </div>

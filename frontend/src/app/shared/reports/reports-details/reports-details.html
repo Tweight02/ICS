@@ -1,0 +1,84 @@
+<ng-template #monitoringCell let-value>
+  <app-quarter-status
+    [tone]="value.approved ? 'approved' : value.progress === null ? 'empty' : 'in-progress'"
+    [progress]="value.progress"
+    [showProgress]="true">
+  </app-quarter-status>
+</ng-template>
+
+<div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
+  <div class="mx-auto max-w-7xl">
+    <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <button app-button variant="back" size="md" type="button" (click)="backToDistricts()" class="mb-3">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5l-5 5 5 5" /></svg>
+          Back
+        </button>
+        <p class="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">Church Reports</p>
+        <h1 class="text-3xl font-bold tracking-tight text-emerald-950 sm:text-4xl">{{ district?.name || 'District Reports' }}</h1>
+        <p *ngIf="district?.address" class="mt-1 text-sm font-medium text-emerald-900/70">{{ district?.address }}</p>
+      </div>
+
+      <div class="flex min-w-[180px] flex-col items-center justify-center rounded-2xl border border-emerald-900/10 bg-white/80 px-6 py-4 shadow-sm">
+        <strong class="text-3xl font-extrabold leading-none text-emerald-700">{{ churches.length }}</strong>
+        <span class="mt-2 text-xs font-medium text-emerald-900/70">Churches</span>
+      </div>
+    </header>
+
+    <div *ngIf="errorMessage" role="alert" class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <span>{{ errorMessage }}</span>
+      <button type="button" (click)="loadChurches()" class="shrink-0 font-semibold underline underline-offset-2 hover:text-red-900">Retry</button>
+    </div>
+
+    <div *ngIf="loadingChurches" class="mx-auto flex w-fit items-center gap-3 rounded-2xl border border-emerald-900/10 bg-white px-8 py-6 text-sm font-medium text-emerald-900 shadow-sm">
+      <app-running-loader></app-running-loader>
+      <span>Loading churches...</span>
+    </div>
+
+    <section *ngIf="!loadingChurches && !errorMessage && churches.length > 0" class="overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[680px] border-collapse text-sm">
+          <thead class="bg-emerald-900/[0.06] text-xs font-bold uppercase tracking-wider text-emerald-950">
+            <tr>
+              <th scope="col" class="w-[36%] min-w-[220px] px-5 py-4 text-left">Church</th>
+              <th scope="col" class="min-w-[110px] px-3 py-4 text-center">Q1</th>
+              <th scope="col" class="min-w-[110px] px-3 py-4 text-center">Q2</th>
+              <th scope="col" class="min-w-[110px] px-3 py-4 text-center">Q3</th>
+              <th scope="col" class="min-w-[110px] px-3 py-4 text-center">Q4</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-emerald-950/10">
+            <tr *ngFor="let church of churches" role="button" tabindex="0" (click)="openChurch(church)" (keydown.enter)="openChurch(church)" (keydown.space)="$event.preventDefault(); openChurch(church)"             class="group cursor-pointer transition-colors hover:bg-emerald-50 focus:outline-none focus-visible:bg-emerald-50">
+              <th scope="row" class="px-5 py-3.5 text-left">
+                <span class="flex items-center gap-3">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800" aria-hidden="true">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+                      <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01" />
+                    </svg>
+                  </span>
+                  <span class="font-semibold text-emerald-950">{{ church.name }}</span>
+                  <svg class="ml-auto h-4 w-4 shrink-0 text-emerald-800/50 transition group-hover:translate-x-0.5 group-hover:text-emerald-800" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5l5 5-5 5" /></svg>
+                </span>
+              </th>
+              <td class="px-3 py-2 text-center"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q1 }"></ng-container></td>
+              <td class="px-3 py-2 text-center"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q2 }"></ng-container></td>
+              <td class="px-3 py-2 text-center"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q3 }"></ng-container></td>
+              <td class="px-3 py-2 text-center"><ng-container *ngTemplateOutlet="monitoringCell; context: { $implicit: getMonitoring(church.church_id).q4 }"></ng-container></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div *ngIf="!loadingChurches && !errorMessage && churches.length === 0" class="mx-auto max-w-md rounded-2xl border border-emerald-900/10 bg-white px-6 py-10 text-center shadow-sm">
+      <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700/10 text-emerald-700" aria-hidden="true">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-emerald-950">No Churches Found</h2>
+      <p class="mt-1 text-sm text-emerald-900/70">No churches or companies were found for this district.</p>
+    </div>
+  </div>
+</div>

@@ -6,6 +6,7 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
+import { NgClass } from '@angular/common';
 
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
@@ -20,9 +21,8 @@ import { User, UserRole } from '../../../core/models/user.model';
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [NgClass, RouterLink, RouterLinkActive],
   templateUrl: './sidebar.html',
-  styleUrl: './sidebar.css'
 })
 export class SidebarComponent implements OnChanges {
 

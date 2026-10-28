@@ -54,7 +54,7 @@ describe('Registration', () => {
 
   it('loads the selected event using church attribution from the registration link', () => {
     expect(component.selectedEvent?.id).toBe(42);
-    expect(component.selectedEvent?.church).toBe('North Local Church');
+    expect(component.selectedEvent?.registrationChurch).toBe('North Local Church');
     expect(getPublicEventById).toHaveBeenCalledWith(42, {
       church_id: 9,
       registration_token: 'signed-token',

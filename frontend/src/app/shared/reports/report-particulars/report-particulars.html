@@ -1,0 +1,488 @@
+<div [ngClass]="embedded
+  ? 'text-emerald-950'
+  : 'min-h-screen px-4 py-4 text-emerald-950 sm:px-8 sm:py-5 lg:px-10'">
+  <div [ngClass]="embedded ? '' : 'mx-auto max-w-6xl'">
+
+        <button *ngIf="!embedded" app-button variant="back" size="sm" type="button" (click)="backToPrograms()" class="mb-3">
+      <svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 5l-5 5 5 5" />
+      </svg>
+      Back
+    </button>
+
+    <header *ngIf="!embedded"
+      class="relative isolate mb-4 flex min-h-20 flex-wrap items-center justify-between gap-3 overflow-hidden rounded-xl border border-white/80 bg-emerald-50 p-3 shadow-sm shadow-emerald-950/10 sm:min-h-24 sm:px-5 sm:py-3">
+      <img src="/assets/Misty.png" alt="" aria-hidden="true"
+        class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-50">
+      <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/85 to-emerald-100/45"></div>
+      <div class="flex items-center gap-4">
+        <div>
+          <p class="mb-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-800/80">Quarterly report</p>
+          <h1 class="max-w-3xl text-lg font-bold tracking-tight text-emerald-950 sm:text-xl">
+            {{ isStewardshipReport ? (getSelectedProgram()?.program_name || 'Stewardship Quarterly Report') : (report?.department?.department_name || 'Report Particulars') }}
+          </h1>
+          <p *ngIf="churchName" class="mt-0.5 text-xs font-medium text-emerald-900/70 sm:text-sm">
+            {{ churchName }}
+            <span *ngIf="districtName"> · {{ districtName }}</span>
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <div
+      *ngIf="loading"
+      class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2
+             text-sm text-emerald-900 backdrop-blur-md">
+      <span class="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
+      Loading...
+    </div>
+
+    <div
+      *ngIf="errorMessage"
+      role="alert"
+      class="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50/90
+             px-4 py-3 text-sm text-red-700 backdrop-blur-md">
+      <span aria-hidden="true">⚠</span>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <ng-container *ngIf="!loading && report">
+
+      <div
+        class="mb-4"
+        [ngClass]="embedded
+          ? 'ml-[22px] pt-[56px] max-[767px]:ml-0 max-[767px]:pt-6'
+          : ''">
+
+        <app-report-period-selector
+          [years]="availableYears"
+          [quarters]="getQuartersForYear()"
+          [selectedYear]="selectedYear"
+          [selectedQuarterId]="selectedQuarterId"
+          [annualView]="isAnnualView"
+          [status]="isQuarterApproved() ? 'approved' : isQuarterEndorsed() ? 'endorsed' : null"
+          (yearChanged)="selectYear($event)"
+          (quarterSelected)="selectQuarter($event)"
+          (annualSelected)="selectAnnual()">
+        </app-report-period-selector>
+      </div>
+
+      <div
+        *ngIf="(report.programs?.length ?? 0) > 1"
+        class="mb-4 flex flex-wrap gap-2 border-b border-emerald-900/10 pb-3">
+
+        <button
+          *ngFor="let program of report.programs; trackBy: trackProgram"
+          type="button"
+          [attr.aria-pressed]="selectedProgramId === program.program_id"
+          (click)="selectProgram(program.program_id)"
+          [ngClass]="{
+            'border-emerald-700 text-emerald-950':
+              selectedProgramId === program.program_id,
+            'border-transparent text-emerald-900/70 hover:border-emerald-900/30 hover:text-emerald-950':
+              selectedProgramId !== program.program_id
+          }"
+          class="border-b-2 bg-transparent px-3 py-1.5 text-xs font-semibold transition-colors sm:text-sm">
+          {{ program.program_name }}
+        </button>
+      </div>
+
+      <ng-container *ngIf="isStewardshipReport">
+        <div class="mb-4 flex flex-wrap gap-2 border-b border-emerald-900/10 pb-3" role="tablist" aria-label="Stewardship report sections">
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeStewardshipTab === 'activities'"
+            [attr.aria-pressed]="activeStewardshipTab === 'activities'"
+            [ngClass]="activeStewardshipTab === 'activities'
+              ? 'border-emerald-800 bg-emerald-800 text-white shadow-md shadow-emerald-900/20'
+              : 'border-white/80 bg-white/80 text-emerald-900 hover:bg-white'"
+            class="min-h-9 rounded-lg border px-4 py-2 text-xs font-bold shadow-sm transition sm:text-sm"
+            (click)="selectStewardshipTab('activities')">
+            Stewardship Activities
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeStewardshipTab === 'offering'"
+            [attr.aria-pressed]="activeStewardshipTab === 'offering'"
+            [ngClass]="activeStewardshipTab === 'offering'
+              ? 'border-emerald-800 bg-emerald-800 text-white shadow-md shadow-emerald-900/20'
+              : 'border-white/80 bg-white/80 text-emerald-900 hover:bg-white'"
+            class="min-h-9 rounded-lg border px-4 py-2 text-xs font-bold shadow-sm transition sm:text-sm"
+            (click)="selectStewardshipTab('offering')">
+            Offering and Tithes
+          </button>
+        </div>
+
+        <div *ngIf="activeStewardshipTab === 'offering'" class="mb-4 grid gap-3 sm:grid-cols-2" aria-label="Offering and tithe totals">
+          <article class="grid gap-1 rounded-xl border border-emerald-900/10 bg-white/80 p-4 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-900/70">Total Offering</span>
+            <strong class="text-xl font-bold tabular-nums text-emerald-950">₱{{ getStewardshipTotal('offering') | number: '1.2-2' }}</strong>
+          </article>
+          <article class="grid gap-1 rounded-xl border border-emerald-900/10 bg-white/80 p-4 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-900/70">Total Tithes</span>
+            <strong class="text-xl font-bold tabular-nums text-emerald-950">₱{{ getStewardshipTotal('tithe') | number: '1.2-2' }}</strong>
+          </article>
+        </div>
+      </ng-container>
+
+      <div class="grid gap-6">
+
+        <div class="min-w-0">
+          <ng-container *ngIf="getSelectedProgram() as program">
+
+            <section
+              *ngFor="let section of getVisibleSections(program); let first = first; trackBy: trackSection"
+              class="mb-1.5 overflow-hidden rounded-lg border border-white/80 bg-white/90 shadow-sm shadow-emerald-950/5 backdrop-blur transition-shadow hover:border-emerald-900/15 hover:shadow-md">
+
+              <details [attr.open]="first && expandFirstSection ? '' : null">
+                <summary class="flex min-h-9 list-none cursor-pointer items-center justify-between gap-2 border-b border-emerald-900/5 bg-gradient-to-r from-white to-emerald-50/65 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] leading-4 text-emerald-950 transition hover:from-emerald-50 hover:to-emerald-100/70 marker:hidden [&::-webkit-details-marker]:hidden sm:px-4">
+                  <span class="block min-w-0 flex-1">{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
+                </summary>
+
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-sm">
+
+                  <thead>
+                    <tr class="border-b border-emerald-900/5 bg-emerald-950/[0.035] text-emerald-900/70">
+                      <th
+                        class="min-w-[220px] px-4 py-2.5 text-left text-[10px] font-bold
+                               uppercase tracking-[0.12em] sm:px-5">
+                        <span class="sr-only">Particular</span>
+                      </th>
+
+                      <ng-container *ngIf="isAnnualView; else quarterHeader">
+                        <th
+                          *ngFor="let quarter of getQuartersForYear(); trackBy: trackQuarter"
+                          class="w-24 min-w-[90px] px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider">
+                          {{ quarter.quarter }}
+                        </th>
+                      </ng-container>
+
+                      <ng-template #quarterHeader>
+                        <ng-container *ngIf="isStewardshipMonthlySection(section) && getSelectedQuarter() as quarter; else singleQuarterHeader">
+                          <th *ngFor="let month of getQuarterMonthNames(quarter)"
+                            class="min-w-[110px] px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider">
+                            {{ month }}
+                          </th>
+                          <th class="w-32 min-w-[110px] px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider">Total</th>
+                        </ng-container>
+                        <ng-template #singleQuarterHeader>
+                          <th class="w-40 min-w-[150px] px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider sm:px-5">
+                            {{ getSelectedQuarter()?.quarter || 'Amount' }}
+                          </th>
+                        </ng-template>
+                      </ng-template>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr
+                      *ngFor="let particular of section.particulars; trackBy: trackParticular"
+                      class="border-t border-emerald-900/5 transition odd:bg-white even:bg-emerald-950/[0.012] hover:bg-emerald-50/60">
+
+                      <td class="px-4 py-2.5 text-sm text-emerald-950/80 sm:px-5">
+                        {{ particular.particular_name }}
+                      </td>
+
+                      <ng-container *ngIf="isAnnualView; else quarterCell">
+                        <td
+                          *ngFor="let quarter of getQuartersForYear(); trackBy: trackQuarter"
+                          class="px-3 py-2.5 text-center tabular-nums text-emerald-950/80">
+
+                          <ng-container
+                            *ngIf="getParticularQuarterRecord(particular, quarter) as record;
+                                   else noAnnualValue">
+
+                            <span>{{ isRecordSubmitted(record) ? (record.combined_value ?? record.value ?? '—') : (record.combined_value ?? '—') }}</span>
+                            <small *ngIf="record.participant_count" class="block text-xs text-emerald-800">
+                              Includes {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
+                            </small>
+                            <small *ngIf="record.completed_event_count" class="block text-xs text-sky-800">
+                              {{ record.completed_event_count }} completed event{{ record.completed_event_count === 1 ? '' : 's' }}
+                            </small>
+                          </ng-container>
+
+                          <ng-template #noAnnualValue>
+                            <span class="text-emerald-900/40">—</span>
+                          </ng-template>
+                        </td>
+                      </ng-container>
+
+                      <ng-template #quarterCell>
+                        <ng-container *ngIf="isStewardshipMonthlySection(section); else singleQuarterCell">
+                          <ng-container *ngIf="getSelectedQuarter() as quarter">
+                            <ng-container
+                              *ngIf="getParticularQuarterRecord(particular, quarter) as record; else noValue">
+
+                              <ng-container *ngFor="let month of getQuarterMonthNames(quarter)">
+                                <td class="min-w-[110px] px-3 py-2.5 text-center tabular-nums text-emerald-950/80">
+                                  <input
+                                    *ngIf="canEditDepartmentReport && (!isQuarterApproved(quarter) || showInputsWhenReadOnly); else monthlyQuarterValue"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    [attr.aria-label]="particular.particular_name + ' ' + month"
+                                    [ngModel]="getStewardshipMonthValue(record, month)"
+                                    (ngModelChange)="updateReportStewardshipMonth(particular, quarter, record, month, $event)"
+                                    [ngModelOptions]="{ standalone: true }"
+                                    [disabled]="savingAction || isQuarterApproved(quarter)"
+                                    class="w-full min-w-[76px] rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
+                                  <ng-template #monthlyQuarterValue>
+                                    <span>{{ getStewardshipMonthValue(record, month) ?? (isRecordSubmitted(record) ? '0' : '—') }}</span>
+                                  </ng-template>
+                                </td>
+                              </ng-container>
+                              <td class="px-3 py-2.5 text-center font-semibold tabular-nums text-emerald-950/80">
+                                ₱{{ record.combined_value ?? record.value ?? 0 | number: '1.2-2' }}
+                                <small *ngIf="record.participant_count" class="block text-xs font-normal text-emerald-800">
+                                  Includes {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
+                                </small>
+                                <small *ngIf="record.completed_event_count" class="block text-xs font-normal text-sky-800">
+                                  {{ record.completed_event_count }} completed event{{ record.completed_event_count === 1 ? '' : 's' }}
+                                </small>
+                              </td>
+                            </ng-container>
+
+                            <ng-template #noValue>
+                              <td [attr.colspan]="getQuarterMonthNames(quarter).length + 1"
+                                class="px-5 py-2.5 text-center text-emerald-900/40">—</td>
+                            </ng-template>
+                          </ng-container>
+                        </ng-container>
+
+                        <ng-template #singleQuarterCell>
+                          <td class="px-4 py-2.5 text-center tabular-nums text-emerald-950/80 sm:px-5">
+                            <ng-container *ngIf="getSelectedQuarter() as quarter">
+                              <ng-container *ngIf="getParticularQuarterRecord(particular, quarter) as record; else noValue">
+                                <div class="flex flex-col items-center gap-1">
+                                <input
+                                  *ngIf="canEditDepartmentReport || showInputsWhenReadOnly; else quarterValue"
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  [attr.aria-label]="particular.particular_name"
+                                  [ngModel]="record.value"
+                                  (ngModelChange)="updateReportValue(particular, quarter, $event)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                  [disabled]="savingAction || isQuarterApproved(quarter)"
+                                  class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
+                                <small *ngIf="canEditDepartmentReport && record.participant_count" class="text-xs text-emerald-800">
+                                  Includes {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
+                                </small>
+                                <small *ngIf="canEditDepartmentReport && record.completed_event_count" class="text-xs text-sky-800">
+                                  Includes {{ record.completed_event_count }} completed event{{ record.completed_event_count === 1 ? '' : 's' }}
+                                </small>
+                                <ng-template #quarterValue>
+                                  <span>{{ record.combined_value ?? record.value ?? '—' }}</span>
+                                </ng-template>
+                                </div>
+                              </ng-container>
+                              <ng-template #noValue><span class="text-emerald-900/40">—</span></ng-template>
+                            </ng-container>
+                          </td>
+                        </ng-template>
+                      </ng-template>
+                    </tr>
+
+                    <tr *ngIf="!section.particulars?.length">
+                      <td
+                        [attr.colspan]="isAnnualView ? getQuartersForYear().length + 1 : 2"
+                        class="px-5 py-8 text-center text-sm text-emerald-900/60">
+                        No particulars found.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              </details>
+            </section>
+          </ng-container>
+
+          <div
+            *ngIf="!getSelectedProgram()"
+            class="rounded-2xl border border-dashed border-emerald-900/20 bg-white/60 p-10
+                   text-center text-sm text-emerald-900/70 backdrop-blur-xl">
+            No program data available.
+          </div>
+        </div>
+
+        <aside class="min-w-0">
+          <button *ngIf="mobileCommentsOpen"
+            type="button"
+            data-testid="comments-backdrop"
+            aria-label="Close comments panel"
+            (click)="closeComments()"
+            class="fixed inset-0 z-40 cursor-default bg-transparent">
+          </button>
+          <section
+            [ngClass]="mobileCommentsOpen
+              ? 'fixed inset-x-3 bottom-3 z-50 flex h-[min(84vh,760px)] flex-col shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[500px] sm:max-w-[calc(100vw-2.5rem)]'
+              : 'hidden'"
+            class="mb-6 overflow-hidden rounded-3xl border border-emerald-900/10 bg-white
+                   shadow-2xl shadow-emerald-950/15">
+
+            <div class="flex shrink-0 items-center justify-between gap-4 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-5 py-4 text-white">
+              <div class="flex min-w-0 items-center gap-4">
+                <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
+                  <img src="/assets/comment_icon.png" alt="" aria-hidden="true" class="h-12 w-12 object-contain">
+                </span>
+                <div class="min-w-0">
+                  <h2 class="text-lg font-bold tracking-tight text-white">Report conversation</h2>
+                </div>
+              </div>
+              <button type="button" (click)="closeComments()" aria-label="Close comments" title="Close comments"
+                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="m5 5 10 10M15 5 5 15" />
+                </svg>
+              </button>
+
+            </div>
+
+            <div
+              *ngIf="commentsError"
+              role="alert"
+              class="border-b border-red-200 bg-red-50 px-5 py-3 text-sm font-medium text-red-800">
+              {{ commentsError }}
+            </div>
+
+            <div
+              *ngIf="commentsLoading"
+              class="flex items-center gap-3 px-6 py-8 text-sm font-medium text-emerald-900/70">
+              <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
+              Loading comments...
+            </div>
+
+            <ul
+              *ngIf="!commentsLoading && getVisibleComments().length > 0"
+              #commentMessages
+              (scroll)="onCommentMessagesScroll()"
+              class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto bg-gradient-to-b from-emerald-50/80 to-slate-50 px-5 py-6 sm:px-6">
+              <li
+                *ngFor="let comment of getVisibleComments(); trackBy: trackComment"
+                class="flex items-end gap-2.5"
+                [ngClass]="isOwnComment(comment) ? 'justify-end' : 'justify-start'">
+                <span *ngIf="!isOwnComment(comment)"
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-xs font-bold text-white shadow-sm">
+                  {{ getInitials(comment.commenter_name || 'Reviewer') }}
+                </span>
+                <div class="flex max-w-[84%] flex-col gap-1.5"
+                  [ngClass]="isOwnComment(comment) ? 'items-end' : 'items-start'">
+                  <div class="flex flex-wrap items-center gap-x-2 px-1 text-xs text-slate-500"
+                    [ngClass]="isOwnComment(comment) ? 'justify-end text-right' : 'justify-start'">
+                    <span class="font-semibold text-slate-700">
+                      {{ comment.commenter_name || (isOwnComment(comment) ? 'You' : 'Reviewer') }}
+                    </span>
+                    <span *ngIf="comment.commenter_role" class="capitalize">{{ comment.commenter_role }}</span>
+                  </div>
+                  <article [ngClass]="isOwnComment(comment)
+                      ? 'rounded-br-md bg-gradient-to-br from-emerald-700 to-emerald-800 text-white'
+                      : 'rounded-bl-md border border-slate-200 bg-white text-slate-800'"
+                    class="rounded-2xl px-4 py-3.5 shadow-sm sm:px-5">
+                    <p class="whitespace-pre-line break-words text-[15px] leading-6">{{ comment.details }}</p>
+                  </article>
+                  <div class="flex flex-wrap items-center gap-x-2 px-1 text-[11px] text-slate-500">
+                    <span *ngIf="isAnnualView && getCommentQuarterLabel(comment)"
+                      class="font-semibold text-emerald-800">{{ getCommentQuarterLabel(comment) }}</span>
+                    <time>{{ comment.date_commented | date: 'mediumDate' }}</time>
+                  </div>
+                </div>
+              </li>
+            </ul>
+
+            <div
+              *ngIf="!commentsLoading && !commentsError && getVisibleComments().length === 0"
+              class="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+              <img src="/assets/comment_icon.png" alt="" aria-hidden="true" class="mb-4 h-20 w-20 object-contain opacity-75">
+              <p class="m-0 text-base font-semibold text-emerald-950">No comments yet</p>
+              <p class="mb-0 mt-1 text-sm text-slate-500">Messages about this report will appear here.</p>
+            </div>
+
+            <div *ngIf="canComment" class="shrink-0 border-t border-slate-200 bg-white p-4 sm:p-5">
+              <ng-container *ngIf="isQuarterApproved(); else commentForm">
+                <p class="m-0 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">This report has been approved. Comments are closed.</p>
+              </ng-container>
+
+              <ng-template #commentForm>
+                <form (ngSubmit)="publishComment()" class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15">
+                  <input type="text" name="comment" [(ngModel)]="newComment" [disabled]="savingComment || isAnnualView"
+                    maxlength="255" placeholder="Write a message..." aria-label="Write a comment"
+                    class="h-12 min-w-0 flex-1 border-0 bg-transparent px-3 text-base text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
+                  <button type="submit" aria-label="Send comment" title="Send comment"
+                    [disabled]="savingComment || !newComment.trim() || isAnnualView"
+                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300">
+                    <svg *ngIf="!savingComment" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="m4 4 17 8-17 8 3-8-3-8Z" />
+                      <path d="M7 12h14" />
+                    </svg>
+                    <span *ngIf="savingComment" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                  </button>
+                </form>
+              </ng-template>
+            </div>
+
+            <div
+              *ngIf="!canComment && getVisibleComments().length > 0"
+              class="border-t border-emerald-900/10 px-5 py-4 text-sm text-emerald-900/70">
+              {{ commentUnavailableMessage }}
+            </div>
+          </section>
+
+          <button *ngIf="!mobileCommentsOpen" type="button" (click)="openComments()"
+            aria-label="Open comments" title="Open comments" [attr.aria-expanded]="mobileCommentsOpen"
+            class="fixed bottom-5 right-5 z-40 flex h-24 w-24 items-center justify-center rounded-full bg-transparent transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+            <img src="/assets/comment_icon.png" alt="" aria-hidden="true"
+              class="h-full w-full object-contain drop-shadow-xl">
+            <span *ngIf="getUnreadCommentCount() > 0"
+              class="absolute right-2 top-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white shadow-md ring-2 ring-white">
+              {{ getUnreadCommentCount() }}
+            </span>
+          </button>
+        </aside>
+      </div>
+
+      <div *ngIf="autoSaveStatus !== 'idle'" class="flex justify-end pb-2">
+        <span class="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold backdrop-blur-md" [ngClass]="{
+          'text-emerald-900/70': autoSaveStatus === 'pending' || autoSaveStatus === 'saving',
+          'text-emerald-700': autoSaveStatus === 'saved',
+          'text-red-600': autoSaveStatus === 'error'
+        }">
+          <ng-container [ngSwitch]="autoSaveStatus">
+            <ng-container *ngSwitchCase="'pending'">Unsaved changes…</ng-container>
+            <ng-container *ngSwitchCase="'saving'">Saving…</ng-container>
+            <ng-container *ngSwitchCase="'saved'">✓ All changes saved</ng-container>
+            <ng-container *ngSwitchCase="'error'">Auto-save failed</ng-container>
+          </ng-container>
+        </span>
+      </div>
+
+      <div *ngIf="!isAnnualView && (canEndorse || canApprove || canEditDepartmentReport)" class="flex flex-wrap items-center justify-end gap-3 pb-6 pt-6">
+        <p *ngIf="canEditDepartmentReport && !canSubmitSelectedQuarter()"
+          role="status"
+          class="m-0 text-xs font-medium text-amber-800">
+          The previous quarter must be approved before submitting this report.
+        </p>
+        <button *ngIf="canEditDepartmentReport" app-button variant="submit" size="md" type="button" (click)="submitPersonalReport()" [loading]="savingAction"
+          [disabled]="savingAction || isQuarterApproved() || !getSelectedQuarter() || !canSubmitSelectedQuarter()"
+          [attr.title]="!canSubmitSelectedQuarter() ? 'The previous quarter must be approved before submitting this report.' : null">
+          {{ savingAction ? 'Submitting...' : isQuarterSubmitted() ? 'Resubmit report' : 'Submit report' }}
+        </button>
+        <button *ngIf="canEndorse && !canEditDepartmentReport" app-button variant="endorse" size="md" type="button" (click)="endorseReport()" [loading]="savingAction"
+          [disabled]="savingAction || !isQuarterSubmitted() || isQuarterEndorsed() || isQuarterApproved()"
+          [attr.title]="!isQuarterSubmitted() ? 'The representative must submit all report data before endorsement.' : null">
+          {{ savingAction ? 'Endorsing...' : (isQuarterApproved() ? 'Approved' : isQuarterEndorsed() ? 'Endorsed' : 'Endorse to assistant') }}
+        </button>
+        <button *ngIf="canApprove" app-button variant="approve" size="md" type="button" (click)="approveReport()" [loading]="savingAction"
+          [disabled]="savingAction || !isQuarterEndorsed() || isQuarterApproved()">
+          {{ savingAction ? 'Approving...' : (isQuarterApproved() ? 'Approved' : 'Approve report') }}
+        </button>
+      </div>
+
+    </ng-container>
+  </div>
+</div>

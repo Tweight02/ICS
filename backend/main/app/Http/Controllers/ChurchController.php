@@ -13,8 +13,15 @@ class ChurchController extends Controller
      * Get all districts.
      * Districts have parent_id = NULL.
      */
-    public function districts(ReportMonitoringService $monitoring): JsonResponse
+    public function districts(Request $request, ReportMonitoringService $monitoring): JsonResponse
     {
+        $validated = $request->validate([
+            'department_id' => ['sometimes', 'integer', 'exists:departments,department_id'],
+        ]);
+        $departmentId = isset($validated['department_id'])
+            ? (int) $validated['department_id']
+            : null;
+
         $districts = Church::query()
             ->whereNull('parent_id')
             ->orderBy('name')
@@ -33,7 +40,8 @@ class ChurchController extends Controller
             ])
             ->groupBy('parent_id');
         $monitoringByChurch = $monitoring->forChurches(
-            $churchesByDistrict->flatten(1)->pluck('church_id')->all()
+            $churchesByDistrict->flatten(1)->pluck('church_id')->all(),
+            $departmentId
         );
 
         $districts->each(function (Church $district) use ($churchesByDistrict, $monitoringByChurch) {
@@ -79,8 +87,18 @@ class ChurchController extends Controller
     /**
      * Get churches belonging to a specified district.
      */
-    public function churches(int $district, ReportMonitoringService $monitoring): JsonResponse
-    {
+    public function churches(
+        Request $request,
+        int $district,
+        ReportMonitoringService $monitoring
+    ): JsonResponse {
+        $validated = $request->validate([
+            'department_id' => ['sometimes', 'integer', 'exists:departments,department_id'],
+        ]);
+        $departmentId = isset($validated['department_id'])
+            ? (int) $validated['department_id']
+            : null;
+
         $districtRecord = Church::query()
             ->where('church_id', $district)
             ->whereNull('parent_id')
@@ -104,7 +122,8 @@ class ChurchController extends Controller
             ]);
 
         $monitoringByChurch = $monitoring->forChurches(
-            $churches->pluck('church_id')->all()
+            $churches->pluck('church_id')->all(),
+            $departmentId
         );
         $churches->each(function (Church $church) use ($monitoringByChurch) {
             $church->monitoring = $monitoringByChurch[$church->church_id] ?? [

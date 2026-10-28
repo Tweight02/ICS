@@ -1,46 +1,46 @@
-<div class="login-page relative isolate min-h-dvh overflow-x-hidden font-sans text-white antialiased">
+<div class="relative isolate min-h-[100svh] overflow-x-clip bg-[#0d3325] font-sans text-white antialiased">
 
   <!-- Photo + scrims -->
   <img
     src="/assets/mountain.png"
     alt=""
     aria-hidden="true"
-    class="login-background fixed inset-0 -z-20 h-full w-full object-cover"
+    class="fixed inset-0 -z-[2] h-full w-full object-cover object-center"
   />
-  <div class="login-scrim login-scrim-horizontal fixed inset-0 -z-10"></div>
-  <div class="login-scrim login-scrim-vertical fixed inset-0 -z-10"></div>
+  <div class="pointer-events-none fixed inset-0 -z-[1] [background:linear-gradient(90deg,rgba(5,40,27,0.9)_0%,rgba(5,40,27,0.72)_45%,rgba(5,40,27,0.36)_100%)]"></div>
+  <div class="pointer-events-none fixed inset-0 -z-[1] [background:linear-gradient(0deg,rgba(3,22,15,0.46)_0%,transparent_50%,rgba(3,22,15,0.16)_100%)]"></div>
 
-  <main class="login-layout mx-auto grid min-h-dvh max-w-7xl items-center gap-12 px-6 py-12 sm:px-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-20 lg:px-14">
+  <main class="mx-auto grid min-h-[100svh] w-full max-w-[80rem] box-border items-center gap-[clamp(2.5rem,6vw,5rem)] px-[clamp(1.25rem,5vw,4rem)] py-[clamp(2rem,5vh,3.5rem)] min-[721px]:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] min-[901px]:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] min-[721px]:gap-8 min-[901px]:gap-20 max-[720px]:gap-8 max-[720px]:px-5 max-[720px]:py-8 max-[420px]:gap-6 max-[420px]:px-4 max-[420px]:py-6">
 
     <!-- Brand, headline, system intro -->
-    <section class="login-brand mx-auto flex max-w-2xl flex-col items-center text-center">
+    <section class="mx-auto flex w-full max-w-[38rem] flex-col items-center text-center [text-shadow:0_2px_18px_rgba(0,0,0,0.28)] max-[720px]:max-w-[34rem]">
 
       <span class="inline-flex">
         <img
           src="/assets/logo.png"
           alt="Northeast Luzon Mission"
-          class="login-logo h-44 w-auto object-contain"
+          class="block h-[clamp(7rem,15vh,11rem)] w-auto object-contain [filter:drop-shadow(0_4px_16px_rgba(0,0,0,0.2))] max-[720px]:h-[6.5rem]"
         />
       </span>
 
-      <h1 class="login-title mt-9 text-balance text-5xl font-semibold leading-[1.02] tracking-tight drop-shadow-[0_2px_24px_rgba(0,0,0,0.35)] sm:text-6xl lg:text-7xl">
+      <h1 class="mt-6 text-balance text-[clamp(2.5rem,4.5vw,4.25rem)] font-semibold leading-[1.04] tracking-tight drop-shadow-[0_2px_24px_rgba(0,0,0,0.35)] max-[720px]:mt-4 max-[720px]:text-[clamp(2rem,9vw,3rem)]">
         Northeast Luzon Mission
       </h1>
 
-      <div class="login-divider mt-10 h-px w-14 bg-white/50" aria-hidden="true"></div>
+      <div class="mt-8 h-px w-14 shrink-0 bg-white/50 max-[720px]:mt-[1.4rem]" aria-hidden="true"></div>
 
       <!-- System intro -->
-      <p class="login-intro mt-8 max-w-lg text-pretty text-lg leading-relaxed text-white/90 drop-shadow-[0_1px_12px_rgba(0,0,0,0.4)] sm:text-xl">
+      <p class="mt-6 max-w-[34rem] text-pretty text-[clamp(1rem,1.45vw,1.2rem)] leading-relaxed text-white/90 drop-shadow-[0_1px_12px_rgba(0,0,0,0.4)] max-[720px]:mt-4 max-[720px]:text-base">
         The Integrated Communication System (ICS) is a web-based platform for the Northeast Luzon Mission that brings ministry reporting, event coordination, and notifications together in one place.
       </p>
     </section>
 
     <!-- Glass card -->
-    <section class="login-card w-full max-w-md justify-self-center rounded-3xl border border-white/25 bg-gradient-to-br from-white/20 via-green-950/35 to-green-950/45 p-7 shadow-2xl shadow-black/40 ring-1 ring-inset ring-white/10 backdrop-blur-2xl backdrop-saturate-150 sm:p-9 lg:max-w-none lg:justify-self-end">
+    <section class="box-border w-full max-w-[26rem] justify-self-end rounded-3xl border border-white/30 bg-[linear-gradient(145deg,rgba(255,255,255,0.16),rgba(7,48,33,0.78)_45%,rgba(5,40,27,0.88))] p-[clamp(1.5rem,3vw,2.25rem)] shadow-[0_24px_64px_rgba(0,0,0,0.3)] backdrop-blur-[18px] backdrop-saturate-[140%] max-[720px]:mx-auto max-[720px]:max-w-[30rem] max-[420px]:rounded-[1.25rem] max-[420px]:p-[1.35rem]">
 
       <h2 class="login-card-title text-2xl font-semibold tracking-tight">Sign in to your account</h2>
 
-      <form class="login-form mt-8 space-y-5" [formGroup]="credentials" (ngSubmit)="submit()" novalidate>
+      <form class="mt-7 space-y-5 max-[420px]:mt-[1.35rem]" [formGroup]="credentials" (ngSubmit)="submit()" novalidate>
 
         @if (error()) {
           <div role="alert" class="login-error rounded-xl border border-red-300/50 bg-red-500/25 px-3.5 py-2.5 text-sm text-red-50">
@@ -99,15 +99,14 @@
           }
         </div>
 
-        <div class="login-options flex items-center justify-between gap-4 text-sm">
+        <div class="flex items-center justify-start gap-4 text-sm max-[420px]:gap-3 max-[420px]:text-[0.8rem]">
           <label class="login-remember flex cursor-pointer items-center gap-2.5">
             <input
               type="checkbox" formControlName="remember"
-              class="h-4 w-4 rounded border-white/50 bg-white/10 accent-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              class="h-4 w-4 rounded border-white/50 bg-white/10 accent-[#edbd46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             />
             Remember me
           </label>
-          <a href="#" class="login-forgot font-medium underline decoration-white/60 underline-offset-4 hover:decoration-white focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">Forgot password?</a>
         </div>
 
         <button

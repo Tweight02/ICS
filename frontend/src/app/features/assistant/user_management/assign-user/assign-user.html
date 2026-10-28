@@ -1,8 +1,7 @@
 <main class="mx-auto max-w-6xl px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
 	<header class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 		<div>
-			<a routerLink="/assistant/view-user" style="border-radius: 9999px"
-				class="group mb-4 inline-flex items-center gap-2 bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2 text-sm font-medium tracking-widest text-white !no-underline shadow-[0_12px_20px_-8px_rgba(6,78,59,0.45)] transition hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700 hover:shadow-[0_16px_24px_-8px_rgba(6,78,59,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2">
+			<a app-button variant="back" size="sm" routerLink="/assistant/view-user" class="mb-4">
 				<svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none"
 					stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 					aria-hidden="true">
@@ -169,7 +168,7 @@
 
 	<!-- Assign / change / transfer modal -->
 	@if (transferTarget(); as target) {
-	<div class="assignment-modal-backdrop fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-slate-900/50 p-3 sm:p-4"
+	<div class="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-slate-900/50 p-3 sm:p-4 [.app-main.sidebar-expanded_&]:left-[235px] [.app-main.sidebar-collapsed_&]:left-[76px] [@media(max-width:768px)]:[.app-main.sidebar-collapsed_&]:left-0"
 		(click)="closeTransfer()">
 		<div id="transfer-dialog" role="dialog" aria-modal="true" aria-labelledby="transfer-title"
 			aria-describedby="transfer-desc" tabindex="-1" (click)="$event.stopPropagation()"
@@ -344,7 +343,7 @@
 					class="inline-flex h-9 items-center justify-center !rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60">
 					Cancel
 				</button>
-				<button type="button" (click)="submitTransfer()" [disabled]="!selectedPastor() || saving()"
+				<button app-button variant="submit" size="md" type="button" (click)="submitTransfer()" [disabled]="!selectedPastor() || saving()" [loading]="saving()"
 					class="inline-flex h-9 items-center justify-center !rounded-md bg-[#0F4A30] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0B3925] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
 					@if (saving()) {
 					<svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">

@@ -29,7 +29,6 @@ const BANNERS = [
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './home.html',
-  styleUrl: './home.css',
 })
 export class Home implements OnInit, OnDestroy {
   readonly events = signal<PublicEvent[]>([]);

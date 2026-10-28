@@ -1,0 +1,48 @@
+<div class="flex flex-wrap items-start gap-6">
+  <div class="flex flex-col items-start gap-1.5">
+    <label for="reporting-year" class="pl-0.5 text-[10px] font-bold tracking-[0.14em] text-black">YEAR</label>
+    <select
+      id="reporting-year"
+      aria-label="Reporting year"
+      [ngModel]="selectedYear()"
+      (ngModelChange)="yearChanged.emit($event)"
+      class="!m-0 !h-9 w-28 rounded-lg border border-emerald-900/15 bg-white px-3 text-sm text-emerald-950 shadow-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15">
+      <option *ngFor="let year of years()" [ngValue]="year">{{ year }}</option>
+    </select>
+  </div>
+
+  <div class="flex flex-col gap-1.5">
+    <span class="pl-0.5 text-[10px] font-bold tracking-[0.14em] text-black">QUARTER</span>
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-emerald-900/10 bg-emerald-50 p-1">
+      <div class="flex flex-wrap gap-0.5">
+        <button *ngFor="let quarter of quarters()"
+          type="button"
+          (click)="quarterSelected.emit(quarter)"
+          [attr.aria-pressed]="!annualView() && selectedQuarterId() === quarter.quarter_id"
+          [ngClass]="!annualView() && selectedQuarterId() === quarter.quarter_id
+            ? 'bg-emerald-700 text-white shadow-sm'
+            : 'text-emerald-900/80 hover:bg-white/70 hover:text-emerald-950'"
+          class="min-h-8 min-w-11 rounded-md px-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
+          {{ quarter.quarter }}
+        </button>
+        <button type="button"
+          (click)="annualSelected.emit()"
+          [attr.aria-pressed]="annualView()"
+          [ngClass]="annualView()
+            ? 'bg-emerald-700 text-white shadow-sm'
+            : 'text-emerald-900/80 hover:bg-white/70 hover:text-emerald-950'"
+          class="min-h-8 min-w-14 rounded-md px-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
+          Annual
+        </button>
+      </div>
+      <span *ngIf="!annualView() && status()"
+        role="status"
+        data-testid="period-status"
+        [ngClass]="status() === 'approved' ? 'border-emerald-700 text-emerald-900' : 'border-sky-700 text-sky-900'"
+        class="inline-flex items-center gap-1.5 border-l pl-2 text-xs font-bold">
+        <span aria-hidden="true">✓</span>
+        {{ status() === 'approved' ? 'Approved' : 'Endorsed' }}
+      </span>
+    </div>
+  </div>
+</div>

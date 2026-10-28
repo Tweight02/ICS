@@ -1,5 +1,5 @@
-<div class="home-page min-h-screen text-gray-800">
-  <header class="bg-green-800/80 text-white shadow-lg">
+<div class="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-[linear-gradient(rgba(0,0,0,0.35),rgba(0,0,0,0.35)),url('/assets/images/mountain.png')_center/cover_no-repeat_fixed] text-gray-800">
+  <header class="sticky top-0 z-10 shrink-0 bg-green-800/80 text-white shadow-lg">
     <div class="mx-auto max-w-7xl px-6 py-3">
       <div class="flex items-center gap-4">
         <img src="logo.png" alt="Northeast Luzon Mission logo" class="h-12 w-12 shrink-0 object-contain" />
@@ -8,9 +8,9 @@
     </div>
   </header>
 
-  <main class="home-content">
-    <div class="home-content-inner mx-auto max-w-7xl px-6 py-8 lg:px-8">
-    <div class="home-intro mb-8 text-center">
+  <main class="flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto">
+    <div class="mx-auto w-full max-w-7xl flex-none px-6 py-8 max-[1279px]:p-4 lg:px-8">
+    <div class="mb-8 flex-none text-center max-[1279px]:mb-4">
       <p class="text-sm font-semibold uppercase tracking-widest text-green-200">
         Northeast Luzon Mission
       </p>
@@ -44,17 +44,17 @@
       No upcoming events are available for registration.
     </div>
 
-    <div *ngIf="!loading() && !errorMessage() && events().length > 0" class="events-grid grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 xl:grid-cols-3">
+    <div *ngIf="!loading() && !errorMessage() && events().length > 0" class="grid flex-none grid-cols-1 items-stretch gap-6 sm:grid-cols-2 xl:grid-cols-3">
       <article
         *ngFor="let event of events()"
-        class="event-card flex min-w-0 flex-col overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg transition duration-200 hover:-translate-y-1 hover:shadow-xl"
+        class="flex min-h-80 min-w-0 flex-col overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg transition duration-200 hover:-translate-y-1 hover:shadow-xl"
       >
-        <div [ngClass]="['event-banner', 'bg-linear-to-br', event.banner, 'p-5', 'text-white']">
+        <div [ngClass]="['flex', 'min-h-[clamp(7rem,14vw,9rem)]', 'w-full', 'min-w-0', 'flex-col', 'justify-center', '[overflow-wrap:anywhere]', 'bg-linear-to-br', event.banner, 'p-5', 'text-white', 'max-[639px]:min-h-28']">
           <span *ngIf="!event.registration_open"
             class="mb-2 self-start rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wide">
             Registration closed
           </span>
-          <h3 class="text-xl font-bold leading-snug">{{ event.title }}</h3>
+          <h3 class="max-w-full break-words text-xl font-bold leading-snug">{{ event.title }}</h3>
           <p class="mt-1 text-xl text-white/85">{{ event.start_date | date: 'MMMM d, y' }}</p>
         </div>
 

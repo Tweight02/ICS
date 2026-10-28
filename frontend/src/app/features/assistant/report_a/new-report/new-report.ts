@@ -12,11 +12,11 @@ import { RouterLink } from '@angular/router';
 import { Department } from '../../../../core/models/department.model';
 import { ReportService } from '../../../../core/services/report/report';
 import { UserService } from '../../../../core/services/user/user-service';
+import { Button } from '../../../../shared/components/button/button';
 
 @Component({
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [Button, CommonModule, ReactiveFormsModule, RouterLink],
   selector: 'app-new-report',
-  styleUrl: './new-report.css',
   templateUrl: './new-report.html',
 })
 export class NewReport implements OnInit {

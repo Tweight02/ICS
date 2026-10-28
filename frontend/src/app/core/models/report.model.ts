@@ -3,6 +3,9 @@
    DEPARTMENT
 ========================================================= */
 
+export const PERSONAL_REPORT_GROUP_DEPARTMENT_ID = 16;
+export const PERSONAL_REPORT_DEPARTMENT_IDS = [16, 20, 22, 23] as const;
+
 export interface Department {
   department_id: number;
   department_name: string;
@@ -11,6 +14,10 @@ export interface Department {
   q2_approved?: boolean;
   q3_approved?: boolean;
   q4_approved?: boolean;
+  q1_endorsed?: boolean;
+  q2_endorsed?: boolean;
+  q3_endorsed?: boolean;
+  q4_endorsed?: boolean;
 
   q1_submitted?: boolean;
   q2_submitted?: boolean;
@@ -43,6 +50,7 @@ export interface ReportQuarter {
 
   value: number | string | null;
   participant_count?: number;
+  completed_event_count?: number;
   combined_value?: number | null;
   monthly_values?: Record<string, number | null>;
 }

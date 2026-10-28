@@ -9,11 +9,21 @@ import {
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
+import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
-import { ReportService } from '../../../../core/services/report/report';
-import { Department } from '../../../../core/models/report.model';
+import {
+  PERSONAL_REPORT_GROUP_DEPARTMENT_ID
+} from '../../../../core/models/report.model';
 import { RunningLoader } from '../../../../shared/components/running-loader/running-loader';
+import { Button } from '../../../../shared/components/button/button';
+import { QuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
+
+interface MonitoringAlert {
+  quarter: string;
+  status: string;
+  tone: 'complete' | 'endorsed' | 'pending' | 'in-progress' | 'not-started';
+}
 
 @Component({
   selector: 'app-reports',
@@ -21,11 +31,12 @@ import { RunningLoader } from '../../../../shared/components/running-loader/runn
 
   imports: [
     CommonModule,
-    RunningLoader
+    RunningLoader,
+    Button,
+    QuarterStatus
   ],
 
-  templateUrl: './reports.html',
-  styleUrl: './reports.css'
+  templateUrl: '../../../../shared/reports/reports/reports.html'
 })
 export class Reports implements OnInit {
   readonly quarterKeys: Array<'q1' | 'q2' | 'q3' | 'q4'> = ['q1', 'q2', 'q3', 'q4'];
@@ -33,19 +44,15 @@ export class Reports implements OnInit {
   private readonly churchService =
     inject(ChurchService);
 
-  private readonly reportService =
-    inject(ReportService);
-
   private readonly router =
     inject(Router);
+
+  private readonly authService = inject(AuthService);
 
   readonly districts = signal<Church[]>([]);
   readonly districtChurches = signal<Record<number, Church[]>>({});
   readonly loadingDistrictChurches = signal<Record<number, boolean>>({});
-  readonly departmentsByChurch = signal<Record<number, Department[]>>({});
-  readonly loadingDepartments = signal<Record<number, boolean>>({});
   readonly expandedDistrictId = signal<number | null>(null);
-  readonly expandedChurchId = signal<number | null>(null);
   readonly loadingDistricts = signal(false);
   readonly errorMessage = signal('');
   readonly searchTerm = signal('');
@@ -54,7 +61,11 @@ export class Reports implements OnInit {
     const searchTerm = this.searchTerm().trim().toLocaleLowerCase();
 
     return searchTerm
-      ? this.districts().filter(district => district.name.toLocaleLowerCase().includes(searchTerm))
+      ? this.districts().filter(district =>
+          district.name.toLocaleLowerCase().includes(searchTerm) ||
+          (this.districtChurches()[district.church_id] ?? [])
+            .some(church => church.name.toLocaleLowerCase().includes(searchTerm))
+        )
       : this.districts();
   });
   readonly churchCount = computed(() => this.districts().reduce(
@@ -62,7 +73,7 @@ export class Reports implements OnInit {
     0
   ));
 
-  private readonly personalReportDepartmentIds = new Set([16, 20, 22, 23]);
+  readonly personalReportGroupDepartmentId = PERSONAL_REPORT_GROUP_DEPARTMENT_ID;
 
   ngOnInit(): void {
     this.loadDistricts();
@@ -71,9 +82,17 @@ export class Reports implements OnInit {
   loadDistricts(): void {
     this.loadingDistricts.set(true);
     this.errorMessage.set('');
+    const departmentId = Number(this.authService.getCurrentUser()?.department_id);
+
+    if (this.isAssistantPortal && (!Number.isInteger(departmentId) || departmentId < 1)) {
+      this.districts.set([]);
+      this.loadingDistricts.set(false);
+      this.errorMessage.set('Your department is unavailable. Please sign in again or contact an administrator.');
+      return;
+    }
 
     this.churchService
-      .getDistricts()
+      .getDistricts(this.isAssistantPortal ? departmentId : undefined)
       .subscribe({
         next: (response) => {
           if (response?.success && Array.isArray(response.data)) {
@@ -111,14 +130,26 @@ export class Reports implements OnInit {
 
     this.expandedDistrictId.set(districtId);
 
-    if (Object.hasOwn(this.districtChurches(), districtId)) {
+    this.loadDistrictChurches(districtId);
+  }
+
+  private loadDistrictChurches(districtId: number): void {
+    if (
+      Object.hasOwn(this.districtChurches(), districtId) ||
+      this.loadingDistrictChurches()[districtId]
+    ) {
       return;
     }
 
     this.loadingDistrictChurches.update(current => ({ ...current, [districtId]: true }));
 
     this.churchService
-      .getChurches(districtId)
+      .getChurches(
+        districtId,
+        this.isAssistantPortal
+          ? Number(this.authService.getCurrentUser()?.department_id)
+          : undefined
+      )
       .subscribe({
         next: (response) => {
           const churches = response?.success && Array.isArray(response.data)
@@ -139,111 +170,44 @@ export class Reports implements OnInit {
   }
 
   updateSearch(event: Event): void {
-    this.searchTerm.set((event.target as HTMLInputElement).value);
+    const searchTerm = (event.target as HTMLInputElement).value;
+    this.searchTerm.set(searchTerm);
+
+    if (searchTerm.trim()) {
+      this.districts().forEach(district => this.loadDistrictChurches(district.church_id));
+    }
   }
 
   clearSearch(): void {
     this.searchTerm.set('');
   }
 
-  toggleChurch(churchId: number): void {
-    this.expandedChurchId.set(this.expandedChurchId() === churchId ? null : churchId);
+  canViewPersonalReports(): boolean {
+    const user = this.authService.getCurrentUser();
+    const role = String(user?.role || '').trim().toLowerCase().replace(/[_-]/g, ' ');
 
-    if (this.expandedChurchId() !== churchId || Object.hasOwn(this.departmentsByChurch(), churchId)) {
-      return;
-    }
-
-    this.loadingDepartments.update(current => ({ ...current, [churchId]: true }));
-    this.reportService.getDepartments(churchId).subscribe({
-      next: (response) => {
-        const departments = Array.isArray(response) ? response : [];
-        this.departmentsByChurch.update(current => ({ ...current, [churchId]: departments }));
-        this.loadingDepartments.update(current => ({ ...current, [churchId]: false }));
-      },
-      error: () => {
-        this.departmentsByChurch.update(current => ({ ...current, [churchId]: [] }));
-        this.loadingDepartments.update(current => ({ ...current, [churchId]: false }));
-      }
-    });
+    return Number(user?.department_id) === this.personalReportGroupDepartmentId
+      && ['assistant', 'administrative assistant', 'director'].includes(role);
   }
 
-  isChurchOpen(churchId: number): boolean {
-    return this.expandedChurchId() === churchId;
-  }
-
-  getReportDepartments(churchId: number): Department[] {
-    return (this.departmentsByChurch()[churchId] ?? []).filter(
-      department => !this.isPersonalReportDepartment(department)
-    );
-  }
-
-  getPersonalReportDepartments(churchId: number): Department[] {
-    return (this.departmentsByChurch()[churchId] ?? []).filter(
-      department => this.isPersonalReportDepartment(department)
-    );
-  }
-
-  openPersonalReport(districtId: number, churchId: number): void {
+  openChurch(districtId: number, churchId: number): void {
     const portalPrefix = this.router.url.startsWith('/assistant')
       ? '/assistant'
       : '/director';
+    const departmentId = Number(this.authService.getCurrentUser()?.department_id);
 
-    this.router.navigate([
-      `${portalPrefix}/reports/records`,
-      22,
-      districtId,
-      churchId
-    ], {
-      queryParams: { return_to: 'monitoring' }
-    });
-  }
-
-  private isPersonalReportDepartment(department: Department): boolean {
-    const name = String(department.department_name || '').trim().toLowerCase();
-
-    return this.personalReportDepartmentIds.has(Number(department.department_id))
-      || name.includes('adventist mission')
-      || name.includes('ministerial')
-      || name.includes('baptism record')
-      || name.includes('death record');
-  }
-
-  getDepartmentProgress(department: Department, quarter: 'q1' | 'q2' | 'q3' | 'q4'): number | null {
-    return {
-      q1: department.q1_data_progress,
-      q2: department.q2_data_progress,
-      q3: department.q3_data_progress,
-      q4: department.q4_data_progress
-    }[quarter] ?? null;
-  }
-
-  isDepartmentApproved(department: Department, quarter: 'q1' | 'q2' | 'q3' | 'q4'): boolean {
-    return Boolean({
-      q1: department.q1_approved,
-      q2: department.q2_approved,
-      q3: department.q3_approved,
-      q4: department.q4_approved
-    }[quarter]);
-  }
-
-  openDepartment(department: Department, districtId: number, churchId: number): void {
-    if (!department?.department_id) {
+    if (!Number.isInteger(departmentId) || departmentId < 1) {
+      this.errorMessage.set('Your department is unavailable. Please sign in again or contact an administrator.');
       return;
     }
 
-    const portalPrefix = this.router.url.startsWith('/assistant')
-      ? '/assistant'
-      : '/director';
-    const departmentName = String(department.department_name || '').toLowerCase();
-    const isBaptismOrDeath = department.department_id === 22
-      || department.department_id === 23
-      || departmentName.includes('baptism')
-      || departmentName.includes('death');
+    const reportType = departmentId === 22 || departmentId === 23
+      ? 'records'
+      : 'particulars';
 
-    const reportType = isBaptismOrDeath ? 'records' : 'particulars';
     this.router.navigate([
       `${portalPrefix}/reports/${reportType}`,
-      department.department_id,
+      departmentId,
       districtId,
       churchId
     ], {
@@ -251,26 +215,33 @@ export class Reports implements OnInit {
     });
   }
 
-  getQuarterValue(church: Church, quarter: 'q1' | 'q2' | 'q3' | 'q4'): number | null {
-    const monitoringValue = church.monitoring?.[quarter];
-
-    if (typeof monitoringValue === 'number') {
-      return monitoringValue;
+  getQuarterStatus(church: Church, quarter: 'q1' | 'q2' | 'q3' | 'q4'): MonitoringAlert | null {
+    if (church.monitoring?.[`${quarter}_approved`]) {
+      return { quarter: quarter.toUpperCase(), status: 'Approved', tone: 'complete' };
     }
 
-    return typeof church[quarter] === 'number' ? church[quarter] ?? null : null;
-  }
+    const progress = church.monitoring?.[quarter] ?? church[quarter] ?? null;
+    if (church.monitoring?.[`${quarter}_endorsed`]) {
+      return { quarter: quarter.toUpperCase(), status: 'Endorsed', tone: 'endorsed' };
+    }
 
-  isQuarterApproved(church: Church, quarter: 'q1' | 'q2' | 'q3' | 'q4'): boolean {
-    return Boolean(church.monitoring?.[`${quarter}_approved`]);
-  }
+    if (church.monitoring?.[`${quarter}_submitted`]) {
+      return { quarter: quarter.toUpperCase(), status: 'Submitted', tone: 'pending' };
+    }
 
-  openChurch(church: Church): void {
-    const prefix = this.router.url.startsWith('/assistant')
-      ? '/assistant'
-      : '/director';
+    if (progress === null) {
+      return null;
+    }
 
-    this.router.navigate([`${prefix}/reports/details`, church.church_id]);
+    if (progress === 100) {
+      return { quarter: quarter.toUpperCase(), status: 'Ready to submit', tone: 'pending' };
+    }
+
+    if (progress > 0) {
+      return { quarter: quarter.toUpperCase(), status: 'In progress', tone: 'in-progress' };
+    }
+
+    return { quarter: quarter.toUpperCase(), status: 'Not started', tone: 'not-started' };
   }
 
   openDistrict(

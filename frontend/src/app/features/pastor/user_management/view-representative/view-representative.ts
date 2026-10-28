@@ -12,13 +12,14 @@ import {
     RepresentativeFilters
 } from '../../../../core/models/representative.model';
 import { ChurchService } from '../../../../core/services/church/church-service';
+import { Button } from '../../../../shared/components/button/button';
 
 @Component({
     selector: 'app-view-representative',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, Button],
     templateUrl: './view-representative.html',
-    styleUrl: './view-representative.css'
+
 })
 export class ViewRepresentative implements OnInit {
     private rep = inject(RepresentativeService);

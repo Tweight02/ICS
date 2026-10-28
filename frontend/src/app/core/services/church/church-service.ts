@@ -63,11 +63,10 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
     private readonly http: HttpClient
   ) {}
 
-  getDistricts(): Observable<DistrictResponse> {
-
-    return this.http.get<DistrictResponse>(
-      `${this.apiUrl}/districts`
-    );
+  getDistricts(departmentId?: number): Observable<DistrictResponse> {
+    return this.http.get<DistrictResponse>(`${this.apiUrl}/districts`, {
+      params: departmentId ? { department_id: departmentId } : {}
+    });
   }
 
   getAllChurches(): Observable<ChurchDirectoryResponse> {
@@ -77,11 +76,13 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
   }
 
   getChurches(
-    districtId: number
+    districtId: number,
+    departmentId?: number
   ): Observable<ChurchesResponse> {
 
     return this.http.get<ChurchesResponse>(
-      `${this.apiUrl}/districts/${districtId}/churches`
+      `${this.apiUrl}/districts/${districtId}/churches`,
+      { params: departmentId ? { department_id: departmentId } : {} }
     );
   }
 }

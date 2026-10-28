@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
+import { Button } from '../../../../shared/components/button/button';
 
 interface Baptism {
   baptism_id: number;
@@ -47,10 +48,10 @@ interface DeathRecord {
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink
+    RouterLink,
+    Button
   ],
   templateUrl: './deathaddrec.html',
-  styleUrls: ['./deathaddrec.css']
 })
 export class DeathaddrecComponent implements OnInit {
 
@@ -106,12 +107,12 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   private readonly swalCustomClass = {
-    popup: 'compact-swal-popup',
-    title: 'compact-swal-title',
-    htmlContainer: 'compact-swal-message',
-    actions: 'compact-swal-actions',
-    confirmButton: 'compact-swal-confirm',
-    cancelButton: 'compact-swal-cancel'
+    popup: 'w-[340px] max-w-[calc(100vw-32px)] rounded-[14px] px-[22px] pt-[22px] pb-[18px] font-[Arial,sans-serif] shadow-[0_12px_35px_rgba(15,23,42,0.14)] max-[400px]:w-[calc(100vw-36px)] max-[400px]:px-4 max-[400px]:pt-[19px] max-[400px]:pb-4 [&_.swal2-icon]:mx-auto [&_.swal2-icon]:mt-0.5 [&_.swal2-icon]:mb-[13px] [&_.swal2-icon]:h-12 [&_.swal2-icon]:w-12 [&_.swal2-icon]:border-[3px]',
+    title: 'm-0 mb-2 p-0 text-[17px] font-bold leading-[1.4] text-gray-800 max-[400px]:text-base',
+    htmlContainer: 'm-0 break-words whitespace-pre-line text-xs leading-[1.6] text-slate-500',
+    actions: 'mx-auto mt-[17px] gap-2 max-[400px]:gap-[7px]',
+    confirmButton: 'm-0 min-w-[78px] rounded-[7px] border-0 px-[13px] py-[9px] text-[11px] font-semibold leading-[1.4] shadow-none focus-visible:outline-2 focus-visible:outline-[#94a3b8] focus-visible:outline-offset-[3px] max-[400px]:px-[11px]',
+    cancelButton: 'm-0 min-w-[78px] rounded-[7px] border-0 px-[13px] py-[9px] text-[11px] font-semibold leading-[1.4] shadow-none focus-visible:outline-2 focus-visible:outline-[#94a3b8] focus-visible:outline-offset-[3px] max-[400px]:px-[11px]'
   };
 
   death = {

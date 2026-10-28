@@ -14,6 +14,150 @@ class EventSaveTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_a_pastor_assigned_to_a_local_church_uses_its_parent_district_for_representative_churches(): void
+    {
+        $departmentId = DB::table('departments')->insertGetId(
+            ['department_name' => 'Youth'],
+            'department_id'
+        );
+        $districtId = DB::table('churches')->insertGetId([
+            'name' => 'Southwestern Nueva Vizcaya',
+            'address' => 'Southwestern Nueva Vizcaya',
+            'parent_id' => null,
+        ], 'church_id');
+        $assignedChurchId = DB::table('churches')->insertGetId([
+            'name' => 'Daan',
+            'address' => 'Daan',
+            'parent_id' => $districtId,
+        ], 'church_id');
+        $availableChurchId = DB::table('churches')->insertGetId([
+            'name' => 'Malasin',
+            'address' => 'Malasin',
+            'parent_id' => $districtId,
+        ], 'church_id');
+        $pastor = User::create([
+            'department_id' => $departmentId,
+            'church_id' => $assignedChurchId,
+            'first_name' => 'District',
+            'last_name' => 'Pastor',
+            'birthdate' => '1990-01-01',
+            'gender' => 'Other',
+            'role' => 'pastor',
+            'email' => 'local-church-pastor@example.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
+
+        Sanctum::actingAs($pastor);
+        $this->getJson('/api/pastor/representatives/churches')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['church_id' => $assignedChurchId, 'name' => 'Daan'])
+            ->assertJsonFragment(['church_id' => $availableChurchId, 'name' => 'Malasin']);
+
+        $this->postJson('/api/pastor/representatives', [
+            'church_id' => $availableChurchId,
+            'first_name' => 'Malasin',
+            'last_name' => 'Representative',
+            'birthdate' => '1995-01-01',
+            'gender' => 'female',
+            'email' => 'malasin-representative@example.test',
+            'password' => 'password123',
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('users', [
+            'church_id' => $availableChurchId,
+            'role' => 'representative',
+            'email' => 'malasin-representative@example.test',
+        ]);
+    }
+
+    public function test_a_district_pastor_creates_one_event_per_selected_church(): void
+    {
+        $departmentId = DB::table('departments')->insertGetId(
+            ['department_name' => 'Youth'],
+            'department_id'
+        );
+        $districtId = DB::table('churches')->insertGetId([
+            'name' => 'North District',
+            'address' => 'North District',
+            'parent_id' => null,
+        ], 'church_id');
+        $churchIds = [];
+        foreach (['North Church', 'South Church'] as $name) {
+            $churchIds[] = DB::table('churches')->insertGetId([
+                'name' => $name,
+                'address' => $name,
+                'parent_id' => $districtId,
+            ], 'church_id');
+        }
+        $programId = DB::table('programs')->insertGetId([
+            'department_id' => $departmentId,
+            'program_name' => 'Youth Program',
+            'parent_id' => null,
+        ], 'program_id');
+        $particularId = DB::table('particulars')->insertGetId([
+            'program_id' => $programId,
+            'particular_name' => 'Youth Attendance',
+        ], 'particular_id');
+        foreach ($churchIds as $churchId) {
+            DB::table('quarters')->insert([
+                'program_id' => $programId,
+                'church_id' => $churchId,
+                'quarter' => 'Q4',
+                'year' => '2026',
+            ]);
+        }
+        $pastor = User::create([
+            'department_id' => DB::table('departments')->insertGetId(
+                ['department_name' => 'Pastor assigned department'],
+                'department_id'
+            ),
+            'church_id' => $churchIds[0],
+            'first_name' => 'Jordan',
+            'last_name' => 'Pastor',
+            'birthdate' => '1990-01-01',
+            'gender' => 'Other',
+            'role' => 'pastor',
+            'email' => 'multi-church-pastor@example.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
+
+        Sanctum::actingAs($pastor);
+        $this->getJson('/api/users/'.$pastor->user_id)
+            ->assertOk()
+            ->assertJsonPath('data.district.name', 'North District');
+        $response = $this->postJson('/api/events', [
+            'title' => 'Multi-church Youth Gathering',
+            'location' => 'North District',
+            'church_ids' => $churchIds,
+            'department_id' => $departmentId,
+            'particular_ids' => [$particularId],
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+        ]);
+
+        $response->assertCreated()->assertJsonCount(2, 'data');
+        $events = $response->json('data');
+        $this->assertCount(2, $events);
+        foreach ($churchIds as $index => $churchId) {
+            $this->assertDatabaseHas('events', [
+                'event_id' => $events[$index]['id'],
+                'church_id' => $churchId,
+                'title' => 'Multi-church Youth Gathering',
+            ]);
+        }
+        $this->assertDatabaseCount('events', 2);
+        $this->getJson('/api/events/'.$events[0]['id'])->assertOk()
+            ->assertJsonPath('data.id', $events[0]['id']);
+        $this->getJson('/api/events?status=all')->assertOk()
+            ->assertJsonFragment(['id' => $events[0]['id'], 'title' => 'Multi-church Youth Gathering'])
+            ->assertJsonFragment(['id' => $events[1]['id'], 'title' => 'Multi-church Youth Gathering']);
+    }
+
     public function test_an_assistant_can_save_an_event_for_multiple_districts(): void
     {
         $departmentId = DB::table('departments')->insertGetId(
@@ -35,7 +179,7 @@ class EventSaveTest extends TestCase
         ], 'program_id');
         $particularId = DB::table('particulars')->insertGetId([
             'program_id' => $programId,
-            'particular_name' => 'Youth Gathering',
+            'particular_name' => 'Youth Attendance',
         ], 'particular_id');
         DB::table('quarters')->insert([
             'program_id' => $programId,
@@ -71,6 +215,8 @@ class EventSaveTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('data.scope.districts.0.id', $districtIds[0])
             ->assertJsonPath('data.scope.districts.1.id', $districtIds[1])
+            ->assertJsonPath('data.scope.all_districts', true)
+            ->assertJsonPath('data.created_by', 'Alex Assistant')
             ->assertJsonPath('data.abilities.update', true)
             ->assertJsonPath('data.abilities.manage_participants', true)
             ->assertJsonPath('data.abilities.confirm_participants', false);

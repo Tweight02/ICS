@@ -21,6 +21,8 @@ import { ChurchService } from '../../../../core/services/church/church-service';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { UserRole } from '../../../../core/models/user.model';
 import { SaveReportItem } from '../../../../core/models/report.model';
+import { Button } from '../../../../shared/components/button/button';
+import { ReportPeriodSelector } from '../../../../shared/reports/period-selector/report-period-selector';
 import Swal from 'sweetalert2';
 
 interface QuarterRecord {
@@ -29,6 +31,7 @@ interface QuarterRecord {
   year?: number | string;
   value: number | string | null;
   participant_count?: number;
+  completed_event_count?: number;
   combined_value?: number | null;
   date_submitted?: string | null;
   district_endorse?: string | null;
@@ -95,11 +98,14 @@ interface QuarterRef {
 @Component({
   selector: 'app-report-particulars',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './report-particulars.html',
-  styleUrl: './report-particulars.css'
+  imports: [CommonModule, FormsModule, Button, ReportPeriodSelector],
+  templateUrl: '../../../../shared/reports/report-particulars/report-particulars.html'
 })
 export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
+  expandFirstSection = true;
+  showInputsWhenReadOnly = false;
+  autoSaveStatus: 'idle' | 'pending' | 'saving' | 'saved' | 'error' = 'idle';
+
   @ViewChild('commentMessages')
   private commentMessages?: ElementRef<HTMLUListElement>;
 
@@ -215,6 +221,14 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     return this.embedded &&
       [16, 20].includes(this.departmentId) &&
       ['pastor', 'district pastor'].includes(this.normalizedUserRole);
+  }
+
+  canSubmitSelectedQuarter(): boolean {
+    return true;
+  }
+
+  get commentUnavailableMessage(): string {
+    return 'View only. Comments cannot be added from this account.';
   }
 
   private get normalizedUserRole(): string {
@@ -482,6 +496,16 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     );
   }
 
+  updateReportStewardshipMonth(
+    _particular: Particular,
+    _quarter: Quarter,
+    record: QuarterRecord,
+    month: string,
+    value: number | string | null
+  ): void {
+    this.updateStewardshipMonth(record, month, value);
+  }
+
   getStewardshipMonthValue(record: QuarterRecord, month: string): number | null {
     return record.monthly_values?.[month] ?? null;
   }
@@ -493,6 +517,17 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     return particular.quarters?.find(record =>
       this.matchesQuarter(record, quarter)
     ) ?? null;
+  }
+
+  updateReportValue(
+    _particular: Particular,
+    _quarter: Quarter,
+    value: number | string | null
+  ): void {
+    const record = this.getParticularQuarterRecord(_particular, _quarter);
+    if (record) {
+      record.value = value;
+    }
   }
 
   private hasFlag(value: unknown): boolean {
@@ -920,9 +955,10 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     }
 
     const quarter = this.getSelectedQuarter();
+    const program = this.getSelectedProgram();
 
-    if (this.isAnnualView || !quarter || this.savingAction) {
-      this.errorMessage = 'Select a quarter first.';
+    if (this.isAnnualView || !quarter || !program || this.savingAction) {
+      this.errorMessage = 'Select a report program and quarter first.';
       return;
     }
 
@@ -938,12 +974,14 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
       ? this.reportService.endorseDepartmentReport(
           this.churchId,
           this.departmentId,
+          program.program_id,
           quarter.year,
           quarter.quarter
         )
       : this.reportService.approveDepartmentReport(
           this.churchId,
           this.departmentId,
+          program.program_id,
           quarter.year,
           quarter.quarter
         );

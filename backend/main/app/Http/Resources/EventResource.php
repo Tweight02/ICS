@@ -15,8 +15,11 @@ class EventResource extends JsonResource
         $user = EventUser::fromRequest($request);
         $quarter = $this->quarterDetails();
         $church = EventsOrg::church((int) $this->church_id);
+        $creator = $this->createdBy()->first(['users.first_name', 'users.last_name']);
         $particulars = $this->particulars()->with('program')->get();
         $districts = $this->districts()->get(['churches.church_id as id', 'churches.name']);
+        $allDistrictsSelected = $districts->isNotEmpty()
+            && $districts->count() === EventsOrg::districts()->count();
         $participantQuery = $this->participants();
         if ($user->role === 'church_representative') {
             $participantQuery->where('church_id', $user->churchId ?? 0);
@@ -74,9 +77,13 @@ class EventResource extends JsonResource
                     'id' => (int) $district->id,
                     'name' => $district->name,
                 ])->values(),
+                'all_districts' => $allDistrictsSelected,
             ],
             'church_id' => (int) $this->church_id,
             'church_name' => $church->name ?? null,
+            'created_by' => $creator
+                ? trim($creator->first_name . ' ' . $creator->last_name)
+                : null,
             'organized_by' => null,
             'participants' => ['total' => $total, 'confirmed' => $confirmed, 'pending' => $total - $confirmed],
             'abilities' => [
