@@ -69,9 +69,7 @@
 
               <!-- First Name -->
               <div class="flex min-w-0 flex-col gap-1.5">
-                <label
-                  class="text-xs font-bold text-[#3f5a4e]"
-                  for="first_name">
+                <label class="text-xs font-bold text-[#3f5a4e]" for="first_name">
                   First Name <span class="text-[#d44848]">*</span>
                 </label>
 
@@ -87,9 +85,7 @@
 
               <!-- Middle Name -->
               <div class="flex min-w-0 flex-col gap-1.5">
-                <label
-                  class="text-xs font-bold text-[#3f5a4e]"
-                  for="middle_name">
+                <label class="text-xs font-bold text-[#3f5a4e]" for="middle_name">
                   Middle Name
                 </label>
 
@@ -104,9 +100,7 @@
 
               <!-- Last Name -->
               <div class="flex min-w-0 flex-col gap-1.5">
-                <label
-                  class="text-xs font-bold text-[#3f5a4e]"
-                  for="last_name">
+                <label class="text-xs font-bold text-[#3f5a4e]" for="last_name">
                   Last Name <span class="text-[#d44848]">*</span>
                 </label>
 
@@ -122,9 +116,7 @@
 
               <!-- Extension Name -->
               <div class="flex min-w-0 flex-col gap-1.5">
-                <label
-                  class="text-xs font-bold text-[#3f5a4e]"
-                  for="extension_name">
+                <label class="text-xs font-bold text-[#3f5a4e]" for="extension_name">
                   Extension Name
                 </label>
 
@@ -152,6 +144,7 @@
                 name="birthdate"
                 type="date"
                 [(ngModel)]="baptism.birthdate"
+                (change)="updateMinimumBaptismDate()"
                 [max]="today"
                 required />
             </div>
@@ -169,10 +162,7 @@
                 [(ngModel)]="baptism.gender"
                 required>
 
-                <option value="" disabled>
-                  Select gender
-                </option>
-
+                <option value="" disabled>Select gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
               </select>
@@ -190,15 +180,11 @@
                 name="marital_status"
                 [(ngModel)]="baptism.marital_status">
 
-                <option value="">
-                  Select marital status
-                </option>
-
+                
                 <option value="Single">Single</option>
                 <option value="Married">Married</option>
                 <option value="Widowed">Widowed</option>
-                <option value="Divorced">Divorced</option>
-                <option value="Separated">Separated</option>
+           
               </select>
             </div>
 
@@ -231,29 +217,118 @@
 
           <div class="grid grid-cols-2 gap-x-4 gap-y-3 max-[650px]:grid-cols-1 max-[650px]:gap-3">
 
-            <!-- Church -->
+            <!-- Church: Searchable District Church Dropdown -->
             <div class="flex min-w-0 flex-col gap-1.5">
-              <label class="text-xs font-bold text-[#3f5a4e]" for="church_id">
+              <label class="text-xs font-bold text-[#3f5a4e]" for="church_search">
                 Church <span class="text-[#d44848]">*</span>
               </label>
 
-              <select
-                class="w-full min-h-[40px] rounded-[9px] border border-[#d9e4dd] bg-white px-2.5 py-2 text-[13px] text-[#213a2f] outline-none transition focus:border-[#25845e] focus:ring-[3px] focus:ring-[#25845e]/10"
-                id="church_id"
+              <div
+                class="relative w-full"
+                #churchDropdown
+                [class.open]="churchDropdownOpen">
+
+                <div class="relative w-full">
+
+                  <!-- Search Icon -->
+                  <svg
+                    class="pointer-events-none absolute left-[13px] top-1/2 z-10 !h-4 !w-4 -translate-y-1/2 !text-[#64748b]"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#64748b"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="m20 20-4-4"></path>
+                  </svg>
+
+                  <!-- Search Input -->
+                  <input
+                    id="church_search"
+                    type="text"
+                    class="box-border block h-[40px] w-full cursor-pointer rounded-[9px] border border-[#d9e4dd] bg-white !py-2 !pl-10 !pr-11 text-[13px] text-[#213a2f] shadow-none transition-[border-color,box-shadow] placeholder:text-[#9daaa2] focus:border-[#25845e] focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-[#25845e]/10"
+                    [value]="churchDropdownOpen ? churchSearch : getSelectedChurchName()"
+                    (focus)="openChurchDropdown()"
+                    (input)="onChurchSearch($event)"
+                    [placeholder]="churchesLoading
+                      ? 'Loading district churches...'
+                      : churches.length === 0
+                        ? 'No churches assigned to your district'
+                        : 'Search or select church'"
+                    autocomplete="off"
+                    [disabled]="churchesLoading || churches.length === 0"
+                    aria-label="Search churches"
+                    aria-autocomplete="list"
+                    [attr.aria-expanded]="churchDropdownOpen"
+                    (keydown.escape)="closeChurchDropdown()">
+
+                  <!-- Dropdown Arrow -->
+                  <button
+                    type="button"
+                    class="absolute right-[5px] top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    (click)="toggleChurchDropdown()"
+                    [disabled]="churchesLoading || churches.length === 0"
+                    aria-label="Toggle church dropdown">
+
+                    <svg
+                      class="h-[18px] w-[18px] transition-transform duration-200"
+                      [class.rotate-180]="churchDropdownOpen"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true">
+                      <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                  </button>
+
+                </div>
+
+                <!-- Church Options -->
+                <div
+                  *ngIf="churchDropdownOpen"
+                  class="absolute left-0 right-0 top-[calc(100%+4px)] z-[1050] max-h-[200px] overflow-y-auto rounded-lg border border-slate-300 bg-white p-1 shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
+                  role="listbox">
+
+                  <button
+                    *ngFor="let church of filteredChurches"
+                    type="button"
+                    class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] text-slate-700 transition-colors hover:bg-emerald-50 focus-visible:bg-emerald-50 focus-visible:outline-none"
+                    role="option"
+                    [class.bg-emerald-50]="sameChurch(church.church_id, baptism.church_id)"
+                    [class.text-emerald-800]="sameChurch(church.church_id, baptism.church_id)"
+                    [attr.aria-selected]="sameChurch(church.church_id, baptism.church_id)"
+                    (click)="selectChurch(church)">
+                    {{ church.name }}
+                  </button>
+
+                  <div
+                    *ngIf="filteredChurches.length === 0"
+                    class="p-2.5 text-center text-[13px] text-slate-500">
+                    No churches found.
+                  </div>
+
+                </div>
+              </div>
+
+              <input
+                type="hidden"
                 name="church_id"
                 [(ngModel)]="baptism.church_id"
                 required>
 
-                <option [ngValue]="null" disabled>
-                  Select church
-                </option>
-
-                <option
-                  *ngFor="let church of churches"
-                  [ngValue]="church.church_id">
-                  {{ church.name }}
-                </option>
-              </select>
+              <p
+                *ngIf="churchesError"
+                class="text-[12px] leading-[1.5] text-[#a52b2b]"
+                role="alert">
+                {{ churchesError }}
+              </p>
             </div>
 
             <!-- Quarter -->
@@ -288,9 +363,18 @@
                 name="date_of_baptism"
                 type="date"
                 [(ngModel)]="baptism.date_of_baptism"
+                [min]="minimumBaptismDate || null"
                 [max]="today"
-                [min]="baptism.birthdate || null"
+                (change)="validateBaptismDate()"
                 required />
+
+              <!-- Baptism Date Validation Message -->
+              <p
+                *ngIf="baptismDateError"
+                class="text-[12px] leading-[1.5] text-[#a52b2b]"
+                role="alert">
+                {{ baptismDateError }}
+              </p>
             </div>
 
             <!-- Officiating Minister -->
@@ -335,13 +419,8 @@
                 name="is_reclaimed"
                 [(ngModel)]="baptism.is_reclaimed">
 
-                <option [ngValue]="false">
-                  Newly Baptized
-                </option>
-
-                <option [ngValue]="true">
-                  Reclaimed Member
-                </option>
+                <option [ngValue]="false">Newly Baptized</option>
+                <option [ngValue]="true">Reclaimed Member</option>
               </select>
             </div>
 
@@ -368,15 +447,10 @@
             type="submit"
             [loading]="saving"
             class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
-            [disabled]="saving || baptismForm.invalid">
+            [disabled]="saving || baptismForm.invalid || isBaptismDateInvalid()">
 
-            <span *ngIf="!saving">
-              Save Changes
-            </span>
-
-            <span *ngIf="saving">
-              Saving...
-            </span>
+            <span *ngIf="!saving">Save Changes</span>
+            <span *ngIf="saving">Saving...</span>
           </button>
 
         </div>

@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -48,6 +49,10 @@ export class BapaddrecComponent implements OnInit {
   // Today's date in local YYYY-MM-DD format.
   today = this.getTodayDate();
 
+  // Minimum permitted baptism date and validation message.
+  minimumBaptismDate = '';
+  baptismDateError = '';
+
   private readonly savingState = signal(false);
 
   get saving(): boolean {
@@ -90,7 +95,13 @@ export class BapaddrecComponent implements OnInit {
 
   ngOnInit(): void {
     const quarter = this.route.snapshot.queryParamMap.get('quarter');
-    if (quarter === 'Q1' || quarter === 'Q2' || quarter === 'Q3' || quarter === 'Q4') {
+
+    if (
+      quarter === 'Q1' ||
+      quarter === 'Q2' ||
+      quarter === 'Q3' ||
+      quarter === 'Q4'
+    ) {
       this.baptism.quarter = quarter;
     }
 
@@ -245,19 +256,97 @@ export class BapaddrecComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
+  /* =========================================
+     BAPTISM DATE VALIDATION
+  ========================================= */
+
+  /**
+   * Set the minimum baptism date to one day after
+   * the selected birthdate.
+   */
+  updateMinimumBaptismDate(): void {
+    this.baptismDateError = '';
+
+    const birthdate = this.baptism.birthdate;
+
+    if (!birthdate) {
+      this.minimumBaptismDate = '';
+      return;
+    }
+
+    const [year, month, day] = birthdate.split('-').map(Number);
+
+    const minimumDate = new Date(year, month - 1, day);
+
+    // Baptism must be at least one day after birth.
+    minimumDate.setDate(minimumDate.getDate() + 1);
+
+    const minimumYear = minimumDate.getFullYear();
+    const minimumMonth = String(
+      minimumDate.getMonth() + 1
+    ).padStart(2, '0');
+    const minimumDay = String(
+      minimumDate.getDate()
+    ).padStart(2, '0');
+
+    this.minimumBaptismDate =
+      `${minimumYear}-${minimumMonth}-${minimumDay}`;
+
+    // Check the currently selected baptism date again
+    // whenever the birthdate changes.
+    this.validateBaptismDate();
+  }
+
+  /**
+   * Prevent baptism on or before the birthdate.
+   */
+  validateBaptismDate(): void {
+    this.baptismDateError = '';
+
+    const birthdate = this.baptism.birthdate;
+    const baptismDate = this.baptism.date_of_baptism;
+
+    if (!birthdate || !baptismDate) {
+      return;
+    }
+
+    // ISO YYYY-MM-DD dates can be compared directly.
+    if (baptismDate <= birthdate) {
+      this.baptism.date_of_baptism = '';
+
+      this.baptismDateError =
+        'Date of baptism must be at least one day after the birthdate.';
+    }
+  }
+
+  /**
+   * Additional validation before saving.
+   */
+  isBaptismDateInvalid(): boolean {
+    const birthdate = this.baptism.birthdate;
+    const baptismDate = this.baptism.date_of_baptism;
+
+    return !!birthdate &&
+      !!baptismDate &&
+      baptismDate <= birthdate;
+  }
+
   /**
    * Load only churches assigned to the signed-in pastor's district.
    */
   loadChurches(): void {
     this.churchesLoading = true;
+
     this.churchService
       .getMyDistrictChurches()
       .subscribe({
         next: (response) => {
           const districtId = Number(response.district?.church_id);
+
           if (!Number.isInteger(districtId) || districtId <= 0) {
             this.churches = [];
             this.churchesLoading = false;
+
             Swal.fire({
               icon: 'error',
               title: 'Unable to Load District Churches',
@@ -266,6 +355,7 @@ export class BapaddrecComponent implements OnInit {
               confirmButtonColor: '#176b52',
               customClass: this.swalCustomClass
             });
+
             return;
           }
 
@@ -279,8 +369,10 @@ export class BapaddrecComponent implements OnInit {
                 ? null
                 : Number(church.parent_id)
             }));
+
           this.churchesLoading = false;
         },
+
         error: (error) => {
           console.error('Failed to load district churches:', error);
 
@@ -373,6 +465,21 @@ export class BapaddrecComponent implements OnInit {
         icon: 'warning',
         title: 'Invalid Birthdate',
         text: 'Birthdate cannot be later than today.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#176b52',
+        customClass: this.swalCustomClass
+      });
+
+      return;
+    }
+
+    // Prevent baptism on the same day as birth
+    // or before the birthdate.
+    if (this.baptism.date_of_baptism <= this.baptism.birthdate) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Baptism Date',
+        text: 'Date of Baptism must be at least one day after the birthdate.',
         confirmButtonText: 'OK',
         confirmButtonColor: '#176b52',
         customClass: this.swalCustomClass
@@ -508,25 +615,32 @@ export class BapaddrecComponent implements OnInit {
   /**
    * Cancel adding a baptism record.
    */
+  // cancelForm(): void {
+  //   Swal.fire({
+  //     icon: 'warning',
+  //     iconColor: '#b7791f',
+  //     title: 'Cancel adding record?',
+  //     text: 'Unsaved baptism information will be discarded.',
+  //     showCancelButton: true,
+  //     confirmButtonText: 'Discard Record',
+  //     cancelButtonText: 'Continue Editing',
+  //     confirmButtonColor: '#b42318',
+  //     cancelButtonColor: '#0c502f',
+  //     reverseButtons: true,
+  //     focusCancel: true,
+  //     allowOutsideClick: false,
+  //     customClass: this.swalCustomClass
+  //   }).then((result) => {
+  //     if (result.isConfirmed) {
+  //       this.navigateBackToReport();
+  //     }
+  //   });
+  // }
+
+  /**
+ * Cancel adding a baptism record without showing a SweetAlert.
+ */
 cancelForm(): void {
-  Swal.fire({
-    icon: 'warning',
-    iconColor: '#b7791f',
-    title: 'Cancel adding record?',
-    text: 'Unsaved baptism information will be discarded.',
-    showCancelButton: true,
-    confirmButtonText: 'Discard Record',
-    cancelButtonText: 'Continue Editing',
-    confirmButtonColor: '#b42318',
-    cancelButtonColor: '#0c502f',
-    reverseButtons: true,
-    focusCancel: true,
-    allowOutsideClick: false,
-    customClass: this.swalCustomClass
-  }).then((result) => {
-    if (result.isConfirmed) {
-      this.navigateBackToReport();
-    }
-  });
+  this.router.navigate(['/pastor/deathbap']);
 }
 }

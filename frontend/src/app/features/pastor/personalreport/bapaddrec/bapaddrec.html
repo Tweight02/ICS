@@ -1,3 +1,4 @@
+
 <div class="flex min-h-screen items-start justify-center bg-[#f5f7fa] px-3 py-4 max-[576px]:p-2">
   <div class="mx-auto w-full max-w-[540px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.06)] max-[576px]:max-w-full max-[576px]:rounded-[10px]">
 
@@ -21,7 +22,7 @@
                 id="first_name"
                 type="text"
                 name="first_name"
-                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
                 [(ngModel)]="baptism.first_name"
                 placeholder="First name"
                 autocomplete="given-name"
@@ -35,7 +36,7 @@
                 id="middle_name"
                 type="text"
                 name="middle_name"
-                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
                 [(ngModel)]="baptism.middle_name"
                 placeholder="Middle name"
                 autocomplete="additional-name">
@@ -48,7 +49,7 @@
                 id="last_name"
                 type="text"
                 name="last_name"
-                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
                 [(ngModel)]="baptism.last_name"
                 placeholder="Last name"
                 autocomplete="family-name"
@@ -62,7 +63,7 @@
                 id="extension_name"
                 type="text"
                 name="extension_name"
-                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
                 [(ngModel)]="baptism.extension_name"
                 placeholder="Jr., Sr., III, IV, etc.">
             </div>
@@ -100,7 +101,7 @@
                 <input
                   id="church_search"
                   type="text"
-                  class="box-border block h-[40px] w-full cursor-text rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 !py-2 !pl-10 !pr-11 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                  class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 !py-2 !pl-10 !pr-11 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
                   [value]="churchDropdownOpen ? churchSearch : getSelectedChurchName()"
                   (focus)="openChurchDropdown()"
                   (input)="onChurchSearch($event)"
@@ -181,7 +182,7 @@
             <label for="quarter">Quarter</label>
             <select
               id="quarter"
-              class="box-border block h-[40px] w-full appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
+              class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
               name="quarter"
               [(ngModel)]="baptism.quarter"
               required>
@@ -199,7 +200,7 @@
             <label for="is_reclaimed">Baptism Status</label>
             <select
               id="is_reclaimed"
-              class="box-border block h-[40px] w-full appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
+              class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
               name="is_reclaimed"
               [(ngModel)]="baptism.is_reclaimed"
               required>
@@ -219,7 +220,7 @@
               id="address"
               type="text"
               name="address"
-              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.address"
               placeholder="Enter complete address">
           </div>
@@ -231,9 +232,9 @@
               id="birthdate"
               type="date"
               name="birthdate"
-              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.birthdate"
-              (change)="calculateAge()"
+              (change)="calculateAge(); updateMinimumBaptismDate()"
               [max]="today"
               required>
           </div>
@@ -245,10 +246,20 @@
               id="date_of_baptism"
               type="date"
               name="date_of_baptism"
-              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.date_of_baptism"
+              [min]="minimumBaptismDate"
               [max]="today"
+              (change)="validateBaptismDate()"
+              [attr.aria-describedby]="baptismDateError ? 'baptismDateError' : null"
               required>
+
+            <p
+              *ngIf="baptismDateError"
+              id="baptismDateError"
+              class="mt-1 text-xs font-normal text-red-600">
+              {{ baptismDateError }}
+            </p>
           </div>
 
           <!-- Officiating Minister -->
@@ -260,7 +271,7 @@
               id="officiating_minister"
               type="text"
               name="officiating_minister"
-              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.officiating_minister"
               placeholder="Enter minister's name">
           </div>
@@ -272,7 +283,7 @@
               id="place_of_baptism"
               type="text"
               name="place_of_baptism"
-              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               [(ngModel)]="baptism.place_of_baptism"
               placeholder="Enter place of baptism">
           </div>
@@ -282,7 +293,7 @@
             <label for="gender">Gender</label>
             <select
               id="gender"
-              class="box-border block h-[40px] w-full appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
+              class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
               name="gender"
               [(ngModel)]="baptism.gender"
               required>
@@ -298,7 +309,7 @@
             <label for="marital_status">Marital Status</label>
             <select
               id="marital_status"
-              class="box-border block h-[40px] w-full appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
+              class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
               name="marital_status"
               [(ngModel)]="baptism.marital_status"
               required>
@@ -321,7 +332,7 @@
         <!-- Cancel Button -->
         <button
           type="button"
-          class="inline-flex h-[30px] w-[140px] items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] !opacity-100 transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed motion-reduce:transition-none max-[650px]:w-full"
+          class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] !opacity-100 transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed motion-reduce:transition-none max-[650px]:w-full"
           (click)="cancelForm()">
           Cancel
         </button>
@@ -332,8 +343,8 @@
           variant="submit"
           size="md"
           type="submit"
-          class="inline-flex h-[30px] w-[140px] items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] !opacity-100 transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:!opacity-100 motion-reduce:transition-none max-[650px]:w-full"
-          [disabled]="saving || baptismForm.invalid">
+          class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] !opacity-100 transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:!opacity-100 motion-reduce:transition-none max-[650px]:w-full"
+          [disabled]="saving || baptismForm.invalid || isBaptismDateInvalid()">
           {{ saving ? 'Saving...' : 'Save' }}
         </button>
 

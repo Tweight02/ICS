@@ -3,20 +3,24 @@ import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  HostListener,
   OnInit,
+  ViewChild,
   inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, timeout } from 'rxjs/operators';
 import Swal from 'sweetalert2';
+import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
 
 interface Church {
   church_id: number;
   name: string;
   address?: string;
-  parent_id?: number | null;
+  parent_id: number | null;
 }
 
 interface BaptismForm {
@@ -41,11 +45,11 @@ interface BaptismForm {
   selector: 'app-editbap',
   standalone: true,
   imports: [CommonModule, FormsModule, Button],
-  templateUrl: './editbap.html',
-
+  templateUrl: './editbap.html'
 })
 export class EditbapComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly churchService = inject(ChurchService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -53,7 +57,11 @@ export class EditbapComponent implements OnInit {
   private readonly apiUrl = 'http://127.0.0.1:8000/api';
 
   baptismId = 0;
+
   churches: Church[] = [];
+  churchesLoading = false;
+  churchesLoaded = false;
+  churchesError = '';
 
   loading = true;
   saving = false;
@@ -63,7 +71,21 @@ export class EditbapComponent implements OnInit {
 
   today = this.getTodayDate();
 
+  // Minimum permitted baptism date: one day after birthdate.
+  minimumBaptismDate = '';
+  baptismDateError = '';
+
   baptism: BaptismForm = this.emptyBaptism();
+
+  /* =========================================
+     SEARCHABLE CHURCH DROPDOWN
+  ========================================= */
+
+  @ViewChild('churchDropdown')
+  churchDropdown?: ElementRef<HTMLElement>;
+
+  churchSearch = '';
+  churchDropdownOpen = false;
 
   ngOnInit(): void {
     this.baptismId =
@@ -100,9 +122,6 @@ export class EditbapComponent implements OnInit {
     };
   }
 
-
-  
-
   private getTodayDate(): string {
     const now = new Date();
 
@@ -132,17 +151,139 @@ export class EditbapComponent implements OnInit {
     return data;
   }
 
-  // Load the available churches for the selector.
-  loadChurches(): void {
-    this.http
-      .get<any>(`${this.apiUrl}/churches`)
-      .pipe(timeout(10000))
-      .subscribe({
-        next: response => {
-          const data = this.unwrapData(response);
+  /* =========================================
+     BAPTISM DATE VALIDATION
+  ========================================= */
 
-          this.churches = Array.isArray(data)
-            ? data.map((church: any): Church => ({
+  /**
+   * Calculate the earliest permitted baptism date.
+   * Baptism must be at least one calendar day after birth.
+   */
+  updateMinimumBaptismDate(): void {
+    this.baptismDateError = '';
+
+    const birthdate = this.baptism.birthdate;
+
+    if (!birthdate) {
+      this.minimumBaptismDate = '';
+      this.baptismDateError = '';
+      return;
+    }
+
+    const [year, month, day] = birthdate
+      .split('-')
+      .map(Number);
+
+    // Use the local calendar date to avoid timezone shifts.
+    const minimumDate = new Date(
+      year,
+      month - 1,
+      day
+    );
+
+    minimumDate.setDate(minimumDate.getDate() + 1);
+
+    const minimumYear = minimumDate.getFullYear();
+    const minimumMonth = String(
+      minimumDate.getMonth() + 1
+    ).padStart(2, '0');
+    const minimumDay = String(
+      minimumDate.getDate()
+    ).padStart(2, '0');
+
+    this.minimumBaptismDate =
+      `${minimumYear}-${minimumMonth}-${minimumDay}`;
+
+    // Revalidate the current baptism date whenever
+    // the birthdate is changed.
+    this.validateBaptismDate();
+  }
+
+  /**
+   * Reject a baptism date that is the same as
+   * or earlier than the birthdate.
+   */
+  validateBaptismDate(): void {
+    this.baptismDateError = '';
+
+    const birthdate = this.baptism.birthdate;
+    const baptismDate = this.baptism.date_of_baptism;
+
+    if (!birthdate || !baptismDate) {
+      return;
+    }
+
+    // YYYY-MM-DD strings can be compared directly.
+    if (baptismDate <= birthdate) {
+      this.baptism.date_of_baptism = '';
+
+      this.baptismDateError =
+        'Date of baptism must be at least one day after the birthdate.';
+    }
+  }
+
+  /**
+   * Additional validation before saving.
+   */
+  isBaptismDateInvalid(): boolean {
+    const birthdate = this.baptism.birthdate;
+    const baptismDate = this.baptism.date_of_baptism;
+
+    return (
+      !!birthdate &&
+      !!baptismDate &&
+      baptismDate <= birthdate
+    );
+  }
+
+  /* =========================================
+     LOAD DISTRICT CHURCHES
+  ========================================= */
+
+  loadChurches(): void {
+    this.churches = [];
+    this.churchesError = '';
+    this.churchesLoading = true;
+    this.churchesLoaded = false;
+
+    this.churchService
+      .getMyDistrictChurches()
+      .subscribe({
+        next: (response: any) => {
+          const districtId = Number(
+            response?.district?.church_id
+          );
+
+          if (
+            !Number.isInteger(districtId) ||
+            districtId <= 0
+          ) {
+            this.churches = [];
+            this.baptism.church_id = null;
+            this.churchesLoading = false;
+            this.churchesLoaded = true;
+
+            this.churchesError =
+              'Your assigned district could not be identified. Please check your district information.';
+
+            this.cdr.detectChanges();
+            return;
+          }
+
+          const districtChurches = Array.isArray(
+            response?.data
+          )
+            ? response.data
+            : [];
+
+          this.churches = districtChurches
+            .filter(
+              (church: any) =>
+                church.parent_id != null &&
+                Number(church.parent_id) === districtId
+            )
+            .map(
+              (church: any): Church => ({
                 church_id: Number(church.church_id),
                 name: church.name ?? '',
                 address: church.address ?? '',
@@ -150,27 +291,182 @@ export class EditbapComponent implements OnInit {
                   church.parent_id == null
                     ? null
                     : Number(church.parent_id)
-              }))
-            : [];
+              })
+            );
+
+          this.churchesLoading = false;
+          this.churchesLoaded = true;
+
+          this.ensureSelectedChurchBelongsToDistrict();
+
+          if (this.churches.length === 0) {
+            this.churchesError =
+              'No churches are assigned to your district.';
+          }
 
           this.cdr.detectChanges();
         },
 
-        error: error => {
-          console.error('Failed to load churches:', error);
+        error: (error: any) => {
+          console.error(
+            'Failed to load district churches:',
+            error
+          );
+
           this.churches = [];
+          this.baptism.church_id = null;
+          this.churchesLoading = false;
+          this.churchesLoaded = true;
+
+          this.churchesError =
+            error?.error?.message ||
+            'Unable to load churches for your district. Please try again.';
+
           this.cdr.detectChanges();
         }
       });
   }
 
-  // Load and display the selected baptism record.
+  private ensureSelectedChurchBelongsToDistrict(): void {
+    if (
+      this.baptism.church_id == null ||
+      !this.churchesLoaded
+    ) {
+      return;
+    }
+
+    const belongsToDistrict = this.churches.some(
+      church =>
+        church.church_id ===
+        Number(this.baptism.church_id)
+    );
+
+    if (!belongsToDistrict) {
+      this.baptism.church_id = null;
+    }
+  }
+
+  /* =========================================
+     SEARCHABLE CHURCH DROPDOWN FUNCTIONS
+  ========================================= */
+
+  get filteredChurches(): Church[] {
+    const search = this.churchSearch
+      .trim()
+      .toLowerCase();
+
+    return this.churches.filter(church =>
+      String(church.name || '')
+        .toLowerCase()
+        .includes(search)
+    );
+  }
+
+  getSelectedChurchName(): string {
+    const selectedChurch = this.churches.find(
+      church =>
+        String(church.church_id) ===
+        String(this.baptism.church_id)
+    );
+
+    return selectedChurch?.name || '';
+  }
+
+  sameChurch(
+    id1: number | null | undefined,
+    id2: number | null | undefined
+  ): boolean {
+    return (
+      id1 != null &&
+      id2 != null &&
+      String(id1) === String(id2)
+    );
+  }
+
+  openChurchDropdown(): void {
+    if (
+      this.churchesLoading ||
+      this.churches.length === 0
+    ) {
+      return;
+    }
+
+    if (!this.churchDropdownOpen) {
+      this.churchSearch = '';
+      this.churchDropdownOpen = true;
+    }
+  }
+
+  onChurchSearch(event: Event): void {
+    this.churchSearch =
+      (event.target as HTMLInputElement).value;
+
+    this.churchDropdownOpen = true;
+  }
+
+  toggleChurchDropdown(): void {
+    if (this.churchDropdownOpen) {
+      this.closeChurchDropdown();
+      return;
+    }
+
+    if (
+      !this.churchesLoading &&
+      this.churches.length > 0
+    ) {
+      this.churchSearch = '';
+      this.churchDropdownOpen = true;
+    }
+  }
+
+  selectChurch(church: Church): void {
+    const isAssignedChurch = this.churches.some(
+      item =>
+        item.church_id === Number(church.church_id)
+    );
+
+    if (!isAssignedChurch) {
+      this.errorMessage =
+        'You can only select a church under your assigned district.';
+      return;
+    }
+
+    this.baptism.church_id = church.church_id;
+    this.churchSearch = '';
+    this.churchDropdownOpen = false;
+    this.churchesError = '';
+    this.errorMessage = '';
+
+    this.cdr.detectChanges();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onChurchDocumentClick(event: MouseEvent): void {
+    const target = event.target as Node | null;
+
+    if (
+      target &&
+      this.churchDropdownOpen &&
+      !this.churchDropdown?.nativeElement.contains(target)
+    ) {
+      this.closeChurchDropdown();
+    }
+  }
+
+  closeChurchDropdown(): void {
+    this.churchDropdownOpen = false;
+    this.churchSearch = '';
+  }
+
+  /* =========================================
+     LOAD BAPTISM RECORD
+  ========================================= */
+
   loadBaptism(): void {
     this.loading = true;
     this.errorMessage = '';
     this.successMessage = '';
 
-    // Refresh the view immediately to show the loading state.
     this.cdr.detectChanges();
 
     console.log(
@@ -179,19 +475,22 @@ export class EditbapComponent implements OnInit {
     );
 
     this.http
-      .get<any>(`${this.apiUrl}/baptisms/${this.baptismId}`)
+      .get<any>(
+        `${this.apiUrl}/baptisms/${this.baptismId}`
+      )
       .pipe(
         timeout(10000),
         finalize(() => {
           this.loading = false;
-
-          // Important: refresh the view after the request finishes.
           this.cdr.detectChanges();
         })
       )
       .subscribe({
         next: response => {
-          console.log('Baptism API response:', response);
+          console.log(
+            'Baptism API response:',
+            response
+          );
 
           const selected = this.unwrapData(response);
 
@@ -207,33 +506,43 @@ export class EditbapComponent implements OnInit {
           }
 
           const responseId = Number(
-            selected.baptism_id ?? selected.id ?? 0
+            selected.baptism_id ??
+            selected.id ??
+            0
           );
 
-          if (responseId > 0 && responseId !== this.baptismId) {
+          if (
+            responseId > 0 &&
+            responseId !== this.baptismId
+          ) {
             this.errorMessage =
               'The returned baptism record does not match the selected record.';
             this.cdr.detectChanges();
             return;
           }
 
-          // Populate the form with the selected member's information.
           this.baptism = {
-            baptism_id: responseId || this.baptismId,
+            baptism_id:
+              responseId || this.baptismId,
 
             church_id:
               selected.church_id == null
                 ? null
                 : Number(selected.church_id),
 
-            quarter: this.normalizeQuarter(selected.quarter),
+            quarter: this.normalizeQuarter(
+              selected.quarter
+            ),
 
             first_name: selected.first_name ?? '',
             middle_name: selected.middle_name ?? '',
             last_name: selected.last_name ?? '',
             extension_name: selected.extension_name ?? '',
 
-            birthdate: this.dateForInput(selected.birthdate),
+            birthdate: this.dateForInput(
+              selected.birthdate
+            ),
+
             gender: selected.gender ?? '',
             address: selected.address ?? '',
 
@@ -243,20 +552,30 @@ export class EditbapComponent implements OnInit {
             place_of_baptism:
               selected.place_of_baptism ?? '',
 
-            date_of_baptism:
-              this.dateForInput(selected.date_of_baptism),
+            date_of_baptism: this.dateForInput(
+              selected.date_of_baptism
+            ),
 
-            marital_status: selected.marital_status ?? '',
+            marital_status:
+              selected.marital_status ?? '',
 
-            is_reclaimed: this.toBoolean(selected.is_reclaimed)
+            is_reclaimed: this.toBoolean(
+              selected.is_reclaimed
+            )
           };
+
+          // Calculate the minimum date immediately after loading.
+          // This also detects an existing baptism date that is
+          // the same as or earlier than the birthdate.
+          this.updateMinimumBaptismDate();
+
+          this.ensureSelectedChurchBelongsToDistrict();
 
           console.log(
             'Selected baptism information loaded:',
             this.baptism
           );
 
-          // Make the populated form appear immediately.
           this.cdr.detectChanges();
         },
 
@@ -292,19 +611,25 @@ export class EditbapComponent implements OnInit {
   private dateForInput(
     value: string | null | undefined
   ): string {
-    return value ? String(value).substring(0, 10) : '';
+    return value
+      ? String(value).substring(0, 10)
+      : '';
   }
 
   private normalizeQuarter(
     value: string | null | undefined
   ): string {
-    const quarter = (value ?? '').trim().toUpperCase();
+    const quarter = (value ?? '')
+      .trim()
+      .toUpperCase();
 
     const match = quarter.match(
       /^(?:Q\s*|QUARTER\s*)?([1-4])(?:ST|ND|RD|TH)?(?:\s*QUARTER)?$/
     );
 
-    return match ? `Q${match[1]}` : quarter || 'Q1';
+    return match
+      ? `Q${match[1]}`
+      : quarter || 'Q1';
   }
 
   private toBoolean(
@@ -322,10 +647,32 @@ export class EditbapComponent implements OnInit {
     );
   }
 
-  // Validate and save the edited baptism record.
+  /* =========================================
+     SAVE CHANGES
+  ========================================= */
+
   saveChanges(formIsValid: boolean): void {
     this.errorMessage = '';
     this.successMessage = '';
+
+    // Block an invalid baptism date before other form validation.
+    if (
+      this.baptism.birthdate &&
+      this.baptism.date_of_baptism &&
+      this.baptism.date_of_baptism <=
+        this.baptism.birthdate
+    ) {
+      this.baptismDateError =
+        'Date of baptism must be at least one day after the birthdate.';
+
+      this.errorMessage = this.baptismDateError;
+      return;
+    }
+
+    if (this.baptismDateError) {
+      this.errorMessage = this.baptismDateError;
+      return;
+    }
 
     if (!formIsValid) {
       this.errorMessage =
@@ -341,12 +688,42 @@ export class EditbapComponent implements OnInit {
       !Number.isInteger(this.baptismId) ||
       this.baptismId <= 0
     ) {
-      this.errorMessage = 'Invalid baptism record ID.';
+      this.errorMessage =
+        'Invalid baptism record ID.';
+      return;
+    }
+
+    if (
+      this.churchesLoading ||
+      !this.churchesLoaded
+    ) {
+      this.errorMessage =
+        'Please wait until your district churches have loaded.';
       return;
     }
 
     if (!this.baptism.church_id) {
-      this.errorMessage = 'Please select a church.';
+      this.errorMessage =
+        'Please select a church under your assigned district.';
+      return;
+    }
+
+    const selectedChurchId = Number(
+      this.baptism.church_id
+    );
+
+    const churchBelongsToDistrict = this.churches.some(
+      church =>
+        church.church_id === selectedChurchId
+    );
+
+    if (!churchBelongsToDistrict) {
+      this.baptism.church_id = null;
+
+      this.errorMessage =
+        'You can only select a church under your assigned district. Please select an available church.';
+
+      this.cdr.detectChanges();
       return;
     }
 
@@ -368,23 +745,34 @@ export class EditbapComponent implements OnInit {
       return;
     }
 
+    // Final date check: a baptism date must be strictly
+    // later than the birthdate, never equal to or earlier.
     if (
       this.baptism.birthdate &&
       this.baptism.date_of_baptism &&
-      this.baptism.date_of_baptism < this.baptism.birthdate
+      this.baptism.date_of_baptism <=
+        this.baptism.birthdate
     ) {
       this.errorMessage =
-        'Date of baptism cannot be earlier than the birthdate.';
+        'Date of baptism must be at least one day after the birthdate.';
       return;
     }
 
     const payload = {
-      church_id: Number(this.baptism.church_id),
-      quarter: this.normalizeQuarter(this.baptism.quarter),
+      church_id: selectedChurchId,
 
-      first_name: this.baptism.first_name.trim(),
-      middle_name: (this.baptism.middle_name ?? '').trim(),
-      last_name: this.baptism.last_name.trim(),
+      quarter: this.normalizeQuarter(
+        this.baptism.quarter
+      ),
+
+      first_name:
+        this.baptism.first_name.trim(),
+
+      middle_name:
+        (this.baptism.middle_name ?? '').trim(),
+
+      last_name:
+        this.baptism.last_name.trim(),
 
       extension_name:
         this.baptism.extension_name.trim() || null,
@@ -399,10 +787,14 @@ export class EditbapComponent implements OnInit {
       place_of_baptism:
         this.baptism.place_of_baptism.trim(),
 
-      date_of_baptism: this.baptism.date_of_baptism,
-      marital_status: this.baptism.marital_status,
+      date_of_baptism:
+        this.baptism.date_of_baptism,
 
-      is_reclaimed: this.baptism.is_reclaimed ? 1 : 0
+      marital_status:
+        this.baptism.marital_status,
+
+      is_reclaimed:
+        this.baptism.is_reclaimed ? 1 : 0
     };
 
     this.saving = true;
@@ -421,25 +813,26 @@ export class EditbapComponent implements OnInit {
         })
       )
       .subscribe({
-    next: response => {
-  const message =
-    response?.message ||
-    'Baptism record updated successfully.';
+        next: response => {
+          const message =
+            response?.message ||
+            'Baptism record updated successfully.';
 
-  this.successMessage = message;
+          this.successMessage = message;
+          this.cdr.detectChanges();
 
-  this.cdr.detectChanges();
-
-  Swal.fire({
-    icon: 'success',
-    title: 'Saved Successfully!',
-    text: message,
-    confirmButtonText: 'OK',
-    confirmButtonColor: '#0c502f'
-  }).then(() => {
-    this.router.navigate(['/pastor/deathbap']);
-  });
-},
+          Swal.fire({
+            icon: 'success',
+            title: 'Saved Successfully!',
+            text: message,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#0c502f'
+          }).then(() => {
+            this.router.navigate([
+              '/pastor/deathbap'
+            ]);
+          });
+        },
 
         error: error => {
           console.error(
@@ -461,7 +854,10 @@ export class EditbapComponent implements OnInit {
               'The update request timed out. Please check your Laravel server.';
           } else if (error?.error?.errors) {
             this.errorMessage = Object.values(
-              error.error.errors as Record<string, string[]>
+              error.error.errors as Record<
+                string,
+                string[]
+              >
             )
               .flat()
               .join(' ');
@@ -476,24 +872,14 @@ export class EditbapComponent implements OnInit {
       });
   }
 
-  // Cancel editing with SweetAlert confirmation.
-cancelEdit(): void {
-  Swal.fire({
-    icon: 'warning',
-    title: 'Cancel Editing Record?',
-    text: 'Your unsaved baptism information will be discarded.',
-    showCancelButton: true,
-    confirmButtonText: 'Yes, Cancel',
-    cancelButtonText: 'Continue Editing',
-    confirmButtonColor: '#dc3545',
-    cancelButtonColor: '#165b32',
-    reverseButtons: false,
-    focusCancel: true,
-    allowOutsideClick: false
-  }).then((result) => {
-    if (result.isConfirmed) {
-      this.router.navigate(['/pastor/deathbap']);
-    }
-  });
-}
+  /* =========================================
+     CANCEL EDITING
+  ========================================= */
+
+  // Cancel editing without showing a SweetAlert confirmation.
+  cancelEdit(): void {
+    this.router.navigate([
+      '/pastor/deathbap'
+    ]);
+  }
 }
