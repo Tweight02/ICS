@@ -221,7 +221,7 @@
                             </label>
 
                             <input id="birthdate" formControlName="birthdate" type="date" autocomplete="bday"
-                                [class.border-red-500]="invalid('birthdate')"
+                                [class.border-red-500]="invalid('birthdate')" [max]="maxBirthdate"
                                 class="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition enabled:hover:border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 [&.ng-invalid.ng-touched]:border-red-500" />
 
                             @if (serverError('birthdate')) {
@@ -244,7 +244,6 @@
                                 <option value="" disabled>Select gender</option>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
-                                <option value="other">Other</option>
                             </select>
 
                             @if (serverError('gender')) {
