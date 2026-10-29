@@ -38,7 +38,7 @@ interface CalendarCell {
   imports: [CommonModule, FormsModule, RouterLink, Button],
   templateUrl: './events-home.component.html',
   host: {
-    class: 'flex min-w-0 flex-col gap-4 max-[640px]:gap-3 [@media(min-width:1025px)_and_(max-height:820px)]:gap-3',
+    class: 'flex min-w-0 flex-col gap-4 max-[640px]:gap-3 [@media(min-width:1025px)_and_(max-height:820px)]:gap-3 [@media(min-width:1025px)_and_(min-height:680px)]:h-[calc(100dvh-3.5rem)] [@media(min-width:1025px)_and_(min-height:680px)]:min-h-0',
   },
 })
 export class EventsHomeComponent implements OnInit {
