@@ -10,15 +10,18 @@ describe('Reports', () => {
   let component: Reports;
   let fixture: ComponentFixture<Reports>;
   let currentUser: User;
+  let routerUrl: string;
   let navigation: {
     commands: Array<string | number>;
     extras?: { queryParams?: Record<string, string> };
   } | undefined;
   let getChurches: ReturnType<typeof vi.fn>;
   let getDistricts: ReturnType<typeof vi.fn>;
+  let getDepartments: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     navigation = undefined;
+    routerUrl = '/assistant/reports';
     getDistricts = vi.fn().mockReturnValue(of({
       success: true,
       data: [{
@@ -29,6 +32,13 @@ describe('Reports', () => {
         church_count: 1,
         q1: 50
       }]
+    }));
+    getDepartments = vi.fn().mockReturnValue(of({
+      success: true,
+      data: [
+        { department_id: 16, department_name: 'Ministerial & Evangelism' },
+        { department_id: 17, department_name: 'Youth Ministries' }
+      ]
     }));
     getChurches = vi.fn().mockReturnValue(of({
       success: true,
@@ -75,13 +85,16 @@ describe('Reports', () => {
           provide: ChurchService,
           useValue: {
             getDistricts,
-            getChurches
+            getChurches,
+            getDepartments
           }
         },
         {
           provide: Router,
           useValue: {
-            url: '/assistant/reports',
+            get url() {
+              return routerUrl;
+            },
             navigate: (
               commands: Array<string | number>,
               extras?: { queryParams?: Record<string, string> }
@@ -119,6 +132,59 @@ describe('Reports', () => {
 
     expect(navigation).toEqual({
       commands: ['/assistant/reports/particulars', 16, 7, 8],
+      extras: { queryParams: { return_to: 'monitoring' } }
+    });
+  });
+
+  it('lets Head Assistants select and open reports for any department', () => {
+    currentUser.role = 'head assistant';
+    currentUser.department_id = undefined;
+
+    component.loadDepartmentOptions();
+
+    expect(component.hasAllDepartmentAccess).toBe(true);
+    expect(getDepartments).toHaveBeenCalledOnce();
+    expect(component.selectedDepartmentId()).toBe(16);
+    expect(getDistricts).toHaveBeenLastCalledWith(16);
+
+    component.selectDepartment(17);
+    component.openChurch(7, 8);
+
+    expect(getDistricts).toHaveBeenLastCalledWith(17);
+    expect(navigation).toEqual({
+      commands: ['/assistant/reports/particulars', 17, 7, 8],
+      extras: { queryParams: { return_to: 'monitoring' } }
+    });
+  });
+
+  it('keeps Directors scoped to their assigned department', () => {
+    currentUser.role = 'director';
+    currentUser.department_id = 17;
+    routerUrl = '/director/reports';
+
+    component.loadDistricts();
+    fixture.detectChanges();
+
+    expect(component.hasAllDepartmentAccess).toBe(false);
+    expect(getDepartments).not.toHaveBeenCalled();
+    expect(getDistricts).toHaveBeenLastCalledWith(17);
+    expect(fixture.nativeElement.querySelector('#report-department-filter')).toBeNull();
+  });
+
+  it('lets Head Directors select and open reports for any department', () => {
+    currentUser.role = 'head director';
+    currentUser.department_id = 16;
+    routerUrl = '/director/reports';
+
+    component.loadDepartmentOptions();
+    component.selectDepartment(17);
+    component.openChurch(7, 8);
+
+    expect(component.hasAllDepartmentAccess).toBe(true);
+    expect(getDepartments).toHaveBeenCalledOnce();
+    expect(getDistricts).toHaveBeenLastCalledWith(17);
+    expect(navigation).toEqual({
+      commands: ['/director/reports/particulars', 17, 7, 8],
       extras: { queryParams: { return_to: 'monitoring' } }
     });
   });

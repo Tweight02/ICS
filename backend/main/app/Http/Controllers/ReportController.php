@@ -150,6 +150,10 @@ class ReportController extends Controller
                     return;
                 }
 
+                if ($this->hasAllDepartmentAccess($user)) {
+                    return;
+                }
+
                 if ($this->isPastorRole(
                     $this->normalizeRole((string) ($user->role ?? ''))
                 )) {
@@ -873,6 +877,8 @@ class ReportController extends Controller
             'district pastor',
             'administrative assistant',
             'assistant',
+            'head assistant',
+            'head director',
             'representative',
         ];
 
@@ -1447,6 +1453,7 @@ class ReportController extends Controller
         return in_array($role, [
             'assistant',
             'administrative assistant',
+            'head assistant',
         ], true);
     }
 
@@ -1591,6 +1598,10 @@ class ReportController extends Controller
             return null;
         }
 
+        if ($this->hasAllDepartmentAccess($user)) {
+            return null;
+        }
+
         if (
             $this->isDirectorOrAssistant($user)
             && in_array($departmentId, self::PERSONAL_REPORT_DEPARTMENT_IDS, true)
@@ -1623,6 +1634,13 @@ class ReportController extends Controller
         $role = $this->normalizeRole((string) ($user->role ?? ''));
 
         return $role === 'director' || $this->isAssistantRole($role);
+    }
+
+    private function hasAllDepartmentAccess(User $user): bool
+    {
+        $role = $this->normalizeRole((string) ($user->role ?? ''));
+
+        return in_array($role, ['head assistant', 'head director'], true);
     }
 
     private function pastorPersonalCommentAccess(

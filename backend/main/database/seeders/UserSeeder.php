@@ -9,251 +9,170 @@ use RuntimeException;
 
 class UserSeeder extends Seeder
 {
+    private const SEEDED_PASSWORD = '12345678';
+
     public function run(): void
     {
-        $users = [
-            [
-                'department_id' => 16, // Ministerial & Evangelism
-                'church_id' => 1,
-                'first_name' => 'Juan',
-                'middle_name' => 'Santos',
-                'last_name' => 'Dela Cruz',
-                'extension_name' => null,
-                'birthdate' => '1980-05-15',
-                'gender' => 'Male',
-                'role' => 'representative',
-                'email' => 'district.representative@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16, // Ministerial & Evangelism
-                'church_id' => 1,
-                'first_name' => 'James',
-                'middle_name' => 'Harmes',
-                'last_name' => 'Dela Cruz',
-                'extension_name' => null,
-                'birthdate' => '1980-05-15',
-                'gender' => 'Male',
-                'role' => 'pastor',
-                'email' => 'James.pastor@gmail.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 19, // Communication
-                'church_id' => 1,
-                'first_name' => 'Maria',
-                'middle_name' => 'Reyes',
-                'last_name' => 'Santos',
-                'extension_name' => 'Jr.',
-                'birthdate' => '1985-08-22',
-                'gender' => 'Female',
-                'role' => 'director',
-                'email' => 'admin.director@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 19, // assistant
-                'church_id' => 1,
-                'first_name' => 'Maria',
-                'middle_name' => 'Reyes',
-                'last_name' => 'Santos',
-                'extension_name' => 'Jr.',
-                'birthdate' => '1985-08-22',
-                'gender' => 'Female',
-                'role' => 'assistant',
-                'email' => 'assistant.e@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16,
-                'church_id' => 2,
-                'first_name' => 'Andrie',
-                'middle_name' => null,
-                'last_name' => 'Aquino',
-                'extension_name' => null,
-                'birthdate' => '1998-12-10',
-                'gender' => 'male',
-                'role' => 'representative',
-                'email' => 'representative@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16,
-                'church_id' => 210,
-                'first_name' => 'Ross',
-                'middle_name' => null,
-                'last_name' => 'Butobara',
-                'extension_name' => null,
-                'birthdate' => '2006-08-12',
-                'gender' => 'male',
-                'role' => 'pastor',
-                'email' => 'pastorRoss@gmail.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16,
-                'church_id' => 214,
-                'first_name' => 'Nico',
-                'middle_name' => null,
-                'last_name' => 'Pugoy',
-                'extension_name' => null,
-                'birthdate' => '1984-05-23',
-                'gender' => 'male',
-                'role' => 'representative',
-                'email' => 'church@gamil.com',
-                'status' => 'active',
-            ],
-        ];
+        $departments = DB::table('departments')
+            ->orderBy('department_id')
+            ->get(['department_id', 'department_name']);
+        $districts = DB::table('churches')
+            ->whereNull('parent_id')
+            ->orderBy('church_id')
+            ->get(['church_id', 'name']);
+        $churches = DB::table('churches')
+            ->whereNotNull('parent_id')
+            ->orderBy('church_id')
+            ->get(['church_id', 'name']);
 
-        $assistantDepartments = [
-            13 => 'children-family-ministries',
-            14 => 'stewardship-ministries',
-            15 => 'sabbath-school-personal-ministries',
-            17 => 'youth-ministries',
-            18 => 'womens-ministries',
-            21 => 'secretariat',
-        ];
-
-        foreach ($assistantDepartments as $departmentId => $emailSlug) {
-            $users[] = [
-                'department_id' => $departmentId,
-                'church_id' => 1,
-                'first_name' => 'Department',
-                'middle_name' => null,
-                'last_name' => 'Assistant',
-                'extension_name' => null,
-                'birthdate' => '1990-01-01',
-                'gender' => 'other',
-                'role' => 'assistant',
-                'email' => "assistant.{$emailSlug}@example.com",
-                'status' => 'active',
-            ];
+        if ($departments->isEmpty()) {
+            throw new RuntimeException('No departments are available. Run DepartmentSeeder first.');
         }
 
-        $batanesDistrictId = $this->districtId('Batanes');
-        $eastCagayanDistrictId = $this->districtId('East Central Cagayan');
-        $batanesChurchId = $this->churchId('Basco', $batanesDistrictId);
-        $eastCagayanChurchId = $this->churchId('Cabayabasan', $eastCagayanDistrictId);
+        if ($departments->count() < 10) {
+            throw new RuntimeException('At least 10 departments are required to seed church users across departments.');
+        }
 
-        $users = array_merge($users, [
-            [
-                'department_id' => 17,
-                'church_id' => $batanesDistrictId,
-                'first_name' => 'Youth',
-                'middle_name' => null,
-                'last_name' => 'Assistant',
-                'extension_name' => null,
-                'birthdate' => '1992-03-12',
-                'gender' => 'female',
-                'role' => 'assistant',
-                'email' => 'youth.assistant@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 14,
-                'church_id' => $batanesDistrictId,
-                'first_name' => 'Stewardship',
-                'middle_name' => null,
-                'last_name' => 'Director',
-                'extension_name' => null,
-                'birthdate' => '1982-06-20',
-                'gender' => 'male',
-                'role' => 'director',
-                'email' => 'stewardship.director@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16,
-                'church_id' => $batanesDistrictId,
-                'first_name' => 'Batanes',
-                'middle_name' => null,
-                'last_name' => 'Pastor',
-                'extension_name' => null,
-                'birthdate' => '1980-04-15',
-                'gender' => 'male',
-                'role' => 'pastor',
-                'email' => 'pastor.batanes@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16,
-                'church_id' => $eastCagayanDistrictId,
-                'first_name' => 'East Cagayan',
-                'middle_name' => null,
-                'last_name' => 'Pastor',
-                'extension_name' => null,
-                'birthdate' => '1983-09-08',
-                'gender' => 'male',
-                'role' => 'pastor',
-                'email' => 'pastor.eastcagayan@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 17,
-                'church_id' => $batanesChurchId,
-                'first_name' => 'Basco',
-                'middle_name' => null,
-                'last_name' => 'Representative',
-                'extension_name' => null,
-                'birthdate' => '1995-02-11',
-                'gender' => 'female',
-                'role' => 'representative',
-                'email' => 'representative.basco@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 14,
-                'church_id' => $eastCagayanChurchId,
-                'first_name' => 'Cabayabasan',
-                'middle_name' => null,
-                'last_name' => 'Representative',
-                'extension_name' => null,
-                'birthdate' => '1991-11-03',
-                'gender' => 'male',
-                'role' => 'representative',
-                'email' => 'representative.cabayabasan@example.com',
-                'status' => 'active',
-            ],
-        ]);
+        if ($districts->isEmpty()) {
+            throw new RuntimeException('No districts are available. Run ChurchSeeder first.');
+        }
 
-        foreach ($users as $user) {
-            DB::table('users')->updateOrInsert(
-                ['email' => $user['email']],
-                array_merge($user, [
-                    'password' => Hash::make('password123'),
-                    'remember_token' => null,
-                ])
+        if ($churches->isEmpty()) {
+            throw new RuntimeException('No churches are available. Run ChurchSeeder first.');
+        }
+
+        $primaryDepartmentId = (int) (
+            $departments->firstWhere('department_id', 16)?->department_id
+            ?? $departments->first()->department_id
+        );
+        $adminChurchId = (int) $districts->first()->church_id;
+        $passwordHash = Hash::make(self::SEEDED_PASSWORD);
+
+        $this->seedUser(
+            $this->user(
+                $primaryDepartmentId,
+                $adminChurchId,
+                'Head',
+                'Assistant',
+                'head assistant',
+                'seed.head-assistant@example.com',
+                $passwordHash
+            )
+        );
+        $this->seedUser(
+            $this->user(
+                $primaryDepartmentId,
+                $adminChurchId,
+                'Head',
+                'Director',
+                'head director',
+                'seed.head-director@example.com',
+                $passwordHash
+            )
+        );
+
+        foreach ($departments as $department) {
+            $departmentId = (int) $department->department_id;
+            $departmentTag = "department-{$departmentId}";
+
+            $this->seedUser(
+                $this->user(
+                    $departmentId,
+                    $adminChurchId,
+                    'Department',
+                    'Assistant',
+                    'assistant',
+                    "seed.assistant.{$departmentTag}@example.com",
+                    $passwordHash
+                )
+            );
+            $this->seedUser(
+                $this->user(
+                    $departmentId,
+                    $adminChurchId,
+                    'Department',
+                    'Director',
+                    'director',
+                    "seed.director.{$departmentTag}@example.com",
+                    $passwordHash
+                )
+            );
+
+            $church = $churches[($departmentId - (int) $departments->first()->department_id)
+                % $churches->count()];
+            $this->seedUser(
+                $this->user(
+                    $departmentId,
+                    (int) $church->church_id,
+                    'Church',
+                    'Representative',
+                    'representative',
+                    "seed.church-user.{$departmentTag}@example.com",
+                    $passwordHash
+                )
             );
         }
 
-        $this->command?->info(count($users).' test users processed.');
-    }
-
-    private function districtId(string $name): int
-    {
-        $districtId = DB::table('churches')
-            ->where('name', $name)
-            ->whereNull('parent_id')
-            ->value('church_id');
-
-        if ($districtId === null) {
-            throw new RuntimeException("The {$name} district is missing. Run ChurchSeeder first.");
+        foreach ($districts as $district) {
+            $this->seedUser(
+                $this->user(
+                    $primaryDepartmentId,
+                    (int) $district->church_id,
+                    (string) $district->name,
+                    'Pastor',
+                    'pastor',
+                    "seed.pastor.district-{$district->church_id}@example.com",
+                    $passwordHash
+                )
+            );
         }
 
-        return (int) $districtId;
+        $this->command?->info(sprintf(
+            'Seeded %d department assistants, %d department directors, %d church users, and %d district pastors, plus Head Assistant and Head Director.',
+            $departments->count(),
+            $departments->count(),
+            $departments->count(),
+            $districts->count()
+        ));
     }
 
-    private function churchId(string $name, int $districtId): int
+    /**
+     * @return array<string, int|string|null>
+     */
+    private function user(
+        int $departmentId,
+        int $churchId,
+        string $firstName,
+        string $lastName,
+        string $role,
+        string $email,
+        string $passwordHash
+    ): array {
+        return [
+            'department_id' => $departmentId,
+            'church_id' => $churchId,
+            'first_name' => $firstName,
+            'middle_name' => null,
+            'last_name' => $lastName,
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'role' => $role,
+            'email' => $email,
+            'password' => $passwordHash,
+            'remember_token' => null,
+            'status' => 'active',
+        ];
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $user
+     */
+    private function seedUser(array $user): void
     {
-        $churchId = DB::table('churches')
-            ->where('name', $name)
-            ->where('parent_id', $districtId)
-            ->value('church_id');
-
-        if ($churchId === null) {
-            throw new RuntimeException("The {$name} church is missing from its district. Run ChurchSeeder first.");
-        }
-
-        return (int) $churchId;
+        DB::table('users')->updateOrInsert(
+            ['email' => $user['email']],
+            $user
+        );
     }
 }

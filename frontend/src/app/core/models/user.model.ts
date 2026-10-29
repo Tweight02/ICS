@@ -8,6 +8,12 @@ export type UserRole =
   | 'administrative assistant'
   | 'administrative_assistant'
   | 'administrative-assistant'
+  | 'head assistant'
+  | 'head_assistant'
+  | 'head-assistant'
+  | 'head director'
+  | 'head_director'
+  | 'head-director'
   | 'director'
   | 'events';
 

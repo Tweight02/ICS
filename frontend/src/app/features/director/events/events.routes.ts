@@ -41,6 +41,7 @@ const PARTICIPANTS: ParticipantsConfig = {
   basePath: BASE,
   crumbRoot: 'All Events',
   eyebrow: 'ALL EVENTS / EVENT DETAILS / PARTICIPANTS',
+  churchFilter: true,
 };
 
 @Component({

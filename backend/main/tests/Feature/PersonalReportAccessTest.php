@@ -88,12 +88,29 @@ function personalReportAccessFixture(): array
         'baptismIds' => $baptismIds,
         'deathIds' => $deathIds,
         'director' => personalReportAccessUser($districtId, 16, 'director', 'director'),
+        'headDirector' => personalReportAccessUser($districtId, $departmentId, 'head director', 'head-director'),
         'assistant' => personalReportAccessUser($districtId, 16, 'assistant', 'assistant'),
         'otherDepartmentDirector' => personalReportAccessUser($districtId, $departmentId, 'director', 'other-director'),
         'otherDepartmentAssistant' => personalReportAccessUser($districtId, $departmentId, 'assistant', 'other-assistant'),
         'representative' => personalReportAccessUser($districtId, $departmentId, 'representative', 'representative'),
     ];
 }
+
+test('head directors can access personal records within their assigned district', function () {
+    $fixture = personalReportAccessFixture();
+
+    $this->actingAs($fixture['headDirector'], 'sanctum')
+        ->getJson('/api/baptisms')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.baptism_id', $fixture['baptismIds'][0]);
+
+    $this->actingAs($fixture['headDirector'], 'sanctum')
+        ->getJson('/api/deaths')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.death_id', $fixture['deathIds'][0]);
+});
 
 test('director and assistant personal reports are limited to their assigned district', function () {
     $fixture = personalReportAccessFixture();

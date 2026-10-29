@@ -27,7 +27,7 @@ describe('NewReport', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    httpTesting.expectOne('http://localhost:8000/api/assistant/departments').flush({
+    httpTesting.expectOne('/api/assistant/departments').flush({
       success: true,
       data: []
     });

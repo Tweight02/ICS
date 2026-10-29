@@ -20,7 +20,17 @@
         </div>
       </div>
 
-      <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+      <div class="mt-4 grid grid-cols-1 items-end gap-3"
+        [ngClass]="config.churchFilter ? 'lg:grid-cols-[112px_minmax(0,1fr)_220px] lg:pl-[27px]' : 'lg:grid-cols-[minmax(0,1fr)_220px]'">
+        <div *ngIf="config.churchFilter" class="flex flex-col items-start gap-1.5">
+          <label for="participant-church-filter" class="pl-0.5 text-[10px] font-bold tracking-[0.14em] text-black">CHURCH</label>
+          <select id="participant-church-filter" [(ngModel)]="churchFilter" (ngModelChange)="resetPage()"
+            class="!m-0 !h-9 w-28 rounded-lg border border-emerald-900/15 bg-white px-3 text-sm text-emerald-950 shadow-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15">
+            <option value="all">All churches</option>
+            <option *ngIf="churchOptions.length === 0" value="" disabled>No churches available</option>
+            <option *ngFor="let church of churchOptions" [value]="church.church_id">{{ church.name }}</option>
+          </select>
+        </div>
         <div>
           <label class="mb-1 block text-[11px] font-semibold text-slate-700">Search participants</label>
           <div class="relative">

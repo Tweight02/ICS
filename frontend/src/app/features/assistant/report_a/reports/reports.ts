@@ -15,6 +15,7 @@ import { Church } from '../../../../core/models/church.model';
 import {
   PERSONAL_REPORT_GROUP_DEPARTMENT_ID
 } from '../../../../core/models/report.model';
+import { Department } from '../../../../core/models/department.model';
 import { RunningLoader } from '../../../../shared/components/running-loader/running-loader';
 import { Button } from '../../../../shared/components/button/button';
 import { QuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
@@ -50,6 +51,8 @@ export class Reports implements OnInit {
   private readonly authService = inject(AuthService);
 
   readonly districts = signal<Church[]>([]);
+  readonly departments = signal<Department[]>([]);
+  readonly selectedDepartmentId = signal<number | null>(null);
   readonly districtChurches = signal<Record<number, Church[]>>({});
   readonly loadingDistrictChurches = signal<Record<number, boolean>>({});
   readonly expandedDistrictId = signal<number | null>(null);
@@ -76,25 +79,89 @@ export class Reports implements OnInit {
   readonly personalReportGroupDepartmentId = PERSONAL_REPORT_GROUP_DEPARTMENT_ID;
 
   ngOnInit(): void {
+    if (this.hasAllDepartmentAccess) {
+      this.loadDepartmentOptions();
+      return;
+    }
+
     this.loadDistricts();
+  }
+
+  get hasAllDepartmentAccess(): boolean {
+    const role = this.normalizedRole;
+    return role === 'head assistant' || role === 'head director';
+  }
+
+  private get normalizedRole(): string {
+    return String(this.authService.getCurrentUser()?.role || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]/g, ' ');
+  }
+
+  loadDepartmentOptions(): void {
+    this.loadingDistricts.set(true);
+    this.errorMessage.set('');
+    this.churchService.getDepartments().subscribe({
+      next: (response) => {
+        const departments = response?.success && Array.isArray(response.data)
+          ? response.data
+          : [];
+        this.departments.set(departments);
+
+        const assignedDepartmentId = Number(this.authService.getCurrentUser()?.department_id);
+        const initialDepartment = departments.find(department =>
+          Number(department.department_id) === assignedDepartmentId
+        ) ?? departments[0];
+
+        if (!initialDepartment) {
+          this.loadingDistricts.set(false);
+          this.errorMessage.set('No departments are available.');
+          return;
+        }
+
+        this.selectedDepartmentId.set(Number(initialDepartment.department_id));
+        this.loadDistricts();
+      },
+      error: (error) => {
+        console.error('Failed to load departments:', error);
+        this.loadingDistricts.set(false);
+        this.errorMessage.set('Unable to load departments. Check your connection and try again.');
+      }
+    });
   }
 
   loadDistricts(): void {
     this.loadingDistricts.set(true);
     this.errorMessage.set('');
-    const departmentId = Number(this.authService.getCurrentUser()?.department_id);
+    const departmentId = this.hasAllDepartmentAccess
+      ? Number(this.selectedDepartmentId())
+      : Number(this.authService.getCurrentUser()?.department_id);
 
-    if (this.isAssistantPortal && (!Number.isInteger(departmentId) || departmentId < 1)) {
+    if ((this.isDepartmentScopedPortal || this.hasAllDepartmentAccess) &&
+      (!Number.isInteger(departmentId) || departmentId < 1)) {
       this.districts.set([]);
       this.loadingDistricts.set(false);
       this.errorMessage.set('Your department is unavailable. Please sign in again or contact an administrator.');
       return;
     }
 
+    const requestedDepartmentId =
+      this.isDepartmentScopedPortal || this.hasAllDepartmentAccess ? departmentId : null;
+
     this.churchService
-      .getDistricts(this.isAssistantPortal ? departmentId : undefined)
+      .getDistricts(this.isDepartmentScopedPortal || this.hasAllDepartmentAccess
+        ? departmentId
+        : undefined)
       .subscribe({
         next: (response) => {
+          if (
+            requestedDepartmentId !== null &&
+            requestedDepartmentId !== this.activeDepartmentId
+          ) {
+            return;
+          }
+
           if (response?.success && Array.isArray(response.data)) {
             this.districts.set(response.data);
           } else {
@@ -106,11 +173,33 @@ export class Reports implements OnInit {
         },
 
         error: () => {
+          if (
+            requestedDepartmentId !== null &&
+            requestedDepartmentId !== this.activeDepartmentId
+          ) {
+            return;
+          }
+
           this.districts.set([]);
           this.loadingDistricts.set(false);
           this.errorMessage.set('Unable to connect to the district server.');
         }
       });
+  }
+
+  onDepartmentChange(event: Event): void {
+    this.selectDepartment(Number((event.target as HTMLSelectElement).value));
+  }
+
+  selectDepartment(departmentId: number): void {
+    if (!Number.isInteger(departmentId) || departmentId < 1) return;
+
+    this.selectedDepartmentId.set(departmentId);
+    this.districts.set([]);
+    this.districtChurches.set({});
+    this.loadingDistrictChurches.set({});
+    this.expandedDistrictId.set(null);
+    this.loadDistricts();
   }
 
   getMonitoring(district: Church): { q1: number | null; q2: number | null; q3: number | null; q4: number | null } {
@@ -142,16 +231,27 @@ export class Reports implements OnInit {
     }
 
     this.loadingDistrictChurches.update(current => ({ ...current, [districtId]: true }));
+    const requestedDepartmentId =
+      this.isDepartmentScopedPortal || this.hasAllDepartmentAccess
+        ? this.activeDepartmentId
+        : null;
 
     this.churchService
       .getChurches(
         districtId,
-        this.isAssistantPortal
-          ? Number(this.authService.getCurrentUser()?.department_id)
+        this.isDepartmentScopedPortal || this.hasAllDepartmentAccess
+          ? this.activeDepartmentId
           : undefined
       )
       .subscribe({
         next: (response) => {
+          if (
+            requestedDepartmentId !== null &&
+            requestedDepartmentId !== this.activeDepartmentId
+          ) {
+            return;
+          }
+
           const churches = response?.success && Array.isArray(response.data)
             ? response.data
             : [];
@@ -159,6 +259,13 @@ export class Reports implements OnInit {
           this.loadingDistrictChurches.update(current => ({ ...current, [districtId]: false }));
         },
         error: () => {
+          if (
+            requestedDepartmentId !== null &&
+            requestedDepartmentId !== this.activeDepartmentId
+          ) {
+            return;
+          }
+
           this.districtChurches.update(current => ({ ...current, [districtId]: [] }));
           this.loadingDistrictChurches.update(current => ({ ...current, [districtId]: false }));
         }
@@ -183,18 +290,22 @@ export class Reports implements OnInit {
   }
 
   canViewPersonalReports(): boolean {
-    const user = this.authService.getCurrentUser();
-    const role = String(user?.role || '').trim().toLowerCase().replace(/[_-]/g, ' ');
+    return this.hasAllDepartmentAccess ||
+      (Number(this.authService.getCurrentUser()?.department_id) === this.personalReportGroupDepartmentId
+        && ['assistant', 'administrative assistant', 'director'].includes(this.normalizedRole));
+  }
 
-    return Number(user?.department_id) === this.personalReportGroupDepartmentId
-      && ['assistant', 'administrative assistant', 'director'].includes(role);
+  private get activeDepartmentId(): number {
+    return this.hasAllDepartmentAccess
+      ? Number(this.selectedDepartmentId())
+      : Number(this.authService.getCurrentUser()?.department_id);
   }
 
   openChurch(districtId: number, churchId: number): void {
     const portalPrefix = this.router.url.startsWith('/assistant')
       ? '/assistant'
       : '/director';
-    const departmentId = Number(this.authService.getCurrentUser()?.department_id);
+    const departmentId = this.activeDepartmentId;
 
     if (!Number.isInteger(departmentId) || departmentId < 1) {
       this.errorMessage.set('Your department is unavailable. Please sign in again or contact an administrator.');
@@ -264,4 +375,11 @@ export class Reports implements OnInit {
     return this.router.url.startsWith('/assistant');
   }
 
+  get isDirectorPortal(): boolean {
+    return this.router.url.startsWith('/director');
+  }
+
+  private get isDepartmentScopedPortal(): boolean {
+    return this.isAssistantPortal || this.isDirectorPortal;
+  }
 }

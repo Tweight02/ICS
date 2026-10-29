@@ -13,6 +13,7 @@ import {
 import {
   Church
 } from '../../models/church.model';
+import { Department } from '../../models/department.model';
 
 export interface DistrictResponse {
   success: boolean;
@@ -57,7 +58,7 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
 }
 
   private readonly apiUrl =
-    'http://127.0.0.1:8000/api';
+    '/api';
 
   constructor(
     private readonly http: HttpClient
@@ -67,6 +68,12 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
     return this.http.get<DistrictResponse>(`${this.apiUrl}/districts`, {
       params: departmentId ? { department_id: departmentId } : {}
     });
+  }
+
+  getDepartments(): Observable<{ success: boolean; data: Department[] }> {
+    return this.http.get<{ success: boolean; data: Department[] }>(
+      `${this.apiUrl}/departments`
+    );
   }
 
   getAllChurches(): Observable<ChurchDirectoryResponse> {

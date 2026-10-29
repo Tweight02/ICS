@@ -16,7 +16,7 @@
 }
 
 <main
-  class="relative min-h-screen ml-0 overflow-x-clip bg-[#edf7f0] font-sans text-slate-800 [font-family:Inter,Segoe_UI,Arial,sans-serif] transition-[margin-left] duration-200 motion-reduce:transition-none max-lg:ml-0 lg:has-[app-events-home]:flex lg:has-[app-events-home]:h-dvh lg:has-[app-events-home]:min-h-0 lg:has-[app-events-home]:flex-col lg:has-[app-events-home]:overflow-hidden"
+  class="relative min-h-screen ml-0 overflow-x-clip bg-[#edf7f0] font-sans text-slate-800 [font-family:Inter,Segoe_UI,Arial,sans-serif] transition-[margin-left] duration-200 motion-reduce:transition-none max-lg:ml-0"
   [ngClass]="{
     'lg:ml-[235px]': showSidebar && !collapsed,
     'lg:ml-[76px]': showSidebar && collapsed
@@ -45,7 +45,7 @@
 
   <!-- Main page content -->
   <div
-    class="relative z-[1] box-border min-h-screen min-w-0 max-w-full p-[1rem_clamp(1rem,2.25vw,1.75rem)] max-lg:px-4 max-lg:pt-[4.25rem] max-lg:pb-4 max-[480px]:px-2.5 max-[480px]:pt-16 max-[480px]:pb-3 lg:has-[app-events-home]:flex lg:has-[app-events-home]:min-h-0 lg:has-[app-events-home]:flex-1 lg:has-[app-events-home]:flex-col lg:has-[app-events-home]:overflow-hidden"
+    class="relative z-[1] box-border min-h-screen min-w-0 max-w-full p-[1rem_clamp(1rem,2.25vw,1.75rem)] max-lg:px-4 max-lg:pt-[4.25rem] max-lg:pb-4 max-[480px]:px-2.5 max-[480px]:pt-16 max-[480px]:pb-3"
     [ngClass]="{ '!p-0': isLoginPage }"
   >
     <router-outlet />

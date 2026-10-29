@@ -51,6 +51,7 @@ function departmentReportAccessFixture(): array
         'churchId' => $churchId,
         'departmentId' => $departmentId,
         'director' => departmentReportAccessUser($churchId, 16, 'director', 'director'),
+        'headDirector' => departmentReportAccessUser($churchId, 16, 'head director', 'head-director'),
         'assistant' => departmentReportAccessUser($churchId, 16, 'administrative assistant', 'assistant'),
         'otherDepartmentDirector' => departmentReportAccessUser($churchId, $departmentId, 'director', 'other-director'),
         'otherDepartmentAssistant' => departmentReportAccessUser($churchId, $departmentId, 'assistant', 'other-assistant'),
@@ -58,6 +59,19 @@ function departmentReportAccessFixture(): array
         'representative' => departmentReportAccessUser($churchId, $departmentId, 'representative', 'representative'),
     ];
 }
+
+test('head directors can access every department report', function () {
+    $fixture = departmentReportAccessFixture();
+
+    $this->actingAs($fixture['headDirector'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments")
+        ->assertOk()
+        ->assertJsonCount(6);
+
+    $this->actingAs($fixture['headDirector'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/30/report")
+        ->assertOk();
+});
 
 test('only Ministerial and Evangelism directors and assistants can access personal report departments', function () {
     $fixture = departmentReportAccessFixture();

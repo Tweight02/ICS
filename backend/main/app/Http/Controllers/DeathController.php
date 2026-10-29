@@ -259,12 +259,14 @@ class DeathController extends Controller
             'director',
             'assistant',
             'administrative assistant',
+            'head assistant',
+            'head director',
         ], true)) {
             return null;
         }
 
         if (
-            in_array($role, ['director', 'assistant', 'administrative assistant'], true)
+            in_array($role, ['assistant', 'administrative assistant', 'director'], true)
             && (int) $user->department_id !== 16
         ) {
             return null;

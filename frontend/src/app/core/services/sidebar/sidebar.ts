@@ -54,6 +54,9 @@ export class SidebarService {
 
       // ADMINISTRATIVE ASSISTANT
       case 'assistant':
+      case 'head assistant':
+      case 'head_assistant':
+      case 'head-assistant':
         return [
            {
             label: 'Pastors',
@@ -74,6 +77,9 @@ export class SidebarService {
 
       // ADMINISTRATOR + DIRECTOR
       case 'director':
+      case 'head director':
+      case 'head_director':
+      case 'head-director':
         return [
           {
             label: 'Events',
@@ -115,8 +121,18 @@ export class SidebarService {
       case 'assistant':
         return 'Administrative Assistant';
 
+      case 'head assistant':
+      case 'head_assistant':
+      case 'head-assistant':
+        return 'Head Assistant';
+
       case 'director':
-        return 'Administrator and Director';
+        return 'Director';
+
+      case 'head director':
+      case 'head_director':
+      case 'head-director':
+        return 'Head Director';
 
       case 'events':
         return 'Events Representative';

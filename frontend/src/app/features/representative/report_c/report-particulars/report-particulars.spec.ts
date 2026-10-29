@@ -140,6 +140,17 @@ describe('ReportParticulars', () => {
     expect(component).toBeTruthy();
   });
 
+  it('does not show the confirmed participant label in report inputs', () => {
+    const record = component.report!.programs[0].sections[0].particulars[0].quarters[0];
+    record.participant_count = 1;
+    record.value = 1;
+    record.combined_value = 1;
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Includes 1 confirmed participant');
+  });
+
   it('keeps program selectors unfilled while identifying the selected program', () => {
     const buttons = fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
     const programButton = Array.from(buttons)
@@ -432,6 +443,7 @@ describe('ReportParticulars', () => {
     const summary = details.querySelector('summary') as HTMLElement;
 
     expect(summary.textContent).toContain('Section');
+    expect(summary.querySelector('.report-accordion-indicator')).not.toBeNull();
     expect(details.open).toBe(true);
     expect(nextDetails.open).toBe(false);
     expect(details.querySelectorAll('input[type="number"]')).toHaveLength(2);

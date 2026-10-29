@@ -533,7 +533,7 @@ export class BapaddrecComponent implements OnInit {
 
     this.http
       .post<any>(
-        'http://127.0.0.1:8000/api/baptisms',
+        '/api/baptisms',
         payload
       )
       .subscribe({
