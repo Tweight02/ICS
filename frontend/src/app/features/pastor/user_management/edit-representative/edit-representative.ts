@@ -3,6 +3,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
 import Swal from 'sweetalert2';
 
 import { RepresentativeService } from '../../../../core/services/representative/representative-service'; // adjust to your real path
@@ -56,6 +57,15 @@ export class EditRepresentative implements OnInit {
     /** Snapshot of the loaded values, used to restore the form on Cancel */
     private original: ReturnType<EditRepresentative['form']['getRawValue']> | null = null;
     private currentChurch: { church_id: number; name: string } | null = null;
+
+    /** Latest selectable birthdate: yesterday, in local time (backend rule is before:today). */
+    readonly maxBirthdate = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        const notFuture = (c: AbstractControl): ValidationErrors | null =>
+            c.value && c.value > this.maxBirthdate ? { beforeToday: true } : null;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    })();
 
     ngOnInit(): void {
         this.id = Number(this.route.snapshot.paramMap.get('id'));
