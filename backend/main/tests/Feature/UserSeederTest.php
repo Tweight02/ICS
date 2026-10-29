@@ -3,11 +3,12 @@
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-test('user seeder adds sample roles and departments idempotently', function () {
+test('user seeder creates all role scopes idempotently', function () {
     foreach (range(13, 23) as $departmentId) {
         DB::table('departments')->insert([
             'department_id' => $departmentId,
@@ -48,62 +49,58 @@ test('user seeder adds sample roles and departments idempotently', function () {
     $this->seed(UserSeeder::class);
     $this->seed(UserSeeder::class);
 
+    $departmentIds = DB::table('departments')
+        ->orderBy('department_id')
+        ->pluck('department_id')
+        ->all();
     $assistantDepartmentIds = DB::table('users')
         ->where('role', 'assistant')
         ->orderBy('department_id')
         ->pluck('department_id')
         ->all();
+    $directorDepartmentIds = DB::table('users')
+        ->where('role', 'director')
+        ->orderBy('department_id')
+        ->pluck('department_id')
+        ->all();
+    $churchUserDepartmentIds = DB::table('users')
+        ->where('role', 'representative')
+        ->distinct()
+        ->orderBy('department_id')
+        ->pluck('department_id')
+        ->all();
+    $districtCount = DB::table('churches')->whereNull('parent_id')->count();
 
-    expect($assistantDepartmentIds)->toBe([13, 14, 15, 17, 17, 18, 19, 21])
-        ->and(DB::table('users')->count())->toBe(19);
+    expect($assistantDepartmentIds)->toBe($departmentIds)
+        ->and($directorDepartmentIds)->toBe($departmentIds)
+        ->and($churchUserDepartmentIds)->toBe($departmentIds)
+        ->and(DB::table('users')->where('role', 'head assistant')->count())->toBe(1)
+        ->and(DB::table('users')->where('role', 'head director')->count())->toBe(1)
+        ->and(DB::table('users')->where('role', 'pastor')->count())->toBe($districtCount)
+        ->and(DB::table('users')->count())->toBe(2 + (3 * count($departmentIds)) + $districtCount);
 
-    $this->assertDatabaseHas('users', [
-        'first_name' => 'Andrie',
-        'last_name' => 'Aquino',
-        'church_id' => 2,
-        'email' => 'representative@example.com',
-    ]);
-    $this->assertDatabaseHas('users', [
-        'first_name' => 'Ross',
-        'last_name' => 'Butobara',
-        'church_id' => 210,
-        'email' => 'pastorRoss@gmail.com',
-    ]);
-    $this->assertDatabaseHas('users', [
-        'first_name' => 'Nico',
-        'last_name' => 'Pugoy',
-        'church_id' => 214,
-        'email' => 'church@gamil.com',
-    ]);
-    $this->assertDatabaseHas('users', [
-        'department_id' => 17,
-        'church_id' => $batanesDistrictId,
-        'role' => 'assistant',
-        'email' => 'youth.assistant@example.com',
-    ]);
-    $this->assertDatabaseHas('users', [
-        'department_id' => 14,
-        'role' => 'director',
-        'email' => 'stewardship.director@example.com',
-    ]);
+    $headDirector = DB::table('users')
+        ->where('email', 'seed.head-director@example.com')
+        ->first();
+    expect($headDirector)->not->toBeNull()
+        ->and(Hash::check('12345678', $headDirector->password))->toBeTrue();
+
     $this->assertDatabaseHas('users', [
         'church_id' => $batanesDistrictId,
         'role' => 'pastor',
-        'email' => 'pastor.batanes@example.com',
+        'email' => "seed.pastor.district-{$batanesDistrictId}@example.com",
     ]);
     $this->assertDatabaseHas('users', [
         'church_id' => $eastCagayanDistrictId,
         'role' => 'pastor',
-        'email' => 'pastor.eastcagayan@example.com',
+        'email' => "seed.pastor.district-{$eastCagayanDistrictId}@example.com",
     ]);
     $this->assertDatabaseHas('users', [
         'church_id' => $batanesChurchId,
         'role' => 'representative',
-        'email' => 'representative.basco@example.com',
     ]);
     $this->assertDatabaseHas('users', [
         'church_id' => $eastCagayanChurchId,
         'role' => 'representative',
-        'email' => 'representative.cabayabasan@example.com',
     ]);
 });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ParticipantResource;
 use App\Models\Event;
 use App\Models\EventParticipant;
+use App\Support\EventParticularType;
 use App\Support\EventRegistrationAttribution;
 use App\Support\EventUser;
 use App\Support\ReportParticipantCoverage;
@@ -37,12 +38,33 @@ class ParticipantController extends Controller
     public function index(Request $request, int $event)
     {
         $event = $this->visibleEvent($request, $event);
-        $request->validate(['status' => ['nullable', 'in:confirmed,pending,all']]);
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:confirmed,pending,all'],
+            'church_id' => ['nullable', 'integer', 'exists:churches,church_id'],
+        ]);
 
         $user = EventUser::fromRequest($request);
         $query = $event->participants();
+        $summaryQuery = $event->participants();
         if ($user->role === 'church_representative') {
-            $query->where('church_id', $user->churchId ?? 0);
+            $query->where('participants.church_id', $user->churchId ?? 0);
+            $summaryQuery->where('participants.church_id', $user->churchId ?? 0);
+        }
+        $churches = (clone $summaryQuery)
+            ->join('churches', 'churches.church_id', '=', 'participants.church_id')
+            ->select('churches.church_id', 'churches.name')
+            ->distinct()
+            ->orderBy('churches.name')
+            ->get()
+            ->map(fn ($church) => [
+                'church_id' => (int) $church->church_id,
+                'name' => (string) $church->name,
+            ])
+            ->values();
+
+        if (isset($validated['church_id'])) {
+            $query->where('participants.church_id', $validated['church_id']);
+            $summaryQuery->where('participants.church_id', $validated['church_id']);
         }
         if ($search = $request->query('search')) {
             $query->where(fn ($q) => $q->where('first_name', 'like', "%$search%")
@@ -53,10 +75,6 @@ class ParticipantController extends Controller
             $query->whereRaw('LOWER(registration_status) = ?', [$request->query('status')]);
         }
 
-        $summaryQuery = $event->participants();
-        if ($user->role === 'church_representative') {
-            $summaryQuery->where('church_id', $user->churchId ?? 0);
-        }
         $total = (clone $summaryQuery)->count();
         $confirmed = (clone $summaryQuery)
             ->whereRaw('LOWER(registration_status) = ?', ['confirmed'])->count();
@@ -68,6 +86,7 @@ class ParticipantController extends Controller
                     'confirmed' => $confirmed,
                     'pending' => $total - $confirmed,
                 ],
+                'churches' => $churches,
             ]);
     }
 
@@ -119,12 +138,7 @@ class ParticipantController extends Controller
             $participant->update($data);
 
             if (! $wasConfirmed && $participant->status === 'confirmed') {
-                $quarterId = EventRegistrationAttribution::quarterId(
-                    (int) $event->quarter_id,
-                    (int) $participant->church_id
-                );
-                $this->assertQuarterCanReceiveContributions($quarterId);
-                $this->recordReportContributions($event, $participant, $quarterId);
+                $this->recordReportContributions($event, $participant);
             } elseif ($wasConfirmed && $participant->status !== 'confirmed') {
                 $contributions = DB::table('event_participant_contributions')
                     ->where('event_id', $event->event_id)
@@ -146,12 +160,18 @@ class ParticipantController extends Controller
 
                 foreach (DB::table('event_particular')
                     ->where('event_id', $event->event_id)
-                    ->whereIn('particular_id', ReportParticipantCoverage::headcountParticularIds())
                     ->pluck('particular_id') as $particularId) {
-                    $affectedItems[$event->quarter_id.':'.$particularId] = [
-                        'quarter_id' => (int) $event->quarter_id,
-                        'particular_id' => (int) $particularId,
-                    ];
+                    $quarterIds = EventRegistrationAttribution::quarterIds(
+                        (int) $event->quarter_id,
+                        (int) $participant->church_id,
+                        (int) $particularId
+                    );
+                    foreach ($quarterIds as $quarterId) {
+                        $affectedItems[$quarterId.':'.$particularId] = [
+                            'quarter_id' => $quarterId,
+                            'particular_id' => (int) $particularId,
+                        ];
+                    }
                 }
 
                 foreach ($affectedItems as $item) {
@@ -188,34 +208,62 @@ class ParticipantController extends Controller
         );
     }
 
-    private function recordReportContributions(Event $event, EventParticipant $participant, int $quarterId): void
+    private function recordReportContributions(Event $event, EventParticipant $participant): void
     {
         $now = now();
         $headcountParticularIds = ReportParticipantCoverage::headcountParticularIds();
         $existingParticularIds = DB::table('event_participant_contributions')
             ->where('event_id', $event->event_id)
             ->where('participant_id', $participant->participant_id)
-            ->pluck('particular_id');
-        $contributions = DB::table('event_particular')
-            ->whereIn('particular_id', $headcountParticularIds)
-            ->where('event_id', $event->event_id)
-            ->whereNotIn('particular_id', $existingParticularIds)
-            ->get(['particular_id'])
-            ->map(fn ($particular) => [
-                'event_id' => $event->event_id,
-                'participant_id' => $participant->participant_id,
-                'quarter_id' => $quarterId,
-                'particular_id' => $particular->particular_id,
-                'contributed_at' => $now,
-            ])
-            ->all();
+            ->pluck('particular_id')
+            ->map(fn ($id) => (int) $id);
+        $eventParticulars = DB::table('event_particular')
+            ->join('particulars', 'particulars.particular_id', '=', 'event_particular.particular_id')
+            ->where('event_particular.event_id', $event->event_id)
+            ->get(['event_particular.particular_id', 'particulars.particular_name']);
+        $contributions = [];
+        $affectedItems = [];
+
+        foreach ($eventParticulars as $particular) {
+            $particularId = (int) $particular->particular_id;
+            $quarterIds = EventRegistrationAttribution::quarterIds(
+                (int) $event->quarter_id,
+                (int) $participant->church_id,
+                $particularId
+            );
+            $quarterId = $quarterIds[0];
+            foreach ($quarterIds as $targetQuarterId) {
+                $this->assertQuarterCanReceiveContributions($targetQuarterId);
+                $affectedItems[$targetQuarterId.':'.$particularId] = [
+                    'quarter_id' => $targetQuarterId,
+                    'particular_id' => $particularId,
+                ];
+            }
+
+            if (
+                in_array($particularId, $headcountParticularIds, true) &&
+                ! $existingParticularIds->contains($particularId) &&
+                EventParticularType::matchesParticipantAge(
+                    (string) $particular->particular_name,
+                    (int) $participant->age
+                )
+            ) {
+                $contributions[] = [
+                    'event_id' => $event->event_id,
+                    'participant_id' => $participant->participant_id,
+                    'quarter_id' => $quarterId,
+                    'particular_id' => $particularId,
+                    'contributed_at' => $now,
+                ];
+            }
+        }
 
         if ($contributions !== []) {
             DB::table('event_participant_contributions')->insert($contributions);
         }
 
-        foreach (DB::table('event_particular')->where('event_id', $event->event_id)->pluck('particular_id') as $particularId) {
-            $this->syncParticularItemTotal($quarterId, (int) $particularId);
+        foreach ($affectedItems as $item) {
+            $this->syncParticularItemTotal($item['quarter_id'], $item['particular_id']);
         }
     }
 

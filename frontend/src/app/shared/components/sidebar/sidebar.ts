@@ -26,7 +26,7 @@ import { User, UserRole } from '../../../core/models/user.model';
 })
 export class SidebarComponent implements OnChanges {
 
-  private readonly apiBase = 'http://127.0.0.1:8000';
+  private readonly apiBase = '';
 
   @Input() user: User | null = null;
   @Input() collapsed = false;

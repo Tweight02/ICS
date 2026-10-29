@@ -23,7 +23,7 @@ export interface ChurchWithRep {
 export class RepresentativeService {
 
     private http = inject(HttpClient);
-    private apiUrl = 'http://localhost:8000/api/pastor';
+    private apiUrl = '/api/pastor';
     private opts = { withCredentials: true };
 
     getRepresentatives(filters: RepresentativeFilters = {}) {

@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             ReportingSetupSeeder::class,
             QuarterlyReportDataSeeder::class,
             UserSeeder::class,
+            PersonalReportDataSeeder::class,
         ]);
     }
 }

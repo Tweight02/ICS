@@ -58,8 +58,8 @@ final class EventUser
         return match (true) {
             in_array($r, ['pastor', 'district pastor'], true) => 'district_pastor',
             $r === 'representative' => 'church_representative',
-            in_array($r, ['assistant', 'administrative assistant'], true) => 'assistant',
-            $r === 'director' => 'director',
+            in_array($r, ['assistant', 'administrative assistant', 'head assistant'], true) => 'assistant',
+            in_array($r, ['director', 'head director'], true) => 'director',
             default => 'none',
         };
     }

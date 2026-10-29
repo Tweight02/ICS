@@ -202,7 +202,7 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   }
 
   get canComment(): boolean {
-    return ['pastor', 'district pastor', 'assistant', 'administrative assistant']
+    return ['pastor', 'district pastor', 'assistant', 'administrative assistant', 'head assistant']
       .includes(this.normalizedUserRole);
   }
 
@@ -211,7 +211,7 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   }
 
   get canApprove(): boolean {
-    return ['assistant', 'administrative assistant'].includes(this.normalizedUserRole);
+    return ['assistant', 'administrative assistant', 'head assistant'].includes(this.normalizedUserRole);
   }
 
   get canEditDepartmentReport(): boolean {
@@ -293,6 +293,7 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
       .subscribe({
         next: (response: any) => {
           this.report = (response?.data ?? response) as Report;
+          this.useCombinedValuesForInputs();
           this.initializeSelections();
           this.loading = false;
           this.cdr.detectChanges();
@@ -305,6 +306,24 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private useCombinedValuesForInputs(): void {
+    for (const program of this.report?.programs ?? []) {
+      for (const section of program.sections ?? []) {
+        for (const particular of section.particulars ?? []) {
+          for (const record of particular.quarters ?? []) {
+            if (record.monthly_values) continue;
+
+            if (record.combined_value !== null && record.combined_value !== undefined) {
+              record.value = record.combined_value;
+            } else if ((record.participant_count ?? 0) > 0) {
+              record.value = record.participant_count ?? 0;
+            }
+          }
+        }
+      }
+    }
   }
 
   private initializeSelections(): void {

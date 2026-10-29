@@ -92,6 +92,17 @@ describe('ReportParticulars', () => {
     expect(component).toBeTruthy();
   });
 
+  it('shows confirmed event participants in personal report particular inputs', () => {
+    const record = component.report!.programs[0].sections[0].particulars[0].quarters[0];
+    record.value = null;
+    record.participant_count = 2;
+    record.combined_value = 2;
+
+    component.loadReport();
+
+    expect(record.value).toBe(2);
+  });
+
   it('shows stewardship sections and computes the offering and tithe totals', () => {
     component.departmentId = 14;
     component.report!.department!.department_id = 14;
