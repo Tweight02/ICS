@@ -440,18 +440,18 @@
           </button>
 
           <!-- Save Changes Button -->
-          <button
-            app-button
-            variant="edit"
-            size="md"
-            type="submit"
-            [loading]="saving"
-            class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
-            [disabled]="saving || baptismForm.invalid || isBaptismDateInvalid()">
+         <button
+  app-button
+  variant="edit"
+  size="md"
+  type="submit"
+  [loading]="saving"
+  class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-[#0c502f] px-[18px] text-[13px] font-semibold !text-white transition-colors duration-200 hover:!border-[#0c502f] hover:!bg-[#0c502f] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
+  [disabled]="saving || baptismForm.invalid || isBaptismDateInvalid()">
 
-            <span *ngIf="!saving">Save Changes</span>
-            <span *ngIf="saving">Saving...</span>
-          </button>
+  <span *ngIf="!saving">Save Changes</span>
+  <span *ngIf="saving">Saving...</span>
+</button>
 
         </div>
       </form>
