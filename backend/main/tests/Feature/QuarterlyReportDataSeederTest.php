@@ -2,6 +2,7 @@
 
 use App\Services\ReportingSetupService;
 use Database\Seeders\QuarterlyReportDataSeeder;
+use Database\Seeders\SampleReport2025Seeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -122,6 +123,65 @@ test('quarterly report seeder creates approved Q1 and Q2, mixed Q3, and empty Q4
             })
             ->count()
     );
+
+    Carbon::setTestNow();
+});
+
+test('2025 sample seeder creates complete approved reports for all four quarters', function () {
+    Carbon::setTestNow('2026-10-29 12:00:00');
+    config(['app.reporting_year' => '2026']);
+
+    $districtId = DB::table('churches')->insertGetId([
+        'name' => '2025 Sample District',
+        'address' => 'Nueva Vizcaya',
+        'parent_id' => null,
+    ]);
+    $churchId = DB::table('churches')->insertGetId([
+        'name' => '2025 Sample Church',
+        'address' => 'Nueva Vizcaya',
+        'parent_id' => $districtId,
+    ]);
+    DB::table('departments')->insert([
+        'department_id' => 13,
+        'department_name' => 'Children and Family Ministries',
+    ]);
+    $programId = DB::table('programs')->insertGetId([
+        'department_id' => 13,
+        'program_name' => 'AY Quarterly Report',
+        'parent_id' => null,
+    ]);
+    $sectionId = DB::table('programs')->insertGetId([
+        'department_id' => 13,
+        'program_name' => "CHILDREN'S MINISTRIES",
+        'parent_id' => $programId,
+    ]);
+    DB::table('particulars')->insert([
+        'program_id' => $sectionId,
+        'particular_name' => 'No. of Church Members',
+    ]);
+
+    $this->seed(SampleReport2025Seeder::class);
+
+    $quarters = DB::table('quarters')
+        ->where('church_id', $churchId)
+        ->where('program_id', $programId)
+        ->where('year', '2025')
+        ->orderBy('quarter')
+        ->get();
+
+    $this->assertSame(['Q1', 'Q2', 'Q3', 'Q4'], $quarters->pluck('quarter')->all());
+    $this->assertSame(4, DB::table('particular_items')
+        ->whereIn('quarter_id', $quarters->pluck('quarter_id'))
+        ->count());
+    $this->assertSame(4, $quarters->whereNotNull('date_submitted')->count());
+    $this->assertSame(4, $quarters->whereNotNull('district_endorse')->count());
+    $this->assertSame(4, $quarters->whereNotNull('mission_approve')->count());
+
+    $this->seed(SampleReport2025Seeder::class);
+
+    $this->assertSame(4, DB::table('particular_items')
+        ->whereIn('quarter_id', $quarters->pluck('quarter_id'))
+        ->count());
 
     Carbon::setTestNow();
 });
