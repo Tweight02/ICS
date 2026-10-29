@@ -1,3 +1,4 @@
+
 <header class="px-[clamp(18px,4vw,40px)] pt-1">
   <div class="d-flex align-items-center justify-content-between">
     <div class="flex items-center gap-3">
@@ -201,9 +202,7 @@
           *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
           class="overflow-x-auto px-6 pb-4 max-[767px]:px-4 max-[767px]:pb-3">
 
-          <!-- ================================================= -->
           <!-- BAPTISM RECORD TABLE -->
-          <!-- ================================================= -->
           <table
             class="w-full min-w-[760px] table-fixed border-separate border-spacing-0 [&_thead_th]:whitespace-normal [&_thead_th]:break-words [&_thead_th]:border-b [&_thead_th]:border-[#e5ece8] [&_thead_th]:bg-white [&_thead_th]:px-2.5 [&_thead_th]:py-2.5 [&_thead_th]:text-[10px] [&_thead_th]:font-extrabold [&_thead_th]:uppercase [&_thead_th]:tracking-[0.07em] [&_thead_th]:text-[#74837c] [&_tbody_td]:border-b [&_tbody_td]:border-[#edf1ef] [&_tbody_td]:px-2.5 [&_tbody_td]:py-2.5 [&_tbody_td]:text-[13px] [&_tbody_td]:text-[#4c5d55] [&_tbody_td]:[overflow-wrap:anywhere] [&_tbody_tr:nth-child(even)]:bg-[#fafcfb] [&_tbody_tr:hover]:bg-[#f1f7f4] [&_tbody_td[colspan]]:px-4 [&_tbody_td[colspan]]:py-[42px] [&_tbody_td[colspan]]:text-sm [&_tbody_td[colspan]]:text-[#718079] [&_th:nth-child(1)]:w-[8%] [&_th:nth-child(2)]:w-[15%] [&_th:nth-child(3)]:w-[12%] [&_th:nth-child(4)]:w-[16%] [&_th:nth-child(5)]:w-[19%] [&_th:nth-child(6)]:w-[18%] [&_th:nth-child(7)]:w-[12%]"
             *ngIf="selectedRecord === 'baptism'">
@@ -221,14 +220,12 @@
             </thead>
 
             <tbody>
-              <!-- Error -->
               <tr *ngIf="!loadingBaptisms && baptismError">
                 <td colspan="7" class="text-center">
                   {{ baptismError }}
                 </td>
               </tr>
 
-              <!-- No Records -->
               <tr
                 *ngIf="
                   !loadingBaptisms &&
@@ -242,7 +239,6 @@
                 </td>
               </tr>
 
-              <!-- Baptism Records -->
               <tr
                 *ngFor="let baptism of paginatedBaptisms; let i = index"
                 class="cursor-pointer transition-[background-color,box-shadow] duration-200 hover:bg-[#eef5ff] hover:[&>td]:bg-[#eef5ff] hover:[&>td]:shadow-[inset_0_1px_0_#d7e7ff,inset_0_-1px_0_#d7e7ff] focus-visible:outline-2 focus-visible:outline-[#0d6efd] focus-visible:outline-offset-[-2px] motion-reduce:transition-none"
@@ -335,9 +331,7 @@
             </ul>
           </nav>
 
-          <!-- ================================================= -->
           <!-- DEATH RECORD TABLE -->
-          <!-- ================================================= -->
           <table
             class="w-full min-w-[900px] table-fixed border-separate border-spacing-0 [&_thead_th]:whitespace-normal [&_thead_th]:break-words [&_thead_th]:border-b [&_thead_th]:border-[#e5ece8] [&_thead_th]:bg-white [&_thead_th]:px-2.5 [&_thead_th]:py-2.5 [&_thead_th]:text-[10px] [&_thead_th]:font-extrabold [&_thead_th]:uppercase [&_thead_th]:tracking-[0.07em] [&_thead_th]:text-[#74837c] [&_tbody_td]:border-b [&_tbody_td]:border-[#edf1ef] [&_tbody_td]:px-2.5 [&_tbody_td]:py-2.5 [&_tbody_td]:text-[13px] [&_tbody_td]:text-[#4c5d55] [&_tbody_td]:[overflow-wrap:anywhere] [&_tbody_tr:nth-child(even)]:bg-[#fafcfb] [&_tbody_tr:hover]:bg-[#f1f7f4] [&_tbody_td[colspan]]:px-4 [&_tbody_td[colspan]]:py-[42px] [&_tbody_td[colspan]]:text-sm [&_tbody_td[colspan]]:text-[#718079] [&_th:nth-child(1)]:w-[8%] [&_th:nth-child(2)]:w-[16%] [&_th:nth-child(3)]:w-[12%] [&_th:nth-child(4)]:w-[12%] [&_th:nth-child(5)]:w-[13%] [&_th:nth-child(6)]:w-[7%] [&_th:nth-child(7)]:w-[10%] [&_th:nth-child(8)]:w-[22%]"
             *ngIf="selectedRecord === 'death'">
@@ -356,14 +350,12 @@
             </thead>
 
             <tbody>
-              <!-- Error -->
               <tr *ngIf="!loadingDeaths && deathError">
                 <td colspan="8" class="text-center">
                   {{ deathError }}
                 </td>
               </tr>
 
-              <!-- No Records -->
               <tr
                 *ngIf="
                   !loadingDeaths &&
@@ -377,7 +369,6 @@
                 </td>
               </tr>
 
-              <!-- Death Records -->
               <tr
                 *ngFor="let death of paginatedDeaths; let i = index"
                 class="cursor-pointer transition-[background-color,box-shadow] duration-200 hover:bg-[#eef5ff] hover:[&>td]:bg-[#eef5ff] hover:[&>td]:shadow-[inset_0_1px_0_#d7e7ff,inset_0_-1px_0_#d7e7ff] focus-visible:outline-2 focus-visible:outline-[#0d6efd] focus-visible:outline-offset-[-2px] motion-reduce:transition-none"
@@ -528,9 +519,7 @@
       </section>
     </div>
 
-    <!-- ================================================= -->
     <!-- COMMENTS -->
-    <!-- ================================================= -->
     <ng-container *ngIf="!isReadOnly">
 
       <aside
@@ -760,320 +749,220 @@
     </ng-container>
 
     <!-- ================================================= -->
-<!-- BAPTISM DETAILS MODAL -->
-<!-- ================================================= -->
-<div
-  *ngIf="selectedBaptism"
-  class="fixed inset-0 z-[1040] bg-slate-900/[0.58] backdrop-blur"
-  (click)="closeBaptismModal()">
-</div>
+    <!-- BAPTISM DETAILS MODAL -->
+    <!-- ================================================= -->
 
-<div
-  *ngIf="selectedBaptism"
-  class="fixed inset-0 z-[1050] flex items-center justify-center overflow-x-hidden overflow-y-auto p-3 max-[640px]:p-2"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="baptismModalTitle"
-  (click)="$event.stopPropagation()">
-
-  <div class="relative flex max-h-[calc(100vh-1.5rem)] w-full max-w-[850px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_20px_55px_rgba(15,23,42,0.22)] max-[640px]:max-h-[calc(100vh-1rem)]">
-
-    <!-- Modal Header -->
-    <div class="flex items-center justify-between border-b border-[#e8edf4] bg-white px-5 py-3 max-[640px]:px-3 max-[640px]:py-2.5">
-      <h2
-        id="baptismModalTitle"
-        class="m-0 text-lg font-bold tracking-tight text-[#17243a] max-[640px]:text-base">
-        Baptism Record
-      </h2>
+    <div
+      *ngIf="selectedBaptism"
+      class="fixed inset-0 z-[1040] bg-slate-900/[0.58] backdrop-blur"
+      (click)="closeBaptismModal()">
     </div>
 
-    <!-- Modal Body -->
     <div
-      class="overflow-y-auto bg-slate-50 p-3 max-[640px]:p-2"
-      *ngIf="selectedBaptism">
+      *ngIf="selectedBaptism"
+      class="fixed inset-0 z-[1050] flex items-center justify-center overflow-y-auto p-3 max-[640px]:p-2"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="baptismModalTitle"
+      (click)="$event.stopPropagation()">
 
-      <div class="rounded-lg border border-[#e6ebf2] bg-white p-3 max-[640px]:p-2.5">
+      <div class="relative flex max-h-[calc(100vh-1.5rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_20px_55px_rgba(15,23,42,0.22)] max-[640px]:max-h-[calc(100vh-1rem)]">
 
-        <!-- Personal Information -->
-        <div class="grid grid-cols-1 gap-1.5">
-
-          <!-- Name Fields -->
-          <div class="grid grid-cols-4 gap-2 max-[640px]:grid-cols-2">
-
-            <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-              <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">First Name</span>
-              <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.first_name || '—' }}</span>
-            </div>
-
-            <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-              <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Middle Name</span>
-              <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.middle_name || '—' }}</span>
-            </div>
-
-            <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-              <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Last Name</span>
-              <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.last_name || '—' }}</span>
-            </div>
-
-            <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-              <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Extension Name</span>
-              <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.extension_name || '—' }}</span>
-            </div>
-
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Gender</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.gender || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Marital Status</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.marital_status || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Birthdate</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ formatDate(selectedBaptism.birthdate) }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Age</span>
-            <span class="text-[13px] font-semibold leading-5 text-[#263449]">
-              {{ calculateAge(selectedBaptism.birthdate) }}
-              <span class="ml-1 text-xs font-normal text-[#8794a7]">years old</span>
-            </span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Address</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.address || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Church</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getChurchName(selectedBaptism.church_id) }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Quarter</span>
-            <span class="text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.quarter || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Date of Baptism</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ formatDate(selectedBaptism.date_of_baptism) }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Officiating Minister</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.officiating_minister || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Place of Baptism</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ selectedBaptism.place_of_baptism || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Baptism Status</span>
-            <span
-              class="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11px] font-bold"
-              [ngClass]="{
-                'bg-green-100 text-green-800': getBaptismStatus(selectedBaptism.is_reclaimed) === 'Reclaimed Member',
-                'bg-slate-100 text-slate-600': getBaptismStatus(selectedBaptism.is_reclaimed) === 'Newly Baptized'
-              }">
-              {{ getBaptismStatus(selectedBaptism.is_reclaimed) }}
-            </span>
-          </div>
-
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-[#e8edf4] bg-white px-4 py-3">
+          <h2
+            id="baptismModalTitle"
+            class="m-0 text-base font-bold tracking-tight text-[#17243a]">
+            Baptism Record
+          </h2>
         </div>
+
+        <!-- Modal Body -->
+        <div
+          class="overflow-y-auto bg-slate-50 p-3"
+          *ngIf="selectedBaptism">
+
+          <div class="rounded-lg border border-[#e6ebf2] bg-white px-3">
+
+            <div class="grid grid-cols-1">
+
+              <!-- Full Name -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Full Name
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getFullName(selectedBaptism) || '—' }}
+                </span>
+              </div>
+
+              <!-- Gender -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Gender
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.gender || '—' }}
+                </span>
+              </div>
+
+              <!-- Marital Status -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Marital Status
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.marital_status || '—' }}
+                </span>
+              </div>
+
+              <!-- Birthdate -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Birthdate
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(selectedBaptism.birthdate) }}
+                </span>
+              </div>
+
+              <!-- Age -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Age
+                </span>
+
+                <span class="text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ calculateAge(selectedBaptism.birthdate) }}
+                  <span class="ml-1 text-xs font-normal text-[#8794a7]">
+                    years old
+                  </span>
+                </span>
+              </div>
+
+              <!-- Address -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Address
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.address || '—' }}
+                </span>
+              </div>
+
+              <!-- Church -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Church
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getChurchName(selectedBaptism.church_id) }}
+                </span>
+              </div>
+
+              <!-- Quarter -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Quarter
+                </span>
+
+                <span class="text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.quarter || '—' }}
+                </span>
+              </div>
+
+              <!-- Date of Baptism -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Date of Baptism
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(selectedBaptism.date_of_baptism) }}
+                </span>
+              </div>
+
+              <!-- Officiating Minister -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Officiating Minister
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.officiating_minister || '—' }}
+                </span>
+              </div>
+
+              <!-- Place of Baptism -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Place of Baptism
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.place_of_baptism || '—' }}
+                </span>
+              </div>
+
+              <!-- Baptism Status -->
+              <div class="flex min-w-0 flex-col items-start gap-1 py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Baptism Status
+                </span>
+
+                <span
+                  class="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11px] font-bold"
+                  [ngClass]="{
+                    'bg-green-100 text-green-800': getBaptismStatus(selectedBaptism.is_reclaimed) === 'Reclaimed Member',
+                    'bg-slate-100 text-slate-600': getBaptismStatus(selectedBaptism.is_reclaimed) === 'Newly Baptized'
+                  }">
+                  {{ getBaptismStatus(selectedBaptism.is_reclaimed) }}
+                </span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer: Close Button on the Right -->
+    <!-- Modal Footer: Edit and Close Buttons on the Right -->
+<div class="flex items-center justify-end gap-2 border-t border-[#e8edf4] bg-white px-4 py-3">
+
+ 
+
+  <!-- Close Button -->
+  <button
+    app-button
+    variant="done"
+    size="md"
+    type="button"
+    class="inline-flex h-[32px] w-[110px] cursor-pointer items-center justify-center !rounded-[8px] !border !border-[#0c502f] !bg-white px-3 text-[12px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] motion-reduce:transition-none"
+    (click)="closeBaptismModal()">
+    Close
+  </button>
+
+<!-- Edit Record Button -->
+<button
+  app-button
+  variant="edit"
+  size="md"
+  *ngIf="!isReadOnly"
+  type="button"
+  class="inline-flex h-[32px] w-[110px] cursor-pointer items-center justify-center !rounded-[8px] !border !border-[#0c502f] !bg-[#0c502f] px-3 text-[12px] font-semibold !text-white transition-colors duration-200 hover:!border-[#0c502f] hover:!bg-[#0c502f] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
+  (click)="editSelectedBaptism()">
+  Edit Record
+</button>
+
+</div>
+
       </div>
     </div>
-
-    <!-- Modal Footer -->
-    <div class="flex items-center justify-end gap-2 border-t border-[#e8edf4] bg-white px-5 py-2.5 max-[640px]:px-3 max-[640px]:py-2">
-      <button
-        app-button
-        variant="edit"
-        size="md"
-        *ngIf="!isReadOnly"
-        type="button"
-        class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
-        (click)="editSelectedBaptism()">
-        Edit Record
-      </button>
-
-      <button
-        app-button
-        variant="done"
-        size="md"
-        type="button"
-        class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
-        (click)="closeBaptismModal()">
-        Close
-      </button>
-    </div>
-
-  </div>
-</div>
-
-
-<!-- ================================================= -->
-<!-- DEATH DETAILS MODAL -->
-<!-- ================================================= -->
-<div
-  *ngIf="selectedDeath"
-  class="fixed inset-0 z-[1040] bg-slate-900/[0.58] backdrop-blur"
-  (click)="closeDeathModal()">
-</div>
-
-<div
-  *ngIf="selectedDeath"
-  class="fixed inset-0 z-[1050] flex items-center justify-center overflow-x-hidden overflow-y-auto p-3 max-[640px]:p-2"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="deathModalTitle"
-  (click)="$event.stopPropagation()">
-
-  <div class="relative flex max-h-[calc(100vh-1.5rem)] w-full max-w-[850px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_20px_55px_rgba(15,23,42,0.22)] max-[640px]:max-h-[calc(100vh-1rem)]">
-
-    <!-- Modal Header -->
-    <div class="flex items-center justify-between border-b border-[#e8edf4] bg-white px-5 py-3 max-[640px]:px-3 max-[640px]:py-2.5">
-      <h2
-        id="deathModalTitle"
-        class="m-0 text-lg font-bold tracking-tight text-[#17243a] max-[640px]:text-base">
-        Death Record
-      </h2>
-    </div>
-
-    <!-- Modal Body -->
-    <div
-      class="overflow-y-auto bg-slate-50 p-3 max-[640px]:p-2"
-      *ngIf="selectedDeath as deathRecord">
-
-      <div class="rounded-lg border border-[#e6ebf2] bg-white p-3 max-[640px]:p-2.5">
-
-        <div class="mb-2 border-b border-[#e8edf4] pb-2">
-          <h3 class="m-0 text-sm font-bold text-[#17243a]">
-            {{ getFullName(getDeathBaptism(deathRecord)) }}
-          </h3>
-        </div>
-
-        <div class="grid grid-cols-2 gap-x-4 gap-y-0 max-[640px]:grid-cols-1">
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">First Name</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getDeathBaptism(deathRecord)?.first_name || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Middle Name</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getDeathBaptism(deathRecord)?.middle_name || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Last Name</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getDeathBaptism(deathRecord)?.last_name || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Extension Name</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getDeathBaptism(deathRecord)?.extension_name || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Gender</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getDeathBaptism(deathRecord)?.gender || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Marital Status</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getDeathBaptism(deathRecord)?.marital_status || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Birthdate</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ formatDate(getDeathBaptism(deathRecord)?.birthdate || '') }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Age at Death</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
-              {{ calculateAgeAtDeath(
-                getDeathBaptism(deathRecord)?.birthdate || '',
-                deathRecord.date_of_death
-              ) }}
-              <span class="ml-1 text-xs font-normal text-[#8794a7]">years old</span>
-            </span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Address</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getDeathBaptism(deathRecord)?.address || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Church</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getChurchName(getDeathBaptism(deathRecord)?.church_id) }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Date of Death</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ formatDate(deathRecord.date_of_death) }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Quarter</span>
-            <span class="text-[13px] font-semibold leading-5 text-[#263449]">{{ deathRecord.quarter || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Date of Baptism</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ formatDate(getDeathBaptism(deathRecord)?.date_of_baptism || '') }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Officiating Minister</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getDeathBaptism(deathRecord)?.officiating_minister || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Place of Baptism</span>
-            <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">{{ getDeathBaptism(deathRecord)?.place_of_baptism || '—' }}</span>
-          </div>
-
-          <div class="flex min-w-0 flex-col gap-1 py-2">
-            <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">Reclaimed Member</span>
-            <span
-              class="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11px] font-bold"
-              [ngClass]="{
-                'bg-green-100 text-green-800': getDeathBaptism(deathRecord)?.is_reclaimed,
-                'bg-slate-100 text-slate-600': !getDeathBaptism(deathRecord)?.is_reclaimed
-              }">
-              {{ getDeathBaptism(deathRecord)?.is_reclaimed ? 'Yes' : 'No' }}
-            </span>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Footer -->
-    <div class="flex items-center justify-end border-t border-[#e8edf4] bg-white px-5 py-2.5 max-[640px]:px-3 max-[640px]:py-2">
-      <button
-        app-button
-        variant="done"
-        size="md"
-        type="button"
-        class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-white px-[18px] text-[13px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] motion-reduce:transition-none max-[650px]:w-full"
-        (click)="closeDeathModal()">
-        Close
-      </button>
-    </div>
-
-  </div>
-</div>
 
     <!-- ================================================= -->
     <!-- DEATH DETAILS MODAL -->
@@ -1087,132 +976,188 @@
 
     <div
       *ngIf="selectedDeath"
-      class="fixed inset-0 z-[1050] flex items-center justify-center overflow-x-hidden overflow-y-auto p-6 max-[640px]:p-3"
+      class="fixed inset-0 z-[1050] flex items-center justify-center overflow-y-auto p-3 max-[640px]:p-2"
       role="dialog"
       aria-modal="true"
       aria-labelledby="deathModalTitle"
       (click)="$event.stopPropagation()">
 
-      <div class="relative flex max-h-[calc(100vh-3rem)] w-full max-w-[900px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.25)] transition-[opacity,transform] duration-200 ease-out [@starting-style]:translate-y-3 [@starting-style]:scale-[0.99] [@starting-style]:opacity-0 max-[640px]:max-h-[calc(100vh-1.5rem)] max-[640px]:rounded-[14px] motion-reduce:transition-none">
+      <div class="relative flex max-h-[calc(100vh-1.5rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_20px_55px_rgba(15,23,42,0.22)] max-[640px]:max-h-[calc(100vh-1rem)]">
 
         <!-- Modal Header -->
-        <div class="flex items-center justify-between gap-5 border-b border-[#e8edf4] bg-white px-6 py-4 max-[640px]:p-3">
-          <div class="flex min-w-0 items-center gap-[15px] max-[640px]:gap-2.5 [&_h2]:mb-[5px] [&_h2]:mt-0 [&_h2]:text-[21px] [&_h2]:font-bold [&_h2]:tracking-[-0.35px] [&_h2]:text-[#17243a] max-[640px]:[&_h2]:text-[17px] [&_p]:m-0 [&_p]:text-[13px] [&_p]:leading-[1.5] [&_p]:text-[#718096] max-[640px]:[&_p]:text-[11px]">
-            <div>
-              <h2 id="deathModalTitle">Death Record</h2>
-            </div>
-          </div>
+        <div class="flex items-center justify-between border-b border-[#e8edf4] bg-white px-4 py-3">
+          <h2
+            id="deathModalTitle"
+            class="m-0 text-base font-bold tracking-tight text-[#17243a]">
+            Death Record
+          </h2>
         </div>
 
         <!-- Modal Body -->
-        <div class="overflow-y-auto bg-slate-50 px-6 py-4 max-[640px]:p-3" *ngIf="selectedDeath as deathRecord">
+        <div
+          class="overflow-y-auto bg-slate-50 p-3"
+          *ngIf="selectedDeath as deathRecord">
 
-          <div class="rounded-[14px] border border-[#e6ebf2] bg-white p-4 max-[640px]:p-3">
+          <div class="rounded-lg border border-[#e6ebf2] bg-white px-3">
 
-            <div class="mb-4 border-b border-[#e8edf4] pb-3 [&_h3]:mb-[5px] [&_h3]:mt-0 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-[#17243a] [&_p]:m-0 [&_p]:text-xs [&_p]:leading-[1.6] [&_p]:text-[#718096]">
-              <div>
-                <h3>{{ getFullName(getDeathBaptism(deathRecord)) }}</h3>
-              </div>
-            </div>
+            <div class="grid grid-cols-1">
 
-            <div class="grid grid-cols-2 gap-x-7 gap-y-0 max-[640px]:grid-cols-1">
+              <!-- Full Name -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Full Name
+                </span>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">First Name</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.first_name || '—' }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Middle Name</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.middle_name || '—' }}</span>
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getFullName(getDeathBaptism(deathRecord)) || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Last Name</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.last_name || '—' }}</span>
+                 <!-- Date of Death -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Date of Death
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(deathRecord.date_of_death) }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Extension Name</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.extension_name || '—' }}</span>
-              </div>
+                <!-- Age at Death -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Age at Death
+                </span>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Gender</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.gender || '—' }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Marital Status</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.marital_status || '—' }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Birthdate</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ formatDate(getDeathBaptism(deathRecord)?.birthdate || '') }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Age at Death</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
                   {{
                     calculateAgeAtDeath(
                       getDeathBaptism(deathRecord)?.birthdate || '',
                       deathRecord.date_of_death
                     )
                   }}
-                  <span class="ml-1 text-xs font-normal text-[#8794a7]">years old</span>
+                  <span class="ml-1 text-xs font-normal text-[#8794a7]">
+                    years old
+                  </span>
                 </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Address</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.address || '—' }}</span>
+
+              
+              <!-- Birthdate -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Birthdate
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(getDeathBaptism(deathRecord)?.birthdate || '') }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Church</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getChurchName(getDeathBaptism(deathRecord)?.church_id) }}</span>
+
+              <!-- Gender -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Gender
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.gender || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Date of Death</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ formatDate(deathRecord.date_of_death) }}</span>
+                <!-- Church -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Church
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getChurchName(getDeathBaptism(deathRecord)?.church_id) }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Quarter</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ deathRecord.quarter || '—' }}</span>
+               <!-- Address -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Address
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.address || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Date of Baptism</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ formatDate(getDeathBaptism(deathRecord)?.date_of_baptism || '') }}</span>
+             <!-- Quarter -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Quarter
+                </span>
+
+                <span class="text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ deathRecord.quarter || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Officiating Minister</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.officiating_minister || '—' }}</span>
+              <!-- Marital Status -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Marital Status
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.marital_status || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Place of Baptism</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.place_of_baptism || '—' }}</span>
+              <!-- Date of Baptism -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Date of Baptism
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(getDeathBaptism(deathRecord)?.date_of_baptism || '') }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-2.5">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Reclaimed Member</span>
+              <!-- Officiating Minister -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Officiating Minister
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.officiating_minister || '—' }}
+                </span>
+              </div>
+
+              <!-- Place of Baptism -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Place of Baptism
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.place_of_baptism || '—' }}
+                </span>
+              </div>
+
+              <!-- Reclaimed Member -->
+              <div class="flex min-w-0 flex-col items-start gap-1 py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Reclaimed Member
+                </span>
+
                 <span
-                  class="inline-flex w-fit items-center rounded-[20px] px-[11px] py-[5px] text-xs font-bold"
+                  class="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11px] font-bold"
                   [ngClass]="{
                     'bg-green-100 text-green-800': getDeathBaptism(deathRecord)?.is_reclaimed,
                     'bg-slate-100 text-slate-600': !getDeathBaptism(deathRecord)?.is_reclaimed
                   }">
-                  {{
-                    getDeathBaptism(deathRecord)?.is_reclaimed
-                      ? 'Yes'
-                      : 'No'
-                  }}
+                  {{ getDeathBaptism(deathRecord)?.is_reclaimed ? 'Yes' : 'No' }}
                 </span>
               </div>
 
@@ -1220,14 +1165,14 @@
           </div>
         </div>
 
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-between gap-3 border-t border-[#e8edf4] bg-white px-6 py-3 max-[640px]:px-3 max-[640px]:py-2.5">
+        <!-- Modal Footer: Close Button on the Right -->
+        <div class="flex items-center justify-end border-t border-[#e8edf4] bg-white px-4 py-3">
           <button
             app-button
             variant="done"
             size="md"
             type="button"
-            class="min-w-[100px] cursor-pointer rounded-[9px] border border-[#084d23] bg-[#0c502f] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:border-[#044f06] hover:bg-[#5d835e] motion-reduce:transition-none"
+            class="inline-flex h-[32px] w-[110px] cursor-pointer items-center justify-center !rounded-[8px] !border !border-[#0c502f] !bg-white px-4 text-[12px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] motion-reduce:transition-none"
             (click)="closeDeathModal()">
             Close
           </button>
