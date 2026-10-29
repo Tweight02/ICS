@@ -11,12 +11,6 @@
   <!-- HEADER -->
   <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-3">
-      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#0F4A30]">
-        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-            d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m6-10a4 4 0 100-8 4 4 0 000 8zm10 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-        </svg>
-      </div>
       <h1 class="text-xl font-bold tracking-tight text-slate-900">Manage Pastors</h1>
     </div>
 
@@ -45,7 +39,6 @@
 
       <!-- Search -->
       <div>
-        <label for="pastor-search" class="mb-1 block text-xs font-medium text-slate-700">Search</label>
         <input
           id="pastor-search"
           type="text"
@@ -58,7 +51,6 @@
 
       <!-- District Filter -->
       <div class="relative" (focusout)="onDistrictFilterFocusOut($event)">
-        <label for="district-filter" class="mb-1 block text-xs font-medium text-slate-700">District</label>
         <input
           id="district-filter"
           type="text"
@@ -91,8 +83,8 @@
                 [attr.aria-selected]="option.value === churchId()"
                 (click)="onDistrictChange(option.value)"
                 (mouseenter)="districtFilterActiveIndex.set(i)"
-                class="cursor-pointer px-3 py-2 text-slate-800"
-                [class.bg-emerald-50]="i === districtFilterActiveIndex()"
+                class="cursor-pointer px-3 py-2 text-slate-800 transition-colors"
+                [class.bg-emerald-100]="i === districtFilterActiveIndex()"
                 [class.font-semibold]="option.value === churchId()"
               >
                 {{ option.label }}
@@ -104,19 +96,43 @@
         }
       </div>
 
-      <!-- Status Filter -->
+      <!-- Status Filter (custom dropdown, same look and hover as the District filter) -->
       <div>
-        <label for="status-filter" class="mb-1 block text-xs font-medium text-slate-700">Status</label>
-        <select
-          id="status-filter"
-          [value]="status()"
-          (change)="onStatusChange($any($event.target).value)"
-          class="block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0F4A30] focus:outline-none focus:ring-1 focus:ring-[#0F4A30]"
-        >
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        <details #statusMenu class="relative" (keydown.escape)="statusMenu.open = false">
+          <summary
+            id="status-filter"
+            aria-haspopup="listbox"
+            aria-labelledby="status-filter-label status-filter"
+            class="group relative z-20 block cursor-pointer list-none outline-none [&::-webkit-details-marker]:hidden"
+          >
+            <div class="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 group-focus-visible:border-[#0F4A30] group-focus-visible:ring-1 group-focus-visible:ring-[#0F4A30]">
+              <span class="truncate">{{ status() === 'active' ? 'Active' : status() === 'inactive' ? 'Inactive' : 'All statuses' }}</span>
+              <svg class="h-4 w-4 shrink-0 text-slate-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.3 7.3a1 1 0 011.4 0L10 10.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 010-1.4z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </summary>
+
+          <!-- click-away layer -->
+          <div class="fixed inset-0 z-10" aria-hidden="true" (click)="statusMenu.open = false"></div>
+
+          <div
+            role="listbox"
+            aria-label="Statuses"
+            class="absolute left-0 right-0 top-full z-20 mt-1 overflow-auto rounded-md border border-slate-200 bg-white py-1 text-xs shadow-lg"
+          >
+            @for (opt of [{ value: '', label: 'All statuses' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]; track opt.value) {
+              <button
+                type="button"
+                role="option"
+                [attr.aria-selected]="status() === opt.value"
+                (click)="onStatusChange($any(opt.value)); statusMenu.open = false"
+                class="block w-full cursor-pointer px-3 py-2 text-left text-slate-800 transition-colors hover:bg-emerald-100 focus:outline-none focus-visible:bg-emerald-100"
+                [class.font-semibold]="status() === opt.value"
+              >{{ opt.label }}</button>
+            }
+          </div>
+        </details>
       </div>
     </div>
   </div>
@@ -138,7 +154,6 @@
             <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pastor</th>
             <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">District</th>
             <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Email</th>
-            <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Birthdate</th>
             <th class="whitespace-nowrap px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Status</th>
           </tr>
         </thead>
@@ -184,13 +199,6 @@
                 <!-- EMAIL -->
                 <td class="px-4 py-3 align-middle">
                   <span class="text-xs text-slate-600">{{ pastor.email }}</span>
-                </td>
-
-                <!-- BIRTHDATE -->
-                <td class="px-4 py-3 align-middle">
-                  <span class="text-xs text-slate-600">
-                    {{ pastor.birthdate ? (pastor.birthdate | date:'MMM d, y':'UTC') : '—' }}
-                  </span>
                 </td>
 
                 <!-- STATUS -->
