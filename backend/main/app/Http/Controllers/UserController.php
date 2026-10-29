@@ -364,6 +364,40 @@ class UserController extends Controller
         ]);
     }
 
+    private function retire(User $user): void
+    {
+        $user->update(['status' => 'inactive']);
+        $user->tokens()->delete();
+    }
+
+    /** New record in the target district, or reactivate the person's earlier record there. */
+    private function place(User $source, int $churchId): User
+    {
+        $existing = User::where('email', $source->email)
+            ->where('church_id', $churchId)
+            ->first();
+
+        if ($existing) {
+            $existing->forceFill([
+                ...$source->only([
+                    'department_id', 'first_name', 'middle_name', 'last_name',
+                    'extension_name', 'birthdate', 'gender', 'profile_image', 'password',
+                ]),
+                'status' => 'active',
+            ])->save();
+
+            return $existing;
+        }
+
+        $new = $source->replicate();      // primary key is not copied
+        $new->church_id = $churchId;
+        $new->status = 'active';
+        $new->remember_token = null;
+        $new->save();
+
+        return $new;
+    }
+
     public function assignPastorToDistrict(Request $request, int $districtId): JsonResponse
     {
         $this->authorizeAssistant($request);
@@ -403,11 +437,19 @@ class UserController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if ($assignedPastor) {
-                $assignedPastor->update(['church_id' => $pastor->church_id]);
+            $fromChurchId = (int) $pastor->church_id;
+
+            // Retire the old records first (rows and their past data stay as they are)
+            $this->retire($pastor);
+                if ($assignedPastor) {
+                    $this->retire($assignedPastor);
             }
 
-            $pastor->update(['church_id' => $district->church_id]);
+            // Then place each person in their new district
+            $this->place($pastor, $district->church_id);
+                if ($assignedPastor) {
+                    $this->place($assignedPastor, $fromChurchId);
+            }
         });
 
         return response()->json([
