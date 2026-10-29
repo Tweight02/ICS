@@ -101,90 +101,82 @@
 	</section>
 
 
-<!-- Current assignments -->
-<section aria-labelledby="assignment-list-heading">
-	@if (loading()) {
-		<div
-			class="grid grid-cols-1 gap-3 sm:grid-cols-3"
-			role="status"
-			aria-label="Loading assignments"
-		>
+	<!-- Current assignments -->
+	<section aria-labelledby="assignment-list-heading">
+		@if (loading()) {
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3" role="status" aria-label="Loading assignments">
 			@for (n of [1, 2, 3, 4, 5, 6]; track n) {
-				<div class="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-100"></div>
+			<div class="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-100"></div>
 			}
 		</div>
-	} @else if (!loadError() && assignments().length === 0) {
+		} @else if (!loadError() && assignments().length === 0) {
 		<div class="rounded-lg border border-slate-200 bg-white px-4 py-10 text-center">
 			<p class="text-sm font-medium text-slate-700">No districts available</p>
 			<p class="mt-1 text-sm text-slate-500">
 				District assignments will appear here when available.
 			</p>
 		</div>
-	} @else if (!loadError()) {
+		} @else if (!loadError()) {
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 			@for (assignment of visibleAssignments(); track assignment.church_id) {
-				<button
-					type="button"
-					(click)="openTransfer(assignment)"
-					[attr.aria-label]="'Manage pastor assignment for ' + assignment.district_name"
-					class="group flex min-h-[76px] w-full items-center gap-3 rounded-lg border bg-white p-4 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-2"
-					[class.border-amber-200]="assignment.pastor_user_id === null"
-					[class.hover:border-amber-300]="assignment.pastor_user_id === null"
-					[class.border-slate-200]="assignment.pastor_user_id !== null"
-					[class.hover:border-emerald-300]="assignment.pastor_user_id !== null"
-				>
-					<!-- Status indicator -->
-					<span
-						class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-						[class.bg-amber-50]="assignment.pastor_user_id === null"
-						[class.text-amber-700]="assignment.pastor_user_id === null"
-						[class.bg-emerald-50]="assignment.pastor_user_id !== null"
-						[class.text-emerald-800]="assignment.pastor_user_id !== null"
-						aria-hidden="true"
-					>
-						@if (assignment.pastor_user_id === null) {
-							<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-								<path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 4a1 1 0 10-2 0v3a1 1 0 002 0V6zm-1 7a1.1 1.1 0 100-2.2A1.1 1.1 0 0010 13z" clip-rule="evenodd" />
-							</svg>
-						} @else {
-							<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-								<path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.7 5.3a1 1 0 00-1.4-1.4L9 9.2 7.7 7.9a1 1 0 00-1.4 1.4l2 2a1 1 0 001.4 0l4-4z" clip-rule="evenodd" />
-							</svg>
-						}
-					</span>
-
-					<!-- District information -->
-					<span class="min-w-0 flex-1">
-						<span class="block break-words text-sm font-semibold leading-5 text-slate-900">
-							{{ assignment.district_name }}
-						</span>
-
-						@if (assignment.pastor_user_id === null) {
-							<span class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
-								<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-								Vacant · No pastor assigned
-							</span>
-						} @else {
-							<span class="mt-1 block break-words text-sm text-slate-600">
-								{{ assignment.pastor_name }}
-							</span>
-						}
-					</span>
-
-					<!-- Action indicator -->
-					<svg
-						class="h-4 w-4 shrink-0 text-slate-400 transition-colors group-hover:text-[#0F4A30]"
-						viewBox="0 0 20 20"
-						fill="currentColor"
-						aria-hidden="true"
-					>
-						<path fill-rule="evenodd" d="M7.2 4.3a1 1 0 011.4 0l5 5a1 1 0 010 1.4l-5 5a1 1 0 01-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 010-1.4z" clip-rule="evenodd" />
+			<button type="button" (click)="openTransfer(assignment)"
+				[attr.aria-label]="'Manage pastor assignment for ' + assignment.district_name"
+				class="group flex min-h-[76px] w-full items-center gap-3 rounded-lg border bg-white p-4 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-2"
+				[class.border-amber-200]="assignment.pastor_user_id === null"
+				[class.hover:border-amber-300]="assignment.pastor_user_id === null"
+				[class.border-slate-200]="assignment.pastor_user_id !== null"
+				[class.hover:border-emerald-300]="assignment.pastor_user_id !== null">
+				<!-- Status indicator -->
+				<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+					[class.bg-amber-50]="assignment.pastor_user_id === null"
+					[class.text-amber-700]="assignment.pastor_user_id === null"
+					[class.bg-emerald-50]="assignment.pastor_user_id !== null"
+					[class.text-emerald-800]="assignment.pastor_user_id !== null" aria-hidden="true">
+					@if (assignment.pastor_user_id === null) {
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd"
+							d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 4a1 1 0 10-2 0v3a1 1 0 002 0V6zm-1 7a1.1 1.1 0 100-2.2A1.1 1.1 0 0010 13z"
+							clip-rule="evenodd" />
 					</svg>
-				</button>
+					} @else {
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd"
+							d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.7 5.3a1 1 0 00-1.4-1.4L9 9.2 7.7 7.9a1 1 0 00-1.4 1.4l2 2a1 1 0 001.4 0l4-4z"
+							clip-rule="evenodd" />
+					</svg>
+					}
+				</span>
+
+				<!-- District information -->
+				<span class="min-w-0 flex-1">
+					<span class="block break-words text-sm font-semibold leading-5 text-slate-900">
+						{{ assignment.district_name }}
+					</span>
+
+					@if (assignment.pastor_user_id === null) {
+					<span class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
+						<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+						Vacant · No pastor assigned
+					</span>
+					} @else {
+					<span class="mt-1 block break-words text-sm text-slate-600">
+						{{ assignment.pastor_name }}
+					</span>
+					}
+				</span>
+
+				<!-- Action indicator -->
+				<svg class="h-4 w-4 shrink-0 text-slate-400 transition-colors group-hover:text-[#0F4A30]"
+					viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+					<path fill-rule="evenodd"
+						d="M7.2 4.3a1 1 0 011.4 0l5 5a1 1 0 010 1.4l-5 5a1 1 0 01-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 010-1.4z"
+						clip-rule="evenodd" />
+				</svg>
+			</button>
 			}
 		</div>
-	}
-</section>
+		}
+	</section>
 
 
 	<!-- Assign / change / transfer modal -->
@@ -261,10 +253,10 @@
 				</div>
 
 				<div class="max-h-56 overflow-auto rounded-lg border border-slate-200">
-					<table class="w-full min-w-[28rem] divide-y divide-slate-200 text-left text-sm">
-						<thead class="sticky top-0 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+					<table class="w-full min-w-[20rem] divide-y divide-slate-200 text-left text-sm">
+						<thead
+							class="sticky top-0 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
 							<tr>
-								<th scope="col" class="w-12 px-3 py-2 text-center">Select</th>
 								<th scope="col" class="px-3 py-2">Pastor</th>
 								<th scope="col" class="px-3 py-2">Current district</th>
 							</tr>
@@ -273,16 +265,13 @@
 							@for (p of filteredPastors(); track p.user_id) {
 							@let current = pastorDistricts().get(p.user_id);
 							@let isHere = target.pastor_user_id === p.user_id;
-							<tr class="transition-colors" [class.cursor-pointer]="!isHere"
-								[class.hover:bg-emerald-50]="!isHere" [class.opacity-60]="isHere"
-								(click)="!isHere && !saving() && selectPastor(p)">
-								<td class="px-3 py-2 text-center">
-									<input type="radio" name="transfer-pastor"
-										[attr.aria-label]="'Select ' + p.full_name" [disabled]="saving() || isHere"
-										[checked]="selectedPastorId() === p.user_id" (change)="selectPastor(p)"
-										(click)="$event.stopPropagation()"
-										class="h-4 w-4 accent-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed" />
-								</td>
+							<tr class="transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600"
+								[class.cursor-pointer]="!isHere && !saving()"
+								[class.hover:bg-emerald-50]="!isHere && !saving()" [class.opacity-60]="isHere"
+								[attr.tabindex]="isHere || saving() ? null : 0"
+								[attr.aria-disabled]="isHere || saving()"
+								(click)="!isHere && !saving() && selectPastor(p)"
+								(keydown.enter)="!isHere && !saving() && selectPastor(p)">
 								<td class="px-3 py-2 font-medium text-slate-900">
 									<span class="break-words">{{ p.full_name }}</span>
 								</td>
@@ -298,8 +287,9 @@
 							</tr>
 							} @empty {
 							<tr>
-								<td colspan="3" class="px-3 py-6 text-center text-sm text-slate-500">
-									{{ pastors().length === 0 ? 'There are no active pastors available.' : 'No pastors match your search.' }}
+								<td colspan="2" class="px-3 py-6 text-center text-sm text-slate-500">
+									{{ pastors().length === 0 ? 'There are no active pastors available.' : 'No pastors
+									match your search.' }}
 								</td>
 							</tr>
 							}
@@ -311,7 +301,8 @@
 				<div aria-live="polite">
 					@if (preview(); as pv) {
 					<div class="rounded-lg border border-amber-200 bg-amber-50 p-3">
-						<p class="mb-2 break-words text-xs font-semibold uppercase tracking-wide text-amber-800">{{ pv.title }}</p>
+						<p class="mb-2 break-words text-xs font-semibold uppercase tracking-wide text-amber-800">{{
+							pv.title }}</p>
 
 						<div class="grid grid-cols-1 items-stretch gap-2"
 							[class]="pv.moves.length === 2 ? 'sm:grid-cols-[1fr_auto_1fr]' : ''">
@@ -364,7 +355,8 @@
 					class="inline-flex h-9 items-center justify-center !rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60">
 					Cancel
 				</button>
-				<button app-button variant="submit" size="md" type="button" (click)="submitTransfer()" [disabled]="!selectedPastor() || saving()" [loading]="saving()"
+				<button app-button variant="submit" size="md" type="button" (click)="submitTransfer()"
+					[disabled]="!selectedPastor() || saving()" [loading]="saving()"
 					class="inline-flex h-9 items-center justify-center !rounded-md bg-[#0F4A30] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0B3925] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
 					@if (saving()) {
 					<svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
