@@ -107,37 +107,39 @@
               </div>
 
               <!-- Member Options -->
-              <div
-                class="absolute left-0 right-0 top-[calc(100%+4px)] z-[1050] max-h-[200px] overscroll-contain overflow-y-auto rounded-lg border border-slate-300 bg-white p-1 shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
-                *ngIf="memberDropdownOpen"
-                role="listbox">
+<!-- Member Options -->
+<div
+  id="memberDropdownOptions"
+  class="absolute left-0 right-0 top-[calc(100%+4px)] z-[1050] max-h-[200px] overscroll-contain overflow-y-auto rounded-lg border border-slate-300 bg-white p-1 shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
+  *ngIf="memberDropdownOpen"
+  role="listbox">
 
-                <button
-                  type="button"
-                  class="block w-full cursor-pointer break-words rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] font-normal text-slate-700 transition-colors hover:bg-emerald-50 focus-visible:bg-emerald-50 focus-visible:outline-none"
-                  role="option"
-                  *ngFor="let baptism of filteredAvailableBaptisms"
-                  [class.bg-emerald-50]="sameBaptism(baptism.baptism_id, death.baptism_id)"
-                  [class.text-emerald-800]="sameBaptism(baptism.baptism_id, death.baptism_id)"
-                  [attr.aria-selected]="
-                    sameBaptism(
-                      baptism.baptism_id,
-                      death.baptism_id
-                    )
-                  "
-                  (click)="chooseBaptism(baptism)">
+  <button
+    type="button"
+   class="member-option block w-full cursor-pointer break-words rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] font-normal text-slate-700 transition-all duration-150 hover:!bg-[#dbeafe] hover:!text-[#242833] hover:shadow-sm focus-visible:!bg-[#dbeafe] focus-visible:!text-[#1d4ed8] focus-visible:outline-none active:!bg-[#bfdbfe]"
+    role="option"
+    *ngFor="let baptism of filteredAvailableBaptisms"
+    [class.!bg-[#ecfdf5]]="sameBaptism(baptism.baptism_id, death.baptism_id)"
+    [class.!text-[#065f46]]="sameBaptism(baptism.baptism_id, death.baptism_id)"
+    [attr.aria-selected]="
+      sameBaptism(
+        baptism.baptism_id,
+        death.baptism_id
+      )
+    "
+    (click)="chooseBaptism(baptism)">
 
-                  {{ getFullName(baptism) }}
+    {{ getFullName(baptism) }}
 
-                </button>
+  </button>
 
-                <div
-                  class="p-2.5 text-center text-[13px] text-slate-500"
-                  *ngIf="filteredAvailableBaptisms.length === 0">
-                  No matching baptized members found.
-                </div>
+  <div
+    class="p-2.5 text-center text-[13px] text-slate-500"
+    *ngIf="filteredAvailableBaptisms.length === 0">
+    No matching baptized members found.
+  </div>
 
-              </div>
+</div>
 
             </div>
 
@@ -303,6 +305,7 @@
               name="date_of_death"
               class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 read-only:bg-[#f9fbfa] read-only:text-gray-700 disabled:cursor-not-allowed disabled:opacity-70"
               [(ngModel)]="death.date_of_death"
+              [min]="getMinimumDeathDate()"
               [max]="today"
               required>
           </div>

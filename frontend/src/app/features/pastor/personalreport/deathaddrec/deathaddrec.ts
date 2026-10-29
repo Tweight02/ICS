@@ -1,4 +1,3 @@
-
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -136,6 +135,34 @@ export class DeathaddrecComponent implements OnInit {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Return the earliest allowed death date:
+   * one calendar day after the selected member's birthdate.
+   */
+  getMinimumDeathDate(): string {
+    const birthdate = this.selectedBaptism?.birthdate;
+
+    if (!birthdate) {
+      return '';
+    }
+
+    const birthDate = new Date(
+      birthdate.substring(0, 10) + 'T00:00:00'
+    );
+
+    if (isNaN(birthDate.getTime())) {
+      return '';
+    }
+
+    birthDate.setDate(birthDate.getDate() + 1);
+
+    const year = birthDate.getFullYear();
+    const month = String(birthDate.getMonth() + 1).padStart(2, '0');
+    const day = String(birthDate.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
   }
@@ -346,6 +373,7 @@ export class DeathaddrecComponent implements OnInit {
           if (this.isAlreadyDeceased(this.death.baptism_id)) {
             this.death.baptism_id = null;
             this.selectedBaptism = null;
+            this.death.date_of_death = '';
             this.closeBaptismDropdown();
           }
 
@@ -424,6 +452,7 @@ export class DeathaddrecComponent implements OnInit {
     if (baptismId === null || baptismId === undefined) {
       this.selectedBaptism = null;
       this.death.baptism_id = null;
+      this.death.date_of_death = '';
       return;
     }
 
@@ -432,6 +461,7 @@ export class DeathaddrecComponent implements OnInit {
     if (this.isAlreadyDeceased(selectedId)) {
       this.death.baptism_id = null;
       this.selectedBaptism = null;
+      this.death.date_of_death = '';
 
       Swal.fire({
         icon: 'warning',
@@ -454,6 +484,17 @@ export class DeathaddrecComponent implements OnInit {
 
     if (!this.selectedBaptism) {
       this.death.baptism_id = null;
+      this.death.date_of_death = '';
+      return;
+    }
+
+    // Clear the date if it is not valid for the newly selected member.
+    if (
+      this.death.date_of_death &&
+      this.death.date_of_death <=
+        this.selectedBaptism.birthdate.substring(0, 10)
+    ) {
+      this.death.date_of_death = '';
     }
 
     console.log('Selected baptism:', this.selectedBaptism);
@@ -537,6 +578,7 @@ export class DeathaddrecComponent implements OnInit {
 
   /**
    * Calculate age on the date of death.
+   * The date of death must be strictly later than the birthdate.
    */
   calculateAgeAtDeath(
     birthdate: string,
@@ -557,7 +599,7 @@ export class DeathaddrecComponent implements OnInit {
     if (
       isNaN(birthDate.getTime()) ||
       isNaN(deathDate.getTime()) ||
-      deathDate < birthDate
+      deathDate <= birthDate
     ) {
       return '';
     }
@@ -637,6 +679,7 @@ export class DeathaddrecComponent implements OnInit {
     if (this.isAlreadyDeceased(baptismId)) {
       this.death.baptism_id = null;
       this.selectedBaptism = null;
+      this.death.date_of_death = '';
 
       Swal.fire({
         icon: 'warning',
@@ -650,11 +693,16 @@ export class DeathaddrecComponent implements OnInit {
       return;
     }
 
-    // Do not allow a future date.
-    if (this.death.date_of_death > this.today) {
+    // Verify that the selected member exists.
+    const member = this.baptisms.find(
+      baptism => Number(baptism.baptism_id) === baptismId
+    );
+
+    if (!member) {
       Swal.fire({
         icon: 'warning',
-        title: 'Invalid Date',
+        title: 'Invalid Selection',
+        text: 'Please select a valid baptized member.',
         confirmButtonText: 'OK',
         confirmButtonColor: '#176b52',
         customClass: this.swalCustomClass
@@ -663,18 +711,36 @@ export class DeathaddrecComponent implements OnInit {
       return;
     }
 
-    // Check that death date is on or after birthdate.
+    // Do not allow a future date.
+    if (this.death.date_of_death > this.today) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Date',
+        text: 'The date of death cannot be in the future.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#176b52',
+        customClass: this.swalCustomClass
+      });
+
+      return;
+    }
+
+    // Do not allow the death date to be the same as or earlier than birthdate.
+    const birthdate = member.birthdate.substring(0, 10);
+
     if (
-      this.selectedBaptism &&
+      this.death.date_of_death <= birthdate ||
+      !this.selectedBaptism ||
+      Number(this.selectedBaptism.baptism_id) !== baptismId ||
       this.calculateAgeAtDeath(
-        this.selectedBaptism.birthdate,
+        member.birthdate,
         this.death.date_of_death
       ) === ''
     ) {
       Swal.fire({
         icon: 'warning',
-        title: 'Invalid Date',
-        text: 'The date of death must be on or after the birthdate.',
+        title: 'Invalid Date of Death',
+        text: 'The date of death must be at least one day after the birthdate. The two dates cannot be the same.',
         confirmButtonText: 'OK',
         confirmButtonColor: '#176b52',
         customClass: this.swalCustomClass
@@ -755,22 +821,7 @@ export class DeathaddrecComponent implements OnInit {
    * Cancel adding a death record.
    */
   cancelForm(): void {
-    Swal.fire({
-      icon: 'warning',
-      iconColor: '#dc3545',
-      title: 'Cancel Adding Record?',
-      text: 'Your unsaved baptism information will be discarded.',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Cancel',
-      cancelButtonText: 'Continue Editing',
-      confirmButtonColor: '#dc3545',
-      cancelButtonColor: '#14532d',
-      reverseButtons: true,
-      customClass: this.swalCustomClass
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.router.navigate(['/pastor/deathbap']);
-      }
-    });
+    this.router.navigate(['/pastor/deathbap']);
   }
+
 }
