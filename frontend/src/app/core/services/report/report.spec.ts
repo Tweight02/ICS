@@ -39,7 +39,7 @@ describe('ReportService', () => {
     });
 
     httpTestingController
-      .expectOne('http://127.0.0.1:8000/api/churches/1/departments')
+      .expectOne('/api/churches/1/departments')
       .flush([
         {
           department_id: 1,

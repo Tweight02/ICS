@@ -37,10 +37,26 @@
     </div>
 
     <!-- Loading -->
-    <div *ngIf="loadingDistricts()" class="mx-auto flex w-fit items-center gap-3 rounded-2xl border border-emerald-900/10 bg-white/90 px-8 py-6 text-sm font-medium text-emerald-900 shadow-sm">
+    <div *ngIf="loadingDistricts()" class="mx-auto flex w-fit items-center  px-8 py-6 text-sm font-medium">
       <app-running-loader></app-running-loader>
-      <span>Loading reports...</span>
     </div>
+
+    <section
+      *ngIf="hasAllDepartmentAccess && departments().length > 0"
+      class="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-emerald-900/10 bg-white/75 p-3 shadow-sm sm:p-4">
+      <label for="report-department-filter" class="flex flex-col gap-1">
+        <span class="text-[10px] font-bold tracking-[0.14em] text-emerald-900/70">DEPARTMENT</span>
+        <select
+          id="report-department-filter"
+          class="h-10 min-w-64 rounded-lg border border-emerald-900/15 bg-white px-3 text-sm text-emerald-950 shadow-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
+          [value]="selectedDepartmentId() ?? ''"
+          (change)="onDepartmentChange($event)">
+          <option *ngFor="let department of departments()" [value]="department.department_id">
+            {{ department.department_name }}
+          </option>
+        </select>
+      </label>
+    </section>
 
     <section
       *ngIf="!loadingDistricts() && districts().length > 0"

@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth/auth-service';
 import { Department } from '../../core/models/event.model';
 import { API_URL, EventFormConfig } from './events.config';
 import { Button } from '../components/button/button';
+import Swal from 'sweetalert2';
 
 interface ProgramNode {
   program_id: number;
@@ -589,6 +590,12 @@ export class EventFormComponent implements OnInit {
     this.form = { ...this.form, [field]: value };
   }
 
+  updateAnnouncement(value: string, textarea: HTMLTextAreaElement): void {
+    this.updateFormField('notes', value);
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }
+
   private rawError(field: string): string {
     const f = this.form;
     switch (field) {
@@ -779,7 +786,21 @@ export class EventFormComponent implements OnInit {
         const createdEvent = Array.isArray(res?.data) ? res.data[0] : res?.data;
         const newId = createdEvent?.event_id ?? createdEvent?.id ?? res?.event_id ?? res?.id;
         const target = this.isEdit ? this.eventId : newId;
-        this.router.navigate(target ? [this.config.basePath, target] : [this.config.basePath]);
+        const navigateToEvent = () => {
+          void this.router.navigate(target ? [this.config.basePath, target] : [this.config.basePath]);
+        };
+
+        if (res?.warning) {
+          void Swal.fire({
+            icon: 'warning',
+            title: 'Schedule overlap',
+            text: res.warning,
+            confirmButtonText: 'Continue',
+          }).then(navigateToEvent);
+          return;
+        }
+
+        navigateToEvent();
       },
       error: (err) => {
         console.error('Failed to save the event', err);

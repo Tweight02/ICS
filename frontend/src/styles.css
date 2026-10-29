@@ -1,1 +1,9 @@
 @import 'tailwindcss';
+
+.report-accordion-indicator {
+  transition: transform 180ms ease;
+}
+
+details[open] > summary .report-accordion-indicator {
+  transform: rotate(90deg);
+}

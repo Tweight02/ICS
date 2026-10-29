@@ -233,10 +233,10 @@
         <p class="text-[11px] text-gray-400 mt-2">Times are in Philippine Standard Time (UTC+8).</p>
       </div>
 
-      <div class="flex-1 min-h-[96px] flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+      <div class="shrink-0 min-h-[160px] flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
         <h3 class="shrink-0 font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-journal-text text-[#1b4d3e]"></i> Announcement</h3>
-        <textarea [ngModel]="form.notes" (ngModelChange)="updateFormField('notes', $event)" aria-label="Notes" placeholder="Include information that helps your team prepare for the event."
-                  class="flex-1 min-h-0 mt-2 w-full text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-[#1b4d3e] focus:outline-none"></textarea>
+        <textarea #announcement [ngModel]="form.notes" (ngModelChange)="updateAnnouncement($event, announcement)" aria-label="Notes" placeholder="Include information that helps your team prepare for the event."
+                  rows="4" class="mt-2 min-h-[96px] w-full overflow-hidden text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-[#1b4d3e] focus:outline-none"></textarea>
       </div>
     </div>
 

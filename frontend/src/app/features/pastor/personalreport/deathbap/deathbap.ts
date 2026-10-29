@@ -237,7 +237,15 @@ export class DeathbapComponent implements OnInit {
       .trim()
       .replace(/[_-]/g, ' ');
 
-    return ['pastor', 'district pastor', 'assistant', 'administrative assistant']
+    return [
+      'pastor',
+      'district pastor',
+      'assistant',
+      'administrative assistant',
+      'head assistant',
+      'head director',
+      'director'
+    ]
       .includes(role);
   }
 
@@ -1091,7 +1099,7 @@ export class DeathbapComponent implements OnInit {
     console.log('Loading baptism records...');
 
     this.http
-      .get<any>('http://127.0.0.1:8000/api/baptisms')
+      .get<any>('/api/baptisms')
       .pipe(
         timeout(10000),
         finalize(() => {
@@ -1174,7 +1182,7 @@ export class DeathbapComponent implements OnInit {
     console.log('Loading death records...');
 
     this.http
-      .get<any>('http://127.0.0.1:8000/api/deaths')
+      .get<any>('/api/deaths')
       .pipe(
         timeout(10000),
         finalize(() => {
@@ -1306,7 +1314,7 @@ export class DeathbapComponent implements OnInit {
     console.log('Loading churches...');
 
     this.http
-      .get<any>('http://127.0.0.1:8000/api/churches')
+      .get<any>('/api/churches')
       .subscribe({
         next: response => {
 

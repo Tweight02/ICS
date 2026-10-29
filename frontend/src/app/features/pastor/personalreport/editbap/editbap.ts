@@ -54,7 +54,7 @@ export class EditbapComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  private readonly apiUrl = 'http://127.0.0.1:8000/api';
+  private readonly apiUrl = '/api';
 
   baptismId = 0;
 

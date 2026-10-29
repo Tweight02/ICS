@@ -66,9 +66,15 @@ export class Login {
             break;
 
           case 'assistant':
+          case 'head assistant':
+          case 'head_assistant':
+          case 'head-assistant':
             this.router.navigate(['/assistant/reports']);
             break;
 
+          case 'head director':
+          case 'head_director':
+          case 'head-director':
           case 'director':
             this.router.navigate(['/director']);
             break;

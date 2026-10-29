@@ -323,7 +323,7 @@ export class DeathaddrecComponent implements OnInit {
     this.loadingBaptisms = true;
 
     this.http
-      .get<any>('http://127.0.0.1:8000/api/baptisms')
+      .get<any>('/api/baptisms')
       .subscribe({
         next: (response) => {
           const data = response?.data ?? response;
@@ -361,7 +361,7 @@ export class DeathaddrecComponent implements OnInit {
     this.deathLoadError = false;
 
     this.http
-      .get<any>('http://127.0.0.1:8000/api/deaths')
+      .get<any>('/api/deaths')
       .subscribe({
         next: (response) => {
           const data = response?.data ?? response;
@@ -405,7 +405,7 @@ export class DeathaddrecComponent implements OnInit {
    */
   loadChurches(): void {
     this.http
-      .get<any>('http://127.0.0.1:8000/api/churches')
+      .get<any>('/api/churches')
       .subscribe({
         next: (response) => {
           const data = response?.data ?? response;
@@ -758,7 +758,7 @@ export class DeathaddrecComponent implements OnInit {
     this.saving = true;
 
     this.http
-      .post<any>('http://127.0.0.1:8000/api/deaths', payload)
+      .post<any>('/api/deaths', payload)
       .subscribe({
         next: (response) => {
           console.log('Death record saved:', response);

@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Services\ReportMonitoringService;
+use App\Support\ReportParticipantCoverage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -330,6 +331,250 @@ test('reverting a confirmed event participant to pending removes their report co
         'registration_status' => 'pending',
     ]);
     $this->assertDatabaseCount('event_participant_contributions', 0);
+});
+
+test('confirmed participants from district churches roll up to district age-group reports', function () {
+    $fixture = reportSubmissionFixture();
+    $districtId = DB::table('churches')->insertGetId([
+        'name' => 'Youth Ministries District',
+        'address' => 'Youth Ministries District',
+        'parent_id' => null,
+    ]);
+    DB::table('churches')
+        ->where('church_id', $fixture['churchId'])
+        ->update(['parent_id' => $districtId]);
+    $eventQuarterId = DB::table('quarters')->insertGetId([
+        'program_id' => $fixture['programId'],
+        'church_id' => $districtId,
+        'quarter' => 'Q1',
+        'year' => '2026',
+        'date_submitted' => null,
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    $districtReportQuarterId = $eventQuarterId;
+    $secondChurchId = DB::table('churches')->insertGetId([
+        'name' => 'Second Youth Church',
+        'address' => 'District Address',
+        'parent_id' => $districtId,
+    ]);
+    DB::table('quarters')->insert([
+        'program_id' => $fixture['programId'],
+        'church_id' => $secondChurchId,
+        'quarter' => 'Q1',
+        'year' => '2026',
+        'date_submitted' => null,
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    $representative = createRepresentative($fixture['churchId'], $fixture['departmentId']);
+    $secondRepresentative = User::query()->create([
+        'department_id' => $fixture['departmentId'],
+        'church_id' => $secondChurchId,
+        'first_name' => 'Second',
+        'middle_name' => '',
+        'last_name' => 'Representative',
+        'birthdate' => '1980-01-01',
+        'gender' => 'other',
+        'role' => 'representative',
+        'email' => 'second-youth-representative@example.com',
+        'password' => Hash::make('password'),
+        'status' => 'active',
+    ]);
+    $eventId = DB::table('events')->insertGetId([
+        'quarter_id' => $eventQuarterId,
+        'church_id' => $districtId,
+        'title' => 'Youth age groups',
+        'date_start' => '2026-10-26',
+        'date_end' => '2026-10-26',
+        'time_start' => '09:00:00',
+        'time_end' => '10:00:00',
+        'details' => '',
+        'status' => 'upcoming',
+        'location' => 'Church',
+    ], 'event_id');
+    DB::table('event_creator')->insert([
+        'event_id' => $eventId,
+        'user_id' => $representative->user_id,
+    ]);
+
+    $particularIds = [
+        'Estimated number of SDA youth ages 6-14 years',
+        'Estimated number of SDA youth ages 15-21 years',
+    ];
+    foreach ($particularIds as $name) {
+        DB::table('event_particular')->insert([
+            'event_id' => $eventId,
+            'particular_id' => DB::table('particulars')->insertGetId([
+                'program_id' => $fixture['sectionId'],
+                'particular_name' => $name,
+            ]),
+        ]);
+    }
+
+    foreach (
+        [[12, $fixture['churchId']], [14, $secondChurchId], [17, $secondChurchId], [22, $fixture['churchId']]] as [$age, $participantChurchId]
+    ) {
+        $participantId = DB::table('participants')->insertGetId([
+            'event_id' => $eventId,
+            'church_id' => $participantChurchId,
+            'first_name' => 'Youth',
+            'middle_name' => '',
+            'last_name' => 'Age '.$age,
+            'extension_name' => null,
+            'age' => (string) $age,
+            'gender' => 'other',
+            'registration_status' => 'pending',
+        ], 'participant_id');
+
+        $confirmingRepresentative = $participantChurchId === $secondChurchId
+            ? $secondRepresentative
+            : $representative;
+        $this->actingAs($confirmingRepresentative, 'sanctum')
+            ->patchJson('/api/participants/'.$participantId, ['status' => 'confirmed'])
+            ->assertOk();
+    }
+
+    $age6To14Id = DB::table('particulars')->where('particular_name', 'Estimated number of SDA youth ages 6-14 years')->value('particular_id');
+    $age15To21Id = DB::table('particulars')->where('particular_name', 'Estimated number of SDA youth ages 15-21 years')->value('particular_id');
+
+    expect(ReportParticipantCoverage::countFor($districtReportQuarterId, (int) $age6To14Id))->toBe(2)
+        ->and(ReportParticipantCoverage::countFor($districtReportQuarterId, (int) $age15To21Id))->toBe(1)
+        ->and(DB::table('event_participant_contributions')->count())->toBe(3);
+    expect(DB::table('particular_items')
+        ->where('quarter_id', $districtReportQuarterId)
+        ->where('particular_id', $age6To14Id)
+        ->value('value'))->toBe(2)
+        ->and(DB::table('particular_items')
+            ->where('quarter_id', $districtReportQuarterId)
+            ->where('particular_id', $age15To21Id)
+            ->value('value'))->toBe(1);
+
+    DB::table('event_participant_contributions')->delete();
+
+    expect(ReportParticipantCoverage::countFor($districtReportQuarterId, (int) $age6To14Id))->toBe(2)
+        ->and(ReportParticipantCoverage::countFor($districtReportQuarterId, (int) $age15To21Id))->toBe(1);
+});
+
+test('confirmed participants in church events update the pastor district personal report', function () {
+    $fixture = reportSubmissionFixture();
+    $districtId = DB::table('churches')->insertGetId([
+        'name' => 'Personal Report District',
+        'address' => 'District Address',
+        'parent_id' => null,
+    ]);
+    DB::table('churches')
+        ->where('church_id', $fixture['churchId'])
+        ->update(['parent_id' => $districtId]);
+
+    $department = DB::table('departments')->where('department_id', 16)->first();
+    if (! $department) {
+        DB::table('departments')->insert([
+            'department_id' => 16,
+            'department_name' => 'Ministerial & Evangelism',
+        ]);
+    }
+
+    $programId = DB::table('programs')->insertGetId([
+        'department_id' => 16,
+        'program_name' => 'Ministerial Personal Report',
+        'parent_id' => null,
+    ]);
+    $sectionId = DB::table('programs')->insertGetId([
+        'department_id' => 16,
+        'program_name' => 'Demographic Profile',
+        'parent_id' => $programId,
+    ]);
+    $particularId = DB::table('particulars')->insertGetId([
+        'program_id' => $sectionId,
+        'particular_name' => 'Attendance on 2nd Sabbath',
+    ]);
+    $localQuarterId = DB::table('quarters')->insertGetId([
+        'program_id' => $programId,
+        'church_id' => $fixture['churchId'],
+        'quarter' => 'Q4',
+        'year' => '2026',
+        'date_submitted' => null,
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    $districtQuarterId = DB::table('quarters')->insertGetId([
+        'program_id' => $programId,
+        'church_id' => $districtId,
+        'quarter' => 'Q4',
+        'year' => '2026',
+        'date_submitted' => null,
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    $representative = createRepresentative($fixture['churchId'], $fixture['departmentId']);
+    $eventId = DB::table('events')->insertGetId([
+        'quarter_id' => $localQuarterId,
+        'church_id' => $fixture['churchId'],
+        'title' => 'Church ministerial event',
+        'date_start' => '2026-10-29',
+        'date_end' => '2026-10-29',
+        'time_start' => '09:00:00',
+        'time_end' => '10:00:00',
+        'details' => '',
+        'status' => 'upcoming',
+        'location' => 'Church',
+    ], 'event_id');
+    DB::table('event_particular')->insert([
+        'event_id' => $eventId,
+        'particular_id' => $particularId,
+    ]);
+    DB::table('event_creator')->insert([
+        'event_id' => $eventId,
+        'user_id' => $representative->user_id,
+    ]);
+    $participantId = DB::table('participants')->insertGetId([
+        'event_id' => $eventId,
+        'church_id' => $fixture['churchId'],
+        'first_name' => 'Personal',
+        'middle_name' => '',
+        'last_name' => 'Report Participant',
+        'extension_name' => null,
+        'age' => '20',
+        'gender' => 'other',
+        'registration_status' => 'pending',
+    ], 'participant_id');
+
+    $this->actingAs($representative, 'sanctum')
+        ->patchJson('/api/participants/'.$participantId, ['status' => 'confirmed'])
+        ->assertOk();
+
+    $this->assertDatabaseHas('event_participant_contributions', [
+        'event_id' => $eventId,
+        'participant_id' => $participantId,
+        'quarter_id' => $localQuarterId,
+        'particular_id' => $particularId,
+    ]);
+    $this->assertDatabaseHas('particular_items', [
+        'quarter_id' => $localQuarterId,
+        'particular_id' => $particularId,
+        'value' => 1,
+    ]);
+    $this->assertDatabaseHas('particular_items', [
+        'quarter_id' => $districtQuarterId,
+        'particular_id' => $particularId,
+        'value' => 1,
+    ]);
+
+    $pastor = createDistrictPastor($districtId, 16);
+    $report = $this->actingAs($pastor, 'sanctum')
+        ->getJson("/api/churches/{$districtId}/departments/16/report")
+        ->assertOk()
+        ->json();
+    $particular = collect($report['programs'])
+        ->flatMap(fn ($program) => $program['sections'])
+        ->flatMap(fn ($section) => $section['particulars'])
+        ->firstWhere('particular_id', $particularId);
+    $quarter = collect($particular['quarters'])
+        ->firstWhere('quarter_id', $districtQuarterId);
+
+    expect($quarter['participant_count'])->toBe(1)
+        ->and($quarter['combined_value'])->toBe(1.0);
 });
 
 test('assistant can comment on baptism and death reports when no quarter exists yet', function () {

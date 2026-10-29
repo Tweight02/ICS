@@ -52,7 +52,7 @@
       <div
         class="mb-4"
         [ngClass]="embedded
-          ? 'ml-[22px] pt-[56px] max-[767px]:ml-0 max-[767px]:pt-6'
+          ? 'ml-0 pt-[32px] max-[767px]:pt-6'
           : ''">
 
         <app-report-period-selector
@@ -113,6 +113,17 @@
               <details [attr.open]="isStewardshipReport || (first && expandFirstSection) ? '' : null">
                 <summary class="flex min-h-9 list-none cursor-pointer items-center justify-between gap-2 border-b border-emerald-900/5 bg-gradient-to-r from-white to-emerald-50/65 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] leading-4 text-emerald-950 transition hover:from-emerald-50 hover:to-emerald-100/70 marker:hidden [&::-webkit-details-marker]:hidden sm:px-4">
                   <span class="block min-w-0 flex-1">{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
+                  <svg
+                    class="report-accordion-indicator h-4 w-4 shrink-0 text-emerald-800"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path d="m9 18 6-6-6-6"></path>
+                  </svg>
                 </summary>
 
               <div class="overflow-x-auto">
@@ -170,9 +181,6 @@
                                    else noAnnualValue">
 
                             <span>{{ isRecordSubmitted(record) ? (record.combined_value ?? record.value ?? '—') : (record.combined_value ?? '—') }}</span>
-                            <small *ngIf="record.participant_count" class="block text-xs text-emerald-800">
-                              Includes {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
-                            </small>
                             <small *ngIf="record.completed_event_count" class="block text-xs text-sky-800">
                               {{ record.completed_event_count }} completed event{{ record.completed_event_count === 1 ? '' : 's' }}
                             </small>
@@ -210,9 +218,6 @@
                               </ng-container>
                               <td class="px-3 py-2.5 text-center font-semibold tabular-nums text-emerald-950/80">
                                 ₱{{ record.combined_value ?? record.value ?? 0 | number: '1.2-2' }}
-                                <small *ngIf="record.participant_count" class="block text-xs font-normal text-emerald-800">
-                                  Includes {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
-                                </small>
                                 <small *ngIf="record.completed_event_count" class="block text-xs font-normal text-sky-800">
                                   {{ record.completed_event_count }} completed event{{ record.completed_event_count === 1 ? '' : 's' }}
                                 </small>
@@ -242,9 +247,6 @@
                                   [ngModelOptions]="{ standalone: true }"
                                   [disabled]="savingAction || isQuarterApproved(quarter)"
                                   class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
-                                <small *ngIf="canEditDepartmentReport && record.participant_count" class="text-xs text-emerald-800">
-                                  Includes {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
-                                </small>
                                 <small *ngIf="canEditDepartmentReport && record.completed_event_count" class="text-xs text-sky-800">
                                   Includes {{ record.completed_event_count }} completed event{{ record.completed_event_count === 1 ? '' : 's' }}
                                 </small>

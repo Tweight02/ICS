@@ -17,7 +17,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly location = inject(Location);
-  private readonly apiBase = 'http://127.0.0.1:8000';
+  private readonly apiBase = '';
   private previewUrl: string | null = null;
 
   readonly loading = signal(true);

@@ -5,13 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\EventRequest;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
-use App\Support\EventParticulars;
 use App\Support\EventDepartments;
+use App\Support\EventParticulars;
 use App\Support\EventRegistrationAttribution;
 use App\Support\EventUser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
 {
@@ -104,6 +106,41 @@ class EventController extends Controller
         $churchIds = $user->role === 'district_pastor'
             ? $request->validated('church_ids')
             : [null];
+        $targetChurchIds = match ($user->role) {
+            'church_representative' => [$user->churchId],
+            'district_pastor' => $request->validated('church_ids'),
+            'assistant' => $request->validated('district_ids'),
+            default => [],
+        };
+        $overlappingEvents = $this->overlappingEvents($request);
+        $targetChurchIds = array_map('intval', array_filter($targetChurchIds));
+        $existingDistrictTargets = DB::table('event_district')
+            ->whereIn('event_id', $overlappingEvents->pluck('event_id')->unique())
+            ->get(['event_id', 'district_id'])
+            ->groupBy('event_id')
+            ->map(fn ($targets) => $targets->pluck('district_id')->map(fn ($id) => (int) $id)->all());
+        $sameTargetConflict = $overlappingEvents->contains(function (object $event) use ($targetChurchIds, $existingDistrictTargets): bool {
+            $existingTargets = array_merge(
+                [(int) $event->church_id],
+                $existingDistrictTargets->get($event->event_id, [])
+            );
+
+            return count(array_intersect($targetChurchIds, $existingTargets)) > 0;
+        });
+
+        if ($sameTargetConflict) {
+            throw ValidationException::withMessages([
+                'start_date' => 'An event already exists for the same church or district during this schedule.',
+            ]);
+        }
+
+        $hasDifferentChurchConflict = $overlappingEvents->contains(
+            fn (object $event) => (int) $event->user_id !== $user->id
+                && ! in_array((int) $event->church_id, $targetChurchIds, true)
+        );
+        $warning = $hasDifferentChurchConflict
+            ? "Another user's event is scheduled at a different church during this time. Your event was created."
+            : null;
 
         $events = DB::transaction(function () use ($request, $user, $churchIds) {
             $events = collect();
@@ -121,10 +158,16 @@ class EventController extends Controller
         });
 
         if ($events->count() === 1) {
-            return (new EventResource($events->first()))->response()->setStatusCode(201);
+            return (new EventResource($events->first()))
+                ->additional(['warning' => $warning])
+                ->response()
+                ->setStatusCode(201);
         }
 
-        return EventResource::collection($events)->response()->setStatusCode(201);
+        return EventResource::collection($events)
+            ->additional(['warning' => $warning])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(EventRequest $request, int $event)
@@ -139,6 +182,7 @@ class EventController extends Controller
                 $event->districts()->sync($request->validated('district_ids'));
             }
         });
+
         return new EventResource($event->refresh());
     }
 
@@ -150,6 +194,7 @@ class EventController extends Controller
             $event->participants()->delete();
             $event->delete();
         });
+
         return response()->noContent();
     }
 
@@ -192,6 +237,35 @@ class EventController extends Controller
             'notes' => $request->validated('notes'),
             'status' => $this->eventStatus($request->validated('start_date'), $request->validated('end_date')),
         ];
+    }
+
+    /**
+     * @return Collection<int, object>
+     */
+    private function overlappingEvents(EventRequest $request): Collection
+    {
+        $candidates = DB::table('events')
+            ->join('event_creator', 'event_creator.event_id', '=', 'events.event_id')
+            ->whereDate('events.date_start', '<=', $request->validated('end_date'))
+            ->whereDate('events.date_end', '>=', $request->validated('start_date'))
+            ->get([
+                'events.event_id',
+                'events.date_start',
+                'events.date_end',
+                'events.time_start',
+                'events.time_end',
+                'events.church_id',
+                'event_creator.user_id',
+            ]);
+        $start = Carbon::parse($request->validated('start_date').' '.$request->validated('start_time'));
+        $end = Carbon::parse($request->validated('end_date').' '.$request->validated('end_time'));
+
+        return $candidates->filter(function (object $event) use ($start, $end): bool {
+            $existingStart = Carbon::parse($event->date_start.' '.$event->time_start);
+            $existingEnd = Carbon::parse($event->date_end.' '.$event->time_end);
+
+            return $existingStart->lt($end) && $start->lt($existingEnd);
+        })->values();
     }
 
     private function find(Request $request, int $id): Event

@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             QuarterlyReportDataSeeder::class,
             UserSeeder::class,
             SampleEventSeeder::class,
+            PersonalReportDataSeeder::class,
         ]);
     }
 }
