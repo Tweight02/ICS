@@ -51,10 +51,6 @@ export class Registration implements OnInit, OnDestroy {
   get eventError(): string { return this.eventErrorState(); }
   set eventError(value: string) { this.eventErrorState.set(value); }
 
-  private readonly confirmModalVisibleState = signal(false);
-  get confirmModalVisible(): boolean { return this.confirmModalVisibleState(); }
-  set confirmModalVisible(value: boolean) { this.confirmModalVisibleState.set(value); }
-
   private readonly successModalVisibleState = signal(false);
   get successModalVisible(): boolean { return this.successModalVisibleState(); }
   set successModalVisible(value: boolean) { this.successModalVisibleState.set(value); }
@@ -165,20 +161,16 @@ export class Registration implements OnInit, OnDestroy {
     return start && end ? `${start}–${end}` : start || end;
   }
 
-  onSubmit(form: NgForm): void {
+  async onSubmit(form: NgForm): Promise<void> {
     if (form.invalid || !this.selectedEvent) {
       form.form.markAllAsTouched();
       return;
     }
 
-    this.confirmModalVisible = true;
+    await this.submitRegistration();
   }
 
-  cancelSubmit(): void {
-    this.confirmModalVisible = false;
-  }
-
-  async confirmSubmit(): Promise<void> {
+  private async submitRegistration(): Promise<void> {
     if (!this.eventId) return;
     this.saving = true;
     this.errorVisible = false;
@@ -209,7 +201,6 @@ export class Registration implements OnInit, OnDestroy {
         age: '',
         gender: '',
       };
-      this.confirmModalVisible = false;
       this.successModalVisible = true;
       if (this.successNotificationTimeout) {
         clearTimeout(this.successNotificationTimeout);
@@ -224,7 +215,6 @@ export class Registration implements OnInit, OnDestroy {
         ? Object.values(error.error.errors).flat().join(' ')
         : 'Could not save your registration. Please try again.';
       this.errorVisible = true;
-      this.confirmModalVisible = false;
     } finally {
       this.saving = false;
     }
