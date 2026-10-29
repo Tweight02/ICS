@@ -120,8 +120,15 @@ export class DeathbapComponent implements OnInit {
 
   churchId = 0;
   districtId = 0;
+  districtName = '';
   departmentId = 0;
   isReadOnly = false;
+  private readonly districtReportChurch: Church = {
+    church_id: 0,
+    name: '',
+    address: '',
+    parent_id: null
+  };
 
   baptisms: Baptism[] = [];
   deaths: Death[] = [];
@@ -204,11 +211,15 @@ export class DeathbapComponent implements OnInit {
       );
     }
 
-    if (this.selectedDepartmentId) {
-      const personalChurchId = Number(this.auth.getCurrentUser()?.church_id);
-      return this.churches.filter(
-        church => Number(church.church_id) === personalChurchId
-      );
+    if (this.selectedDepartmentId && !this.isReadOnly) {
+      if (this.districtId <= 0) {
+        return [];
+      }
+
+      this.districtReportChurch.church_id = this.districtId;
+      this.districtReportChurch.name = this.districtName;
+
+      return [this.districtReportChurch];
     }
 
     return this.churches.filter(church => church.parent_id !== null);
@@ -1250,6 +1261,7 @@ export class DeathbapComponent implements OnInit {
 
           this.districtId =
             Number(response.district?.church_id) || this.districtId;
+          this.districtName = response.district?.name || '';
 
           this.churches = (response.data || []).map(church => ({
             church_id: Number(church.church_id),
