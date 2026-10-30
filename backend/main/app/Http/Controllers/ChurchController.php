@@ -17,10 +17,14 @@ class ChurchController extends Controller
     {
         $validated = $request->validate([
             'department_id' => ['sometimes', 'integer', 'exists:departments,department_id'],
+            'year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
         ]);
         $departmentId = isset($validated['department_id'])
             ? (int) $validated['department_id']
             : null;
+        $year = isset($validated['year'])
+            ? (string) $validated['year']
+            : (string) config('app.reporting_year', now()->year);
 
         $districts = Church::query()
             ->whereNull('parent_id')
@@ -41,7 +45,8 @@ class ChurchController extends Controller
             ->groupBy('parent_id');
         $monitoringByChurch = $monitoring->forChurches(
             $churchesByDistrict->flatten(1)->pluck('church_id')->all(),
-            $departmentId
+            $departmentId,
+            $year
         );
 
         $districts->each(function (Church $district) use ($churchesByDistrict, $monitoringByChurch) {
@@ -94,10 +99,14 @@ class ChurchController extends Controller
     ): JsonResponse {
         $validated = $request->validate([
             'department_id' => ['sometimes', 'integer', 'exists:departments,department_id'],
+            'year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
         ]);
         $departmentId = isset($validated['department_id'])
             ? (int) $validated['department_id']
             : null;
+        $year = isset($validated['year'])
+            ? (string) $validated['year']
+            : (string) config('app.reporting_year', now()->year);
 
         $districtRecord = Church::query()
             ->where('church_id', $district)
@@ -123,8 +132,17 @@ class ChurchController extends Controller
 
         $monitoringByChurch = $monitoring->forChurches(
             $churches->pluck('church_id')->all(),
-            $departmentId
+            $departmentId,
+            $year
         );
+        if ($departmentId === 16) {
+            $districtMonitoring = $monitoring->forChurches(
+                [$districtRecord->church_id],
+                $departmentId,
+                $year
+            );
+            $districtRecord->monitoring = $districtMonitoring[$districtRecord->church_id] ?? [];
+        }
         $churches->each(function (Church $church) use ($monitoringByChurch) {
             $church->monitoring = $monitoringByChurch[$church->church_id] ?? [
                 'q1' => null,
@@ -178,6 +196,12 @@ class ChurchController extends Controller
         Request $request,
         ReportMonitoringService $monitoring
     ): JsonResponse {
+        $validated = $request->validate([
+            'year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
+        ]);
+        $year = isset($validated['year'])
+            ? (string) $validated['year']
+            : (string) config('app.reporting_year', now()->year);
         $user = $request->user();
 
         if (! $this->isPastor($user)) {
@@ -207,7 +231,9 @@ class ChurchController extends Controller
             ]);
 
         $monitoringByChurch = $monitoring->forChurches(
-            $churches->pluck('church_id')->all()
+            $churches->pluck('church_id')->all(),
+            null,
+            $year
         );
         $churches->each(function (Church $church) use ($monitoringByChurch) {
             $church->monitoring = $monitoringByChurch[$church->church_id] ?? [

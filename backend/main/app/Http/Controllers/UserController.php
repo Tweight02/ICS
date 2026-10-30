@@ -56,6 +56,8 @@ class UserController extends Controller
 
     public function create_user(Request $request)
     {
+        $this->authorizeHeadAssistant($request);
+
         $data = $request->validate([
             'department_id' => 'required|exists:departments,department_id',
 
@@ -240,6 +242,7 @@ class UserController extends Controller
         Request $request,
         $id
     ) {
+        $this->authorizeHeadAssistant($request);
 
         $pastor =
             User::where(
@@ -311,7 +314,7 @@ class UserController extends Controller
 
     public function districtPastorAssignments(Request $request): JsonResponse
     {
-        $this->authorizeAssistant($request);
+        $this->authorizeHeadAssistant($request);
 
         $districts = Church::query()
             ->whereNull('parent_id')
@@ -400,7 +403,7 @@ class UserController extends Controller
 
     public function assignPastorToDistrict(Request $request, int $districtId): JsonResponse
     {
-        $this->authorizeAssistant($request);
+        $this->authorizeHeadAssistant($request);
         $data = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,user_id'],
         ]);
@@ -457,10 +460,13 @@ class UserController extends Controller
         ]);
     }
 
-    private function authorizeAssistant(Request $request): void
+    private function authorizeHeadAssistant(Request $request): void
     {
-        if (strtolower(trim((string) $request->user()?->role)) !== 'assistant') {
-            abort(403, 'Only assistant accounts can manage district pastor assignments.');
+        $role = strtolower(trim((string) $request->user()?->role));
+        $role = str_replace(['_', '-'], ' ', $role);
+
+        if ($role !== 'head assistant') {
+            abort(403, 'Only Head Assistants can manage pastors.');
         }
     }
 
@@ -487,8 +493,10 @@ class UserController extends Controller
         ]);
     }
 
-    public function activate_pastor($id)
+    public function activate_pastor(Request $request, $id)
     {
+        $this->authorizeHeadAssistant($request);
+
         $pastor = User::where('role', 'pastor')
             ->findOrFail($id);
 
@@ -519,8 +527,10 @@ class UserController extends Controller
         ]);
     }
 
-    public function deactivate_pastor($id)
+    public function deactivate_pastor(Request $request, $id)
     {
+        $this->authorizeHeadAssistant($request);
+
         $pastor = User::where('role', 'pastor')
             ->findOrFail($id);
 

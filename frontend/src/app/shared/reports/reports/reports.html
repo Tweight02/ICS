@@ -1,17 +1,21 @@
-<div class="min-h-screen bg-transparent px-4 py-5 text-emerald-950 sm:px-8 sm:py-6 lg:px-10">
+<div class="min-h-screen bg-transparent px-4 pt-0 pb-5 text-emerald-950 sm:px-8 sm:pb-6 lg:px-10">
   <div class="mx-auto max-w-7xl">
 
     <header class="relative isolate mb-5 flex min-h-24 flex-col justify-center gap-4 overflow-hidden rounded-2xl border border-white/80 bg-emerald-50 p-4 shadow-sm shadow-emerald-950/10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-      <img src="/assets/Misty.png" alt="" aria-hidden="true"
+      <img src="/assets/headerMountain.png" alt="" aria-hidden="true"
         class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-50">
       <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/90 to-emerald-100/45"></div>
       <div class="relative min-w-0">
         <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800/80">Quarterly reports</p>
         <h1 class="!text-xl font-bold tracking-tight text-emerald-950 sm:!text-2xl">Report monitoring</h1>
-        <p class="mt-1 text-xs font-medium text-emerald-900/70 sm:text-sm">District and church reporting progress</p>
+        <p class="mt-1 text-xs font-medium text-emerald-900/70 sm:text-sm">
+          {{ showDistrictPersonalReportLinks
+            ? 'Select a district to open its personal report'
+            : 'District and church reporting progress' }}
+        </p>
       </div>
       <button app-button variant="create" size="md"
-          *ngIf="isAssistantPortal"
+          *ngIf="canCreateReportTemplate"
           type="button"
           (click)="createReportTemplate()"
           class="relative !min-h-10 self-start sm:self-auto">
@@ -42,55 +46,75 @@
     </div>
 
     <section
-      *ngIf="hasAllDepartmentAccess && departments().length > 0"
-      class="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-emerald-900/10 bg-white/75 p-3 shadow-sm sm:p-4">
-      <label for="report-department-filter" class="flex flex-col gap-1">
-        <span class="text-[10px] font-bold tracking-[0.14em] text-emerald-900/70">DEPARTMENT</span>
-        <select
-          id="report-department-filter"
-          class="h-10 min-w-64 rounded-lg border border-emerald-900/15 bg-white px-3 text-sm text-emerald-950 shadow-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
-          [value]="selectedDepartmentId() ?? ''"
-          (change)="onDepartmentChange($event)">
-          <option *ngFor="let department of departments()" [value]="department.department_id">
-            {{ department.department_name }}
-          </option>
-        </select>
-      </label>
-    </section>
+      *ngIf="(hasAllDepartmentAccess && departments().length > 0) || (!loadingDistricts() && districts().length > 0)"
+      class="mb-4 rounded-2xl border border-slate-200/80 bg-white/90 p-3 shadow-[0_8px_24px_rgba(15,74,48,0.07)] backdrop-blur sm:p-4">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
+        <div class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <label for="report-year-filter" class="flex min-w-0 shrink-0 items-center gap-2.5">
+            <span class="shrink-0 text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">YEAR</span>
+            <select
+              id="report-year-filter"
+              class="h-11 min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 sm:w-32"
+              [value]="selectedYear()"
+              (change)="onYearChange($event)">
+              <option *ngFor="let year of reportYears" [value]="year">{{ year }}</option>
+            </select>
+          </label>
 
-    <section
-      *ngIf="!loadingDistricts() && districts().length > 0"
-      class="mb-4 rounded-2xl border border-emerald-900/10 bg-white/75 p-3 shadow-sm sm:p-4">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex h-11 w-full items-center gap-2.5 rounded-xl border border-emerald-900/10 bg-white px-3 transition focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/15 sm:max-w-sm">
-          <svg class="h-4 w-4 shrink-0 text-emerald-800/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-            <circle cx="10.8" cy="10.8" r="6.8" />
-            <path d="m16 16 4.2 4.2" />
-          </svg>
-          <input
-            type="search"
-            aria-label="Search districts"
-            placeholder="Search districts"
-            autocomplete="off"
-            class="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-emerald-950 placeholder:text-emerald-900/40 focus:outline-none focus:ring-0 [&::-webkit-search-cancel-button]:hidden"
-            [value]="searchTerm()"
-            (input)="updateSearch($event)"
-          />
-          <button
-            *ngIf="searchTerm()"
-            type="button"
-            aria-label="Clear search"
-            (click)="clearSearch()"
-            class="grid h-7 w-7 place-items-center rounded-lg text-emerald-900/50 transition hover:bg-emerald-50 hover:text-emerald-800">
-            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-              <path d="m5 5 10 10M15 5 5 15" />
+          <label *ngIf="hasAllDepartmentAccess && departments().length > 0"
+            for="report-department-filter" class="flex min-w-0 shrink-0 items-center gap-2.5">
+            <span class="shrink-0 text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">DEPARTMENT</span>
+            <select
+              id="report-department-filter"
+              class="h-11 min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 sm:w-[min(25rem,38vw)]"
+              (change)="onDepartmentChange($event)">
+              <option
+                *ngFor="let department of departments()"
+                [value]="department.department_id"
+                [selected]="department.department_id === selectedDepartmentId()">
+                {{ department.department_name }}
+              </option>
+            </select>
+          </label>
+
+          <div *ngIf="!loadingDistricts() && districts().length > 0"
+            class="flex h-11 w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 transition focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-600/10 sm:max-w-[19rem]">
+            <svg class="h-4 w-4 shrink-0 text-emerald-700/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <circle cx="10.8" cy="10.8" r="6.8" />
+              <path d="m16 16 4.2 4.2" />
             </svg>
-          </button>
+            <input
+              type="search"
+              aria-label="Search districts"
+              placeholder="Search districts"
+              autocomplete="off"
+              class="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-emerald-950 placeholder:text-slate-400 focus:outline-none focus:ring-0 [&::-webkit-search-cancel-button]:hidden"
+              [value]="searchTerm()"
+              (input)="updateSearch($event)"
+            />
+            <button
+              *ngIf="searchTerm()"
+              type="button"
+              aria-label="Clear search"
+              (click)="clearSearch()"
+              class="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-800">
+              <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                <path d="m5 5 10 10M15 5 5 15" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <dl class="flex items-center self-start divide-x divide-emerald-900/10 text-xs text-emerald-900/70 sm:self-auto">
-          <div class="pr-4"><dt class="sr-only">Districts</dt><dd><span class="font-bold tabular-nums text-emerald-800">{{ districtCount() }}</span> districts</dd></div>
-          <div class="pl-4"><dt class="sr-only">Churches</dt><dd><span class="font-bold tabular-nums text-emerald-800">{{ churchCount() }}</span> churches</dd></div>
+        <dl *ngIf="!loadingDistricts() && districts().length > 0"
+          class="flex items-center gap-2 self-start text-xs text-slate-500 xl:ml-auto xl:self-auto">
+          <div class="rounded-lg bg-emerald-50/80 px-3 py-2">
+            <dt class="sr-only">Districts</dt>
+            <dd><span class="font-bold tabular-nums text-emerald-800">{{ districtCount() }}</span> districts</dd>
+          </div>
+          <div class="rounded-lg bg-emerald-50/80 px-3 py-2">
+            <dt class="sr-only">Churches</dt>
+            <dd><span class="font-bold tabular-nums text-emerald-800">{{ churchCount() }}</span> churches</dd>
+          </div>
         </dl>
       </div>
     </section>
@@ -105,8 +129,11 @@
         <!-- District row -->
         <button
           type="button"
-          (click)="toggleDistrict(district.church_id)"
-          [attr.aria-expanded]="isDistrictOpen(district.church_id)"
+          (click)="onDistrictSelected(district.church_id)"
+          [attr.aria-expanded]="showDistrictPersonalReportLinks ? null : isDistrictOpen(district.church_id)"
+          [attr.aria-label]="showDistrictPersonalReportLinks
+            ? 'Open personal report for ' + district.name
+            : null"
           class="relative flex min-h-[68px] w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 sm:px-5"
           [ngClass]="isDistrictOpen(district.church_id) ? 'bg-emerald-50/70' : 'bg-white/70'">
           <span
@@ -120,28 +147,32 @@
             </span>
             <span class="min-w-0">
               <span class="block truncate text-sm font-semibold leading-5 text-emerald-950 sm:text-base">{{ district.name }}</span>
-              <span class="block text-xs leading-4 text-emerald-900/60">{{ district.church_count ?? 0 }} churches</span>
+              <span class="block text-xs leading-4 text-emerald-900/60">
+                {{ showDistrictPersonalReportLinks ? 'Open personal report' : (district.church_count ?? 0) + ' churches' }}
+              </span>
             </span>
           </span>
 
           <span class="flex shrink-0 items-center">
             <svg
               class="h-5 w-5 text-emerald-900/35 transition-transform duration-200"
-              [ngClass]="{ 'rotate-180 text-emerald-700': isDistrictOpen(district.church_id) }"
+              [ngClass]="showDistrictPersonalReportLinks
+                ? 'rotate-[-90deg] text-emerald-700'
+                : { 'rotate-180 text-emerald-700': isDistrictOpen(district.church_id) }"
               viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M5 7.5l5 5 5-5" />
             </svg>
           </span>
         </button>
 
-        <div *ngIf="isDistrictOpen(district.church_id)" class="border-t border-emerald-900/10 bg-white/80 px-2 py-3 sm:px-4">
+        <div *ngIf="!showDistrictPersonalReportLinks && isDistrictOpen(district.church_id)" class="border-t border-emerald-900/10 bg-white/80 px-2 py-3 sm:px-4">
 
           <div *ngIf="loadingDistrictChurches()[district.church_id]" class="flex justify-center py-8">
             <app-running-loader size="small"></app-running-loader>
           </div>
 
           <div
-            *ngIf="!loadingDistrictChurches()[district.church_id] && districtChurches()[district.church_id]?.length"
+            *ngIf="!loadingDistrictChurches()[district.church_id] && (districtChurches()[district.church_id]?.length || showDistrictPastorReport)"
             class="overflow-x-auto">
             <table class="w-full min-w-[600px] border-collapse text-left">
               <thead class="border-b border-emerald-900/5 bg-emerald-950/[0.025] text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-900/70">
@@ -174,6 +205,33 @@
                       </app-quarter-status>
                     </ng-container>
                     <ng-template #noStatus>
+                      <span class="text-sm text-emerald-900/35">—</span>
+                    </ng-template>
+                  </td>
+                </tr>
+                <tr
+                  *ngIf="showDistrictPastorReport"
+                  role="link"
+                  tabindex="0"
+                  [attr.aria-label]="'Open District Pastor Report for ' + district.name"
+                  (click)="openChurch(district.church_id, district.church_id)"
+                  (keydown.enter)="openChurch(district.church_id, district.church_id)"
+                  (keydown.space)="openChurch(district.church_id, district.church_id); $event.preventDefault()"
+                  class="group cursor-pointer border-t-2 border-emerald-900/10 bg-emerald-50/50 transition hover:bg-emerald-50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700">
+                  <th scope="row" class="px-4 py-3 text-left sm:px-5">
+                    <span class="text-xs font-bold leading-5 text-emerald-900 transition group-hover:text-emerald-700 sm:text-sm">
+                      District Pastor Report
+                    </span>
+                  </th>
+                  <td *ngFor="let quarterKey of quarterKeys" class="px-2 py-2.5 text-center" [attr.title]="quarterKey.toUpperCase() + ' status'">
+                    <ng-container *ngIf="getDistrictPastorQuarterStatus(district.church_id, quarterKey) as status; else districtNoStatus">
+                      <app-quarter-status
+                        class="inline-flex min-w-[5rem] justify-center text-[10px] font-medium leading-none"
+                        [label]="status.tone === 'complete' ? null : status.status"
+                        [tone]="status.tone">
+                      </app-quarter-status>
+                    </ng-container>
+                    <ng-template #districtNoStatus>
                       <span class="text-sm text-emerald-900/35">—</span>
                     </ng-template>
                   </td>

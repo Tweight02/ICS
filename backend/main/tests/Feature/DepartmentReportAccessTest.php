@@ -242,7 +242,7 @@ test('pastors can load and save district-owned personal reports', function () {
     ]);
 });
 
-test('only the assigned pastor can access district-owned personal reports', function () {
+test('M&E assistants can view but not edit district-owned personal reports', function () {
     $fixture = departmentReportAccessFixture();
     $otherDistrictId = DB::table('churches')->insertGetId([
         'name' => 'Other Report District',
@@ -261,6 +261,12 @@ test('only the assigned pastor can access district-owned personal reports', func
         'assistant',
         'district-report-assistant'
     );
+    $headAssistant = departmentReportAccessUser(
+        $fixture['churchId'],
+        16,
+        'head assistant',
+        'district-report-head-assistant'
+    );
 
     $url = "/api/churches/{$fixture['churchId']}/departments/16/report";
     $saveUrl = $url.'/save';
@@ -270,9 +276,21 @@ test('only the assigned pastor can access district-owned personal reports', func
         ->assertForbidden();
     $this->actingAs($assistant, 'sanctum')
         ->getJson($url)
-        ->assertForbidden();
+        ->assertOk()
+        ->assertJsonPath('department.department_id', 16);
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/20/report")
+        ->assertOk()
+        ->assertJsonPath('department.department_id', 20);
+    $this->actingAs($headAssistant, 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/20/report")
+        ->assertOk()
+        ->assertJsonPath('department.department_id', 20);
     $this->actingAs($assistant, 'sanctum')
         ->postJson($saveUrl, ['items' => []])
+        ->assertForbidden();
+    $this->actingAs($headAssistant, 'sanctum')
+        ->postJson("/api/churches/{$fixture['churchId']}/departments/30/report/approve", [])
         ->assertForbidden();
 });
 

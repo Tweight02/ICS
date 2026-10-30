@@ -14,7 +14,7 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 
 interface Church {
   church_id: number;
@@ -347,7 +347,7 @@ export class BapaddrecComponent implements OnInit {
             this.churches = [];
             this.churchesLoading = false;
 
-            Swal.fire({
+            showAppAlert({
               icon: 'error',
               title: 'Unable to Load District Churches',
               text: 'Your assigned district could not be identified.',
@@ -379,7 +379,7 @@ export class BapaddrecComponent implements OnInit {
           this.churches = [];
           this.churchesLoading = false;
 
-          Swal.fire({
+          showAppAlert({
             icon: 'error',
             title: 'Unable to Load District Churches',
             text: error.error?.message ||
@@ -447,7 +447,7 @@ export class BapaddrecComponent implements OnInit {
       !this.baptism.marital_status ||
       this.baptism.is_reclaimed === null
     ) {
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Incomplete Information',
         text: 'Please complete all required fields, including the baptism status.',
@@ -461,7 +461,7 @@ export class BapaddrecComponent implements OnInit {
 
     // Prevent a future birthdate.
     if (this.baptism.birthdate > this.today) {
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Invalid Birthdate',
         text: 'Birthdate cannot be later than today.',
@@ -476,7 +476,7 @@ export class BapaddrecComponent implements OnInit {
     // Prevent baptism on the same day as birth
     // or before the birthdate.
     if (this.baptism.date_of_baptism <= this.baptism.birthdate) {
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Invalid Baptism Date',
         text: 'Date of Baptism must be at least one day after the birthdate.',
@@ -490,7 +490,7 @@ export class BapaddrecComponent implements OnInit {
 
     // Prevent a future baptism date.
     if (this.baptism.date_of_baptism > this.today) {
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Invalid Baptism Date',
         text: 'Date of Baptism cannot be later than today.',
@@ -546,7 +546,7 @@ export class BapaddrecComponent implements OnInit {
 
           this.saving = false;
 
-          Swal.fire({
+          showAppAlert({
             icon: 'success',
             title: 'Saved Successfully',
             text: 'Baptism record has been saved successfully.',
@@ -572,7 +572,7 @@ export class BapaddrecComponent implements OnInit {
                 .flat()
                 .join('\n');
 
-            Swal.fire({
+            showAppAlert({
               icon: 'error',
               title: 'Validation Error',
               text: validationErrors,
@@ -581,7 +581,7 @@ export class BapaddrecComponent implements OnInit {
               customClass: this.swalCustomClass
             });
           } else if (error.error?.message) {
-            Swal.fire({
+            showAppAlert({
               icon: 'error',
               title: 'Unable to Save Record',
               text: error.error.message,
@@ -590,7 +590,7 @@ export class BapaddrecComponent implements OnInit {
               customClass: this.swalCustomClass
             });
           } else if (error.status === 0) {
-            Swal.fire({
+            showAppAlert({
               icon: 'error',
               title: 'Connection Failed',
               text: 'Cannot connect to the Laravel server. Make sure php artisan serve is running.',
@@ -599,7 +599,7 @@ export class BapaddrecComponent implements OnInit {
               customClass: this.swalCustomClass
             });
           } else {
-            Swal.fire({
+            showAppAlert({
               icon: 'error',
               title: 'Save Failed',
               text: 'Failed to save baptism record.',
@@ -616,7 +616,7 @@ export class BapaddrecComponent implements OnInit {
    * Cancel adding a baptism record.
    */
   // cancelForm(): void {
-  //   Swal.fire({
+  //   showAppAlert({
   //     icon: 'warning',
   //     iconColor: '#b7791f',
   //     title: 'Cancel adding record?',

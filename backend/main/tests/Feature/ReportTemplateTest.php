@@ -108,6 +108,29 @@ test('only assistants can create report templates', function () {
     $this->assertDatabaseCount('particulars', 0);
 });
 
+test('assistant cannot create a report template for another department', function () {
+    $fixture = reportTemplateAssistant();
+    $otherDepartmentId = DB::table('departments')->insertGetId([
+        'department_name' => 'Another Department',
+    ]);
+
+    $this->actingAs($fixture['assistant'], 'sanctum')
+        ->postJson('/api/assistant/report-templates', [
+            'department_id' => $otherDepartmentId,
+            'program_name' => 'Other Department Report',
+            'section_name' => 'Activities',
+            'particular_items' => ['Attendance'],
+        ])
+        ->assertForbidden()
+        ->assertJsonPath(
+            'message',
+            'You can only create report templates for your assigned department.'
+        );
+
+    $this->assertDatabaseCount('programs', 0);
+    $this->assertDatabaseCount('particulars', 0);
+});
+
 test('report template creation rejects missing items without partial records', function () {
     $fixture = reportTemplateAssistant();
 

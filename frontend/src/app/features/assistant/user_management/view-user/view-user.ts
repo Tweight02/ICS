@@ -5,9 +5,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
 import { UserService } from '../../../../core/services/user/user-service';
+import { AuthService } from '../../../../core/services/auth/auth-service';
 import { Pastor } from '../../../../core/models/pastor.model';
 import { Church } from '../../../../core/models/church.model';
 import { Button } from '../../../../shared/components/button/button';
+import { isHeadAssistant } from '../head-assistant.guard';
 
 interface DistrictFilterOption {
   value: string;
@@ -23,8 +25,11 @@ interface DistrictFilterOption {
 })
 export class ViewUser implements OnInit {
   private userService = inject(UserService);
+  private authService = inject(AuthService);
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
+
+  readonly canManagePastors = isHeadAssistant(this.authService.getCurrentUser()?.role);
 
   private search$ = new Subject<string>();
 
@@ -100,6 +105,7 @@ export class ViewUser implements OnInit {
   // =========================================================
 
   viewPastor(pastor: Pastor): void {
+    if (!this.canManagePastors) return;
     this.router.navigate(['/assistant/edit-user', pastor.user_id]);
   }
 

@@ -88,6 +88,7 @@ class PublicEventController extends Controller
             'This church-specific registration link is invalid.'
         );
 
+        abort_unless($event->coversChurch((int) $churchId), 422, 'This event is not scheduled for this church.');
         EventRegistrationAttribution::quarterId((int) $event->quarter_id, (int) $churchId);
 
         return (int) $churchId;
@@ -97,9 +98,13 @@ class PublicEventController extends Controller
     {
         $church = EventsOrg::church((int) $event->church_id);
         $districts = $event->districts()->get(['churches.name']);
+        $churches = $event->churches()->get(['churches.name']);
         $scopeNames = $districts->pluck('name')->all();
         $allDistrictsSelected = $districts->isNotEmpty()
             && $districts->count() === EventsOrg::districts()->count();
+        if ($scopeNames === []) {
+            $scopeNames = $churches->pluck('name')->all();
+        }
         if ($scopeNames === [] && $church) {
             $scopeNames[] = $church->name;
         }
@@ -114,7 +119,9 @@ class PublicEventController extends Controller
             'start_time' => substr($event->start_time, 0, 5),
             'end_time' => substr($event->end_time, 0, 5),
             'description' => $event->notes,
-            'church_name' => $church->name ?? null,
+            'church_name' => $churches->count() > 1
+                ? 'Multiple churches'
+                : ($churches->first()->name ?? $church->name ?? null),
             'scope' => $scopeNames,
             'all_districts' => $allDistrictsSelected,
             'created_by' => match ($creatorRole) {

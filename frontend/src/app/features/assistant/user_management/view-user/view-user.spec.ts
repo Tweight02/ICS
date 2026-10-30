@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { AuthService } from '../../../../core/services/auth/auth-service';
 import { UserService } from '../../../../core/services/user/user-service';
 import { ViewUser } from './view-user';
 
@@ -19,13 +20,19 @@ describe('ViewUser', () => {
       to: null,
     })),
   };
+  const authService = {
+    getCurrentUser: vi.fn().mockReturnValue({ role: 'assistant' }),
+  };
 
   beforeEach(async () => {
+    authService.getCurrentUser.mockReturnValue({ role: 'assistant' });
+
     await TestBed.configureTestingModule({
       imports: [ViewUser],
       providers: [
         provideRouter([]),
         { provide: UserService, useValue: userService },
+        { provide: AuthService, useValue: authService },
       ],
     }).compileComponents();
 
@@ -38,13 +45,26 @@ describe('ViewUser', () => {
     expect(component).toBeTruthy();
   });
 
-  it('links to assignments and does not render district transfer controls', () => {
+  it('hides pastor-management actions from non-Head Assistants', () => {
     const pageText = fixture.nativeElement.textContent as string;
 
-    expect(pageText).toContain('District Pastor Assignments');
+    expect(pageText).not.toContain('District Pastor Assignments');
+    expect(pageText).not.toContain('Add New User');
     expect(pageText).not.toContain('District Transfer');
     expect(pageText).not.toContain('Review Transfers');
     expect(fixture.nativeElement.querySelector('input[type="checkbox"]')).toBeNull();
+  });
+
+  it('shows pastor-management actions to Head Assistants', () => {
+    fixture.destroy();
+    authService.getCurrentUser.mockReturnValue({ role: 'head_assistant' });
+    fixture = TestBed.createComponent(ViewUser);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const pageText = fixture.nativeElement.textContent as string;
+    expect(pageText).toContain('District Pastor Assignments');
+    expect(pageText).toContain('Add New User');
   });
 
   it('filters district options by typed name and applies the selected district', () => {
@@ -60,7 +80,7 @@ describe('ViewUser', () => {
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    const options = fixture.nativeElement.querySelectorAll('[role="option"]');
+    const options = fixture.nativeElement.querySelectorAll('#district-filter-list [role="option"]');
     expect(options).toHaveLength(1);
     expect(options[0].textContent).toContain('North District');
 

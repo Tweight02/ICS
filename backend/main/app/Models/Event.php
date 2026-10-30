@@ -97,6 +97,11 @@ class Event extends Model
         return $this->belongsToMany(Church::class, 'event_district', 'event_id', 'district_id');
     }
 
+    public function churches(): BelongsToMany
+    {
+        return $this->belongsToMany(Church::class, 'event_church', 'event_id', 'church_id');
+    }
+
     public function createdBy(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'event_creator', 'event_id', 'user_id', 'event_id', 'user_id');
@@ -147,6 +152,10 @@ class Event extends Model
                     $user->churchId,
                     $user->districtId,
                 ])));
+                if ($user->churchId) {
+                    $scope->orWhereHas('churches', fn (Builder $churches) => $churches
+                        ->where('churches.church_id', $user->churchId));
+                }
                 if ($user->districtId) {
                     $scope->orWhereHas('districts', fn (Builder $districts) => $districts
                         ->where('churches.church_id', $user->districtId));
@@ -154,6 +163,28 @@ class Event extends Model
             }),
             default => $query->where('church_id', $user->churchId ?? 0),
         };
+    }
+
+    public function coversChurch(int $churchId): bool
+    {
+        if ($this->churches()->where('churches.church_id', $churchId)->exists()) {
+            return true;
+        }
+
+        $church = EventsOrg::church($churchId);
+        if (! $church) {
+            return false;
+        }
+
+        $districtId = $church->district_id
+            ? (int) $church->district_id
+            : (int) $church->id;
+
+        if ($this->districts()->where('churches.church_id', $districtId)->exists()) {
+            return true;
+        }
+
+        return (int) $this->church_id === $churchId;
     }
 
     public static function canChange(EventUser $user, self $event): bool

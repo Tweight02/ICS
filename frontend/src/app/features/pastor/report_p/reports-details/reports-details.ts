@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ReportService } from '../../../../core/services/report/report';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
@@ -15,6 +15,11 @@ import {
   PERSONAL_REPORT_DEPARTMENT_IDS
 } from '../../../../core/models/report.model';
 import { QuarterStatus, QuarterStatusTone } from '../../../../shared/reports/quarter-status/quarter-status';
+import {
+  CURRENT_REPORT_YEAR,
+  REPORT_YEAR_OPTIONS,
+  resolveReportYear
+} from '../../../../core/utils/report-year';
 
 @Component({
   selector: 'app-reports-details',
@@ -25,9 +30,12 @@ import { QuarterStatus, QuarterStatusTone } from '../../../../shared/reports/qua
 export class ReportsDetails implements OnInit {
 
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private churchService = inject(ChurchService);
   private reportService = inject(ReportService);
 
+  readonly reportYears = REPORT_YEAR_OPTIONS;
+  readonly selectedYear = signal(CURRENT_REPORT_YEAR);
   readonly districtId = signal(0);
   readonly districtName = signal('');
   readonly district = signal<Church | null>(null);
@@ -55,22 +63,59 @@ export class ReportsDetails implements OnInit {
   }
 
   ngOnInit(): void {
+    this.selectedYear.set(
+      resolveReportYear(this.route.snapshot.queryParamMap.get('year'))
+    );
+    this.loadChurches();
+  }
+
+  onYearChange(event: Event): void {
+    const year = Number((event.target as HTMLSelectElement).value);
+    if (!this.reportYears.includes(year) || year === this.selectedYear()) {
+      return;
+    }
+
+    this.selectedYear.set(year);
+    this.churchDepartments.set({});
+    this.loadingChurchDepartments.set({});
+    this.churchDepartmentErrors.set({});
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { year },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
     this.loadChurches();
   }
 
   loadChurches(): void {
     this.errorMessage.set('');
     this.loadingChurches.set(true);
+    const requestedYear = this.selectedYear();
 
-    this.churchService.getMyDistrictChurches().subscribe({
+    this.churchService.getMyDistrictChurches(requestedYear).subscribe({
       next: response => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
+
         this.district.set(response.district ?? null);
         this.districtId.set(response.district?.church_id ?? 0);
         this.districtName.set(response.district?.name ?? '');
         this.churches.set(Array.isArray(response.data) ? response.data : []);
         this.loadingChurches.set(false);
+
+        const expandedChurch = this.churches().find(
+          church => church.church_id === this.expandedChurchId()
+        );
+        if (expandedChurch) {
+          this.loadChurchDepartments(expandedChurch);
+        }
       },
       error: error => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
         console.error('[REPORT DETAILS] API error:', error);
         this.churches.set([]);
         this.district.set(null);
@@ -91,7 +136,8 @@ export class ReportsDetails implements OnInit {
       {
         queryParams: {
           district_id: this.districtId(),
-          district_name: this.districtName()
+          district_name: this.districtName(),
+          year: this.selectedYear()
         }
       }
     );
@@ -122,13 +168,17 @@ export class ReportsDetails implements OnInit {
       ...current,
       [church.church_id]: true
     }));
+    const requestedYear = this.selectedYear();
     this.churchDepartmentErrors.update(current => ({
       ...current,
       [church.church_id]: ''
     }));
 
-    this.reportService.getDepartments(church.church_id).subscribe({
+    this.reportService.getDepartments(church.church_id, requestedYear).subscribe({
       next: response => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
         this.churchDepartments.update(current => ({
           ...current,
           [church.church_id]: Array.isArray(response) ? response : []
@@ -139,6 +189,9 @@ export class ReportsDetails implements OnInit {
         }));
       },
       error: error => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
         this.loadingChurchDepartments.update(current => ({
           ...current,
           [church.church_id]: false
@@ -172,7 +225,9 @@ export class ReportsDetails implements OnInit {
       department.department_id,
       this.districtId(),
       church.church_id
-    ]);
+    ], {
+      queryParams: { year: this.selectedYear() }
+    });
   }
 
   getQuarterStatus(

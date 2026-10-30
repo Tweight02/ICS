@@ -6,6 +6,7 @@ import {
 } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { NewReport } from './new-report';
+import { AuthService } from '../../../../core/services/auth/auth-service';
 
 describe('NewReport', () => {
   let component: NewReport;
@@ -18,7 +19,13 @@ describe('NewReport', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([])
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: {
+            getCurrentUser: () => ({ department_id: 17 })
+          }
+        }
       ]
     }).compileComponents();
 
@@ -29,7 +36,10 @@ describe('NewReport', () => {
 
     httpTesting.expectOne('/api/assistant/departments').flush({
       success: true,
-      data: []
+      data: [
+        { department_id: 16, department_name: 'Ministerial & Evangelism' },
+        { department_id: 17, department_name: 'Youth Ministries' }
+      ]
     });
   });
 
@@ -47,5 +57,18 @@ describe('NewReport', () => {
     component.removeParticularItem(0);
 
     expect(component.particularItems.length).toBe(1);
+  });
+
+  it('displays only the signed-in user department as read-only', () => {
+    fixture.detectChanges();
+
+    expect(component.departments).toEqual([
+      { department_id: 17, department_name: 'Youth Ministries' }
+    ]);
+    expect(component.assignedDepartment?.department_name).toBe('Youth Ministries');
+    expect(component.form.controls.department_id.disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('select#report-department')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Youth Ministries');
+    expect(fixture.nativeElement.textContent).not.toContain('Ministerial & Evangelism');
   });
 });

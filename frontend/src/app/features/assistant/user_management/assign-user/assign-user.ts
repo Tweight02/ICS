@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 import { AssignablePastor, DistrictPastorAssignment } from '../../../../core/models/pastor.model';
 import { UserService } from '../../../../core/services/user/user-service';
 import { Button } from '../../../../shared/components/button/button';
@@ -357,7 +357,7 @@ export class AssignUser implements OnInit {
           : `${pastor.full_name} will be assigned to ${target.district_name}.`;
 
     this.saving.set(true);
-    const confirmation = await Swal.fire({
+    const confirmation = await showAppAlert({
       icon: 'warning',
       title: 'Confirm pastor transfer',
       text: confirmationText,
@@ -380,7 +380,7 @@ export class AssignUser implements OnInit {
           this.closeTransfer();
           this.loadAssignments();
 
-          Swal.fire({
+          showAppAlert({
             toast: true,
             position: 'top-end',
             icon: 'success',
@@ -414,6 +414,6 @@ export class AssignUser implements OnInit {
   }
 
   private notifyError(title: string, text: string): void {
-    Swal.fire({ icon: 'error', title, text, confirmButtonColor: this.brandColor });
+    showAppAlert({ icon: 'error', title, text, confirmButtonColor: this.brandColor });
   }
 }

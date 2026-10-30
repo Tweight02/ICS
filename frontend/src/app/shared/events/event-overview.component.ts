@@ -242,7 +242,12 @@ export class EventOverviewComponent implements OnInit {
         text: e?.scope?.all_districts ? 'All District of NELM' : districts.join(', '),
       };
     }
-    if (churches.length) return { title: 'Church', text: churches[0] };
+    if (churches.length) {
+      return {
+        title: churches.length === 1 ? 'Church' : 'Churches',
+        text: churches.join(', '),
+      };
+    }
     if (e?.church_name || e?.church?.name) {
       return { title: 'Church', text: e.church_name ?? e.church.name };
     }

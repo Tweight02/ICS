@@ -10,6 +10,7 @@ import {
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Department } from '../../../../core/models/department.model';
+import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ReportService } from '../../../../core/services/report/report';
 import { UserService } from '../../../../core/services/user/user-service';
 import { Button } from '../../../../shared/components/button/button';
@@ -22,8 +23,10 @@ import { Button } from '../../../../shared/components/button/button';
 export class NewReport implements OnInit {
   private readonly reportService = inject(ReportService);
   private readonly userService = inject(UserService);
+  private readonly authService = inject(AuthService);
 
   departments: Department[] = [];
+  assignedDepartment: Department | null = null;
   readonly loadingDepartments = signal(false);
   readonly saving = signal(false);
   errorMessage = '';
@@ -55,10 +58,31 @@ export class NewReport implements OnInit {
   loadDepartments(): void {
     this.loadingDepartments.set(true);
     this.errorMessage = '';
+    this.departments = [];
+    this.assignedDepartment = null;
+
+    const departmentId = Number(this.authService.getCurrentUser()?.department_id);
+    if (!Number.isInteger(departmentId) || departmentId < 1) {
+      this.errorMessage = 'Your account does not have an assigned department.';
+      this.loadingDepartments.set(false);
+      return;
+    }
 
     this.userService.getDepartments().subscribe({
       next: response => {
-        this.departments = response.data ?? [];
+        const department = (response.data ?? []).find(
+          item => Number(item.department_id) === departmentId
+        );
+        if (!department) {
+          this.errorMessage = 'Your assigned department could not be found.';
+          this.loadingDepartments.set(false);
+          return;
+        }
+
+        this.assignedDepartment = department;
+        this.departments = [department];
+        this.form.controls.department_id.setValue(departmentId);
+        this.form.controls.department_id.disable();
         this.loadingDepartments.set(false);
       },
       error: (error: HttpErrorResponse) => {
@@ -124,6 +148,7 @@ export class NewReport implements OnInit {
           program_name: '',
           section_name: ''
         });
+        this.form.controls.department_id.disable();
         this.particularItems.clear();
         this.addParticularItem();
         this.saving.set(false);

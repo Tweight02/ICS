@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth/auth-service';
 import { Department } from '../../core/models/event.model';
 import { API_URL, EventFormConfig } from './events.config';
 import { Button } from '../components/button/button';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../utils/app-alert';
 
 interface ProgramNode {
   program_id: number;
@@ -770,12 +770,26 @@ export class EventFormComponent implements OnInit {
   }
 
   submit(): void {
+    if (this.saving) return;
+
+    const role = String(this.auth.getCurrentUser()?.role ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]/g, ' ');
+    if (role === 'head assistant') {
+      this.saveError = 'Head Assistants cannot create or edit events.';
+      return;
+    }
+
     this.tried2 = true;
     this.saveError = '';
     if (this.missingCount() > 0) return;
 
     this.saving = true;
-    const payload = this.buildPayload();
+    this.saveEvent(this.buildPayload());
+  }
+
+  private saveEvent(payload: Record<string, unknown>, confirmedOverlap = false): void {
     const request = this.isEdit
       ? this.http.put<any>(`${API_URL}/events/${this.eventId}`, payload)
       : this.http.post<any>(`${API_URL}/events`, payload);
@@ -791,7 +805,7 @@ export class EventFormComponent implements OnInit {
         };
 
         if (res?.warning) {
-          void Swal.fire({
+          void showAppAlert({
             icon: 'warning',
             title: 'Schedule overlap',
             text: res.warning,
@@ -803,13 +817,45 @@ export class EventFormComponent implements OnInit {
         navigateToEvent();
       },
       error: (err) => {
+        if (
+          err?.status === 409 &&
+          err?.error?.code === 'EVENT_SCHEDULE_OVERLAP' &&
+          !confirmedOverlap
+        ) {
+          void showAppAlert({
+            icon: 'warning',
+            title: 'Schedule overlap',
+            text: err.error.message,
+            showCancelButton: true,
+            confirmButtonText: 'Create anyway',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+          }).then(result => {
+            if (result.isConfirmed) {
+              this.saving = true;
+              this.saveEvent({ ...payload, confirm_overlap: true }, true);
+            } else {
+              this.saving = false;
+            }
+          });
+          return;
+        }
+
         console.error('Failed to save the event', err);
         this.saving = false;
         const errors = err?.error?.errors;
         const firstValidationError = errors ? Object.values(errors).flat()[0] : null;
-        this.saveError = typeof firstValidationError === 'string'
+        const reason = typeof firstValidationError === 'string'
           ? firstValidationError
           : err?.error?.message ?? 'We could not save the event. Your answers are still here, so you can try again.';
+        this.saveError = reason;
+
+        void showAppAlert({
+          icon: 'error',
+          title: 'Unable to save event',
+          text: reason,
+          confirmButtonText: 'OK'
+        });
       },
     });
   }

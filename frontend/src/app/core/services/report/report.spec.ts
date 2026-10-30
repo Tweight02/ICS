@@ -54,4 +54,12 @@ describe('ReportService', () => {
     expect(departments?.[0].q1_approved).toBe(true);
     expect(departments?.[0].q2_approved).toBe(false);
   });
+
+  it('requests department monitoring for the selected year', () => {
+    service.getDepartments(1, 2025).subscribe();
+
+    httpTestingController
+      .expectOne('/api/churches/1/departments?year=2025')
+      .flush([]);
+  });
 });
