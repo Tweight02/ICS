@@ -13,7 +13,7 @@ class EventScheduleConflictTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_an_event_cannot_overlap_for_the_same_church_or_district_target(): void
+    public function test_same_target_overlap_requires_confirmation_before_creation(): void
     {
         $context = $this->eventContext();
         Sanctum::actingAs($context['user']);
@@ -21,28 +21,67 @@ class EventScheduleConflictTest extends TestCase
         $this->postJson('/api/events', $context['payload'])->assertCreated();
         Sanctum::actingAs($context['sameChurchUser']);
         $this->postJson('/api/events', $context['payload'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('start_date');
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'EVENT_SCHEDULE_OVERLAP');
 
         $this->assertDatabaseCount('events', 1);
+        $this->postJson('/api/events', $context['payload'] + [
+            'confirm_overlap' => true,
+        ])->assertCreated();
+        $this->assertDatabaseCount('events', 2);
     }
 
-    public function test_a_different_user_can_create_the_overlapping_event_with_a_private_warning(): void
+    public function test_different_church_overlap_requires_confirmation_before_creation(): void
     {
         $context = $this->eventContext();
         Sanctum::actingAs($context['user']);
         $this->postJson('/api/events', $context['payload'])->assertCreated();
 
         Sanctum::actingAs($context['otherUser']);
-        $response = $this->postJson('/api/events', $context['payload'])
-            ->assertCreated()
-            ->assertJsonPath(
-                'warning',
-                "Another user's event is scheduled at a different church during this time. Your event was created."
-            );
+        $this->postJson('/api/events', $context['payload'])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'EVENT_SCHEDULE_OVERLAP');
+
+        $response = $this->postJson('/api/events', $context['payload'] + [
+            'confirm_overlap' => true,
+        ])->assertCreated();
 
         $this->assertDatabaseCount('events', 2);
         $this->assertSame((int) $context['otherUser']->church_id, $response->json('data.church_id'));
+    }
+
+    public function test_assistant_events_block_overlapping_events_for_the_same_department_and_district(): void
+    {
+        $context = $this->eventContext();
+        $assistant = User::create([
+            'department_id' => $context['user']->department_id,
+            'church_id' => $context['user']->church_id,
+            'first_name' => 'Alex',
+            'last_name' => 'Assistant',
+            'birthdate' => '1990-01-01',
+            'gender' => 'Other',
+            'role' => 'assistant',
+            'email' => 'schedule-assistant@example.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
+        $assistantPayload = $context['payload'];
+        unset($assistantPayload['department_id']);
+        $assistantPayload['district_ids'] = [$context['user']->church_id];
+
+        Sanctum::actingAs($assistant);
+        $this->postJson('/api/events', $assistantPayload)->assertCreated();
+
+        $this->postJson('/api/events', $assistantPayload)
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'EVENT_SCHEDULE_OVERLAP');
+
+        Sanctum::actingAs($context['sameChurchUser']);
+        $this->postJson('/api/events', $context['payload'])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'EVENT_SCHEDULE_OVERLAP');
+
+        $this->assertDatabaseCount('events', 1);
     }
 
     public function test_adjacent_event_times_are_not_treated_as_overlapping(): void
@@ -56,6 +95,30 @@ class EventScheduleConflictTest extends TestCase
         $this->postJson('/api/events', $context['payload'])->assertCreated();
 
         $this->assertDatabaseCount('events', 2);
+    }
+
+    public function test_head_assistant_cannot_create_events(): void
+    {
+        $context = $this->eventContext();
+        $headAssistant = User::create([
+            'department_id' => DB::table('departments')->value('department_id'),
+            'church_id' => $context['user']->church_id,
+            'first_name' => 'Head',
+            'last_name' => 'Assistant',
+            'birthdate' => '1990-01-01',
+            'gender' => 'Other',
+            'role' => 'head assistant',
+            'email' => 'head-assistant@example.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
+        Sanctum::actingAs($headAssistant);
+
+        $this->postJson('/api/events', $context['payload'] + [
+            'district_ids' => [$context['user']->church_id],
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('events', 0);
     }
 
     /**

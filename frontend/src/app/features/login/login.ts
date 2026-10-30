@@ -7,6 +7,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth/auth-service';
+import { SidebarService } from '../../core/services/sidebar/sidebar';
 
 @Component({
   imports: [ReactiveFormsModule],
@@ -18,6 +19,7 @@ export class Login {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private sidebar = inject(SidebarService);
 
   loading = signal(false);
   error = signal<string | null>(null);
@@ -55,43 +57,12 @@ export class Login {
       next: (response) => {
         this.loading.set(false);
 
-        // Navigate according to the authenticated user's role.
-        switch (response.user.role) {
-          case 'pastor':
-            this.router.navigate(['/pastor/view-representatives']);
-            break;
-
-          case 'representative':
-            this.router.navigate(['/representative/reports/programs']);
-            break;
-
-          case 'assistant':
-          case 'head assistant':
-          case 'head_assistant':
-          case 'head-assistant':
-            this.router.navigate(['/assistant/reports']);
-            break;
-
-          case 'head director':
-          case 'head_director':
-          case 'head-director':
-          case 'director':
-            this.router.navigate(['/director']);
-            break;
-
-          case 'events':
-            this.router.navigate(['/events']);
-            break;
-
-          default:
-            this.error.set(
-              'Your account role does not have a configured landing page.'
-            );
-            console.error(
-              'Unknown user role:',
-              response.user.role
-            );
-            break;
+        const firstMenuItem = this.sidebar.getMenu(response.user.role)[0];
+        if (firstMenuItem) {
+          void this.router.navigateByUrl(firstMenuItem.route);
+        } else {
+          this.error.set('Your account role does not have a configured landing page.');
+          console.error('Unknown user role:', response.user.role);
         }
       },
 

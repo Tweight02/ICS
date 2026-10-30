@@ -14,6 +14,11 @@ import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
 import { QuarterStatus, resolveQuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
+import {
+  CURRENT_REPORT_YEAR,
+  REPORT_YEAR_OPTIONS,
+  resolveReportYear
+} from '../../../../core/utils/report-year';
 
 import {
   Department,
@@ -52,6 +57,8 @@ export class ReportPrograms implements OnInit {
   districtName = '';
   churchId = 0;
   churchName = '';
+  readonly reportYears = REPORT_YEAR_OPTIONS;
+  readonly selectedYear = signal(CURRENT_REPORT_YEAR);
 
   departments: Department[] = [];
 
@@ -69,6 +76,10 @@ export class ReportPrograms implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    this.selectedYear.set(
+      resolveReportYear(this.route.snapshot.queryParamMap.get('year'))
+    );
+
     if (this.isRepresentativePortal) {
       this.resolveRepresentativeChurch();
       return;
@@ -76,6 +87,7 @@ export class ReportPrograms implements OnInit {
 
     this.route.paramMap.subscribe(pathParams => {
       const queryParams = this.route.snapshot.queryParamMap;
+      this.selectedYear.set(resolveReportYear(queryParams.get('year')));
       this.districtId =
         Number(pathParams.get('districtId') || queryParams.get('district_id')) || 0;
       this.churchId =
@@ -96,6 +108,22 @@ export class ReportPrograms implements OnInit {
       this.resolveChurchLabel();
       this.loadDepartments();
     });
+  }
+
+  onYearChange(event: Event): void {
+    const year = Number((event.target as HTMLSelectElement).value);
+    if (!this.reportYears.includes(year) || year === this.selectedYear()) {
+      return;
+    }
+
+    this.selectedYear.set(year);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { year },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
+    this.loadDepartments();
   }
 
   get isRepresentativePortal(): boolean {
@@ -183,7 +211,9 @@ export class ReportPrograms implements OnInit {
         department.department_id,
         this.districtId,
         this.churchId
-      ]);
+      ], {
+        queryParams: this.monitoringReturnParams()
+      });
       return;
     }
 
@@ -193,7 +223,10 @@ export class ReportPrograms implements OnInit {
         department.department_id,
         this.districtId,
         this.churchId
-      ]
+      ],
+      {
+        queryParams: this.monitoringReturnParams()
+      }
     );
   }
 
@@ -220,7 +253,36 @@ export class ReportPrograms implements OnInit {
     this.router.navigate([
       `${this.portalPrefix()}/reports/details`,
       this.districtId
-    ]);
+    ], {
+      queryParams: {
+        district_id: String(this.districtId),
+        district_name: this.districtName,
+        ...this.monitoringReturnParams()
+      }
+    });
+  }
+
+  private monitoringReturnParams(): Record<string, string> {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const keys = [
+      'return_to',
+      'return_department',
+      'return_expanded',
+      'return_search',
+      'return_scroll',
+      'year'
+    ];
+
+    const params = keys.reduce<Record<string, string>>((result, key) => {
+      const value = queryParams.get(key);
+      if (value !== null) {
+        result[key] = value;
+      }
+      return result;
+    }, {});
+    params['year'] = String(this.selectedYear());
+
+    return params;
   }
 
   private portalPrefix(): '/pastor' | '/assistant' | '/director' | '/representative' {
@@ -339,9 +401,13 @@ export class ReportPrograms implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     this.cdr.detectChanges();
+    const requestedYear = this.selectedYear();
 
-    this.reportService.getDepartments(this.churchId).subscribe({
+    this.reportService.getDepartments(this.churchId, requestedYear).subscribe({
       next: (response: Department[] | { data?: Department[] }) => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
         const data = Array.isArray(response)
           ? response
           : (response?.data ?? []);
@@ -351,6 +417,9 @@ export class ReportPrograms implements OnInit {
         this.cdr.detectChanges();
       },
       error: error => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
         this.departments = [];
         this.errorMessage =
           error?.error?.message || 'Unable to load reports.';

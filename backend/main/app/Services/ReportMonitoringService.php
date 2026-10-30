@@ -11,9 +11,17 @@ class ReportMonitoringService
      * @param  list<int>  $churchIds
      * @return array<int, array<string, int|bool|null>>
      */
-    public function forChurches(array $churchIds, ?int $departmentId = null): array
+    public function forChurches(
+        array $churchIds,
+        ?int $departmentId = null,
+        ?string $year = null
+    ): array
     {
-        $stats = $this->departmentQuarterStats($churchIds, $departmentId);
+        $stats = $this->departmentQuarterStats(
+            $churchIds,
+            $departmentId,
+            $year ?? (string) config('app.reporting_year', now()->year)
+        );
         $monitoring = [];
 
         foreach ($stats as $churchId => $departments) {
@@ -68,9 +76,13 @@ class ReportMonitoringService
     /**
      * @return array<int, array<string, bool|int|null>>
      */
-    public function departmentApprovals(int $churchId): array
+    public function departmentApprovals(int $churchId, ?string $year = null): array
     {
-        $stats = $this->departmentQuarterStats([$churchId])[$churchId] ?? [];
+        $stats = $this->departmentQuarterStats(
+            [$churchId],
+            null,
+            $year ?? (string) config('app.reporting_year', now()->year)
+        )[$churchId] ?? [];
         $approvals = [];
 
         foreach ($stats as $departmentId => $quarters) {
@@ -102,7 +114,11 @@ class ReportMonitoringService
      * @param  list<int>  $churchIds
      * @return array<int, array<int, array<int, array{total: int, approved: int, endorsed: int, submitted: int, expected: int, entered: int, submitted_expected: int, submitted_entered: int}>>>
      */
-    private function departmentQuarterStats(array $churchIds, ?int $departmentId = null): array
+    private function departmentQuarterStats(
+        array $churchIds,
+        ?int $departmentId,
+        string $year
+    ): array
     {
         $churchIds = array_values(array_unique(array_filter(
             array_map('intval', $churchIds),
@@ -116,6 +132,7 @@ class ReportMonitoringService
         $reportRows = DB::table('quarters')
             ->join('programs', 'quarters.program_id', '=', 'programs.program_id')
             ->whereIn('quarters.church_id', $churchIds)
+            ->where('quarters.year', $year)
             ->whereNull('programs.parent_id')
             ->when($departmentId !== null, fn ($query) => $query->where('programs.department_id', $departmentId))
             ->select(
@@ -151,6 +168,7 @@ class ReportMonitoringService
                     ->on('participant_coverage.particular_id', '=', 'particulars.particular_id');
             })
             ->whereIn('quarters.church_id', $churchIds)
+            ->where('quarters.year', $year)
             ->whereNull('programs.parent_id')
             ->when($departmentId !== null, fn ($query) => $query->where('programs.department_id', $departmentId))
             ->select(

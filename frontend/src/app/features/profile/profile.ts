@@ -6,6 +6,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth/auth-service';
 import { User } from '../../core/models/user.model';
 import { Button } from '../../shared/components/button/button';
+import { ChurchService } from '../../core/services/church/church-service';
 
 @Component({
   selector: 'app-profile',
@@ -17,13 +18,20 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly location = inject(Location);
+  private readonly churchService = inject(ChurchService);
   private readonly apiBase = '';
   private previewUrl: string | null = null;
 
   readonly loading = signal(true);
   readonly saving = signal(false);
+  readonly editing = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
+  readonly assignmentError = signal('');
+  readonly departmentName = signal('Loading…');
+  readonly locationName = signal('Loading…');
+  readonly locationType = signal('Church or district');
+  readonly districtName = signal('');
   readonly selectedFile = signal<File | null>(null);
   readonly imagePreview = signal<string | null>(null);
   readonly user = signal<User | null>(null);
@@ -69,6 +77,47 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.location.back();
   }
 
+  startEditing(): void {
+    const user = this.user();
+    if (!user || this.saving()) return;
+
+    this.patchForm(user);
+    this.editing.set(true);
+    this.successMessage.set('');
+    this.errorMessage.set('');
+  }
+
+  cancelEditing(): void {
+    if (this.saving()) return;
+
+    const user = this.user();
+    if (user) this.patchForm(user);
+
+    this.selectedFile.set(null);
+    this.releasePreviewUrl();
+    this.editing.set(false);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+  }
+
+  get fullName(): string {
+    const user = this.user();
+    if (!user) return '';
+
+    return [
+      user.first_name,
+      user.middle_name,
+      user.last_name,
+      user.extension_name,
+    ].filter(Boolean).join(' ');
+  }
+
+  get genderLabel(): string {
+    const gender = this.user()?.gender;
+    if (!gender) return 'Not provided';
+    return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+  }
+
   get profileImageUrl(): string | null {
     const image = this.user()?.profile_image;
     if (!image) return null;
@@ -102,7 +151,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   submit(): void {
-    if (this.saving()) return;
+    if (!this.editing() || this.saving()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -125,6 +174,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.patchForm(user);
         this.selectedFile.set(null);
         this.releasePreviewUrl();
+        this.editing.set(false);
         this.successMessage.set('Your profile has been updated.');
         this.saving.set(false);
       },
@@ -157,6 +207,74 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private applyUser(user: User): void {
     this.user.set(user);
     this.patchForm(user);
+    this.loadAssignments(user);
+  }
+
+  private loadAssignments(user: User): void {
+    this.assignmentError.set('');
+    this.departmentName.set(user.department_id ? 'Loading…' : 'Not assigned');
+    this.locationName.set(user.church_id ? 'Loading…' : 'Not assigned');
+    this.locationType.set('Church or district');
+    this.districtName.set('');
+
+    this.churchService.getDepartments().subscribe({
+      next: (response) => {
+        if (!response.success || !Array.isArray(response.data)) {
+          this.assignmentError.set('Could not load your department assignment.');
+          this.departmentName.set('Unavailable');
+          return;
+        }
+
+        this.departmentName.set(
+          response.data.find(
+            (department) => Number(department.department_id) === Number(user.department_id)
+          )?.department_name ?? (user.department_id ? 'Department not found' : 'Not assigned')
+        );
+      },
+      error: (error) => {
+        console.error('Failed to load the profile department:', error);
+        this.departmentName.set('Unavailable');
+        this.assignmentError.set('Could not load your department assignment.');
+      },
+    });
+
+    this.churchService.getAllChurches().subscribe({
+      next: (response) => {
+        if (!response.success || !Array.isArray(response.data)) {
+          this.assignmentError.set('Could not load your church or district assignment.');
+          this.locationName.set('Unavailable');
+          return;
+        }
+
+        const assignedLocation = response.data.find(
+          (church) => Number(church.church_id) === Number(user.church_id)
+        );
+
+        if (!assignedLocation) {
+          this.locationName.set(user.church_id ? 'Location not found' : 'Not assigned');
+          return;
+        }
+
+        if (assignedLocation.parent_id === null) {
+          this.locationType.set('District');
+          this.locationName.set(assignedLocation.name);
+          return;
+        }
+
+        this.locationType.set('Church');
+        this.locationName.set(assignedLocation.name);
+        this.districtName.set(
+          response.data.find(
+            (church) => Number(church.church_id) === Number(assignedLocation.parent_id)
+          )?.name ?? ''
+        );
+      },
+      error: (error) => {
+        console.error('Failed to load the profile church or district:', error);
+        this.locationName.set('Unavailable');
+        this.assignmentError.set('Could not load your church or district assignment.');
+      },
+    });
   }
 
   private releasePreviewUrl(): void {

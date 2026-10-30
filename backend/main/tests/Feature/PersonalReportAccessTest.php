@@ -89,6 +89,7 @@ function personalReportAccessFixture(): array
         'deathIds' => $deathIds,
         'director' => personalReportAccessUser($districtId, 16, 'director', 'director'),
         'headDirector' => personalReportAccessUser($districtId, $departmentId, 'head director', 'head-director'),
+        'headAssistant' => personalReportAccessUser($districtId, 16, 'head assistant', 'head-assistant'),
         'assistant' => personalReportAccessUser($districtId, 16, 'assistant', 'assistant'),
         'otherDepartmentDirector' => personalReportAccessUser($districtId, $departmentId, 'director', 'other-director'),
         'otherDepartmentAssistant' => personalReportAccessUser($districtId, $departmentId, 'assistant', 'other-assistant'),
@@ -112,7 +113,23 @@ test('head directors can access personal records within their assigned district'
         ->assertJsonPath('data.0.death_id', $fixture['deathIds'][0]);
 });
 
-test('director and assistant personal reports are limited to their assigned district', function () {
+test('head assistants can load personal records for the selected district', function () {
+    $fixture = personalReportAccessFixture();
+
+    $this->actingAs($fixture['headAssistant'], 'sanctum')
+        ->getJson('/api/baptisms?district_id='.$fixture['otherDistrictId'])
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.baptism_id', $fixture['baptismIds'][1]);
+
+    $this->actingAs($fixture['headAssistant'], 'sanctum')
+        ->getJson('/api/deaths?district_id='.$fixture['otherDistrictId'])
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.death_id', $fixture['deathIds'][1]);
+});
+
+test('M and E directors and assistants can load personal records for the selected district', function () {
     $fixture = personalReportAccessFixture();
 
     foreach (['director', 'assistant'] as $role) {
@@ -129,6 +146,18 @@ test('director and assistant personal reports are limited to their assigned dist
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.death_id', $fixture['deathIds'][0]);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/baptisms?district_id='.$fixture['otherDistrictId'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.baptism_id', $fixture['baptismIds'][1]);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/deaths?district_id='.$fixture['otherDistrictId'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.death_id', $fixture['deathIds'][1]);
 
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/baptisms/'.$fixture['baptismIds'][1])
@@ -150,6 +179,14 @@ test('directors and assistants outside Ministerial and Evangelism cannot access 
 
         $this->actingAs($fixture[$role], 'sanctum')
             ->getJson('/api/deaths')
+            ->assertForbidden();
+
+        $this->actingAs($fixture[$role], 'sanctum')
+            ->getJson('/api/baptisms?district_id='.$fixture['otherDistrictId'])
+            ->assertForbidden();
+
+        $this->actingAs($fixture[$role], 'sanctum')
+            ->getJson('/api/deaths?district_id='.$fixture['otherDistrictId'])
             ->assertForbidden();
     }
 });

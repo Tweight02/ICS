@@ -37,6 +37,12 @@ class ReportController extends Controller
             'particular_items.*' => ['required', 'string', 'max:255', 'distinct:ignore_case'],
         ]);
 
+        if ((int) $data['department_id'] !== (int) $user->department_id) {
+            return response()->json([
+                'message' => 'You can only create report templates for your assigned department.',
+            ], 403);
+        }
+
         if ($denied = $this->departmentAccessDenied(
             $request,
             (int) $data['department_id']
@@ -127,6 +133,12 @@ class ReportController extends Controller
         $churchId,
         ReportMonitoringService $monitoring
     ) {
+        $validated = $request->validate([
+            'year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
+        ]);
+        $year = isset($validated['year'])
+            ? (string) $validated['year']
+            : (string) config('app.reporting_year', now()->year);
         $user = $request->user();
 
         $church = DB::table('churches')
@@ -173,7 +185,7 @@ class ReportController extends Controller
             ->orderBy('department_name')
             ->get();
 
-        $approvals = $monitoring->departmentApprovals((int) $churchId);
+        $approvals = $monitoring->departmentApprovals((int) $churchId, $year);
 
         $result = $departments->map(function ($department) use ($approvals) {
             return [
@@ -441,6 +453,11 @@ class ReportController extends Controller
         $submitted = (bool) ($validated['submitted'] ?? false);
 
         $user = $request->user();
+        $autoEndorsePersonalReport = $submitted
+            && $user
+            && $this->isPastorRole($this->normalizeRole((string) ($user->role ?? '')))
+            && in_array((int) $departmentId, [16, 20], true);
+
         if ($submitted && $user && $this->isRepresentativeRole($user)) {
             $targetQuarterIds = collect($validated['items'])
                 ->pluck('quarter_id')
@@ -696,19 +713,33 @@ class ReportController extends Controller
                         'date_submitted' => now()->toDateString(),
                     ]);
 
+                if ($autoEndorsePersonalReport) {
+                    DB::table('quarters')
+                        ->whereIn('quarter_id', $quarterIds)
+                        ->update([
+                            'district_endorse' => now()->toDateString(),
+                        ]);
+                }
+
                 $this->recordReportWorkflowComment(
                     (int) $quarterIds->first(),
                     (int) $churchId,
                     (int) $departmentId,
                     (int) $request->user()->user_id,
-                    $wasPreviouslySubmitted ? 'Report resubmitted.' : 'Report submitted.'
+                    $autoEndorsePersonalReport
+                        ? ($wasPreviouslySubmitted
+                            ? 'Personal report resubmitted and endorsed.'
+                            : 'Personal report submitted and endorsed.')
+                        : ($wasPreviouslySubmitted ? 'Report resubmitted.' : 'Report submitted.')
                 );
             }
 
             DB::commit();
 
             return response()->json([
-                'message' => 'Report saved successfully.',
+                'message' => $autoEndorsePersonalReport
+                    ? 'Personal report submitted and endorsed. The assistant can now review it.'
+                    : 'Report saved successfully.',
                 'saved_count' => $savedCount,
             ]);
         } catch (\Throwable $e) {
@@ -1258,7 +1289,10 @@ class ReportController extends Controller
             ], 401);
         }
 
-        if (! $this->isAssistantRole($this->normalizeRole($user->role ?? ''))) {
+        if (! in_array($this->normalizeRole($user->role ?? ''), [
+            'assistant',
+            'administrative assistant',
+        ], true)) {
             return response()->json([
                 'message' => 'Only the administrative assistant can approve this report.',
             ], 403);
@@ -1414,8 +1448,7 @@ class ReportController extends Controller
             ->where('program_id', $programId)
             ->where('year', (string) $year)
             ->get()
-            ->filter(fn ($quarter) =>
-                $this->getQuarterNumber($quarter->quarter) === $quarterNumber
+            ->filter(fn ($quarter) => $this->getQuarterNumber($quarter->quarter) === $quarterNumber
             )
             ->pluck('quarter_id')
             ->map(fn ($id) => (int) $id)
@@ -1475,9 +1508,24 @@ class ReportController extends Controller
         }
 
         $user = $request->user();
+        $role = $user
+            ? $this->normalizeRole((string) ($user->role ?? ''))
+            : '';
+        $canViewPersonalDistrictReport = in_array($departmentId, [16, 20], true)
+            && $request->isMethod('GET')
+            && $user
+            && (
+                $this->hasAllDepartmentAccess($user)
+                || ($this->isDirectorOrAssistant($user) && (int) $user->department_id === 16)
+            );
+
+        if ($canViewPersonalDistrictReport) {
+            return null;
+        }
+
         if (
             ! $user ||
-            ! $this->isPastorRole($this->normalizeRole((string) ($user->role ?? '')))
+            ! $this->isPastorRole($role)
         ) {
             return response()->json([
                 'message' => 'District-level personal reports are available to the assigned pastor only.',

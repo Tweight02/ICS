@@ -11,7 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 import { Button } from '../../../../shared/components/button/button';
 
 interface Baptism {
@@ -340,7 +340,7 @@ export class DeathaddrecComponent implements OnInit {
           this.baptisms = [];
           this.loadingBaptisms = false;
 
-          Swal.fire({
+          showAppAlert({
             icon: 'error',
             title: 'Unable to Load Members',
             text: 'Baptism records could not be loaded. Please try again.',
@@ -388,7 +388,7 @@ export class DeathaddrecComponent implements OnInit {
           this.deathLoadError = true;
           this.closeBaptismDropdown();
 
-          Swal.fire({
+          showAppAlert({
             icon: 'error',
             title: 'Unable to Verify Records',
             text: 'Existing death records could not be checked. Please refresh the page and try again.',
@@ -433,7 +433,7 @@ export class DeathaddrecComponent implements OnInit {
 
           this.churches = [];
 
-          Swal.fire({
+          showAppAlert({
             icon: 'error',
             title: 'Unable to Load Churches',
             text: 'Please check your Laravel server connection.',
@@ -463,7 +463,7 @@ export class DeathaddrecComponent implements OnInit {
       this.selectedBaptism = null;
       this.death.date_of_death = '';
 
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Death Record Already Exists',
         text: 'This member already has a death record and cannot be added again.',
@@ -631,7 +631,7 @@ export class DeathaddrecComponent implements OnInit {
       this.loadingDeaths ||
       this.deathLoadError
     ) {
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Records Not Ready',
         text: 'Please wait until the existing records have been loaded and verified.',
@@ -648,7 +648,7 @@ export class DeathaddrecComponent implements OnInit {
       !this.death.quarter.trim() ||
       !this.death.date_of_death
     ) {
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Incomplete Information',
         text: 'Please select a member, quarter, and date of death.',
@@ -663,7 +663,7 @@ export class DeathaddrecComponent implements OnInit {
     const baptismId = Number(this.death.baptism_id);
 
     if (!Number.isInteger(baptismId) || baptismId <= 0) {
-      Swal.fire({
+      showAppAlert({
         icon: 'error',
         title: 'Invalid Selection',
         text: 'Please select a valid baptized member.',
@@ -681,7 +681,7 @@ export class DeathaddrecComponent implements OnInit {
       this.selectedBaptism = null;
       this.death.date_of_death = '';
 
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Death Record Already Exists',
         text: 'This member already has a death record.',
@@ -699,7 +699,7 @@ export class DeathaddrecComponent implements OnInit {
     );
 
     if (!member) {
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Invalid Selection',
         text: 'Please select a valid baptized member.',
@@ -713,7 +713,7 @@ export class DeathaddrecComponent implements OnInit {
 
     // Do not allow a future date.
     if (this.death.date_of_death > this.today) {
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Invalid Date',
         text: 'The date of death cannot be in the future.',
@@ -737,7 +737,7 @@ export class DeathaddrecComponent implements OnInit {
         this.death.date_of_death
       ) === ''
     ) {
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Invalid Date of Death',
         text: 'The date of death must be at least one day after the birthdate. The two dates cannot be the same.',
@@ -765,7 +765,7 @@ export class DeathaddrecComponent implements OnInit {
 
           this.saving = false;
 
-          Swal.fire({
+          showAppAlert({
             icon: 'success',
             title: 'Saved Successfully',
             text: 'Death record has been saved successfully.',
@@ -798,7 +798,7 @@ export class DeathaddrecComponent implements OnInit {
             ? Object.values(error.error.errors).flat().join('\n')
             : '';
 
-          Swal.fire({
+          showAppAlert({
             icon: 'error',
             title: error.status === 422
               ? 'Unable to Save Record'

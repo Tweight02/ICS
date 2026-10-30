@@ -3,13 +3,16 @@ import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { ReportService } from '../../../../core/services/report/report';
+import { CURRENT_REPORT_YEAR } from '../../../../core/utils/report-year';
 import { ReportPrograms } from './report-programs';
 
 describe('ReportPrograms', () => {
   let component: ReportPrograms;
   let fixture: ComponentFixture<ReportPrograms>;
+  let navigate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    navigate = vi.fn();
     await TestBed.configureTestingModule({
       imports: [ReportPrograms],
       providers: [
@@ -20,7 +23,13 @@ describe('ReportPrograms', () => {
             snapshot: {
               queryParamMap: convertToParamMap({
                 district_name: 'Batanes',
-                church_name: 'Pasuc'
+                church_name: 'Pasuc',
+                return_to: 'monitoring',
+                return_department: '17',
+                return_expanded: '1',
+                return_search: 'North',
+                return_scroll: '240',
+                year: String(CURRENT_REPORT_YEAR - 1)
               })
             }
           }
@@ -49,7 +58,7 @@ describe('ReportPrograms', () => {
           }
         },
         { provide: ChurchService, useValue: { getChurches: () => of({ district: { name: 'Batanes' }, data: [] }) } },
-        { provide: Router, useValue: { url: '/pastor/reports/programs/1/2', navigate: () => undefined } }
+        { provide: Router, useValue: { url: '/assistant/reports/programs/1/2', navigate } }
       ]
     }).compileComponents();
 
@@ -82,5 +91,43 @@ describe('ReportPrograms', () => {
       .toEqual([4]);
     expect(component.personalReportDepartments.map(department => department.department_id))
       .toEqual([16, 20, 22, 23]);
+  });
+
+  it('preserves monitoring state when returning to district details', () => {
+    component.backToReportDetails();
+
+    expect(navigate).toHaveBeenCalledWith(
+      ['/assistant/reports/details', 1],
+      {
+        queryParams: {
+          district_id: '1',
+          district_name: 'Batanes',
+          return_to: 'monitoring',
+          year: String(CURRENT_REPORT_YEAR - 1),
+          return_department: '17',
+          return_expanded: '1',
+          return_search: 'North',
+          return_scroll: '240'
+        }
+      }
+    );
+  });
+
+  it('preserves monitoring state when opening a department report', () => {
+    component.openDepartment(component.reportDepartments[0]);
+
+    expect(navigate).toHaveBeenCalledWith(
+      ['/assistant/reports/particulars', 4, 1, 2],
+      {
+        queryParams: {
+          return_to: 'monitoring',
+          year: String(CURRENT_REPORT_YEAR - 1),
+          return_department: '17',
+          return_expanded: '1',
+          return_search: 'North',
+          return_scroll: '240'
+        }
+      }
+    );
   });
 });

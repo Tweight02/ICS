@@ -15,7 +15,7 @@ class BaptismController extends Controller
      */
     public function index(Request $request)
     {
-        $churchIds = $this->authorizedChurchIds($request);
+        $churchIds = $this->authorizedChurchIds($request, true);
 
         if ($churchIds === null) {
             return $this->forbiddenResponse();
@@ -354,7 +354,7 @@ class BaptismController extends Controller
     /**
      * @return list<int>|null
      */
-    private function authorizedChurchIds(Request $request): ?array
+    private function authorizedChurchIds(Request $request, bool $allowDistrictSelection = false): ?array
     {
         $user = $request->user();
         $role = strtolower(trim(str_replace(
@@ -380,6 +380,35 @@ class BaptismController extends Controller
             && (int) $user->department_id !== 16
         ) {
             return null;
+        }
+
+        if (
+            $allowDistrictSelection &&
+            (
+                in_array($role, ['head assistant', 'head director'], true) ||
+                (
+                    in_array($role, ['assistant', 'administrative assistant', 'director'], true)
+                    && (int) $user->department_id === 16
+                )
+            ) &&
+            $request->filled('district_id')
+        ) {
+            $districtId = (int) $request->query('district_id');
+            $isDistrict = Church::query()
+                ->where('church_id', $districtId)
+                ->whereNull('parent_id')
+                ->exists();
+
+            if (! $isDistrict) {
+                return null;
+            }
+
+            return Church::query()
+                ->where('church_id', $districtId)
+                ->orWhere('parent_id', $districtId)
+                ->pluck('church_id')
+                ->map(fn ($churchId) => (int) $churchId)
+                ->all();
         }
 
         $assignedChurch = DB::table('churches')

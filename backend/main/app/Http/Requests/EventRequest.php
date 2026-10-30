@@ -24,7 +24,7 @@ class EventRequest extends FormRequest
 
         $scope = match ($user->role) {
             'district_pastor' => [
-                'church_ids' => ['required', 'array', $this->isMethod('post') ? 'min:1' : 'size:1'],
+                'church_ids' => ['required', 'array', 'min:1'],
                 'church_ids.*' => ['integer', 'distinct', Rule::exists('churches', 'church_id')],
             ],
             'assistant' => [

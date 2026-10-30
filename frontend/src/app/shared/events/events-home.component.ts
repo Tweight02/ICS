@@ -92,6 +92,15 @@ export class EventsHomeComponent implements OnInit {
     private auth: AuthService,
   ) {}
 
+  get canCreateEvents(): boolean {
+    const role = String(this.auth.getCurrentUser()?.role ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]/g, ' ');
+
+    return this.config.canCreate && role !== 'head assistant';
+  }
+
   ngOnInit(): void {
     this.workspaceName = this.config.workspaceTitle;
     if (this.config.workspaceFromUser) this.loadUser();
