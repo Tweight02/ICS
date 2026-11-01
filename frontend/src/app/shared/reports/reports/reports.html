@@ -24,6 +24,16 @@
           </svg>
           New report
       </button>
+      <button
+          *ngIf="isDirectorRole"
+          type="button"
+          (click)="openMissionSummary()"
+          class="relative inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 sm:self-auto">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 16.5h14M5 13V9m5 4V4m5 9V7" />
+          </svg>
+          Report summary
+      </button>
     </header>
 
     <!-- Error -->

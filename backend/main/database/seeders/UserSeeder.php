@@ -11,6 +11,8 @@ class UserSeeder extends Seeder
 {
     private const SEEDED_PASSWORD = '12345678';
 
+    private const GLOBAL_ASSISTANT_EMAIL = 'seed.assistant@example.com';
+
     public function run(): void
     {
         $departments = DB::table('departments')
@@ -48,44 +50,32 @@ class UserSeeder extends Seeder
         $adminChurchId = (int) $districts->first()->church_id;
         $passwordHash = Hash::make(self::SEEDED_PASSWORD);
 
-        $this->seedUser(
-            $this->user(
-                $primaryDepartmentId,
-                $adminChurchId,
-                'Head',
-                'Assistant',
-                'head assistant',
-                'seed.head-assistant@example.com',
-                $passwordHash
-            )
-        );
-        $this->seedUser(
-            $this->user(
-                $primaryDepartmentId,
-                $adminChurchId,
-                'Head',
-                'Director',
-                'head director',
-                'seed.head-director@example.com',
-                $passwordHash
-            )
-        );
+        DB::transaction(function () use ($adminChurchId, $passwordHash): void {
+            DB::table('users')
+                ->whereRaw(
+                    "LOWER(REPLACE(REPLACE(role, '_', ' '), '-', ' ')) IN (?, ?, ?, ?)",
+                    ['assistant', 'administrative assistant', 'head assistant', 'head director']
+                )
+                ->where('email', '!=', self::GLOBAL_ASSISTANT_EMAIL)
+                ->delete();
+
+            $this->seedUser(
+                $this->user(
+                    null,
+                    $adminChurchId,
+                    'Administrative',
+                    'Assistant',
+                    'assistant',
+                    self::GLOBAL_ASSISTANT_EMAIL,
+                    $passwordHash
+                )
+            );
+        });
 
         foreach ($departments as $department) {
             $departmentId = (int) $department->department_id;
             $departmentTag = "department-{$departmentId}";
 
-            $this->seedUser(
-                $this->user(
-                    $departmentId,
-                    $adminChurchId,
-                    'Department',
-                    'Assistant',
-                    'assistant',
-                    "seed.assistant.{$departmentTag}@example.com",
-                    $passwordHash
-                )
-            );
             $this->seedUser(
                 $this->user(
                     $departmentId,
@@ -128,8 +118,7 @@ class UserSeeder extends Seeder
         }
 
         $this->command?->info(sprintf(
-            'Seeded %d department assistants, %d department directors, %d church users, and %d district pastors, plus Head Assistant and Head Director.',
-            $departments->count(),
+            'Seeded one mission-wide assistant, %d department directors, %d church users, and %d district pastors.',
             $departments->count(),
             $departments->count(),
             $districts->count()
@@ -140,7 +129,7 @@ class UserSeeder extends Seeder
      * @return array<string, int|string|null>
      */
     private function user(
-        int $departmentId,
+        ?int $departmentId,
         int $churchId,
         string $firstName,
         string $lastName,

@@ -63,7 +63,7 @@ function districtPastorAssignmentUser(
     ]);
 }
 
-test('assignment data is available only to authenticated Head Assistants', function () {
+test('assignment data is available to authenticated assistants', function () {
     $this->getJson('/api/assistant/district-pastor-assignments')
         ->assertUnauthorized();
 
@@ -82,7 +82,7 @@ test('assignment data is available only to authenticated Head Assistants', funct
 
     $this->actingAs($fixture['assistant'], 'sanctum')
         ->getJson('/api/assistant/district-pastor-assignments')
-        ->assertForbidden();
+        ->assertOk();
 
     $this->actingAs($fixture['headAssistant'], 'sanctum')
         ->getJson('/api/assistant/district-pastor-assignments')
@@ -93,7 +93,7 @@ test('assignment data is available only to authenticated Head Assistants', funct
         ->assertJsonPath('assignments.1.pastor_name', null);
 });
 
-test('Head Assistant can assign an active pastor to a vacant district', function () {
+test('an assistant can assign an active pastor to a vacant district', function () {
     $fixture = districtPastorAssignmentFixture();
     $pastor = districtPastorAssignmentUser(
         $fixture['firstDistrictId'],
@@ -103,7 +103,7 @@ test('Head Assistant can assign an active pastor to a vacant district', function
         'assignment-movable-pastor@example.com'
     );
 
-    $this->actingAs($fixture['headAssistant'], 'sanctum')
+    $this->actingAs($fixture['assistant'], 'sanctum')
         ->putJson("/api/assistant/district-pastor-assignments/{$fixture['secondDistrictId']}", [
             'user_id' => $pastor->user_id,
         ])
@@ -116,7 +116,7 @@ test('Head Assistant can assign an active pastor to a vacant district', function
     ]);
 });
 
-test('assignment writes require an authenticated Head Assistant', function () {
+test('assignment writes require an authenticated assistant', function () {
     $fixture = districtPastorAssignmentFixture();
     $pastor = districtPastorAssignmentUser(
         $fixture['firstDistrictId'],
@@ -136,11 +136,11 @@ test('assignment writes require an authenticated Head Assistant', function () {
 
     $this->actingAs($fixture['assistant'], 'sanctum')
         ->putJson($url, $payload)
-        ->assertForbidden();
+        ->assertOk();
 
     $this->assertDatabaseHas('users', [
         'user_id' => $pastor->user_id,
-        'church_id' => $fixture['firstDistrictId'],
+        'church_id' => $fixture['secondDistrictId'],
     ]);
 });
 
@@ -217,7 +217,7 @@ test('assignment rejects inactive pastors and non-district churches', function (
     ])->assertNotFound();
 });
 
-test('pastor management writes are restricted to Head Assistants', function () {
+test('pastor management writes are restricted to assistant roles', function () {
     $fixture = districtPastorAssignmentFixture();
     $pastor = districtPastorAssignmentUser(
         $fixture['firstDistrictId'],
@@ -249,19 +249,26 @@ test('pastor management writes are restricted to Head Assistants', function () {
 
     $this->postJson('/api/assistant/users', $createPayload)->assertUnauthorized();
 
-    $this->actingAs($fixture['assistant'], 'sanctum')
+    $nonAssistant = districtPastorAssignmentUser(
+        $fixture['firstDistrictId'],
+        $fixture['departmentId'],
+        'pastor',
+        'active',
+        'management-non-assistant@example.com'
+    );
+    $this->actingAs($nonAssistant, 'sanctum')
         ->postJson('/api/assistant/users', $createPayload)
         ->assertForbidden();
-    $this->actingAs($fixture['assistant'], 'sanctum')
+    $this->actingAs($nonAssistant, 'sanctum')
         ->postJson('/api/users', $createPayload)
         ->assertForbidden();
-    $this->actingAs($fixture['assistant'], 'sanctum')
+    $this->actingAs($nonAssistant, 'sanctum')
         ->putJson("/api/assistant/pastors/{$pastor->user_id}", $updatePayload)
         ->assertForbidden();
-    $this->actingAs($fixture['assistant'], 'sanctum')
+    $this->actingAs($nonAssistant, 'sanctum')
         ->postJson("/api/assistant/pastors/{$pastor->user_id}/activate")
         ->assertForbidden();
-    $this->actingAs($fixture['assistant'], 'sanctum')
+    $this->actingAs($nonAssistant, 'sanctum')
         ->deleteJson("/api/assistant/pastors/{$pastor->user_id}")
         ->assertForbidden();
 
@@ -273,7 +280,7 @@ test('pastor management writes are restricted to Head Assistants', function () {
     $this->assertDatabaseMissing('users', ['email' => $createPayload['email']]);
 });
 
-test('Head Assistants can create, edit, activate, and deactivate pastors', function () {
+test('assistants can create, edit, activate, and deactivate pastors', function () {
     $fixture = districtPastorAssignmentFixture();
     $payload = [
         'department_id' => $fixture['departmentId'],
@@ -287,7 +294,7 @@ test('Head Assistants can create, edit, activate, and deactivate pastors', funct
         'password' => 'password123',
     ];
 
-    $response = $this->actingAs($fixture['headAssistant'], 'sanctum')
+    $response = $this->actingAs($fixture['assistant'], 'sanctum')
         ->postJson('/api/assistant/users', $payload)
         ->assertCreated();
     $pastorId = $response->json('user.user_id');
@@ -300,15 +307,15 @@ test('Head Assistants can create, edit, activate, and deactivate pastors', funct
     $this->deleteJson("/api/assistant/pastors/{$pastorId}")
         ->assertOk();
     $this->assertDatabaseHas('users', [
-    'user_id' => $pastorId,
-    'status' => 'inactive',
+        'user_id' => $pastorId,
+        'status' => 'inactive',
     ]);
 
     $this->postJson("/api/assistant/pastors/{$pastorId}/activate")
-    ->assertOk();
+        ->assertOk();
     $this->assertDatabaseHas('users', [
-    'user_id' => $pastorId,
-    'status' => 'active',
+        'user_id' => $pastorId,
+        'status' => 'active',
     ]);
 });
 

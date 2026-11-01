@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\EventRegistrationAttribution;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -70,6 +71,64 @@ class EventSaveTest extends TestCase
             'role' => 'representative',
             'email' => 'malasin-representative@example.test',
         ]);
+    }
+
+    public function test_a_global_assistant_can_select_a_department_to_create_and_view_events(): void
+    {
+        $departmentId = DB::table('departments')->insertGetId(
+            ['department_name' => 'Youth'],
+            'department_id'
+        );
+        $districtId = DB::table('churches')->insertGetId([
+            'name' => 'Global Assistant District',
+            'address' => 'Global Assistant District',
+            'parent_id' => null,
+        ], 'church_id');
+        $programId = DB::table('programs')->insertGetId([
+            'department_id' => $departmentId,
+            'program_name' => 'Youth Program',
+            'parent_id' => null,
+        ], 'program_id');
+        $particularId = DB::table('particulars')->insertGetId([
+            'program_id' => $programId,
+            'particular_name' => 'Youth Attendance',
+        ], 'particular_id');
+        DB::table('quarters')->insert([
+            'program_id' => $programId,
+            'church_id' => $districtId,
+            'quarter' => 'Q4',
+            'year' => '2026',
+        ]);
+        $assistant = User::create([
+            'department_id' => null,
+            'church_id' => $districtId,
+            'first_name' => 'Global',
+            'last_name' => 'Assistant',
+            'birthdate' => '1990-01-01',
+            'gender' => 'Other',
+            'role' => 'assistant',
+            'email' => 'global-assistant@example.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
+
+        Sanctum::actingAs($assistant);
+        $this->postJson('/api/events', [
+            'title' => 'Mission-wide Youth Gathering',
+            'location' => 'Global Assistant District',
+            'department_id' => $departmentId,
+            'particular_ids' => [$particularId],
+            'district_ids' => [$districtId],
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+        ])->assertCreated();
+
+        $this->getJson('/api/events?status=all')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Mission-wide Youth Gathering');
     }
 
     public function test_a_district_pastor_creates_one_shared_event_for_selected_churches(): void
@@ -207,7 +266,7 @@ class EventSaveTest extends TestCase
             'address' => 'Unselected Church',
             'parent_id' => $districtId,
         ], 'church_id');
-        $unselectedToken = \App\Support\EventRegistrationAttribution::token($eventId, $unselectedChurchId);
+        $unselectedToken = EventRegistrationAttribution::token($eventId, $unselectedChurchId);
         $this->postJson(
             '/api/public/events/'.$eventId.'/participants?church_id='.$unselectedChurchId
                 .'&registration_token='.$unselectedToken,

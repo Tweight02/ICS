@@ -46,6 +46,25 @@ test('user seeder creates all role scopes idempotently', function () {
         'parent_id' => $eastCagayanDistrictId,
     ]);
 
+    foreach ([
+        ['role' => 'assistant', 'email' => 'legacy-assistant@example.com'],
+        ['role' => 'head_assistant', 'email' => 'legacy-head-assistant@example.com'],
+        ['role' => 'head-director', 'email' => 'legacy-head-director@example.com'],
+    ] as $legacyUser) {
+        DB::table('users')->insert([
+            'department_id' => 16,
+            'church_id' => $batanesDistrictId,
+            'first_name' => 'Legacy',
+            'last_name' => 'User',
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'role' => $legacyUser['role'],
+            'email' => $legacyUser['email'],
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
+    }
+
     $this->seed(UserSeeder::class);
     $this->seed(UserSeeder::class);
 
@@ -53,11 +72,9 @@ test('user seeder creates all role scopes idempotently', function () {
         ->orderBy('department_id')
         ->pluck('department_id')
         ->all();
-    $assistantDepartmentIds = DB::table('users')
+    $assistant = DB::table('users')
         ->where('role', 'assistant')
-        ->orderBy('department_id')
-        ->pluck('department_id')
-        ->all();
+        ->first();
     $directorDepartmentIds = DB::table('users')
         ->where('role', 'director')
         ->orderBy('department_id')
@@ -71,19 +88,24 @@ test('user seeder creates all role scopes idempotently', function () {
         ->all();
     $districtCount = DB::table('churches')->whereNull('parent_id')->count();
 
-    expect($assistantDepartmentIds)->toBe($departmentIds)
+    expect($assistant)->not->toBeNull()
+        ->and($assistant->department_id)->toBeNull()
+        ->and($assistant->email)->toBe('seed.assistant@example.com')
         ->and($directorDepartmentIds)->toBe($departmentIds)
         ->and($churchUserDepartmentIds)->toBe($departmentIds)
-        ->and(DB::table('users')->where('role', 'head assistant')->count())->toBe(1)
-        ->and(DB::table('users')->where('role', 'head director')->count())->toBe(1)
+        ->and(DB::table('users')->where('role', 'assistant')->count())->toBe(1)
+        ->and(DB::table('users')->whereRaw("LOWER(REPLACE(REPLACE(role, '_', ' '), '-', ' ')) IN (?, ?, ?, ?)", ['assistant', 'administrative assistant', 'head assistant', 'head director'])->count())->toBe(1)
         ->and(DB::table('users')->where('role', 'pastor')->count())->toBe($districtCount)
-        ->and(DB::table('users')->count())->toBe(2 + (3 * count($departmentIds)) + $districtCount);
+        ->and(DB::table('users')->count())->toBe(1 + (2 * count($departmentIds)) + $districtCount);
 
-    $headDirector = DB::table('users')
-        ->where('email', 'seed.head-director@example.com')
-        ->first();
-    expect($headDirector)->not->toBeNull()
-        ->and(Hash::check('12345678', $headDirector->password))->toBeTrue();
+    expect(Hash::check('12345678', $assistant->password))->toBeTrue();
+    foreach ([
+        'legacy-assistant@example.com',
+        'legacy-head-assistant@example.com',
+        'legacy-head-director@example.com',
+    ] as $legacyEmail) {
+        $this->assertDatabaseMissing('users', ['email' => $legacyEmail]);
+    }
 
     $this->assertDatabaseHas('users', [
         'church_id' => $batanesDistrictId,

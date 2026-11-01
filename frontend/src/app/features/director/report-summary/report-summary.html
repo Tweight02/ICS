@@ -1,0 +1,131 @@
+<main class="min-h-screen bg-transparent px-4 pb-6 pt-0 text-emerald-950 sm:px-8 lg:px-10">
+  <div class="mx-auto max-w-7xl">
+    <header class="relative isolate mb-5 flex min-h-24 flex-col justify-center gap-4 overflow-hidden rounded-2xl border border-white/80 bg-emerald-50 p-4 shadow-sm shadow-emerald-950/10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <img
+        src="/assets/headerMountain.png"
+        alt=""
+        aria-hidden="true"
+        class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-50">
+      <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/90 to-emerald-100/45"></div>
+      <div class="relative min-w-0">
+        <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800/80">
+          Director reports
+        </p>
+        <h1 class="!text-xl font-bold tracking-tight text-emerald-950 sm:!text-2xl">
+          Department report summary
+        </h1>
+        <p class="mt-1 text-xs font-medium text-emerald-900/70">
+          Quarterly totals for your assigned department
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="backToReports()"
+        class="relative inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl border border-emerald-800/20 bg-white/90 px-4 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 sm:self-auto">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12.5 4 6.5 10l6 6M7 10h10" />
+        </svg>
+        Back to reports
+      </button>
+    </header>
+
+    <section class="mb-4 rounded-2xl border border-slate-200/80 bg-white/90 p-3 shadow-sm sm:p-4">
+      <label for="summary-report-year" class="flex w-fit items-center gap-3">
+        <span class="text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">REPORTING YEAR</span>
+        <select
+          id="summary-report-year"
+          class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+          [value]="selectedYear()"
+          (change)="onYearChange($event)">
+          <option *ngFor="let year of reportYears" [value]="year">{{ year }}</option>
+        </select>
+      </label>
+    </section>
+
+    <p *ngIf="loading()" class="flex items-center justify-center py-8 text-sm font-medium" role="status">
+      <app-running-loader></app-running-loader>
+    </p>
+
+    <div
+      *ngIf="errorMessage()"
+      role="alert"
+      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <span class="font-medium">{{ errorMessage() }}</span>
+      <button
+        type="button"
+        (click)="loadSummary()"
+        class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100">
+        Retry
+      </button>
+    </div>
+
+    <ng-container *ngIf="summary() as reportSummary">
+      <dl class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 shadow-sm">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-emerald-800">Submitted reports</dt>
+          <dd class="mt-1 text-2xl font-bold tabular-nums text-emerald-950">
+            {{ reportSummary.total_submitted_reports | number }}
+          </dd>
+        </div>
+        <div class="rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 shadow-sm">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+            Department total · {{ reportSummary.year }}
+          </dt>
+          <dd class="mt-1 text-2xl font-bold tabular-nums text-emerald-950">
+            {{ reportSummary.total_report_value | number }}
+          </dd>
+        </div>
+      </dl>
+
+      <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-sm">
+        <div class="border-b border-slate-200 px-4 py-3 sm:px-5">
+          <h2 class="text-base font-bold text-emerald-950">Report totals by quarter</h2>
+          <p class="mt-1 text-xs text-slate-500">
+            Totals include submitted reports only; numeric entries are summed without unit conversion.
+          </p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[48rem] border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <th scope="col" class="px-4 py-3">
+                  Department / report
+                </th>
+                <th scope="col" class="px-3 py-3 text-right">Q1</th>
+                <th scope="col" class="px-3 py-3 text-right">Q2</th>
+                <th scope="col" class="px-3 py-3 text-right">Q3</th>
+                <th scope="col" class="px-3 py-3 text-right">Q4</th>
+                <th scope="col" class="px-4 py-3 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let department of reportSummary.departments">
+                <tr class="border-b border-slate-100 bg-emerald-50/70 font-semibold text-emerald-950">
+                  <th scope="row" class="px-4 py-3">{{ department.department_name }}</th>
+                  <td class="px-3 py-3 text-right tabular-nums">{{ department.quarter_totals.q1 | number }}</td>
+                  <td class="px-3 py-3 text-right tabular-nums">{{ department.quarter_totals.q2 | number }}</td>
+                  <td class="px-3 py-3 text-right tabular-nums">{{ department.quarter_totals.q3 | number }}</td>
+                  <td class="px-3 py-3 text-right tabular-nums">{{ department.quarter_totals.q4 | number }}</td>
+                  <td class="px-4 py-3 text-right tabular-nums">{{ department.total_report_value | number }}</td>
+                </tr>
+                <tr *ngFor="let report of department.reports" class="border-b border-slate-100 text-slate-700">
+                  <th scope="row" class="px-4 py-3 pl-7 font-medium">{{ report.report_name }}</th>
+                  <td class="px-3 py-3 text-right tabular-nums">{{ report.quarter_totals.q1 | number }}</td>
+                  <td class="px-3 py-3 text-right tabular-nums">{{ report.quarter_totals.q2 | number }}</td>
+                  <td class="px-3 py-3 text-right tabular-nums">{{ report.quarter_totals.q3 | number }}</td>
+                  <td class="px-3 py-3 text-right tabular-nums">{{ report.quarter_totals.q4 | number }}</td>
+                  <td class="px-4 py-3 text-right font-semibold tabular-nums">{{ report.total_report_value | number }}</td>
+                </tr>
+              </ng-container>
+              <tr *ngIf="reportSummary.departments.length === 0">
+                <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                  No report templates are available for this year.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+</main>

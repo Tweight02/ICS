@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { EVENTS1_ROUTES } from './events/events.routes';
-import { headAssistantGuard } from './user_management/head-assistant.guard';
+import { assistantActionsGuard } from './user_management/head-assistant.guard';
 
 export const AssistantRoute: Routes = [
     {
         path: 'new-user',
-        canActivate: [headAssistantGuard],
+        canActivate: [assistantActionsGuard],
         loadComponent: () => import('./user_management/new-user/new-user').then(m => m.NewUser)
     },
     {
@@ -14,12 +14,12 @@ export const AssistantRoute: Routes = [
     },
     {
         path: 'edit-user/:id',
-        canActivate: [headAssistantGuard],
+        canActivate: [assistantActionsGuard],
         loadComponent: () => import('./user_management/edit-user/edit-user').then(m => m.EditUser)
     },
     {
         path: 'assign-user',
-        canActivate: [headAssistantGuard],
+        canActivate: [assistantActionsGuard],
         loadComponent: () => import('./user_management/assign-user/assign-user').then(m => m.AssignUser)
     },
     {

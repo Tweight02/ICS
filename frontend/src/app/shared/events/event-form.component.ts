@@ -237,14 +237,17 @@ export class EventFormComponent implements OnInit {
           const role = String(u.role ?? '').toLowerCase().replace(/[-_]/g, ' ').trim();
           const isRepresentative = role === 'representative' || role === 'church representative';
           const isPastor = role === 'pastor' || role === 'district pastor';
+          const isGlobalAssistant =
+            ['assistant', 'administrative assistant'].includes(role) &&
+            (u.department_id ?? u.department?.department_id) == null;
           this.userDistrictId = Number(
             u.district?.id ?? u.district?.church_id ?? u.district_id ?? u.church?.parent_id,
           ) || (isPastor ? this.userChurchId : null);
           this.userChurchName = isPastor
             ? u.district?.name || u.district_name || u.church?.parent?.name || u.church?.name || ''
             : u.church_name || u.church?.name || '';
-          this.canChooseDepartmentState.set(isRepresentative || isPastor);
-          if (isRepresentative || isPastor) {
+          this.canChooseDepartmentState.set(isRepresentative || isPastor || isGlobalAssistant);
+          if (isRepresentative || isPastor || isGlobalAssistant) {
             if (!this.isEdit) {
               this.deptId = null;
               this.departmentName = '';

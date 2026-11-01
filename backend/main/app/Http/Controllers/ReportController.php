@@ -37,7 +37,10 @@ class ReportController extends Controller
             'particular_items.*' => ['required', 'string', 'max:255', 'distinct:ignore_case'],
         ]);
 
-        if ((int) $data['department_id'] !== (int) $user->department_id) {
+        if (
+            ! $this->hasAllDepartmentAccess($user)
+            && (int) $data['department_id'] !== (int) $user->department_id
+        ) {
             return response()->json([
                 'message' => 'You can only create report templates for your assigned department.',
             ], 403);
@@ -122,6 +125,43 @@ class ReportController extends Controller
             'message' => 'Report template created successfully.',
             'data' => $created,
         ], 201);
+    }
+
+    public function missionSummary(
+        Request $request,
+        ReportMonitoringService $monitoring
+    ): JsonResponse {
+        $user = $request->user();
+        $role = $user
+            ? $this->normalizeRole((string) ($user->role ?? ''))
+            : '';
+
+        if (! $user || ! in_array($role, ['director', 'head director'], true)) {
+            return response()->json([
+                'message' => 'Only directors can access the department report summary.',
+            ], 403);
+        }
+
+        if (! $user->department_id) {
+            return response()->json([
+                'message' => 'A department must be assigned to your Director account.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
+        ]);
+        $year = isset($validated['year'])
+            ? (string) $validated['year']
+            : (string) config('app.reporting_year', now()->year);
+
+        return response()->json([
+            'success' => true,
+            'data' => $monitoring->missionSummary(
+                $year,
+                (int) $user->department_id
+            ),
+        ]);
     }
 
     /* =========================================================
@@ -1646,7 +1686,14 @@ class ReportController extends Controller
             return null;
         }
 
-        if ($this->hasAllDepartmentAccess($user)) {
+        if (
+            $this->hasAllDepartmentAccess($user)
+            && ! $this->isDirectorRole($user)
+        ) {
+            return null;
+        }
+
+        if ($this->isDirectorRole($user) && $request->isMethod('GET')) {
             return null;
         }
 
@@ -1688,7 +1735,17 @@ class ReportController extends Controller
     {
         $role = $this->normalizeRole((string) ($user->role ?? ''));
 
-        return in_array($role, ['head assistant', 'head director'], true);
+        return in_array($role, ['director', 'head assistant', 'head director'], true)
+            || ($this->isAssistantRole($role) && $user->department_id === null);
+    }
+
+    private function isDirectorRole(User $user): bool
+    {
+        return in_array(
+            $this->normalizeRole((string) ($user->role ?? '')),
+            ['director', 'head director'],
+            true
+        );
     }
 
     private function pastorPersonalCommentAccess(

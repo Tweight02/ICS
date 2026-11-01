@@ -121,7 +121,13 @@ export class Reports implements OnInit {
 
   get hasAllDepartmentAccess(): boolean {
     const role = this.normalizedRole;
-    return role === 'head assistant' || role === 'head director';
+    const user = this.authService.getCurrentUser();
+
+    return role === 'head assistant' ||
+      (
+        ['assistant', 'administrative assistant'].includes(role) &&
+        user?.department_id == null
+      );
   }
 
   private get normalizedRole(): string {
@@ -148,7 +154,10 @@ export class Reports implements OnInit {
           : allDepartments;
         this.departments.set(departments);
 
-        const defaultDepartmentId = this.normalizedRole === 'head assistant'
+        const isGlobalAssistant =
+          ['assistant', 'administrative assistant'].includes(this.normalizedRole) &&
+          this.authService.getCurrentUser()?.department_id == null;
+        const defaultDepartmentId = this.normalizedRole === 'head assistant' || isGlobalAssistant
           ? this.personalReportGroupDepartmentId
           : Number(this.authService.getCurrentUser()?.department_id);
         const returnDepartmentId = Number(
@@ -607,5 +616,15 @@ export class Reports implements OnInit {
 
   private get isDepartmentScopedPortal(): boolean {
     return this.isAssistantPortal || this.isDirectorPortal;
+  }
+
+  get isDirectorRole(): boolean {
+    return ['director', 'head director'].includes(this.normalizedRole);
+  }
+
+  openMissionSummary(): void {
+    void this.router.navigate(['/director/reports/summary'], {
+      queryParams: { year: this.selectedYear() }
+    });
   }
 }

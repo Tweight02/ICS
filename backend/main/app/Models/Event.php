@@ -7,14 +7,16 @@ use App\Support\EventUser;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
 class Event extends Model
 {
     protected $table = 'events';
+
     protected $primaryKey = 'event_id';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -136,7 +138,9 @@ class Event extends Model
 
         if ($user->role !== 'church_representative') {
             if (! $user->departmentId) {
-                return $query->whereRaw('1 = 0');
+                return $user->role === 'assistant'
+                    ? $query
+                    : $query->whereRaw('1 = 0');
             }
 
             $query->whereIn('quarter_id', DB::table('quarters')
