@@ -56,7 +56,7 @@ class UserController extends Controller
 
     public function create_user(Request $request)
     {
-        $this->authorizeHeadAssistant($request);
+        $this->authorizeAssistant($request);
 
         $data = $request->validate([
             'department_id' => 'required|exists:departments,department_id',
@@ -242,7 +242,7 @@ class UserController extends Controller
         Request $request,
         $id
     ) {
-        $this->authorizeHeadAssistant($request);
+        $this->authorizeAssistant($request);
 
         $pastor =
             User::where(
@@ -314,7 +314,7 @@ class UserController extends Controller
 
     public function districtPastorAssignments(Request $request): JsonResponse
     {
-        $this->authorizeHeadAssistant($request);
+        $this->authorizeAssistant($request);
 
         $districts = Church::query()
             ->whereNull('parent_id')
@@ -403,7 +403,7 @@ class UserController extends Controller
 
     public function assignPastorToDistrict(Request $request, int $districtId): JsonResponse
     {
-        $this->authorizeHeadAssistant($request);
+        $this->authorizeAssistant($request);
         $data = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,user_id'],
         ]);
@@ -444,14 +444,14 @@ class UserController extends Controller
 
             // Retire the old records first (rows and their past data stay as they are)
             $this->retire($pastor);
-                if ($assignedPastor) {
-                    $this->retire($assignedPastor);
+            if ($assignedPastor) {
+                $this->retire($assignedPastor);
             }
 
             // Then place each person in their new district
             $this->place($pastor, $district->church_id);
-                if ($assignedPastor) {
-                    $this->place($assignedPastor, $fromChurchId);
+            if ($assignedPastor) {
+                $this->place($assignedPastor, $fromChurchId);
             }
         });
 
@@ -460,13 +460,13 @@ class UserController extends Controller
         ]);
     }
 
-    private function authorizeHeadAssistant(Request $request): void
+    private function authorizeAssistant(Request $request): void
     {
         $role = strtolower(trim((string) $request->user()?->role));
         $role = str_replace(['_', '-'], ' ', $role);
 
-        if ($role !== 'head assistant') {
-            abort(403, 'Only Head Assistants can manage pastors.');
+        if (! in_array($role, ['assistant', 'administrative assistant', 'head assistant'], true)) {
+            abort(403, 'Only assistants can manage pastors.');
         }
     }
 
@@ -495,7 +495,7 @@ class UserController extends Controller
 
     public function activate_pastor(Request $request, $id)
     {
-        $this->authorizeHeadAssistant($request);
+        $this->authorizeAssistant($request);
 
         $pastor = User::where('role', 'pastor')
             ->findOrFail($id);
@@ -529,7 +529,7 @@ class UserController extends Controller
 
     public function deactivate_pastor(Request $request, $id)
     {
-        $this->authorizeHeadAssistant($request);
+        $this->authorizeAssistant($request);
 
         $pastor = User::where('role', 'pastor')
             ->findOrFail($id);
@@ -541,14 +541,13 @@ class UserController extends Controller
 
         return response()->json([
             'data' => [
-                'has_pastor'  => (bool) $pastor,
+                'has_pastor' => (bool) $pastor,
                 'pastor_name' => $pastor
                     ? trim("{$pastor->first_name} {$pastor->last_name}")
                     : null,
             ],
         ]);
     }
-    
 
     // GET /api/users/{id}
     public function show($id)
@@ -573,7 +572,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => array_merge($user->toArray(), [
+            'data' => array_merge($user->toArray(), [
                 'district' => $district
                     ? ['id' => (int) $district->church_id, 'name' => $district->name]
                     : null,

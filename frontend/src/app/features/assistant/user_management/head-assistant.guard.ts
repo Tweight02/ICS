@@ -2,15 +2,17 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth-service';
 
-export function isHeadAssistant(role: string | null | undefined): boolean {
-  return (role ?? '').trim().toLowerCase().replace(/[_-]/g, ' ') === 'head assistant';
+export function canManageAssistantActions(role: string | null | undefined): boolean {
+  const normalizedRole = (role ?? '').trim().toLowerCase().replace(/[_-]/g, ' ');
+
+  return ['assistant', 'administrative assistant', 'head assistant'].includes(normalizedRole);
 }
 
-export const headAssistantGuard: CanActivateFn = () => {
+export const assistantActionsGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  return isHeadAssistant(auth.getCurrentUser()?.role)
+  return canManageAssistantActions(auth.getCurrentUser()?.role)
     ? true
     : router.createUrlTree(['/assistant/view-user']);
 };

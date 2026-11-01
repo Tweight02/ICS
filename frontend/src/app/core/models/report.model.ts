@@ -118,6 +118,38 @@ export interface DistrictReportMonitoring {
   monitoring: ReportMonitoring;
 }
 
+export interface MissionReportSummary {
+  year: string;
+  total_submitted_reports: number;
+  total_report_value: number;
+  quarter_totals: MissionReportQuarterTotals;
+  departments: MissionReportDepartmentSummary[];
+}
+
+export interface MissionReportQuarterTotals {
+  q1: number;
+  q2: number;
+  q3: number;
+  q4: number;
+}
+
+export interface MissionReportDepartmentSummary {
+  department_id: number;
+  department_name: string;
+  submitted_reports: number;
+  total_report_value: number;
+  quarter_totals: MissionReportQuarterTotals;
+  reports: MissionReportProgramSummary[];
+}
+
+export interface MissionReportProgramSummary {
+  program_id: number;
+  report_name: string;
+  submitted_reports: number;
+  total_report_value: number;
+  quarter_totals: MissionReportQuarterTotals;
+}
+
 /* =========================================================
    COMMENT
 ========================================================= */

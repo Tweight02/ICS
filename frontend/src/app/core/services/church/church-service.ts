@@ -14,6 +14,7 @@ import {
   Church
 } from '../../models/church.model';
 import { Department } from '../../models/department.model';
+import { MissionReportSummary } from '../../models/report.model';
 
 export interface DistrictResponse {
   success: boolean;
@@ -78,6 +79,18 @@ getMyDistrictChurches(year?: number): Observable<MyDistrictChurchesResponse> {
     return this.http.get<{ success: boolean; data: Department[] }>(
       `${this.apiUrl}/departments`
     );
+  }
+
+  getMissionReportSummary(year: number): Observable<{
+    success: boolean;
+    data: MissionReportSummary;
+  }> {
+    return this.http.get<{
+      success: boolean;
+      data: MissionReportSummary;
+    }>(`${this.apiUrl}/reports/mission-summary`, {
+      params: { year }
+    });
   }
 
   getAllChurches(): Observable<ChurchDirectoryResponse> {

@@ -265,9 +265,15 @@ class DeathController extends Controller
             return null;
         }
 
+        $isGlobalAssistant = in_array($role, ['assistant', 'administrative assistant'], true)
+            && $user->department_id === null;
+        $isReadOnlyDirector = $role === 'director' && $request->isMethod('GET');
+
         if (
             in_array($role, ['assistant', 'administrative assistant', 'director'], true)
             && (int) $user->department_id !== 16
+            && ! $isGlobalAssistant
+            && ! $isReadOnlyDirector
         ) {
             return null;
         }
@@ -276,6 +282,8 @@ class DeathController extends Controller
             $allowDistrictSelection &&
             (
                 in_array($role, ['head assistant', 'head director'], true) ||
+                $isGlobalAssistant ||
+                $isReadOnlyDirector ||
                 (
                     in_array($role, ['assistant', 'administrative assistant', 'director'], true)
                     && (int) $user->department_id === 16
@@ -296,6 +304,13 @@ class DeathController extends Controller
             return DB::table('churches')
                 ->where('church_id', $districtId)
                 ->orWhere('parent_id', $districtId)
+                ->pluck('church_id')
+                ->map(fn ($churchId) => (int) $churchId)
+                ->all();
+        }
+
+        if ($isReadOnlyDirector) {
+            return DB::table('churches')
                 ->pluck('church_id')
                 ->map(fn ($churchId) => (int) $churchId)
                 ->all();

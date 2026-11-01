@@ -8,7 +8,7 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-function personalReportAccessUser(int $churchId, int $departmentId, string $role, string $suffix): User
+function personalReportAccessUser(int $churchId, ?int $departmentId, string $role, string $suffix): User
 {
     return User::query()->create([
         'department_id' => $departmentId,
@@ -88,6 +88,7 @@ function personalReportAccessFixture(): array
         'baptismIds' => $baptismIds,
         'deathIds' => $deathIds,
         'director' => personalReportAccessUser($districtId, 16, 'director', 'director'),
+        'globalAssistant' => personalReportAccessUser($districtId, null, 'assistant', 'global-assistant'),
         'headDirector' => personalReportAccessUser($districtId, $departmentId, 'head director', 'head-director'),
         'headAssistant' => personalReportAccessUser($districtId, 16, 'head assistant', 'head-assistant'),
         'assistant' => personalReportAccessUser($districtId, 16, 'assistant', 'assistant'),
@@ -169,10 +170,10 @@ test('M and E directors and assistants can load personal records for the selecte
     }
 });
 
-test('directors and assistants outside Ministerial and Evangelism cannot access personal records', function () {
+test('department-assigned assistants outside Ministerial and Evangelism cannot access personal records', function () {
     $fixture = personalReportAccessFixture();
 
-    foreach (['otherDepartmentDirector', 'otherDepartmentAssistant'] as $role) {
+    foreach (['otherDepartmentAssistant'] as $role) {
         $this->actingAs($fixture[$role], 'sanctum')
             ->getJson('/api/baptisms')
             ->assertForbidden();
@@ -189,6 +190,38 @@ test('directors and assistants outside Ministerial and Evangelism cannot access 
             ->getJson('/api/deaths?district_id='.$fixture['otherDistrictId'])
             ->assertForbidden();
     }
+});
+
+test('directors can view personal records for any selected district', function () {
+    $fixture = personalReportAccessFixture();
+
+    $this->actingAs($fixture['otherDepartmentDirector'], 'sanctum')
+        ->getJson('/api/baptisms?district_id='.$fixture['otherDistrictId'])
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.baptism_id', $fixture['baptismIds'][1]);
+
+    $this->actingAs($fixture['otherDepartmentDirector'], 'sanctum')
+        ->getJson('/api/deaths?district_id='.$fixture['otherDistrictId'])
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.death_id', $fixture['deathIds'][1]);
+});
+
+test('global assistants can view personal records for any selected district', function () {
+    $fixture = personalReportAccessFixture();
+
+    $this->actingAs($fixture['globalAssistant'], 'sanctum')
+        ->getJson('/api/baptisms?district_id='.$fixture['otherDistrictId'])
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.baptism_id', $fixture['baptismIds'][1]);
+
+    $this->actingAs($fixture['globalAssistant'], 'sanctum')
+        ->getJson('/api/deaths?district_id='.$fixture['otherDistrictId'])
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.death_id', $fixture['deathIds'][1]);
 });
 
 test('users outside pastor, director, and assistant roles cannot access personal reports', function () {

@@ -185,6 +185,11 @@ Route::middleware('auth:sanctum')->prefix('churches/{churchId}')->group(function
     ]);
 });
 
+Route::get('/reports/mission-summary', [
+    ReportController::class,
+    'missionSummary',
+])->middleware('auth:sanctum');
+
 /*
 |--------------------------------------------------------------------------
 | DEPARTMENTS & PROGRAMS

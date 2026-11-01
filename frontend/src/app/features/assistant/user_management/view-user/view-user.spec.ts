@@ -45,7 +45,13 @@ describe('ViewUser', () => {
     expect(component).toBeTruthy();
   });
 
-  it('hides pastor-management actions from non-Head Assistants', () => {
+  it('hides pastor-management actions from non-assistants', () => {
+    authService.getCurrentUser.mockReturnValue({ role: 'pastor' });
+    fixture.destroy();
+    fixture = TestBed.createComponent(ViewUser);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
     const pageText = fixture.nativeElement.textContent as string;
 
     expect(pageText).not.toContain('District Pastor Assignments');
@@ -55,7 +61,12 @@ describe('ViewUser', () => {
     expect(fixture.nativeElement.querySelector('input[type="checkbox"]')).toBeNull();
   });
 
-  it('shows pastor-management actions to Head Assistants', () => {
+  it('shows pastor-management actions to assistants', () => {
+    expect(fixture.nativeElement.textContent).toContain('District Pastor Assignments');
+    expect(fixture.nativeElement.textContent).toContain('Add New User');
+  });
+
+  it('keeps assistant-management actions available to legacy Head Assistants', () => {
     fixture.destroy();
     authService.getCurrentUser.mockReturnValue({ role: 'head_assistant' });
     fixture = TestBed.createComponent(ViewUser);

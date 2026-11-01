@@ -20,6 +20,7 @@ describe('Reports', () => {
   let getChurches: ReturnType<typeof vi.fn>;
   let getDistricts: ReturnType<typeof vi.fn>;
   let getDepartments: ReturnType<typeof vi.fn>;
+  let getMissionReportSummary: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     navigation = undefined;
@@ -46,6 +47,15 @@ describe('Reports', () => {
         { department_id: 20, department_name: 'Death Record' },
         { department_id: 21, department_name: 'Communication' }
       ]
+    }));
+    getMissionReportSummary = vi.fn().mockReturnValue(of({
+      success: true,
+      data: {
+        year: String(CURRENT_REPORT_YEAR),
+        total_submitted_reports: 12,
+        total_report_value: 345,
+        departments: []
+      }
     }));
     getChurches = vi.fn().mockReturnValue(of({
       success: true,
@@ -112,7 +122,8 @@ describe('Reports', () => {
           useValue: {
             getDistricts,
             getChurches,
-            getDepartments
+            getDepartments,
+            getMissionReportSummary
           }
         },
         {
@@ -228,28 +239,67 @@ describe('Reports', () => {
     currentUser.role = 'director';
     currentUser.department_id = 17;
     routerUrl = '/director/reports';
+    fixture.destroy();
+    fixture = TestBed.createComponent(Reports);
+    component = fixture.componentInstance;
 
-    component.loadDistricts();
     fixture.detectChanges();
 
     expect(component.hasAllDepartmentAccess).toBe(false);
-    expect(getDepartments).not.toHaveBeenCalled();
     expect(getDistricts).toHaveBeenLastCalledWith(17, CURRENT_REPORT_YEAR);
     expect(fixture.nativeElement.querySelector('#report-department-filter')).toBeNull();
   });
 
-  it('lets Head Directors select and open reports for any department', () => {
-    currentUser.role = 'head director';
-    currentUser.department_id = 16;
+  it('shows Directors a navigation button for the mission-wide report summary', () => {
+    fixture.destroy();
+    currentUser.role = 'director';
     routerUrl = '/director/reports';
+    fixture = TestBed.createComponent(Reports);
+    component = fixture.componentInstance;
+    expect(component.isDirectorRole).toBe(true);
+    fixture.detectChanges();
 
+    expect(getMissionReportSummary).not.toHaveBeenCalled();
+    const summaryButton = fixture.nativeElement.querySelector(
+      'button'
+    ) as HTMLButtonElement;
+    expect(summaryButton.textContent).toContain('Report summary');
+
+    component.openMissionSummary();
+    expect(navigation).toEqual({
+      commands: ['/director/reports/summary'],
+      extras: { queryParams: { year: CURRENT_REPORT_YEAR } }
+    });
+  });
+
+  it('does not show the mission summary navigation button to assistants', () => {
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Report summary');
+  });
+
+  it('gives an assistant without a department access to every department', () => {
+    currentUser.role = 'assistant';
+    currentUser.department_id = null;
     component.loadDepartmentOptions();
-    component.selectDepartment(17);
-    component.openChurch(7, 8);
 
     expect(component.hasAllDepartmentAccess).toBe(true);
-    expect(getDepartments).toHaveBeenCalledOnce();
-    expect(component.departments()).toHaveLength(6);
+    expect(component.selectedDepartmentId()).toBe(16);
+    expect(getDistricts).toHaveBeenLastCalledWith(16, CURRENT_REPORT_YEAR);
+  });
+
+  it('keeps Head Directors scoped to their assigned department', () => {
+    currentUser.role = 'head director';
+    currentUser.department_id = 17;
+    routerUrl = '/director/reports';
+    fixture.destroy();
+    fixture = TestBed.createComponent(Reports);
+    component = fixture.componentInstance;
+
+    fixture.detectChanges();
+    component.openChurch(7, 8);
+
+    expect(component.hasAllDepartmentAccess).toBe(false);
     expect(getDistricts).toHaveBeenLastCalledWith(17, CURRENT_REPORT_YEAR);
     expect(navigation).toEqual({
       commands: ['/director/reports/particulars', 17, 7, 8],

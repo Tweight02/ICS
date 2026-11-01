@@ -9,7 +9,7 @@ import { AuthService } from '../../../../core/services/auth/auth-service';
 import { Pastor } from '../../../../core/models/pastor.model';
 import { Church } from '../../../../core/models/church.model';
 import { Button } from '../../../../shared/components/button/button';
-import { isHeadAssistant } from '../head-assistant.guard';
+import { canManageAssistantActions } from '../head-assistant.guard';
 
 interface DistrictFilterOption {
   value: string;
@@ -29,7 +29,7 @@ export class ViewUser implements OnInit {
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
 
-  readonly canManagePastors = isHeadAssistant(this.authService.getCurrentUser()?.role);
+  readonly canManagePastors = canManageAssistantActions(this.authService.getCurrentUser()?.role);
 
   private search$ = new Subject<string>();
 

@@ -10,7 +10,7 @@ uses(TestCase::class, RefreshDatabase::class);
 
 function departmentReportAccessUser(
     int $churchId,
-    int $departmentId,
+    ?int $departmentId,
     string $role,
     string $suffix
 ): User {
@@ -53,7 +53,7 @@ function departmentReportAccessFixture(): array
         'director' => departmentReportAccessUser($churchId, 16, 'director', 'director'),
         'headDirector' => departmentReportAccessUser($churchId, 16, 'head director', 'head-director'),
         'assistant' => departmentReportAccessUser($churchId, 16, 'administrative assistant', 'assistant'),
-        'otherDepartmentDirector' => departmentReportAccessUser($churchId, $departmentId, 'director', 'other-director'),
+        'globalAssistant' => departmentReportAccessUser($churchId, null, 'assistant', 'global-assistant'),
         'otherDepartmentAssistant' => departmentReportAccessUser($churchId, $departmentId, 'assistant', 'other-assistant'),
         'pastor' => departmentReportAccessUser($churchId, $departmentId, 'pastor', 'pastor'),
         'representative' => departmentReportAccessUser($churchId, $departmentId, 'representative', 'representative'),
@@ -73,10 +73,10 @@ test('head directors can access every department report', function () {
         ->assertOk();
 });
 
-test('only Ministerial and Evangelism directors and assistants can access personal report departments', function () {
+test('department-assigned assistants remain scoped to their assigned departments', function () {
     $fixture = departmentReportAccessFixture();
 
-    foreach (['director', 'assistant'] as $role) {
+    foreach (['assistant'] as $role) {
         $user = $fixture[$role];
         $departments = $this->actingAs($user, 'sanctum')
             ->getJson("/api/churches/{$fixture['churchId']}/departments")
@@ -97,7 +97,7 @@ test('only Ministerial and Evangelism directors and assistants can access person
             ->assertForbidden();
     }
 
-    foreach (['otherDepartmentDirector', 'otherDepartmentAssistant'] as $role) {
+    foreach (['otherDepartmentAssistant'] as $role) {
         $user = $fixture[$role];
         $departments = $this->actingAs($user, 'sanctum')
             ->getJson("/api/churches/{$fixture['churchId']}/departments")
@@ -111,6 +111,31 @@ test('only Ministerial and Evangelism directors and assistants can access person
                 ->assertForbidden();
         }
     }
+});
+
+test('global assistants and directors can read every department report', function () {
+    $fixture = departmentReportAccessFixture();
+
+    foreach (['globalAssistant', 'director'] as $role) {
+        $user = $fixture[$role];
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/churches/{$fixture['churchId']}/departments")
+            ->assertOk()
+            ->assertJsonFragment(['department_id' => 30]);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/churches/{$fixture['churchId']}/departments/30/report")
+            ->assertOk();
+    }
+
+    $this->actingAs($fixture['globalAssistant'], 'sanctum')
+        ->postJson("/api/churches/{$fixture['churchId']}/departments/30/report/save", [])
+        ->assertUnprocessable();
+
+    $this->actingAs($fixture['director'], 'sanctum')
+        ->postJson("/api/churches/{$fixture['churchId']}/departments/30/report/save", [])
+        ->assertForbidden();
 });
 
 test('representatives can access all departments except pastor personal reports', function () {
