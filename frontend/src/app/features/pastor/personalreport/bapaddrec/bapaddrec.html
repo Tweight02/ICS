@@ -1,37 +1,35 @@
-
 <div class="flex min-h-screen items-start justify-center bg-[#f5f7fa] px-3 py-4 max-[576px]:p-2">
   <div class="mx-auto w-full max-w-[540px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.06)] max-[576px]:max-w-full max-[576px]:rounded-[10px]">
 
     <!-- Header -->
     <div class="rounded-t-xl border-b border-[#e9edf2] bg-white px-5 py-3 max-[576px]:px-4 max-[576px]:py-3">
- 
-    <div class="mb-0 text-base font-extrabold tracking-[1px] text-[#087d6f]">
-  ADD BAPTISM RECORD
-</div>
+
+      <div class="mb-0 text-base font-extrabold tracking-[1px] text-[#087d6f]">
+        ADD BAPTISM RECORD
+      </div>
     </div>
 
-
     <!-- Form -->
-    <form #baptismForm="ngForm" (ngSubmit)="saveBaptism()"> 
+    <form #baptismForm="ngForm" novalidate (ngSubmit)="saveBaptism()">
       <div class="px-5 py-4 max-[576px]:p-3">
         <div class="grid w-full grid-cols-1 gap-3 max-[576px]:gap-2.5">
 
           <!-- NAME FIELDS: FOUR FIELDS IN ONE ROW -->
           <div class="col-span-full grid w-full grid-cols-4 gap-2 max-[576px]:grid-cols-2">
 
-           <!-- First Name -->
-<div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
-  <label for="first_name">First Name</label>
-  <input
-    id="first_name"
-    type="text"
-    name="first_name"
-    class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] !bg-white px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:!bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-    [(ngModel)]="baptism.first_name"
-    placeholder="First name"
-    autocomplete="given-name"
-    required>
-</div>
+            <!-- First Name -->
+            <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+              <label for="first_name">First Name</label>
+              <input
+                id="first_name"
+                type="text"
+                name="first_name"
+                class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] !bg-white px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:!bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                [(ngModel)]="baptism.first_name"
+                placeholder="First name"
+                autocomplete="given-name"
+                required>
+            </div>
 
             <!-- Middle Name -->
             <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
@@ -53,7 +51,7 @@
                 id="last_name"
                 type="text"
                 name="last_name"
-                class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] duration-200 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
                 [(ngModel)]="baptism.last_name"
                 placeholder="Last name"
                 autocomplete="family-name"
@@ -308,9 +306,9 @@
             </select>
           </div>
 
-          <!-- Marital Status -->
+          <!-- Civil Status -->
           <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
-            <label for="marital_status">Marital Status</label>
+            <label for="marital_status">Civil Status</label>
             <select
               id="marital_status"
               class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
@@ -319,7 +317,7 @@
               required>
 
               <option [ngValue]="null" disabled>
-                Select marital status
+                Select civil status
               </option>
               <option value="Single">Single</option>
               <option value="Married">Married</option>
@@ -340,16 +338,17 @@
           (click)="cancelForm()">
           Cancel
         </button>
-<!-- Save Button -->
-<button
-  app-button
-  variant="submit"
-  size="md"
-  type="submit"
-  class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-[#0c502f] px-[18px] text-[13px] font-semibold !text-white !opacity-100 transition-colors duration-200 hover:!border-[#0c502f] hover:!bg-[#0c502f] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:!opacity-100 motion-reduce:transition-none max-[650px]:w-full"
-  [disabled]="saving || baptismForm.invalid || isBaptismDateInvalid()">
-  {{ saving ? 'Saving...' : 'Save' }}
-</button>
+
+        <!-- Save Button -->
+        <button
+          app-button
+          variant="submit"
+          size="md"
+          type="submit"
+          class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-[#0c502f] px-[18px] text-[13px] font-semibold !text-white !opacity-100 transition-colors duration-200 hover:!border-[#0c502f] hover:!bg-[#0c502f] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:!opacity-100 motion-reduce:transition-none max-[650px]:w-full"
+          [disabled]="saving">
+          {{ saving ? 'Saving...' : 'Save' }}
+        </button>
 
       </div>
     </form>
