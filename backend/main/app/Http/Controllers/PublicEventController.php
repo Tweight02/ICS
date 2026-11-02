@@ -8,6 +8,7 @@ use App\Support\EventsOrg;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PublicEventController extends Controller
 {
@@ -55,7 +56,28 @@ class PublicEventController extends Controller
         $data['event_id'] = $event->event_id;
         $data['church_id'] = $churchId ?? $event->church_id;
         $data['middle_name'] ??= '';
+        $data['extension_name'] ??= '';
         $data['registration_status'] = 'pending';
+
+        $duplicateExists = $event->participants()
+            ->where('church_id', $data['church_id'])
+            ->whereRaw('LOWER(TRIM(first_name)) = ?', [mb_strtolower(trim($data['first_name']))])
+            ->whereRaw('LOWER(TRIM(COALESCE(middle_name, ?))) = ?', [
+                '',
+                mb_strtolower(trim($data['middle_name'])),
+            ])
+            ->whereRaw('LOWER(TRIM(last_name)) = ?', [mb_strtolower(trim($data['last_name']))])
+            ->whereRaw('LOWER(TRIM(COALESCE(extension_name, ?))) = ?', [
+                '',
+                mb_strtolower(trim($data['extension_name'])),
+            ])
+            ->exists();
+
+        if ($duplicateExists) {
+            throw ValidationException::withMessages([
+                'first_name' => ['This participant is already registered for this event.'],
+            ]);
+        }
 
         $participant = DB::transaction(fn () => $event->participants()->create($data));
 

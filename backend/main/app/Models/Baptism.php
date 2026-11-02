@@ -28,8 +28,5 @@ class Baptism extends Model
         'date_of_baptism',
         'marital_status',
         'is_reclaimed'
-
-
-
     ];
 }
