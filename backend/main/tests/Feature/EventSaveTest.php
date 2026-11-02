@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\EventRegistrationAttribution;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -72,7 +73,65 @@ class EventSaveTest extends TestCase
         ]);
     }
 
-    public function test_a_district_pastor_creates_one_event_per_selected_church(): void
+    public function test_a_global_assistant_can_select_a_department_to_create_and_view_events(): void
+    {
+        $departmentId = DB::table('departments')->insertGetId(
+            ['department_name' => 'Youth'],
+            'department_id'
+        );
+        $districtId = DB::table('churches')->insertGetId([
+            'name' => 'Global Assistant District',
+            'address' => 'Global Assistant District',
+            'parent_id' => null,
+        ], 'church_id');
+        $programId = DB::table('programs')->insertGetId([
+            'department_id' => $departmentId,
+            'program_name' => 'Youth Program',
+            'parent_id' => null,
+        ], 'program_id');
+        $particularId = DB::table('particulars')->insertGetId([
+            'program_id' => $programId,
+            'particular_name' => 'Youth Attendance',
+        ], 'particular_id');
+        DB::table('quarters')->insert([
+            'program_id' => $programId,
+            'church_id' => $districtId,
+            'quarter' => 'Q4',
+            'year' => '2026',
+        ]);
+        $assistant = User::create([
+            'department_id' => null,
+            'church_id' => $districtId,
+            'first_name' => 'Global',
+            'last_name' => 'Assistant',
+            'birthdate' => '1990-01-01',
+            'gender' => 'Other',
+            'role' => 'assistant',
+            'email' => 'global-assistant@example.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
+
+        Sanctum::actingAs($assistant);
+        $this->postJson('/api/events', [
+            'title' => 'Mission-wide Youth Gathering',
+            'location' => 'Global Assistant District',
+            'department_id' => $departmentId,
+            'particular_ids' => [$particularId],
+            'district_ids' => [$districtId],
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+        ])->assertCreated();
+
+        $this->getJson('/api/events?status=all')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Mission-wide Youth Gathering');
+    }
+
+    public function test_a_district_pastor_creates_one_shared_event_for_selected_churches(): void
     {
         $departmentId = DB::table('departments')->insertGetId(
             ['department_name' => 'Youth'],
@@ -140,22 +199,84 @@ class EventSaveTest extends TestCase
             'end_time' => '11:00',
         ]);
 
-        $response->assertCreated()->assertJsonCount(2, 'data');
-        $events = $response->json('data');
-        $this->assertCount(2, $events);
-        foreach ($churchIds as $index => $churchId) {
-            $this->assertDatabaseHas('events', [
-                'event_id' => $events[$index]['id'],
+        $response->assertCreated()
+            ->assertJsonPath('data.scope.churches.0.id', $churchIds[0])
+            ->assertJsonPath('data.scope.churches.1.id', $churchIds[1]);
+        $eventId = $response->json('data.id');
+        $this->assertDatabaseHas('events', [
+            'event_id' => $eventId,
+            'church_id' => $churchIds[0],
+            'title' => 'Multi-church Youth Gathering',
+        ]);
+        foreach ($churchIds as $churchId) {
+            $this->assertDatabaseHas('event_church', [
+                'event_id' => $eventId,
                 'church_id' => $churchId,
-                'title' => 'Multi-church Youth Gathering',
             ]);
         }
-        $this->assertDatabaseCount('events', 2);
-        $this->getJson('/api/events/'.$events[0]['id'])->assertOk()
-            ->assertJsonPath('data.id', $events[0]['id']);
+        $this->assertDatabaseCount('events', 1);
+        $this->getJson('/api/events/'.$eventId)->assertOk()
+            ->assertJsonPath('data.id', $eventId);
         $this->getJson('/api/events?status=all')->assertOk()
-            ->assertJsonFragment(['id' => $events[0]['id'], 'title' => 'Multi-church Youth Gathering'])
-            ->assertJsonFragment(['id' => $events[1]['id'], 'title' => 'Multi-church Youth Gathering']);
+            ->assertJsonCount(1, 'data')
+            ->assertJsonFragment(['id' => $eventId, 'title' => 'Multi-church Youth Gathering']);
+
+        foreach ($churchIds as $churchId) {
+            $representative = User::create([
+                'department_id' => $departmentId,
+                'church_id' => $churchId,
+                'first_name' => 'Church',
+                'last_name' => 'Representative',
+                'birthdate' => '1990-01-01',
+                'gender' => 'Other',
+                'role' => 'representative',
+                'email' => "representative-{$churchId}@example.test",
+                'password' => Hash::make('password'),
+                'status' => 'active',
+            ]);
+            Sanctum::actingAs($representative);
+            $this->getJson('/api/events?status=all')
+                ->assertOk()
+                ->assertJsonCount(1, 'data')
+                ->assertJsonPath('data.0.id', $eventId);
+
+            $link = $this->postJson('/api/events/'.$eventId.'/registration-link')
+                ->assertOk()
+                ->assertJsonPath('data.church_id', $churchId)
+                ->json('data');
+            $registration = $this->postJson(
+                '/api/public/events/'.$eventId.'/participants?church_id='.$churchId
+                    .'&registration_token='.$link['registration_token'],
+                [
+                    'first_name' => 'Church',
+                    'last_name' => 'Registrant',
+                    'age' => 25,
+                    'gender' => 'other',
+                ]
+            )->assertCreated();
+            $this->assertDatabaseHas('participants', [
+                'participant_id' => $registration->json('data.id'),
+                'event_id' => $eventId,
+                'church_id' => $churchId,
+            ]);
+        }
+
+        $unselectedChurchId = DB::table('churches')->insertGetId([
+            'name' => 'Unselected Church',
+            'address' => 'Unselected Church',
+            'parent_id' => $districtId,
+        ], 'church_id');
+        $unselectedToken = EventRegistrationAttribution::token($eventId, $unselectedChurchId);
+        $this->postJson(
+            '/api/public/events/'.$eventId.'/participants?church_id='.$unselectedChurchId
+                .'&registration_token='.$unselectedToken,
+            [
+                'first_name' => 'Unselected',
+                'last_name' => 'Registrant',
+                'age' => 25,
+                'gender' => 'other',
+            ]
+        )->assertUnprocessable();
     }
 
     public function test_an_assistant_can_save_an_event_for_multiple_districts(): void
@@ -729,6 +850,7 @@ class EventSaveTest extends TestCase
         ]);
         $this->assertTrue(Schema::hasTable('event_particular'));
         $this->assertTrue(Schema::hasTable('event_district'));
+        $this->assertTrue(Schema::hasTable('event_church'));
         $this->assertTrue(Schema::hasTable('event_creator'));
         $this->assertFalse(Schema::hasTable('church_events'));
         $this->assertFalse(Schema::hasTable('church_event_church'));

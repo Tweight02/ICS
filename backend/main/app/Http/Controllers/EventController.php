@@ -9,11 +9,11 @@ use App\Support\EventDepartments;
 use App\Support\EventParticulars;
 use App\Support\EventRegistrationAttribution;
 use App\Support\EventUser;
+use App\Support\EventsOrg;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
 {
@@ -87,6 +87,7 @@ class EventController extends Controller
         abort_unless($user->role === 'church_representative' && $user->churchId, 403);
 
         $event = $this->find($request, $event);
+        abort_unless($event->coversChurch($user->churchId), 403, 'This event is not scheduled for your church.');
         EventRegistrationAttribution::quarterId((int) $event->quarter_id, $user->churchId);
 
         return response()->json([
@@ -103,9 +104,6 @@ class EventController extends Controller
     public function store(EventRequest $request)
     {
         $user = EventUser::fromRequest($request);
-        $churchIds = $user->role === 'district_pastor'
-            ? $request->validated('church_ids')
-            : [null];
         $targetChurchIds = match ($user->role) {
             'church_representative' => [$user->churchId],
             'district_pastor' => $request->validated('church_ids'),
@@ -119,55 +117,108 @@ class EventController extends Controller
             ->get(['event_id', 'district_id'])
             ->groupBy('event_id')
             ->map(fn ($targets) => $targets->pluck('district_id')->map(fn ($id) => (int) $id)->all());
-        $sameTargetConflict = $overlappingEvents->contains(function (object $event) use ($targetChurchIds, $existingDistrictTargets): bool {
+        $existingChurchTargets = DB::table('event_church')
+            ->whereIn('event_id', $overlappingEvents->pluck('event_id')->unique())
+            ->get(['event_id', 'church_id'])
+            ->groupBy('event_id')
+            ->map(fn ($targets) => $targets->pluck('church_id')->map(fn ($id) => (int) $id)->all());
+        $departmentId = $request->departmentId();
+        $targetDistrictIds = array_values(array_unique(array_filter(array_map(
+            fn (int $churchId) => EventsOrg::districtOfChurch($churchId),
+            $targetChurchIds
+        ))));
+        $assistantScheduleConflict = $overlappingEvents->contains(
+            function (object $event) use (
+                $user,
+                $departmentId,
+                $targetDistrictIds,
+                $existingDistrictTargets,
+                $existingChurchTargets
+            ): bool {
+                $creatorRole = strtolower(trim(str_replace(
+                    ['_', '-'],
+                    ' ',
+                    (string) $event->creator_role
+                )));
+                if (
+                    (int) $event->department_id !== $departmentId ||
+                    ($user->role !== 'assistant' && ! in_array(
+                        $creatorRole,
+                        ['assistant', 'administrative assistant'],
+                        true
+                    ))
+                ) {
+                    return false;
+                }
+
+                $existingTargets = array_merge(
+                    [(int) $event->church_id],
+                    $existingDistrictTargets->get($event->event_id, []),
+                    $existingChurchTargets->get($event->event_id, [])
+                );
+                $existingDistrictIds = array_values(array_unique(array_filter(array_map(
+                    fn (int $churchId) => EventsOrg::districtOfChurch($churchId),
+                    array_map('intval', $existingTargets)
+                ))));
+
+                return count(array_intersect($targetDistrictIds, $existingDistrictIds)) > 0;
+            }
+        );
+
+        $sameTargetConflict = $overlappingEvents->contains(function (object $event) use ($targetChurchIds, $existingDistrictTargets, $existingChurchTargets): bool {
             $existingTargets = array_merge(
                 [(int) $event->church_id],
-                $existingDistrictTargets->get($event->event_id, [])
+                $existingDistrictTargets->get($event->event_id, []),
+                $existingChurchTargets->get($event->event_id, [])
             );
 
             return count(array_intersect($targetChurchIds, $existingTargets)) > 0;
         });
 
-        if ($sameTargetConflict) {
-            throw ValidationException::withMessages([
-                'start_date' => 'An event already exists for the same church or district during this schedule.',
-            ]);
-        }
+        $hasDifferentChurchConflict = $overlappingEvents->contains(function (object $event) use (
+            $user,
+            $targetChurchIds,
+            $existingDistrictTargets,
+            $existingChurchTargets
+        ): bool {
+            $existingTargets = array_merge(
+                [(int) $event->church_id],
+                $existingDistrictTargets->get($event->event_id, []),
+                $existingChurchTargets->get($event->event_id, [])
+            );
 
-        $hasDifferentChurchConflict = $overlappingEvents->contains(
-            fn (object $event) => (int) $event->user_id !== $user->id
-                && ! in_array((int) $event->church_id, $targetChurchIds, true)
-        );
-        $warning = $hasDifferentChurchConflict
-            ? "Another user's event is scheduled at a different church during this time. Your event was created."
-            : null;
-
-        $events = DB::transaction(function () use ($request, $user, $churchIds) {
-            $events = collect();
-            foreach ($churchIds as $churchId) {
-                $event = Event::create($this->eventData($request, $churchId === null ? null : (int) $churchId));
-                $event->createdBy()->attach($user->id);
-                $event->particulars()->sync($request->validated('particular_ids'));
-                if ($user->role === 'assistant') {
-                    $event->districts()->sync($request->validated('district_ids'));
-                }
-                $events->push($event);
-            }
-
-            return $events;
+            return (int) $event->user_id !== $user->id
+                && ! count(array_intersect($existingTargets, $targetChurchIds));
         });
 
-        if ($events->count() === 1) {
-            return (new EventResource($events->first()))
-                ->additional(['warning' => $warning])
-                ->response()
-                ->setStatusCode(201);
+        if ($overlappingEvents->isNotEmpty() && ! $request->boolean('confirm_overlap')) {
+            $message = match (true) {
+                $assistantScheduleConflict => 'An assistant event for this department and district overlaps this schedule.',
+                $sameTargetConflict => 'An event already exists for the same church or district during this schedule.',
+                $hasDifferentChurchConflict => "Another user's event is scheduled at a different church during this time.",
+                default => 'Another event overlaps this schedule.',
+            };
+
+            return response()->json([
+                'code' => 'EVENT_SCHEDULE_OVERLAP',
+                'message' => $message.' Do you want to create this event anyway?',
+            ], 409);
         }
 
-        return EventResource::collection($events)
-            ->additional(['warning' => $warning])
-            ->response()
-            ->setStatusCode(201);
+        $event = DB::transaction(function () use ($request, $user) {
+            $event = Event::create($this->eventData($request));
+            $event->createdBy()->attach($user->id);
+            $event->particulars()->sync($request->validated('particular_ids'));
+            if ($user->role === 'assistant') {
+                $event->districts()->sync($request->validated('district_ids'));
+            } elseif ($user->role === 'district_pastor') {
+                $event->churches()->sync($request->validated('church_ids'));
+            }
+
+            return $event;
+        });
+
+        return (new EventResource($event))->response()->setStatusCode(201);
     }
 
     public function update(EventRequest $request, int $event)
@@ -180,6 +231,8 @@ class EventController extends Controller
             $event->particulars()->sync($request->validated('particular_ids'));
             if (EventUser::fromRequest($request)->role === 'assistant') {
                 $event->districts()->sync($request->validated('district_ids'));
+            } elseif (EventUser::fromRequest($request)->role === 'district_pastor') {
+                $event->churches()->sync($request->validated('church_ids'));
             }
         });
 
@@ -198,12 +251,12 @@ class EventController extends Controller
         return response()->noContent();
     }
 
-    private function eventData(EventRequest $request, ?int $targetChurchId = null): array
+    private function eventData(EventRequest $request): array
     {
         $user = EventUser::fromRequest($request);
         $churchId = match ($user->role) {
             'church_representative' => $user->churchId,
-            'district_pastor' => $targetChurchId ?? (int) $request->validated('church_ids')[0],
+            'district_pastor' => (int) $request->validated('church_ids')[0],
             'assistant' => (int) $request->validated('district_ids')[0],
             default => null,
         };
@@ -246,6 +299,9 @@ class EventController extends Controller
     {
         $candidates = DB::table('events')
             ->join('event_creator', 'event_creator.event_id', '=', 'events.event_id')
+            ->join('users as event_creators', 'event_creators.user_id', '=', 'event_creator.user_id')
+            ->join('quarters', 'quarters.quarter_id', '=', 'events.quarter_id')
+            ->join('programs', 'programs.program_id', '=', 'quarters.program_id')
             ->whereDate('events.date_start', '<=', $request->validated('end_date'))
             ->whereDate('events.date_end', '>=', $request->validated('start_date'))
             ->get([
@@ -256,6 +312,8 @@ class EventController extends Controller
                 'events.time_end',
                 'events.church_id',
                 'event_creator.user_id',
+                'event_creators.role as creator_role',
+                'programs.department_id',
             ]);
         $start = Carbon::parse($request->validated('start_date').' '.$request->validated('start_time'));
         $end = Carbon::parse($request->validated('end_date').' '.$request->validated('end_time'));

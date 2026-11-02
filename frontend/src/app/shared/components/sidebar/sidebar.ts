@@ -15,7 +15,8 @@ import {
   SidebarService
 } from '../../../core/services/sidebar/sidebar';
 
-import { AuthService } from '../../../core/services/auth/auth-service'; // adjust path
+import { AuthService } from '../../../core/services/auth/auth-service';
+import { ChurchService } from '../../../core/services/church/church-service';
 import { User, UserRole } from '../../../core/models/user.model';
 
 @Component({
@@ -34,10 +35,12 @@ export class SidebarComponent implements OnChanges {
 
   menuItems: SidebarItem[] = [];
   roleName = 'User';
+  departmentName = '';
 
   constructor(
     private readonly sidebarService: SidebarService,
     private readonly authService: AuthService,
+    private readonly churchService: ChurchService,
     private readonly router: Router
   ) {}
 
@@ -46,12 +49,45 @@ export class SidebarComponent implements OnChanges {
       const role = this.user.role as UserRole;
       this.menuItems = this.sidebarService.getMenu(role);
       this.roleName = this.sidebarService.getRoleName(role);
+      this.loadDepartmentName();
     }
+  }
+
+  private loadDepartmentName(): void {
+    const departmentId = Number(this.user?.department_id);
+    this.departmentName = '';
+
+    if (!Number.isInteger(departmentId) || departmentId < 1) {
+      return;
+    }
+
+    this.churchService.getDepartments().subscribe({
+      next: response => {
+        if (!response?.success || !Array.isArray(response.data)) {
+          console.error('Unable to load the user department for the sidebar.');
+          return;
+        }
+
+        this.departmentName = response.data.find(
+          department => Number(department.department_id) === departmentId
+        )?.department_name ?? '';
+      },
+      error: error => {
+        console.error('Failed to load the user department for the sidebar:', error);
+      }
+    });
   }
 
   toggleSidebar(): void {
     this.collapsed = !this.collapsed;
     this.collapsedChange.emit(this.collapsed);
+  }
+
+  closeAfterNavigation(): void {
+    if (window.innerWidth > 1024) return;
+
+    this.collapsed = true;
+    this.collapsedChange.emit(true);
   }
 
   get userName(): string {

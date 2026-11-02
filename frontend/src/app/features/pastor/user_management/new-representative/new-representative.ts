@@ -3,7 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 
 import { RepresentativeService } from '../../../../core/services/representative/representative-service'; // adjust to your real path
 import { Button } from '../../../../shared/components/button/button';
@@ -164,7 +164,7 @@ export class NewRepresentative implements OnInit {
 
         const { first_name, last_name } = this.form.getRawValue();
 
-        const result = await Swal.fire({
+        const result = await showAppAlert({
             title: 'Add representative?',
             text: `${first_name} ${last_name} will be assigned to the selected church.`,
             icon: 'question',
@@ -201,7 +201,7 @@ export class NewRepresentative implements OnInit {
             .pipe(finalize(() => this.saving.set(false)))
             .subscribe({
                 next: () => {
-                    Swal.fire({
+                    showAppAlert({
                         toast: true,
                         position: 'top-end',
                         icon: 'success',

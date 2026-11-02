@@ -26,6 +26,9 @@ import {
   ReportQuarterOption
 } from '../../../../shared/reports/period-selector/report-period-selector';
 
+const PERSONAL_RECORD_ACCESS_MESSAGE =
+  'Baptism and death records must be accessed through the personal records page.';
+
 interface Baptism {
   baptism_id: number;
   church_id: number;
@@ -71,7 +74,7 @@ interface Death {
     ReportPeriodSelector
   ],
   templateUrl: './deathbap.html',
-  host: { class: 'block min-h-full bg-[#f5f7f6]' }
+  host: { class: 'block min-h-full' }
 })
 export class DeathbapComponent implements OnInit {
 
@@ -247,6 +250,26 @@ export class DeathbapComponent implements OnInit {
       'director'
     ]
       .includes(role);
+  }
+
+  get isHeadAssistant(): boolean {
+    return String(this.auth.getCurrentUser()?.role ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]/g, ' ') === 'head assistant';
+  }
+
+  private get canSelectDistrictRecords(): boolean {
+    const role = String(this.auth.getCurrentUser()?.role ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]/g, ' ');
+
+    return ['head assistant', 'head director'].includes(role) ||
+      (
+        this.departmentId === 16 &&
+        ['assistant', 'administrative assistant', 'director'].includes(role)
+      );
   }
 
   get visibleComments(): ReportComment[] {
@@ -563,7 +586,7 @@ export class DeathbapComponent implements OnInit {
   /** Filter baptism records by church, year, quarter, and search text. */
   get displayedBaptisms(): Baptism[] {
 
-    const records = this.churchId
+    const records = this.churchId && !this.isReadOnly
       ? this.baptisms.filter(
           record =>
             Number(record.church_id) === Number(this.churchId)
@@ -602,7 +625,7 @@ export class DeathbapComponent implements OnInit {
   /** Filter death records by church, year, quarter, and search text. */
   get displayedDeaths(): Death[] {
 
-    const records = this.churchId
+    const records = this.churchId && !this.isReadOnly
       ? this.deaths.filter(
           record =>
             Number(this.getDeathBaptism(record)?.church_id) ===
@@ -648,7 +671,7 @@ export class DeathbapComponent implements OnInit {
   /** Find matching baptism records across all loaded years and quarters. */
   private getBaptismSearchMatches(query: string): Baptism[] {
 
-    const records = this.churchId
+    const records = this.churchId && !this.isReadOnly
       ? this.baptisms.filter(
           record => Number(record.church_id) === Number(this.churchId)
         )
@@ -679,7 +702,7 @@ export class DeathbapComponent implements OnInit {
   /** Find matching death records across all loaded years and quarters. */
   private getDeathSearchMatches(query: string): Death[] {
 
-    const records = this.churchId
+    const records = this.churchId && !this.isReadOnly
       ? this.deaths.filter(
           record =>
             Number(this.getDeathBaptism(record)?.church_id) ===
@@ -878,16 +901,34 @@ export class DeathbapComponent implements OnInit {
   }
 
   backToReports(): void {
-
     if (!this.isReadOnly) {
       return;
     }
 
     this.router.navigate([
-      `${this.router.url.startsWith('/assistant') ? '/assistant' : '/director'}/reports/programs`,
-      this.districtId,
-      this.churchId
-    ]);
+      `${this.router.url.startsWith('/assistant') ? '/assistant' : '/director'}/reports`
+    ], {
+      queryParams: this.monitoringReturnParams()
+    });
+  }
+
+  private monitoringReturnParams(): Record<string, string> {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const keys = [
+      'return_to',
+      'return_department',
+      'return_expanded',
+      'return_search',
+      'return_scroll'
+    ];
+
+    return keys.reduce<Record<string, string>>((params, key) => {
+      const value = queryParams.get(key);
+      if (value !== null) {
+        params[key] = value;
+      }
+      return params;
+    }, { return_to: 'monitoring' });
   }
 
   selectRecord(
@@ -958,8 +999,7 @@ export class DeathbapComponent implements OnInit {
 
       error: error => {
 
-        this.commentsError =
-          error?.error?.message || 'Unable to load comments.';
+        this.setCommentsError(error, 'Unable to load comments.');
 
         this.commentsLoading = false;
         this.cdr.detectChanges();
@@ -989,14 +1029,31 @@ export class DeathbapComponent implements OnInit {
 
         error: error => {
 
-          this.commentsError =
-            error?.error?.message ||
-            'Unable to load report quarter for comments.';
+          this.setCommentsError(
+            error,
+            'Unable to load report quarter for comments.'
+          );
 
           this.cdr.detectChanges();
         }
       });
     }
+  }
+
+  private setCommentsError(error: unknown, fallback: string): void {
+    const response = error && typeof error === 'object' && 'error' in error
+      ? error.error
+      : null;
+    const message = response &&
+      typeof response === 'object' &&
+      'message' in response &&
+      typeof response.message === 'string'
+      ? response.message
+      : null;
+
+    this.commentsError = message === PERSONAL_RECORD_ACCESS_MESSAGE
+      ? ''
+      : message || fallback;
   }
 
   private updateCommentQuarter(
@@ -1079,8 +1136,7 @@ export class DeathbapComponent implements OnInit {
 
           this.savingComment = false;
 
-          this.commentsError =
-            error?.error?.message || 'Unable to save comment.';
+          this.setCommentsError(error, 'Unable to save comment.');
 
           this.cdr.detectChanges();
         }
@@ -1099,7 +1155,9 @@ export class DeathbapComponent implements OnInit {
     console.log('Loading baptism records...');
 
     this.http
-      .get<any>('/api/baptisms')
+      .get<any>('/api/baptisms', {
+        params: this.districtRecordQueryParams
+      })
       .pipe(
         timeout(10000),
         finalize(() => {
@@ -1182,7 +1240,9 @@ export class DeathbapComponent implements OnInit {
     console.log('Loading death records...');
 
     this.http
-      .get<any>('/api/deaths')
+      .get<any>('/api/deaths', {
+        params: this.districtRecordQueryParams
+      })
       .pipe(
         timeout(10000),
         finalize(() => {
@@ -1361,6 +1421,12 @@ export class DeathbapComponent implements OnInit {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private get districtRecordQueryParams(): Record<string, number> {
+    return this.isReadOnly && this.canSelectDistrictRecords && this.districtId > 0
+      ? { district_id: this.districtId }
+      : {};
   }
 
   // =================================================

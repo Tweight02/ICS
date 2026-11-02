@@ -12,7 +12,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, timeout } from 'rxjs/operators';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
 
@@ -821,7 +821,7 @@ export class EditbapComponent implements OnInit {
           this.successMessage = message;
           this.cdr.detectChanges();
 
-          Swal.fire({
+          showAppAlert({
             icon: 'success',
             title: 'Saved Successfully!',
             text: message,

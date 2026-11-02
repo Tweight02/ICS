@@ -180,7 +180,7 @@
   <!-- ===================== STEP 2 ===================== -->
   <div *ngIf="step === 2 && !loadingExisting && !loadError" class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-3">
     <!-- Left: what, when, notes -->
-    <div class="flex flex-col gap-3 min-h-0 overflow-y-auto [scrollbar-width:thin]">
+    <div class="min-h-0 overflow-y-auto [scrollbar-width:thin]">
       <div class="shrink-0 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
         <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-calendar-plus text-[#1b4d3e]"></i> Event information</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
@@ -200,43 +200,42 @@
             <p class="text-[11px] mt-1" [ngClass]="fieldError('location') ? 'text-red-600' : 'text-gray-400'">{{ fieldError('location') || 'Where will people meet?' }}</p>
           </div>
         </div>
-      </div>
+        <section class="mt-4 border-t border-gray-100 pt-4">
+          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-clock text-[#1b4d3e]"></i> Date &amp; time</h3>
+          <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-3">
+            <div>
+              <label for="start_date" class="block text-[11px] font-semibold text-gray-800 mb-1">Start date *</label>
+              <input id="start_date" type="date" [ngModel]="form.start_date" (ngModelChange)="updateFormField('start_date', $event)" (blur)="touch('start_date')"
+                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('start_date')" />
+              <p *ngIf="fieldError('start_date')" class="text-[11px] mt-1 text-red-600">{{ fieldError('start_date') }}</p>
+            </div>
+            <div>
+              <label for="end_date" class="block text-[11px] font-semibold text-gray-800 mb-1">End date *</label>
+              <input id="end_date" type="date" [ngModel]="form.end_date" (ngModelChange)="updateFormField('end_date', $event)" (blur)="touch('end_date')" [min]="form.start_date"
+                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('end_date')" />
+              <p *ngIf="fieldError('end_date')" class="text-[11px] mt-1 text-red-600">{{ fieldError('end_date') }}</p>
+            </div>
+            <div>
+              <label for="start_time" class="block text-[11px] font-semibold text-gray-800 mb-1">Start time *</label>
+              <input id="start_time" type="time" [ngModel]="form.start_time" (ngModelChange)="updateFormField('start_time', $event)" (blur)="touch('start_time')"
+                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('start_time')" />
+              <p *ngIf="fieldError('start_time')" class="text-[11px] mt-1 text-red-600">{{ fieldError('start_time') }}</p>
+            </div>
+            <div>
+              <label for="end_time" class="block text-[11px] font-semibold text-gray-800 mb-1">End time *</label>
+              <input id="end_time" type="time" [ngModel]="form.end_time" (ngModelChange)="updateFormField('end_time', $event)" (blur)="touch('end_time')"
+                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('end_time')" />
+              <p *ngIf="fieldError('end_time')" class="text-[11px] mt-1 text-red-600">{{ fieldError('end_time') }}</p>
+            </div>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-2">Times are in Philippine Standard Time (UTC+8).</p>
+        </section>
 
-      <div class="shrink-0 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-        <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-clock text-[#1b4d3e]"></i> Date &amp; time</h3>
-        <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-3">
-          <div>
-            <label for="start_date" class="block text-[11px] font-semibold text-gray-800 mb-1">Start date *</label>
-            <input id="start_date" type="date" [ngModel]="form.start_date" (ngModelChange)="updateFormField('start_date', $event)" (blur)="touch('start_date')"
-                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('start_date')" />
-            <p *ngIf="fieldError('start_date')" class="text-[11px] mt-1 text-red-600">{{ fieldError('start_date') }}</p>
-          </div>
-          <div>
-            <label for="end_date" class="block text-[11px] font-semibold text-gray-800 mb-1">End date *</label>
-            <input id="end_date" type="date" [ngModel]="form.end_date" (ngModelChange)="updateFormField('end_date', $event)" (blur)="touch('end_date')" [min]="form.start_date"
-                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('end_date')" />
-            <p *ngIf="fieldError('end_date')" class="text-[11px] mt-1 text-red-600">{{ fieldError('end_date') }}</p>
-          </div>
-          <div>
-            <label for="start_time" class="block text-[11px] font-semibold text-gray-800 mb-1">Start time *</label>
-            <input id="start_time" type="time" [ngModel]="form.start_time" (ngModelChange)="updateFormField('start_time', $event)" (blur)="touch('start_time')"
-                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('start_time')" />
-            <p *ngIf="fieldError('start_time')" class="text-[11px] mt-1 text-red-600">{{ fieldError('start_time') }}</p>
-          </div>
-          <div>
-            <label for="end_time" class="block text-[11px] font-semibold text-gray-800 mb-1">End time *</label>
-            <input id="end_time" type="time" [ngModel]="form.end_time" (ngModelChange)="updateFormField('end_time', $event)" (blur)="touch('end_time')"
-                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('end_time')" />
-            <p *ngIf="fieldError('end_time')" class="text-[11px] mt-1 text-red-600">{{ fieldError('end_time') }}</p>
-          </div>
-        </div>
-        <p class="text-[11px] text-gray-400 mt-2">Times are in Philippine Standard Time (UTC+8).</p>
-      </div>
-
-      <div class="shrink-0 min-h-[160px] flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-        <h3 class="shrink-0 font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-journal-text text-[#1b4d3e]"></i> Announcement</h3>
-        <textarea #announcement [ngModel]="form.notes" (ngModelChange)="updateAnnouncement($event, announcement)" aria-label="Notes" placeholder="Include information that helps your team prepare for the event."
-                  rows="4" class="mt-2 min-h-[96px] w-full overflow-hidden text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-[#1b4d3e] focus:outline-none"></textarea>
+        <section class="mt-4 border-t border-gray-100 pt-4">
+          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-journal-text text-[#1b4d3e]"></i> Announcement</h3>
+          <textarea #announcement [ngModel]="form.notes" (ngModelChange)="updateAnnouncement($event, announcement)" aria-label="Notes" placeholder="Include information that helps your team prepare for the event."
+                    rows="4" class="mt-2 min-h-[96px] w-full overflow-hidden text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-[#1b4d3e] focus:outline-none"></textarea>
+        </section>
       </div>
     </div>
 

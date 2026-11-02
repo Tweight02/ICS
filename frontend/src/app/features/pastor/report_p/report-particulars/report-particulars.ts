@@ -23,7 +23,7 @@ import { UserRole } from '../../../../core/models/user.model';
 import { SaveReportItem } from '../../../../core/models/report.model';
 import { Button } from '../../../../shared/components/button/button';
 import { ReportPeriodSelector } from '../../../../shared/reports/period-selector/report-period-selector';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 
 interface QuarterRecord {
   quarter_id: number;
@@ -211,7 +211,7 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   }
 
   get canApprove(): boolean {
-    return ['assistant', 'administrative assistant', 'head assistant'].includes(this.normalizedUserRole);
+    return ['assistant', 'administrative assistant'].includes(this.normalizedUserRole);
   }
 
   get canEditDepartmentReport(): boolean {
@@ -872,7 +872,6 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
 
           this.newComment = '';
           this.savingComment = false;
-          this.showSuccess('Comment published.');
           this.cdr.detectChanges();
           this.scrollCommentMessagesToLatest();
         },
@@ -1016,7 +1015,7 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   }
 
   private showSuccess(message: string): void {
-    void Swal.fire({
+    void showAppAlert({
       icon: 'success',
       title: 'Success',
       text: message,
@@ -1035,7 +1034,9 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     }
 
     if (this.route.snapshot.queryParamMap.get('return_to') === 'monitoring') {
-      this.router.navigate([`${this.portalPrefix()}/reports`]);
+      this.router.navigate([`${this.portalPrefix()}/reports`], {
+        queryParams: this.monitoringReturnParams()
+      });
       return;
     }
 
@@ -1049,6 +1050,25 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     }
 
     this.router.navigate([`${this.portalPrefix()}/reports/programs`]);
+  }
+
+  private monitoringReturnParams(): Record<string, string> {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const keys = [
+      'return_to',
+      'return_department',
+      'return_expanded',
+      'return_search',
+      'return_scroll'
+    ];
+
+    return keys.reduce<Record<string, string>>((params, key) => {
+      const value = queryParams.get(key);
+      if (value !== null) {
+        params[key] = value;
+      }
+      return params;
+    }, { return_to: 'monitoring' });
   }
 
   private portalPrefix(): '/pastor' | '/assistant' | '/director' {

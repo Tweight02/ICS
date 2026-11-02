@@ -11,10 +11,13 @@
   <!-- HEADER -->
   <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-3">
-      <h1 class="text-xl font-bold tracking-tight text-slate-900">Manage Pastors</h1>
+      <h1 class="text-xl font-bold tracking-tight text-slate-900">
+        {{ canManagePastors ? 'Manage Pastors' : 'Pastors' }}
+      </h1>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
+      @if (canManagePastors) {
       <a
         routerLink="/assistant/assign-user"
         class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 !no-underline transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-[#0F4A30] focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
@@ -30,6 +33,7 @@
         </svg>
         Add New User
       </a>
+      }
     </div>
   </div>
 
@@ -179,9 +183,11 @@
           } @else {
             @for (pastor of pastors(); track pastor.user_id) {
               <tr
-                class="cursor-pointer transition-colors hover:bg-emerald-100 focus:outline-none focus-visible:bg-emerald-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F4A30]/40"
-                tabindex="0"
-                [attr.aria-label]="'View pastor ' + fullName(pastor)"
+                [class]="canManagePastors
+                  ? 'cursor-pointer transition-colors hover:bg-emerald-100 focus:outline-none focus-visible:bg-emerald-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F4A30]/40'
+                  : 'transition-colors'"
+                [attr.tabindex]="canManagePastors ? 0 : null"
+                [attr.aria-label]="canManagePastors ? 'Edit pastor ' + fullName(pastor) : fullName(pastor)"
                 (click)="viewPastor(pastor)"
                 (keydown.enter)="viewPastor(pastor)"
                 (keydown.space)="onRowSpace($any($event), pastor)"

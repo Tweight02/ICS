@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             SampleEventSeeder::class,
             PersonalReportDataSeeder::class,
+            LastYearReportSeeder::class,
         ]);
     }
 }

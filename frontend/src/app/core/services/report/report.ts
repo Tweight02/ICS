@@ -47,9 +47,10 @@ export class ReportService {
     }>(`${this.apiUrl}/assistant/report-templates`, payload);
   }
 
-  getDepartments(churchId: number): Observable<Department[]> {
+  getDepartments(churchId: number, year?: number): Observable<Department[]> {
     return this.http.get<Department[]>(
-      `${this.apiUrl}/churches/${churchId}/departments`
+      `${this.apiUrl}/churches/${churchId}/departments`,
+      { params: year ? { year } : {} }
     );
   }
 

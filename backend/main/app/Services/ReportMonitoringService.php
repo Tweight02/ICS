@@ -8,12 +8,139 @@ use Illuminate\Support\Facades\DB;
 class ReportMonitoringService
 {
     /**
+     * @return array{
+     *     year: string,
+     *     total_submitted_reports: int,
+     *     total_report_value: int,
+     *     quarter_totals: array{q1: int, q2: int, q3: int, q4: int},
+     *     departments: list<array{
+     *         department_id: int,
+     *         department_name: string,
+     *         submitted_reports: int,
+     *         total_report_value: int,
+     *         quarter_totals: array{q1: int, q2: int, q3: int, q4: int},
+     *         reports: list<array{
+     *             program_id: int,
+     *             report_name: string,
+     *             submitted_reports: int,
+     *             total_report_value: int,
+     *             quarter_totals: array{q1: int, q2: int, q3: int, q4: int}
+     *         }>
+     *     }>
+     * }
+     */
+    public function missionSummary(string $year, ?int $departmentId = null): array
+    {
+        $rows = DB::table('programs')
+            ->join('departments', 'departments.department_id', '=', 'programs.department_id')
+            ->leftJoin('quarters', function ($join) use ($year) {
+                $join->on('quarters.program_id', '=', 'programs.program_id')
+                    ->where('quarters.year', '=', $year);
+            })
+            ->leftJoin('particular_items', 'particular_items.quarter_id', '=', 'quarters.quarter_id')
+            ->whereNull('programs.parent_id')
+            ->when(
+                $departmentId !== null,
+                fn ($query) => $query->where('departments.department_id', $departmentId)
+            )
+            ->select(
+                'departments.department_id',
+                'departments.department_name',
+                'programs.program_id',
+                'programs.program_name'
+            )
+            ->selectRaw(
+                'COUNT(DISTINCT CASE WHEN quarters.date_submitted IS NOT NULL THEN quarters.quarter_id END) AS submitted_report_count'
+            )
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN quarters.date_submitted IS NOT NULL THEN particular_items.value ELSE 0 END), 0) AS total_report_value'
+            )
+            ->selectRaw(
+                "COALESCE(SUM(CASE WHEN quarters.date_submitted IS NOT NULL AND UPPER(TRIM(quarters.quarter)) = 'Q1' THEN particular_items.value ELSE 0 END), 0) AS q1_report_value"
+            )
+            ->selectRaw(
+                "COALESCE(SUM(CASE WHEN quarters.date_submitted IS NOT NULL AND UPPER(TRIM(quarters.quarter)) = 'Q2' THEN particular_items.value ELSE 0 END), 0) AS q2_report_value"
+            )
+            ->selectRaw(
+                "COALESCE(SUM(CASE WHEN quarters.date_submitted IS NOT NULL AND UPPER(TRIM(quarters.quarter)) = 'Q3' THEN particular_items.value ELSE 0 END), 0) AS q3_report_value"
+            )
+            ->selectRaw(
+                "COALESCE(SUM(CASE WHEN quarters.date_submitted IS NOT NULL AND UPPER(TRIM(quarters.quarter)) = 'Q4' THEN particular_items.value ELSE 0 END), 0) AS q4_report_value"
+            )
+            ->groupBy(
+                'departments.department_id',
+                'departments.department_name',
+                'programs.program_id',
+                'programs.program_name'
+            )
+            ->orderBy('departments.department_name')
+            ->orderBy('programs.program_name')
+            ->get();
+
+        $departments = [];
+        $totalSubmittedReports = 0;
+        $totalReportValue = 0;
+        $totalQuarterValues = ['q1' => 0, 'q2' => 0, 'q3' => 0, 'q4' => 0];
+
+        foreach ($rows as $row) {
+            $departmentId = (int) $row->department_id;
+            $submittedReports = (int) $row->submitted_report_count;
+            $reportValue = (int) $row->total_report_value;
+            $quarterTotals = [
+                'q1' => (int) $row->q1_report_value,
+                'q2' => (int) $row->q2_report_value,
+                'q3' => (int) $row->q3_report_value,
+                'q4' => (int) $row->q4_report_value,
+            ];
+
+            $departments[$departmentId] ??= [
+                'department_id' => $departmentId,
+                'department_name' => (string) $row->department_name,
+                'submitted_reports' => 0,
+                'total_report_value' => 0,
+                'quarter_totals' => ['q1' => 0, 'q2' => 0, 'q3' => 0, 'q4' => 0],
+                'reports' => [],
+            ];
+            $departments[$departmentId]['submitted_reports'] += $submittedReports;
+            $departments[$departmentId]['total_report_value'] += $reportValue;
+            foreach ($quarterTotals as $quarter => $value) {
+                $departments[$departmentId]['quarter_totals'][$quarter] += $value;
+                $totalQuarterValues[$quarter] += $value;
+            }
+            $departments[$departmentId]['reports'][] = [
+                'program_id' => (int) $row->program_id,
+                'report_name' => (string) $row->program_name,
+                'submitted_reports' => $submittedReports,
+                'total_report_value' => $reportValue,
+                'quarter_totals' => $quarterTotals,
+            ];
+            $totalSubmittedReports += $submittedReports;
+            $totalReportValue += $reportValue;
+        }
+
+        return [
+            'year' => $year,
+            'total_submitted_reports' => $totalSubmittedReports,
+            'total_report_value' => $totalReportValue,
+            'quarter_totals' => $totalQuarterValues,
+            'departments' => array_values($departments),
+        ];
+    }
+
+    /**
      * @param  list<int>  $churchIds
      * @return array<int, array<string, int|bool|null>>
      */
-    public function forChurches(array $churchIds, ?int $departmentId = null): array
-    {
-        $stats = $this->departmentQuarterStats($churchIds, $departmentId);
+    public function forChurches(
+        array $churchIds,
+        ?int $departmentId = null,
+        ?string $year = null
+    ): array {
+        $stats = $this->departmentQuarterStats(
+            $churchIds,
+            $departmentId,
+            $year ?? (string) config('app.reporting_year', now()->year)
+        );
         $monitoring = [];
 
         foreach ($stats as $churchId => $departments) {
@@ -68,9 +195,13 @@ class ReportMonitoringService
     /**
      * @return array<int, array<string, bool|int|null>>
      */
-    public function departmentApprovals(int $churchId): array
+    public function departmentApprovals(int $churchId, ?string $year = null): array
     {
-        $stats = $this->departmentQuarterStats([$churchId])[$churchId] ?? [];
+        $stats = $this->departmentQuarterStats(
+            [$churchId],
+            null,
+            $year ?? (string) config('app.reporting_year', now()->year)
+        )[$churchId] ?? [];
         $approvals = [];
 
         foreach ($stats as $departmentId => $quarters) {
@@ -102,8 +233,11 @@ class ReportMonitoringService
      * @param  list<int>  $churchIds
      * @return array<int, array<int, array<int, array{total: int, approved: int, endorsed: int, submitted: int, expected: int, entered: int, submitted_expected: int, submitted_entered: int}>>>
      */
-    private function departmentQuarterStats(array $churchIds, ?int $departmentId = null): array
-    {
+    private function departmentQuarterStats(
+        array $churchIds,
+        ?int $departmentId,
+        string $year
+    ): array {
         $churchIds = array_values(array_unique(array_filter(
             array_map('intval', $churchIds),
             static fn (int $churchId): bool => $churchId > 0
@@ -116,6 +250,7 @@ class ReportMonitoringService
         $reportRows = DB::table('quarters')
             ->join('programs', 'quarters.program_id', '=', 'programs.program_id')
             ->whereIn('quarters.church_id', $churchIds)
+            ->where('quarters.year', $year)
             ->whereNull('programs.parent_id')
             ->when($departmentId !== null, fn ($query) => $query->where('programs.department_id', $departmentId))
             ->select(
@@ -151,6 +286,7 @@ class ReportMonitoringService
                     ->on('participant_coverage.particular_id', '=', 'particulars.particular_id');
             })
             ->whereIn('quarters.church_id', $churchIds)
+            ->where('quarters.year', $year)
             ->whereNull('programs.parent_id')
             ->when($departmentId !== null, fn ($query) => $query->where('programs.department_id', $departmentId))
             ->select(

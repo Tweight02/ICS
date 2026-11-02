@@ -14,6 +14,7 @@ import {
   Church
 } from '../../models/church.model';
 import { Department } from '../../models/department.model';
+import { MissionReportSummary } from '../../models/report.model';
 
 export interface DistrictResponse {
   success: boolean;
@@ -51,9 +52,10 @@ export class ChurchService {
   }>(`${this.apiUrl}/pastor/my-district`);
 }
 
-getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
+getMyDistrictChurches(year?: number): Observable<MyDistrictChurchesResponse> {
   return this.http.get<MyDistrictChurchesResponse>(
-    `${this.apiUrl}/pastor/my-district/churches`
+    `${this.apiUrl}/pastor/my-district/churches`,
+    { params: year ? { year } : {} }
   );
 }
 
@@ -64,9 +66,12 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
     private readonly http: HttpClient
   ) {}
 
-  getDistricts(departmentId?: number): Observable<DistrictResponse> {
+  getDistricts(departmentId?: number, year?: number): Observable<DistrictResponse> {
     return this.http.get<DistrictResponse>(`${this.apiUrl}/districts`, {
-      params: departmentId ? { department_id: departmentId } : {}
+      params: {
+        ...(departmentId ? { department_id: departmentId } : {}),
+        ...(year ? { year } : {})
+      }
     });
   }
 
@@ -74,6 +79,18 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
     return this.http.get<{ success: boolean; data: Department[] }>(
       `${this.apiUrl}/departments`
     );
+  }
+
+  getMissionReportSummary(year: number): Observable<{
+    success: boolean;
+    data: MissionReportSummary;
+  }> {
+    return this.http.get<{
+      success: boolean;
+      data: MissionReportSummary;
+    }>(`${this.apiUrl}/reports/mission-summary`, {
+      params: { year }
+    });
   }
 
   getAllChurches(): Observable<ChurchDirectoryResponse> {
@@ -84,12 +101,18 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
 
   getChurches(
     districtId: number,
-    departmentId?: number
+    departmentId?: number,
+    year?: number
   ): Observable<ChurchesResponse> {
 
     return this.http.get<ChurchesResponse>(
       `${this.apiUrl}/districts/${districtId}/churches`,
-      { params: departmentId ? { department_id: departmentId } : {} }
+      {
+        params: {
+          ...(departmentId ? { department_id: departmentId } : {}),
+          ...(year ? { year } : {})
+        }
+      }
     );
   }
 }

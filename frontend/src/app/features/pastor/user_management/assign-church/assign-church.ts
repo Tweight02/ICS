@@ -2,7 +2,7 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { EMPTY, expand, finalize, forkJoin, reduce } from 'rxjs';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 
 import { Representative } from '../../../../core/models/representative.model';
 import { ChurchService } from '../../../../core/services/church/church-service';
@@ -431,7 +431,7 @@ export class AssignChurch implements OnInit {
         ? `${this.fullName(representative)} will move from ${sourceChurch.name} to ${church.name}, leaving ${sourceChurch.name} without a representative.`
         : `${this.fullName(representative)} will be assigned to ${church.name}.`;
 
-    const confirmation = await Swal.fire({
+    const confirmation = await showAppAlert({
       icon: 'warning',
       title: 'Confirm representative transfer',
       text: confirmationText,
@@ -459,7 +459,7 @@ export class AssignChurch implements OnInit {
           this.closeAssignment();
 
           // Fire-and-forget: do not await the toast.
-          void Swal.fire({
+          void showAppAlert({
             toast: true,
             position: 'top-end',
             icon: 'success',
@@ -510,6 +510,6 @@ export class AssignChurch implements OnInit {
   }
 
   private notifyError(title: string, text: string): void {
-    Swal.fire({ icon: 'error', title, text, confirmButtonColor: this.brandColor });
+    showAppAlert({ icon: 'error', title, text, confirmButtonColor: this.brandColor });
   }
 }

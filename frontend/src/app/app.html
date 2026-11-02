@@ -19,15 +19,16 @@
   class="relative min-h-screen ml-0 overflow-x-clip bg-[#edf7f0] font-sans text-slate-800 [font-family:Inter,Segoe_UI,Arial,sans-serif] transition-[margin-left] duration-200 motion-reduce:transition-none max-lg:ml-0"
   [ngClass]="{
     'lg:ml-[235px]': showSidebar && !collapsed,
-    'lg:ml-[76px]': showSidebar && collapsed
+    'lg:ml-[76px]': showSidebar && collapsed,
+    '!bg-transparent': isPersonalReportsPage
   }"
 >
-  @if (!isLoginPage) {
+  @if (!isLoginPage && !isPersonalReportsPage) {
     <img
-      src="/assets/Misty.png"
+      src="/assets/Golden%20Mountain%20Valley%20at%20Sunrise.png"
       alt=""
       aria-hidden="true"
-      class="pointer-events-none fixed inset-0 z-0 h-full w-full object-cover object-center opacity-70"
+      class="pointer-events-none fixed inset-0 z-0 h-full w-full object-cover object-center opacity-5"
       [ngClass]="{
         'lg:left-[235px]': showSidebar && !collapsed,
         'lg:left-[76px]': showSidebar && collapsed
@@ -35,13 +36,15 @@
     />
   }
 
+  @if (!isPersonalReportsPage) {
   <div
-    class="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(244,250,247,0.88)_0%,rgba(237,247,242,0.82)_48%,rgba(255,255,255,0.9)_100%)] transition-[left] duration-200 motion-reduce:transition-none"
+    class="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.08)),radial-gradient(ellipse_at_20%_25%,rgba(255,255,255,0.14),transparent_72%),radial-gradient(ellipse_at_78%_72%,rgba(255,255,255,0.12),transparent_80%)] transition-[left] duration-200 motion-reduce:transition-none"
     [ngClass]="{
       'lg:left-[235px]': showSidebar && !collapsed,
       'lg:left-[76px]': showSidebar && collapsed
     }"
   ></div>
+  }
 
   <!-- Main page content -->
   <div

@@ -18,7 +18,7 @@ import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
 import { ReportPeriodSelector } from '../../../../shared/reports/period-selector/report-period-selector';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 
 interface QuarterRecord {
   quarter_id: number;
@@ -1348,7 +1348,7 @@ ngOnInit(): void {
       .saveDepartmentReport(this.churchId, this.departmentId, submittedItems, true)
       .subscribe({
         next: (response: any) => {
-          void Swal.fire({
+          void showAppAlert({
             icon: 'success',
             title: 'Success',
             text: response?.message || 'Report submitted successfully.',

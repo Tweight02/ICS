@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AbstractControl, ValidationErrors } from '@angular/forms';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 
 import { RepresentativeService } from '../../../../core/services/representative/representative-service'; // adjust to your real path
 import { Representative } from '../../../../core/models/representative.model';
@@ -172,7 +172,7 @@ export class EditRepresentative implements OnInit {
 
         const { first_name, last_name } = this.form.getRawValue();
 
-        const result = await Swal.fire({
+        const result = await showAppAlert({
             title: 'Save changes?',
             text: `Update the details of ${first_name} ${last_name}.`,
             icon: 'question',
@@ -214,7 +214,7 @@ export class EditRepresentative implements OnInit {
             .pipe(finalize(() => this.saving.set(false)))
             .subscribe({
                 next: () => {
-                    Swal.fire({
+                    showAppAlert({
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
@@ -251,7 +251,7 @@ export class EditRepresentative implements OnInit {
 
         const { first_name, last_name } = this.form.getRawValue();
 
-        const result = await Swal.fire({
+        const result = await showAppAlert({
             title: 'Deactivate representative?',
             text: `${first_name} ${last_name} will be made inactive and signed out. Their account and records will be kept.`,
             icon: 'warning',
@@ -274,7 +274,7 @@ export class EditRepresentative implements OnInit {
             .pipe(finalize(() => this.deleting.set(false)))
             .subscribe({
                 next: () => {
-                    Swal.fire({
+                    showAppAlert({
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
@@ -300,7 +300,7 @@ export class EditRepresentative implements OnInit {
             }
 
             const { first_name, last_name } = this.form.getRawValue();
-            const result = await Swal.fire({
+            const result = await showAppAlert({
                 title: 'Reactivate representative?',
                 text: `${first_name} ${last_name} will be able to sign in again.`,
                 icon: 'question',
@@ -325,7 +325,7 @@ export class EditRepresentative implements OnInit {
                     next: async (response) => {
                         this.status.set('active');
 
-                        await Swal.fire({
+                        await showAppAlert({
                             toast: true,
                             position: 'top-end',
                             icon: 'success',
@@ -340,7 +340,7 @@ export class EditRepresentative implements OnInit {
                             ?? err?.error?.message
                             ?? 'Unable to reactivate this representative. Please try again.';
 
-                        await Swal.fire({
+                        await showAppAlert({
                             icon: 'error',
                             title: 'Reactivation Failed',
                             text: message,
