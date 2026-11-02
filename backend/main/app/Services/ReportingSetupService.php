@@ -47,6 +47,7 @@ class ReportingSetupService
                 );
             }
 
+            $sql = str_replace("\\'", "''", $sql);
             DB::unprepared($sql);
             $particularCount = DB::table('particulars')->count();
             $particularsRestored = true;

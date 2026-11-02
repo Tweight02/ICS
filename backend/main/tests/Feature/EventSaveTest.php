@@ -673,6 +673,7 @@ class EventSaveTest extends TestCase
         $this->postJson('/api/events', [
             'title' => 'Invalid Mixed Particulars',
             'location' => 'Central Church',
+            'department_id' => $departmentId,
             'particular_ids' => [$particularId, $otherParticularId],
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-10',
@@ -683,6 +684,7 @@ class EventSaveTest extends TestCase
         $response = $this->postJson('/api/events', [
             'title' => 'Youth Gathering',
             'location' => 'Central Church',
+            'department_id' => $departmentId,
             'particular_ids' => [$particularId],
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-10',
@@ -749,6 +751,18 @@ class EventSaveTest extends TestCase
             'first_name' => 'Public',
             'last_name' => 'Registrant',
         ]);
+        $participantCount = DB::table('participants')->where('event_id', $eventId)->count();
+        $this->postJson('/api/public/events/'.$eventId.'/participants', [
+            'first_name' => 'public',
+            'last_name' => 'registrant',
+            'age' => 25,
+            'gender' => 'other',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('first_name');
+        $this->assertSame(
+            $participantCount,
+            DB::table('participants')->where('event_id', $eventId)->count()
+        );
 
         $otherDepartmentDirector = User::create([
             'department_id' => $otherDepartmentId,
