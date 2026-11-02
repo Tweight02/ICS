@@ -43,7 +43,6 @@ export class AssignUser implements OnInit {
   saving = signal(false);
   loadError = signal('');
 
-  // ---------- District filter (dropdown that always opens downward) ----------
   readonly selectedDistrictId = signal(''); // '' = all districts
   readonly filterOpen = signal(false);
   readonly filterQuery = signal('');
