@@ -543,12 +543,17 @@ export class BapaddrecComponent implements OnInit {
 
   /**
    * Normalize text before comparing existing records.
-   * This prevents differences in capitalization or extra
-   * spaces from bypassing the duplicate check.
+   *
+   * This handles:
+   * - Uppercase and lowercase differences.
+   * - Extra spaces.
+   * - Leading and trailing spaces.
+   * - Different Unicode representations of accented letters.
    */
   private normalizeText(value: string | null | undefined): string {
     return String(value ?? '')
-      .normalize('NFKC')
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
       .trim()
       .replace(/\s+/g, ' ')
       .toLocaleLowerCase();
@@ -562,20 +567,17 @@ export class BapaddrecComponent implements OnInit {
   }
 
   /**
-   * Check whether an existing record represents the same
-   * member and baptism entry.
+   * Check whether an existing record belongs to the same person.
    *
-   * Duplicate comparison uses:
+   * A duplicate is identified using:
    * - First Name
    * - Middle Name
    * - Last Name
    * - Extension Name
    * - Birthdate
-   * - Church
-   * - Date of Baptism
    *
-   * Baptism status, address, quarter, and minister do not
-   * make an otherwise identical baptism entry a new record.
+   * Church, quarter, and date of baptism are intentionally
+   * excluded so changing those fields cannot bypass the check.
    */
   private isDuplicateBaptism(
     existing: ExistingBaptism
@@ -601,28 +603,54 @@ export class BapaddrecComponent implements OnInit {
       this.normalizeDate(existing.birthdate) ===
       this.normalizeDate(this.baptism.birthdate);
 
-    const sameChurch =
-      Number(existing.church_id) ===
-      Number(this.baptism.church_id);
-
-    const sameBaptismDate =
-      this.normalizeDate(existing.date_of_baptism) ===
-      this.normalizeDate(this.baptism.date_of_baptism);
-
     return (
       sameFirstName &&
       sameMiddleName &&
       sameLastName &&
       sameExtensionName &&
-      sameBirthdate &&
-      sameChurch &&
-      sameBaptismDate
+      sameBirthdate
     );
   }
 
   /**
+   * Safely extract baptism records from common Laravel
+   * response formats:
+   *
+   * 1. [...]
+   * 2. { data: [...] }
+   * 3. { data: { data: [...] } }
+   * 4. { baptisms: [...] }
+   */
+  private extractExistingBaptisms(
+    response: any
+  ): ExistingBaptism[] | null {
+
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (Array.isArray(response?.data)) {
+      return response.data;
+    }
+
+    if (Array.isArray(response?.data?.data)) {
+      return response.data.data;
+    }
+
+    if (Array.isArray(response?.baptisms)) {
+      return response.baptisms;
+    }
+
+    if (Array.isArray(response?.data?.baptisms)) {
+      return response.data.baptisms;
+    }
+
+    return null;
+  }
+
+  /**
    * Check existing records immediately before saving.
-   * Saving is stopped when the same baptism entry already exists.
+   * Saving is stopped when the same person already exists.
    */
   private checkDuplicateBeforeSaving(payload: any): void {
     this.http
@@ -631,11 +659,11 @@ export class BapaddrecComponent implements OnInit {
       .subscribe({
 
         next: (response) => {
-          const existingRecords = Array.isArray(response)
-            ? response
-            : response?.data;
+          const existingRecords =
+            this.extractExistingBaptisms(response);
 
-          if (!Array.isArray(existingRecords)) {
+          // Stop saving when the API response cannot be verified.
+          if (!existingRecords) {
             this.saving = false;
 
             showAppAlert({
@@ -650,6 +678,7 @@ export class BapaddrecComponent implements OnInit {
             return;
           }
 
+          // Check whether the same person already has a record.
           const duplicateExists = existingRecords.some(
             (record: ExistingBaptism) =>
               this.isDuplicateBaptism(record)
@@ -659,9 +688,9 @@ export class BapaddrecComponent implements OnInit {
             this.saving = false;
 
             showAppAlert({
-              icon: 'error',
+              icon: 'warning',
               title: 'Duplicate Baptism Record',
-              text: 'This baptism record already exists for the same member, church, birthdate, and date of baptism. Duplicate entries are not allowed.',
+              text: 'This person already has an existing baptism record. A member with the same first name, middle name, last name, extension name, and birthdate cannot be added again.',
               confirmButtonText: 'OK',
               confirmButtonColor: '#176b52',
               customClass: this.swalCustomClass

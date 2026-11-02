@@ -22,6 +22,7 @@ class BaptismController extends Controller
         }
 
         $baptisms = Baptism::whereIn('church_id', $churchIds)
+            ->whereNotNull('date_of_baptism')
             ->orderBy('date_of_baptism', 'desc')
             ->get();
 
