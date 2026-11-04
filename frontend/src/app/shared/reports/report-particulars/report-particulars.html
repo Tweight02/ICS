@@ -111,10 +111,10 @@
               class="mb-1.5 overflow-hidden rounded-lg border border-white/80 bg-white/90 shadow-sm shadow-emerald-950/5 backdrop-blur transition-shadow hover:border-emerald-900/15 hover:shadow-md">
 
               <details [attr.open]="isStewardshipReport || (first && expandFirstSection) ? '' : null">
-                <summary class="flex min-h-9 list-none cursor-pointer items-center justify-between gap-2 border-b border-emerald-900/5 bg-gradient-to-r from-white to-emerald-50/65 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] leading-4 text-emerald-950 transition hover:from-emerald-50 hover:to-emerald-100/70 marker:hidden [&::-webkit-details-marker]:hidden sm:px-4">
+                <summary class="relative !flex !min-h-9 !flex-row list-none cursor-pointer items-center justify-between gap-2 border-b border-emerald-900/5 bg-gradient-to-r from-white to-emerald-50/65 px-3 py-1.5 pr-9 text-[11px] font-bold uppercase tracking-[0.08em] leading-4 text-emerald-950 transition hover:from-emerald-50 hover:to-emerald-100/70 marker:hidden [&::-webkit-details-marker]:hidden sm:px-4 sm:pr-10">
                   <span class="block min-w-0 flex-1">{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
                   <svg
-                    class="report-accordion-indicator h-4 w-4 shrink-0 text-emerald-800"
+                    class="report-accordion-indicator absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-800 sm:right-4"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
