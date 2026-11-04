@@ -9,9 +9,7 @@
         <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800/80">Quarterly reports</p>
         <h1 class="!text-xl font-bold tracking-tight text-emerald-950 sm:!text-2xl">Report monitoring</h1>
         <p class="mt-1 text-xs font-medium text-emerald-900/70 sm:text-sm">
-          {{ showDistrictPersonalReportLinks
-            ? 'Select a district to open its personal report'
-            : 'District and church reporting progress' }}
+          Expand a district and church, then select a quarter to open its department report
         </p>
       </div>
       <button app-button variant="create" size="md"
@@ -25,10 +23,11 @@
           New report
       </button>
       <button
-          *ngIf="isDirectorRole"
+          *ngIf="canViewReportSummary"
           type="button"
           (click)="openMissionSummary()"
-          class="relative inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 sm:self-auto">
+          class="relative inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-full border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 sm:self-auto"
+          style="border-radius: 9999px">
           <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 16.5h14M5 13V9m5 4V4m5 9V7" />
           </svg>
@@ -68,22 +67,6 @@
               [value]="selectedYear()"
               (change)="onYearChange($event)">
               <option *ngFor="let year of reportYears" [value]="year">{{ year }}</option>
-            </select>
-          </label>
-
-          <label *ngIf="hasAllDepartmentAccess && departments().length > 0"
-            for="report-department-filter" class="flex min-w-0 shrink-0 items-center gap-2.5">
-            <span class="shrink-0 text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">DEPARTMENT</span>
-            <select
-              id="report-department-filter"
-              class="h-11 min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 sm:w-[min(25rem,38vw)]"
-              (change)="onDepartmentChange($event)">
-              <option
-                *ngFor="let department of departments()"
-                [value]="department.department_id"
-                [selected]="department.department_id === selectedDepartmentId()">
-                {{ department.department_name }}
-              </option>
             </select>
           </label>
 
@@ -140,10 +123,7 @@
         <button
           type="button"
           (click)="onDistrictSelected(district.church_id)"
-          [attr.aria-expanded]="showDistrictPersonalReportLinks ? null : isDistrictOpen(district.church_id)"
-          [attr.aria-label]="showDistrictPersonalReportLinks
-            ? 'Open personal report for ' + district.name
-            : null"
+          [attr.aria-expanded]="isDistrictOpen(district.church_id)"
           class="relative flex min-h-[68px] w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 sm:px-5"
           [ngClass]="isDistrictOpen(district.church_id) ? 'bg-emerald-50/70' : 'bg-white/70'">
           <span
@@ -158,7 +138,7 @@
             <span class="min-w-0">
               <span class="block truncate text-sm font-semibold leading-5 text-emerald-950 sm:text-base">{{ district.name }}</span>
               <span class="block text-xs leading-4 text-emerald-900/60">
-                {{ showDistrictPersonalReportLinks ? 'Open personal report' : (district.church_count ?? 0) + ' churches' }}
+                {{ (district.church_count ?? 0) + ' churches' }}
               </span>
             </span>
           </span>
@@ -166,84 +146,142 @@
           <span class="flex shrink-0 items-center">
             <svg
               class="h-5 w-5 text-emerald-900/35 transition-transform duration-200"
-              [ngClass]="showDistrictPersonalReportLinks
-                ? 'rotate-[-90deg] text-emerald-700'
-                : { 'rotate-180 text-emerald-700': isDistrictOpen(district.church_id) }"
+              [ngClass]="{ 'rotate-180 text-emerald-700': isDistrictOpen(district.church_id) }"
               viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M5 7.5l5 5 5-5" />
             </svg>
           </span>
         </button>
 
-        <div *ngIf="!showDistrictPersonalReportLinks && isDistrictOpen(district.church_id)" class="border-t border-emerald-900/10 bg-white/80 px-2 py-3 sm:px-4">
+        <div *ngIf="isDistrictOpen(district.church_id)" class="border-t border-emerald-900/10 bg-white/80 px-2 py-3 sm:px-4">
 
           <div *ngIf="loadingDistrictChurches()[district.church_id]" class="flex justify-center py-8">
             <app-running-loader size="small"></app-running-loader>
           </div>
 
           <div
-            *ngIf="!loadingDistrictChurches()[district.church_id] && (districtChurches()[district.church_id]?.length || showDistrictPastorReport)"
-            class="overflow-x-auto">
+            *ngIf="!loadingDistrictChurches()[district.church_id] && (districtChurches()[district.church_id]?.length || showDistrictPastorReport || showDistrictPersonalReportLinks)"
+            class="space-y-2">
+            <button
+              *ngIf="showDistrictPersonalReportLinks && !isDirectorPersonalReportOnly"
+              type="button"
+              (click)="openDistrictPastorReport(district.church_id)"
+              [attr.aria-label]="'Open District Pastor Report for ' + district.name"
+              class="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-emerald-700/20 bg-emerald-50/70 px-4 py-3 text-left transition hover:border-emerald-700/40 hover:bg-emerald-100/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
+              <span class="flex min-w-0 items-center gap-2.5">
+                <svg class="h-4 w-4 shrink-0 text-emerald-700" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 3.5h10v13H5zM8 7h4M8 10h4M8 13h2" />
+                </svg>
+                <span class="truncate text-sm font-semibold text-emerald-950">District Pastor Report</span>
+              </span>
+              <span class="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-800/65">Open report</span>
+            </button>
+
+            <ng-container *ngIf="!isDirectorPersonalReportOnly">
+            <div
+              *ngFor="let church of districtChurches()[district.church_id]"
+              class="overflow-hidden rounded-xl border border-emerald-900/10 bg-white">
+              <button
+                type="button"
+                [attr.aria-expanded]="isChurchOpen(district.church_id, church.church_id)"
+                [attr.aria-controls]="'church-departments-' + district.church_id + '-' + church.church_id"
+                (click)="toggleChurch(district.church_id, church.church_id)"
+                class="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-emerald-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600"
+                [ngClass]="isChurchOpen(district.church_id, church.church_id) ? 'bg-emerald-50/70' : 'bg-white'">
+                <span class="flex min-w-0 items-center gap-2.5">
+                  <svg class="h-4 w-4 shrink-0 text-emerald-700 transition-transform"
+                    [ngClass]="{ 'rotate-180': isChurchOpen(district.church_id, church.church_id) }"
+                    viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m5 7.5 5 5 5-5" />
+                  </svg>
+                  <span class="truncate text-sm font-semibold text-emerald-950">{{ church.name }}</span>
+                </span>
+                <span class="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-800/65">
+                  {{ isChurchOpen(district.church_id, church.church_id) ? 'Hide departments' : 'View departments' }}
+                </span>
+              </button>
+
+              <div
+                *ngIf="isChurchOpen(district.church_id, church.church_id)"
+                [id]="'church-departments-' + district.church_id + '-' + church.church_id"
+                class="overflow-x-auto border-t border-emerald-900/10">
+                <table class="w-full min-w-[600px] border-collapse text-left">
+                  <thead class="bg-emerald-950/[0.025] text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-900/70">
+                    <tr class="border-b border-slate-200">
+                      <th scope="col" class="w-[36%] px-4 py-3 sm:px-5">Department</th>
+                      <th *ngFor="let quarterKey of quarterKeys" scope="col" class="px-3 py-3 text-center">{{ quarterKey }}</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-emerald-950/[0.06]">
+                    <tr *ngFor="let department of churchMonitoringDepartments()"
+                      class="transition hover:bg-emerald-50/40">
+                      <th scope="row" class="px-4 py-3 text-left sm:px-5">
+                        <span class="text-xs font-semibold leading-5 text-emerald-950/85 sm:text-sm">
+                          {{ department.department_name }}
+                        </span>
+                      </th>
+                      <td *ngFor="let quarterKey of quarterKeys" class="px-2 py-1.5 text-center">
+                        <button
+                          type="button"
+                          (click)="openDepartmentQuarterReport(district.church_id, church.church_id, department.department_id, quarterKey)"
+                          [attr.aria-label]="'Open ' + quarterKey.toUpperCase() + ' report for ' + department.department_name + ' at ' + church.name"
+                          [attr.title]="'Open ' + quarterKey.toUpperCase() + ' report'"
+                          class="inline-flex min-h-9 min-w-[5rem] cursor-pointer items-center justify-center rounded-lg px-2 transition hover:bg-white hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
+                          <ng-container *ngIf="getDepartmentQuarterStatus(district.church_id, church, department.department_id, quarterKey) as status; else noStatus">
+                            <app-quarter-status
+                              class="inline-flex justify-center text-[10px] font-medium leading-none"
+                              [label]="status.tone === 'complete' ? null : status.status"
+                              [tone]="status.tone">
+                            </app-quarter-status>
+                          </ng-container>
+                          <ng-template #noStatus>
+                            <span class="text-sm text-emerald-900/35">—</span>
+                          </ng-template>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            </ng-container>
+          </div>
+
+          <div
+            *ngIf="!loadingDistrictChurches()[district.church_id] && showDistrictPastorReport && (!showDistrictPersonalReportLinks || isDirectorPortal)"
+            class="mt-3 overflow-x-auto rounded-xl border border-emerald-900/10 bg-emerald-50/50">
             <table class="w-full min-w-[600px] border-collapse text-left">
-              <thead class="border-b border-emerald-900/5 bg-emerald-950/[0.025] text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-900/70">
-                <tr class="border-b border-slate-200">
-                  <th scope="col" class="w-[36%] px-4 py-3 sm:px-5">Church</th>
-                  <th *ngFor="let quarterKey of quarterKeys" scope="col" class="px-3 py-3 text-center">{{ quarterKey }}</th>
+              <thead class="sr-only">
+                <tr>
+                  <th scope="col">Department</th>
+                  <th *ngFor="let quarterKey of quarterKeys" scope="col">{{ quarterKey }}</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-emerald-950/[0.06]">
-                <tr
-                  *ngFor="let church of districtChurches()[district.church_id]"
-                  role="link"
-                  tabindex="0"
-                  [attr.aria-label]="'Open report for ' + church.name"
-                  (click)="openChurch(district.church_id, church.church_id)"
-                  (keydown.enter)="openChurch(district.church_id, church.church_id)"
-                  (keydown.space)="openChurch(district.church_id, church.church_id); $event.preventDefault()"
-                  class="group cursor-pointer transition hover:bg-emerald-50/70 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700">
+              <tbody>
+                <tr>
                   <th scope="row" class="px-4 py-3 text-left sm:px-5">
-                    <span class="text-xs font-semibold leading-5 text-emerald-950/85 transition group-hover:text-emerald-800 sm:text-sm">
-                      {{ church.name }}
-                    </span>
+                    <span class="text-xs font-bold leading-5 text-emerald-900 sm:text-sm">District Pastor Report</span>
                   </th>
-                  <td *ngFor="let quarterKey of quarterKeys" class="px-2 py-2.5 text-center" [attr.title]="quarterKey.toUpperCase() + ' status'">
-                    <ng-container *ngIf="getQuarterStatus(church, quarterKey) as status; else noStatus">
-                      <app-quarter-status
-                        class="inline-flex min-w-[5rem] justify-center text-[10px] font-medium leading-none"
-                        [label]="status.tone === 'complete' ? null : status.status"
-                        [tone]="status.tone">
-                      </app-quarter-status>
-                    </ng-container>
-                    <ng-template #noStatus>
-                      <span class="text-sm text-emerald-900/35">—</span>
-                    </ng-template>
-                  </td>
-                </tr>
-                <tr
-                  *ngIf="showDistrictPastorReport"
-                  role="link"
-                  tabindex="0"
-                  [attr.aria-label]="'Open District Pastor Report for ' + district.name"
-                  (click)="openChurch(district.church_id, district.church_id)"
-                  (keydown.enter)="openChurch(district.church_id, district.church_id)"
-                  (keydown.space)="openChurch(district.church_id, district.church_id); $event.preventDefault()"
-                  class="group cursor-pointer border-t-2 border-emerald-900/10 bg-emerald-50/50 transition hover:bg-emerald-50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700">
-                  <th scope="row" class="px-4 py-3 text-left sm:px-5">
-                    <span class="text-xs font-bold leading-5 text-emerald-900 transition group-hover:text-emerald-700 sm:text-sm">
-                      District Pastor Report
-                    </span>
-                  </th>
-                  <td *ngFor="let quarterKey of quarterKeys" class="px-2 py-2.5 text-center" [attr.title]="quarterKey.toUpperCase() + ' status'">
-                    <ng-container *ngIf="getDistrictPastorQuarterStatus(district.church_id, quarterKey) as status; else districtNoStatus">
-                      <app-quarter-status
-                        class="inline-flex min-w-[5rem] justify-center text-[10px] font-medium leading-none"
-                        [label]="status.tone === 'complete' ? null : status.status"
-                        [tone]="status.tone">
-                      </app-quarter-status>
-                    </ng-container>
-                    <ng-template #districtNoStatus>
-                      <span class="text-sm text-emerald-900/35">—</span>
-                    </ng-template>
+                  <td *ngFor="let quarterKey of quarterKeys" class="px-2 py-1.5 text-center">
+                    <button
+                      type="button"
+                      (click)="openDistrictPastorReport(district.church_id, quarterKey)"
+                      [attr.aria-label]="'Open ' + quarterKey.toUpperCase() + ' District Pastor Report for ' + district.name"
+                      class="inline-flex min-h-9 min-w-[5rem] cursor-pointer items-center justify-center rounded-lg px-2 transition hover:bg-white hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
+                      <ng-container *ngIf="getDistrictPastorQuarterStatus(district.church_id, quarterKey) as status">
+                        <span
+                          class="inline-flex justify-center text-center text-[10px] font-semibold leading-none"
+                          [ngClass]="{
+                            'text-emerald-700': status.status === 'Approved',
+                            'text-teal-700': status.status === 'Endorsed',
+                            'text-amber-800': status.status === 'Submitted',
+                            'text-slate-400': status.status === 'Not submitted'
+                          }">
+                          {{ status.status }}
+                        </span>
+                      </ng-container>
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -251,7 +289,7 @@
           </div>
 
           <div
-            *ngIf="!loadingDistrictChurches()[district.church_id] && (!districtChurches()[district.church_id] || districtChurches()[district.church_id].length === 0)"
+            *ngIf="!isDirectorPersonalReportOnly && !loadingDistrictChurches()[district.church_id] && (!districtChurches()[district.church_id] || districtChurches()[district.church_id].length === 0)"
             class="px-5 py-8 text-center text-sm text-emerald-900/60">
             No churches found for this district.
           </div>

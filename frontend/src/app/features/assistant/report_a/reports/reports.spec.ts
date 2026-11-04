@@ -77,6 +77,26 @@ describe('Reports', () => {
         name: 'Pasuc',
         address: null,
         parent_id: 7,
+        monitoring_by_department: {
+          16: {
+            q1: null, q2: null, q3: null, q4: null,
+            q1_approved: false, q2_approved: false, q3_approved: false, q4_approved: false,
+            q1_endorsed: false, q2_endorsed: false, q3_endorsed: false, q4_endorsed: false,
+            q1_submitted: false, q2_submitted: false, q3_submitted: false, q4_submitted: false
+          },
+          17: {
+            q1: 50, q1_approved: false, q1_submitted: false,
+            q2: 100, q2_approved: false, q2_submitted: true,
+            q3: 100, q3_approved: true, q3_submitted: true,
+            q4: null, q4_endorsed: true
+          },
+          21: {
+            q1: null, q2: null, q3: null, q4: null,
+            q1_approved: false, q2_approved: false, q3_approved: false, q4_approved: false,
+            q1_endorsed: false, q2_endorsed: false, q3_endorsed: false, q4_endorsed: false,
+            q1_submitted: false, q2_submitted: false, q3_submitted: false, q4_submitted: false
+          }
+        },
         monitoring: {
           q1: 50,
           q1_approved: false,
@@ -173,40 +193,55 @@ describe('Reports', () => {
     });
   });
 
-  it('lets Head Assistants select and open reports for any department', () => {
+  it('shows department monitoring without a department selector to Head Assistants', () => {
     currentUser.role = 'head assistant';
     currentUser.department_id = 17;
 
     component.loadDepartmentOptions();
 
     expect(component.hasAllDepartmentAccess).toBe(true);
-    expect(getDepartments).toHaveBeenCalledOnce();
+    expect(getDepartments).toHaveBeenCalled();
     expect(component.departments().map(department => department.department_name)).toEqual([
       'Ministerial & Evangelism',
       'Youth Ministries',
       'Communication'
     ]);
-    expect(component.selectedDepartmentId()).toBe(16);
-    expect(getDistricts).toHaveBeenLastCalledWith(16, CURRENT_REPORT_YEAR);
+    expect(getDistricts).toHaveBeenLastCalledWith(undefined, CURRENT_REPORT_YEAR);
     fixture.detectChanges();
-    const departmentSelect = fixture.nativeElement.querySelector(
-      '#report-department-filter'
-    ) as HTMLSelectElement;
-    expect(departmentSelect.value).toBe('16');
-    expect(departmentSelect.selectedOptions[0].textContent.trim())
-      .toBe('Ministerial & Evangelism');
+    expect(fixture.nativeElement.querySelector('#report-department-filter')).toBeNull();
     expect(component.canCreateReportTemplate).toBe(false);
     expect(fixture.nativeElement.textContent).not.toContain('New report');
 
-    component.selectDepartment(21);
-    component.openChurch(7, 8);
+    component.toggleDistrict(7);
+    component.toggleChurch(7, 8);
+    fixture.detectChanges();
+    expect(getChurches).toHaveBeenCalledOnce();
+    expect(getChurches).toHaveBeenCalledWith(7, undefined, CURRENT_REPORT_YEAR, true);
+    expect(
+      fixture.nativeElement.querySelectorAll('[id^="church-departments-"] tbody tr')
+    ).toHaveLength(2);
+    const churchMonitoringTable = fixture.nativeElement.querySelector(
+      '[id^="church-departments-"]'
+    ) as HTMLElement;
+    expect(churchMonitoringTable.textContent).not.toContain('Ministerial & Evangelism');
+    expect(churchMonitoringTable.textContent).not.toContain('Adventist Mission');
+    expect(churchMonitoringTable.textContent).not.toContain('Baptism Record');
+    expect(churchMonitoringTable.textContent).not.toContain('Death Record');
 
-    expect(getDistricts).toHaveBeenLastCalledWith(21, CURRENT_REPORT_YEAR);
+    component.openDepartmentQuarterReport(7, 8, 21, 'q3');
     expect(navigation).toEqual({
       commands: ['/assistant/reports/particulars', 21, 7, 8],
-      extras: { queryParams: { return_to: 'monitoring', year: String(CURRENT_REPORT_YEAR), return_department: '21' } }
+      extras: {
+        queryParams: {
+          return_to: 'monitoring',
+          year: String(CURRENT_REPORT_YEAR),
+          return_department: '21',
+          return_expanded: '7',
+          return_church: '8',
+          quarter: 'Q3'
+        }
+      }
     });
-
   });
 
   it('shows New report to regular assistants', () => {
@@ -230,9 +265,8 @@ describe('Reports', () => {
 
     component.loadDepartmentOptions();
 
-    expect(component.selectedDepartmentId()).toBe(99);
     expect(component.personalReportGroupDepartmentId).toBe(99);
-    expect(getDistricts).toHaveBeenLastCalledWith(99, CURRENT_REPORT_YEAR);
+    expect(getDistricts).toHaveBeenLastCalledWith(undefined, CURRENT_REPORT_YEAR);
   });
 
   it('keeps Directors scoped to their assigned department', () => {
@@ -272,10 +306,20 @@ describe('Reports', () => {
     });
   });
 
-  it('does not show the mission summary navigation button to assistants', () => {
+  it('shows assistants a button for the all-department summary', () => {
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).not.toContain('Report summary');
+    const summaryButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).find(button => button.textContent?.includes('Report summary')) as
+      HTMLButtonElement | undefined;
+    expect(summaryButton).toBeDefined();
+
+    component.openMissionSummary();
+    expect(navigation).toEqual({
+      commands: ['/assistant/reports/summary'],
+      extras: { queryParams: { year: CURRENT_REPORT_YEAR } }
+    });
   });
 
   it('gives an assistant without a department access to every department', () => {
@@ -284,8 +328,8 @@ describe('Reports', () => {
     component.loadDepartmentOptions();
 
     expect(component.hasAllDepartmentAccess).toBe(true);
-    expect(component.selectedDepartmentId()).toBe(16);
-    expect(getDistricts).toHaveBeenLastCalledWith(16, CURRENT_REPORT_YEAR);
+    expect(component.departments().length).toBeGreaterThan(0);
+    expect(getDistricts).toHaveBeenLastCalledWith(undefined, CURRENT_REPORT_YEAR);
   });
 
   it('keeps Head Directors scoped to their assigned department', () => {
@@ -327,41 +371,125 @@ describe('Reports', () => {
     expect(component.errorMessage()).toContain('Your department is unavailable');
   });
 
-  it('opens the selected district personal report directly for M&E assistants', () => {
+  it('shows District Pastor Report first in the church list for M&E assistants', () => {
     expect(getDistricts).toHaveBeenCalledWith(16, CURRENT_REPORT_YEAR);
     fixture.detectChanges();
 
     const districtRow = fixture.nativeElement.querySelector(
-      '[aria-label="Open personal report for North District"]'
+      'button[aria-expanded="false"]'
     ) as HTMLButtonElement;
     districtRow.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     fixture.detectChanges();
 
-    expect(getChurches).not.toHaveBeenCalled();
-    expect(districtRow.hasAttribute('aria-expanded')).toBe(false);
-    expect(component.expandedDistrictId()).toBeNull();
+    expect(getChurches).toHaveBeenCalledWith(7, 16, CURRENT_REPORT_YEAR);
+    expect(component.expandedDistrictId()).toBe(7);
+    const personalReportButton = fixture.nativeElement.querySelector(
+      '[aria-label="Open District Pastor Report for North District"]'
+    ) as HTMLButtonElement;
+    const firstChurchButton = personalReportButton.nextElementSibling
+      ?.querySelector('button') as HTMLButtonElement;
+    expect(personalReportButton.textContent).toContain('District Pastor Report');
+    expect(firstChurchButton.textContent).toContain('Pasuc');
+    personalReportButton.click();
+
     expect(navigation).toEqual({
       commands: ['/assistant/reports/records', 16, 7, 7],
-      extras: { queryParams: { return_to: 'monitoring', year: String(CURRENT_REPORT_YEAR), return_department: '16' } }
+      extras: {
+        queryParams: {
+          return_to: 'monitoring',
+          year: String(CURRENT_REPORT_YEAR),
+          return_department: '16',
+          return_expanded: '7'
+        }
+      }
     });
   });
 
-  it('restores selected department, search, and expanded district from monitoring return state', () => {
+  it('shows only quarter monitoring for M&E directors', () => {
+    currentUser.role = 'director';
+    currentUser.department_id = 16;
+    routerUrl = '/director/reports';
+    fixture.destroy();
+    fixture = TestBed.createComponent(Reports);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const districtRow = fixture.nativeElement.querySelector(
+      'button[aria-expanded="false"]'
+    ) as HTMLButtonElement;
+    districtRow.click();
+    fixture.detectChanges();
+
+    expect(component.isDirectorPersonalReportOnly).toBe(true);
+    expect(fixture.nativeElement.textContent).not.toContain('Pasuc');
+    expect(
+      fixture.nativeElement.querySelector(
+        '[aria-label="Open District Pastor Report for North District"]'
+      )
+    ).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[id^="church-departments-"]')
+    ).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector(
+        '[aria-label="Open Q1 District Pastor Report for North District"]'
+      )
+    ).not.toBeNull();
+  });
+
+  it('uses the requested four labels for District Pastor Report quarter statuses', () => {
+    component.districtPastorMonitoring.set({
+      7: {
+        q1: null,
+        q1_approved: true,
+        q2: null,
+        q2_endorsed: true,
+        q3: null,
+        q3_submitted: true,
+        q4: null
+      }
+    });
+
+    expect(component.getDistrictPastorQuarterStatus(7, 'q1').status).toBe('Approved');
+    expect(component.getDistrictPastorQuarterStatus(7, 'q2').status).toBe('Endorsed');
+    expect(component.getDistrictPastorQuarterStatus(7, 'q3').status).toBe('Submitted');
+    expect(component.getDistrictPastorQuarterStatus(7, 'q4').status).toBe('Not submitted');
+    expect(component.getDistrictPastorQuarterStatus(8, 'q1').status).toBe('Not submitted');
+  });
+
+  it('opens the district personal report from its quarter monitoring cell', () => {
+    component.openDistrictPastorReport(7, 'q3');
+
+    expect(navigation).toEqual({
+      commands: ['/assistant/reports/records', 16, 7, 7],
+      extras: {
+        queryParams: {
+          return_to: 'monitoring',
+          year: String(CURRENT_REPORT_YEAR),
+          return_department: '16',
+          quarter: 'Q3'
+        }
+      }
+    });
+  });
+
+  it('restores search and expanded church from monitoring return state', () => {
     currentUser.role = 'head assistant';
     currentUser.department_id = 17;
     returnQueryParams = {
       return_to: 'monitoring',
       return_department: '17',
       return_expanded: '7',
+      return_church: '8',
       return_search: 'North'
     };
 
     component.loadDepartmentOptions();
 
-    expect(component.selectedDepartmentId()).toBe(17);
     expect(component.searchTerm()).toBe('North');
     expect(component.expandedDistrictId()).toBe(7);
-    expect(getChurches).toHaveBeenCalledWith(7, 17, CURRENT_REPORT_YEAR);
+    expect(component.isChurchOpen(7, 8)).toBe(true);
+    expect(getChurches).toHaveBeenCalledWith(7, undefined, CURRENT_REPORT_YEAR, true);
   });
 
   it('restores a department-assigned assistant user’s monitoring search and scroll state', () => {
@@ -379,31 +507,33 @@ describe('Reports', () => {
     expect(getDistricts).toHaveBeenLastCalledWith(17, CURRENT_REPORT_YEAR);
   });
 
-  it('keeps district accordion monitoring for other assistant departments', () => {
+  it('shows the signed-in department in the nested church accordion', () => {
     currentUser.department_id = 17;
     component.loadDistricts();
     component.toggleDistrict(7);
+    component.toggleChurch(7, 8);
     fixture.detectChanges();
 
     expect(getChurches).toHaveBeenCalledWith(7, 17, CURRENT_REPORT_YEAR);
     expect(fixture.nativeElement.querySelectorAll('tbody tr')).toHaveLength(1);
   });
 
-  it('opens the personal report directly when a Head Assistant selects M&E', () => {
+  it('lets Head Assistants open an M&E quarter without selecting a department first', () => {
     currentUser.role = 'head assistant';
     currentUser.department_id = undefined;
     component.loadDepartmentOptions();
-    component.selectDepartment(16);
-    fixture.detectChanges();
 
-    fixture.nativeElement
-      .querySelector('[aria-label="Open personal report for North District"]')
-      .dispatchEvent(new MouseEvent('click', { bubbles: true }));
-
-    expect(getChurches).not.toHaveBeenCalled();
+    component.openDepartmentQuarterReport(7, 8, 16, 'q2');
     expect(navigation).toEqual({
-      commands: ['/assistant/reports/records', 16, 7, 7],
-      extras: { queryParams: { return_to: 'monitoring', year: String(CURRENT_REPORT_YEAR), return_department: '16' } }
+      commands: ['/assistant/reports/particulars', 16, 7, 8],
+      extras: {
+        queryParams: {
+          return_to: 'monitoring',
+          year: String(CURRENT_REPORT_YEAR),
+          return_department: '16',
+          quarter: 'Q2'
+        }
+      }
     });
   });
 
@@ -411,12 +541,11 @@ describe('Reports', () => {
     currentUser.department_id = 17;
     component.loadDistricts();
     component.toggleDistrict(7);
+    component.toggleChurch(7, 8);
     fixture.detectChanges();
 
-    const churchRows = fixture.nativeElement.querySelectorAll('tbody tr');
-    expect(churchRows).toHaveLength(1);
     const quarterStatuses = Array.from(
-      churchRows[0].querySelectorAll('[title$="status"]')
+      fixture.nativeElement.querySelectorAll('tbody tr td button')
     ) as HTMLElement[];
     expect(quarterStatuses).toHaveLength(4);
     expect(quarterStatuses[0].textContent).toContain('In progress');
@@ -425,29 +554,32 @@ describe('Reports', () => {
     expect(quarterStatuses[3].textContent).toContain('Endorsed');
   });
 
-  it('finds districts by the name of a church in the district', () => {
+  it('filters district names without eagerly loading every district church list', () => {
     currentUser.department_id = 17;
     component.loadDistricts();
     const searchInput = fixture.nativeElement.querySelector(
       '[aria-label="Search districts"]'
     ) as HTMLInputElement;
-    searchInput.value = 'Pasuc';
+    searchInput.value = 'North';
     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
 
-    expect(getChurches).toHaveBeenCalledWith(7, 17, CURRENT_REPORT_YEAR);
+    expect(getChurches).not.toHaveBeenCalled();
     expect(component.filteredDistricts().map(district => district.name))
       .toEqual(['North District']);
   });
 
-  it('opens the church report when its monitoring row is clicked', () => {
+  it('opens the selected department and quarter from the church monitoring table', () => {
     currentUser.department_id = 17;
     component.loadDistricts();
     component.toggleDistrict(7);
+    component.toggleChurch(7, 8);
     fixture.detectChanges();
 
-    const churchRow = fixture.nativeElement.querySelector('tbody tr') as HTMLTableRowElement;
-    churchRow.querySelector('td')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    const quarterButton = fixture.nativeElement.querySelector(
+      '[aria-label="Open Q1 report for Department 17 at Pasuc"]'
+    ) as HTMLButtonElement;
+    quarterButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     expect(navigation).toEqual({
       commands: ['/assistant/reports/particulars', 17, 7, 8],
@@ -456,20 +588,25 @@ describe('Reports', () => {
           return_to: 'monitoring',
           year: String(CURRENT_REPORT_YEAR),
           return_department: '17',
-          return_expanded: '7'
+          return_expanded: '7',
+          return_church: '8',
+          quarter: 'Q1'
         }
       }
     });
   });
 
-  it('opens the church report when its monitoring row is activated by keyboard', () => {
+  it('opens a department quarter report from its quarter button', () => {
     currentUser.department_id = 17;
     component.loadDistricts();
     component.toggleDistrict(7);
+    component.toggleChurch(7, 8);
     fixture.detectChanges();
 
-    const churchRow = fixture.nativeElement.querySelector('tbody tr') as HTMLTableRowElement;
-    churchRow.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const quarterButton = fixture.nativeElement.querySelector(
+      '[aria-label="Open Q1 report for Department 17 at Pasuc"]'
+    ) as HTMLButtonElement;
+    quarterButton.click();
 
     expect(navigation).toEqual({
       commands: ['/assistant/reports/particulars', 17, 7, 8],
@@ -478,7 +615,9 @@ describe('Reports', () => {
           return_to: 'monitoring',
           year: String(CURRENT_REPORT_YEAR),
           return_department: '17',
-          return_expanded: '7'
+          return_expanded: '7',
+          return_church: '8',
+          quarter: 'Q1'
         }
       }
     });

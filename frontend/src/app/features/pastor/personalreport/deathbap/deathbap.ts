@@ -101,6 +101,7 @@ export class DeathbapComponent implements OnInit {
   deathPage = 1;
 
   selectedQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q1';
+  selectedSummaryQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' | null = null;
 
   quarterOptions: ('Q1' | 'Q2' | 'Q3' | 'Q4')[] = [
     'Q1',
@@ -186,16 +187,34 @@ export class DeathbapComponent implements OnInit {
     this.districtId =
       Number(this.route.snapshot.paramMap.get('districtId')) || 0;
 
+    const requestedYear = Number(this.route.snapshot.queryParamMap.get('year'));
+    if (Number.isInteger(requestedYear) && requestedYear > 0) {
+      this.selectedYear = requestedYear;
+    }
+
+    const requestedQuarter = this.quarterOptions.find(quarter =>
+      quarter === this.normalizeQuarter(
+        this.route.snapshot.queryParamMap.get('quarter')
+      )
+    );
+    if (requestedQuarter) {
+      this.selectedQuarter = requestedQuarter;
+    }
+
     this.isReadOnly =
       this.router.url.startsWith('/assistant') ||
       this.router.url.startsWith('/director');
 
     if (this.departmentId === 16) {
-      this.selectedRecord = 'ministerial';
+      this.selectedRecord = this.isReadOnly ? 'baptism' : 'ministerial';
     } else if (this.departmentId === 20) {
       this.selectedRecord = 'mission';
     } else if (this.departmentId === 23) {
       this.selectedRecord = 'death';
+    }
+
+    if (this.isDistrictPersonalSummaryView) {
+      this.selectedSummaryQuarter = requestedQuarter ?? null;
     }
 
     this.loadChurches();
@@ -232,6 +251,79 @@ export class DeathbapComponent implements OnInit {
     if (this.selectedRecord === 'ministerial') return 16;
     if (this.selectedRecord === 'mission') return 20;
     return null;
+  }
+
+  get isDistrictPersonalSummaryView(): boolean {
+    return this.isReadOnly && this.departmentId === 16;
+  }
+
+  get isDistrictPersonalSummaryTab(): boolean {
+    return this.isDistrictPersonalSummaryView &&
+      (this.selectedRecord === 'baptism' || this.selectedRecord === 'death');
+  }
+
+  get districtBaptismQuarterTotals(): Record<'Q1' | 'Q2' | 'Q3' | 'Q4', number> {
+    return this.quarterOptions.reduce((totals, quarter) => {
+      totals[quarter] = this.baptisms.filter(record =>
+        this.getYearFromDate(record.date_of_baptism) === this.selectedYear &&
+        this.normalizeQuarter(record.quarter) === quarter
+      ).length;
+      return totals;
+    }, { Q1: 0, Q2: 0, Q3: 0, Q4: 0 });
+  }
+
+  get districtDeathQuarterTotals(): Record<'Q1' | 'Q2' | 'Q3' | 'Q4', number> {
+    return this.quarterOptions.reduce((totals, quarter) => {
+      totals[quarter] = this.deaths.filter(record =>
+        this.getYearFromDate(record.date_of_death) === this.selectedYear &&
+        this.normalizeQuarter(record.quarter) === quarter
+      ).length;
+      return totals;
+    }, { Q1: 0, Q2: 0, Q3: 0, Q4: 0 });
+  }
+
+  get districtBaptismTotal(): number {
+    return Object.values(this.districtBaptismQuarterTotals)
+      .reduce((total, quarterTotal) => total + quarterTotal, 0);
+  }
+
+  get districtDeathTotal(): number {
+    return Object.values(this.districtDeathQuarterTotals)
+      .reduce((total, quarterTotal) => total + quarterTotal, 0);
+  }
+
+  get districtSummaryBaptisms(): Baptism[] {
+    const quarter = this.selectedSummaryQuarter;
+    return quarter === null ? [] : this.baptisms.filter(record =>
+      this.getYearFromDate(record.date_of_baptism) === this.selectedYear &&
+      this.normalizeQuarter(record.quarter) === quarter
+    );
+  }
+
+  get districtSummaryDeaths(): Death[] {
+    const quarter = this.selectedSummaryQuarter;
+    return quarter === null ? [] : this.deaths.filter(record =>
+      this.getYearFromDate(record.date_of_death) === this.selectedYear &&
+      this.normalizeQuarter(record.quarter) === quarter
+    );
+  }
+
+  selectSummaryQuarter(quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'): void {
+    if (!this.isDistrictPersonalSummaryTab) {
+      return;
+    }
+
+    this.selectedSummaryQuarter =
+      this.selectedSummaryQuarter === quarter ? null : quarter;
+    if (this.selectedSummaryQuarter) {
+      this.selectedQuarter = quarter;
+      this.isAnnualView = false;
+    }
+    this.resetPagination();
+  }
+
+  closeSummaryQuarter(): void {
+    this.selectedSummaryQuarter = null;
   }
 
   get canComment(): boolean {
@@ -393,6 +485,7 @@ export class DeathbapComponent implements OnInit {
   onYearChange(value: number): void {
     if (Number.isInteger(value) && value > 0) {
       this.selectedYear = value;
+      this.selectedSummaryQuarter = null;
       this.resetPagination();
       this.updateCommentQuarter();
     }
@@ -936,6 +1029,7 @@ export class DeathbapComponent implements OnInit {
   ): void {
 
     this.selectedRecord = record;
+    this.selectedSummaryQuarter = null;
     this.searchTerm = '';
     this.resetPagination();
 

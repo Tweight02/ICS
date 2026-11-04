@@ -370,14 +370,29 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
       ...new Set(this.availableQuarters.map(quarter => quarter.year))
     ].sort((a, b) => b - a);
 
-    if (
+    const queryParams = this.route.snapshot.queryParamMap;
+    const requestedYear = Number(queryParams.get('year'));
+    if (this.availableYears.includes(requestedYear)) {
+      this.selectedYear = requestedYear;
+    } else if (
       this.selectedYear === null ||
       !this.availableYears.includes(this.selectedYear)
     ) {
       this.selectedYear = this.availableYears[0] ?? null;
     }
 
-    if (
+    const requestedQuarter = String(queryParams.get('quarter') ?? '')
+      .toUpperCase()
+      .match(/(?:Q|QUARTER\s*)?([1-4])/);
+    const requestedQuarterNumber = requestedQuarter
+      ? Number(requestedQuarter[1])
+      : 0;
+    const matchingRequestedQuarter = this.getQuartersForYear().find(
+      quarter => this.quarterNumber(quarter.quarter) === requestedQuarterNumber
+    );
+    if (matchingRequestedQuarter) {
+      this.selectedQuarterId = matchingRequestedQuarter.quarter_id;
+    } else if (
       !this.getQuartersForYear().some(
         quarter => quarter.quarter_id === this.selectedQuarterId
       )

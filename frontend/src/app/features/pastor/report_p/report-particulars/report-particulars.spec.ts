@@ -43,15 +43,35 @@ describe('ReportParticulars', () => {
             particulars: [{
               particular_id: 3,
               particular_name: 'Members visited',
-              quarters: [{
-                quarter_id: 9,
-                quarter: 'Q1',
-                year: 2026,
-                value: 10,
-                date_submitted: null,
-                district_endorse: null,
-                mission_approve: null
-              }]
+              quarters: [
+                {
+                  quarter_id: 9,
+                  quarter: 'Q1',
+                  year: 2026,
+                  value: 10,
+                  date_submitted: null,
+                  district_endorse: null,
+                  mission_approve: null
+                },
+                {
+                  quarter_id: 10,
+                  quarter: 'Q2',
+                  year: 2026,
+                  value: null,
+                  date_submitted: null,
+                  district_endorse: null,
+                  mission_approve: null
+                },
+                {
+                  quarter_id: 11,
+                  quarter: 'Q4',
+                  year: 2025,
+                  value: null,
+                  date_submitted: null,
+                  district_endorse: null,
+                  mission_approve: null
+                }
+              ]
             }]
           },
           { program_id: 4, program_name: 'Second Section', particulars: [] }
@@ -116,6 +136,28 @@ describe('ReportParticulars', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('opens the requested year and quarter from monitoring navigation', () => {
+    const route = TestBed.inject(ActivatedRoute);
+    Object.defineProperty(route.snapshot, 'queryParamMap', {
+      value: convertToParamMap({
+        year: '2025',
+        quarter: 'Q4',
+        church_name: 'Test Church',
+        district_name: 'Test District'
+      }),
+      configurable: true
+    });
+
+    component.loadReport();
+
+    expect(component.selectedYear).toBe(2025);
+    expect(component.getSelectedQuarter()).toEqual({
+      quarter_id: 11,
+      quarter: 'Q4',
+      year: 2025
+    });
   });
 
   it('lets Head Assistants comment but not approve reports', () => {

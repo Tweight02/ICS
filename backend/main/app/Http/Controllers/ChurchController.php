@@ -99,11 +99,13 @@ class ChurchController extends Controller
     ): JsonResponse {
         $validated = $request->validate([
             'department_id' => ['sometimes', 'integer', 'exists:departments,department_id'],
+            'include_department_monitoring' => ['sometimes', 'boolean'],
             'year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
         ]);
         $departmentId = isset($validated['department_id'])
             ? (int) $validated['department_id']
             : null;
+        $includeDepartmentMonitoring = (bool) ($validated['include_department_monitoring'] ?? false);
         $year = isset($validated['year'])
             ? (string) $validated['year']
             : (string) config('app.reporting_year', now()->year);
@@ -130,12 +132,33 @@ class ChurchController extends Controller
                 'parent_id',
             ]);
 
-        $monitoringByChurch = $monitoring->forChurches(
-            $churches->pluck('church_id')->all(),
-            $departmentId,
-            $year
-        );
-        if ($departmentId === 16) {
+        if ($includeDepartmentMonitoring) {
+            $departmentMonitoringByChurch = $monitoring->forChurchesByDepartment(
+                [$districtRecord->church_id, ...$churches->pluck('church_id')->all()],
+                $year
+            );
+            $districtRecord->monitoring =
+                $departmentMonitoringByChurch[$districtRecord->church_id][16] ?? [];
+            $churches->each(function (Church $church) use ($departmentMonitoringByChurch) {
+                $church->monitoring_by_department =
+                    $departmentMonitoringByChurch[$church->church_id] ?? [];
+            });
+        } else {
+            $monitoringByChurch = $monitoring->forChurches(
+                $churches->pluck('church_id')->all(),
+                $departmentId,
+                $year
+            );
+            $churches->each(function (Church $church) use ($monitoringByChurch) {
+                $church->monitoring = $monitoringByChurch[$church->church_id] ?? [
+                    'q1' => null,
+                    'q2' => null,
+                    'q3' => null,
+                    'q4' => null,
+                ];
+            });
+        }
+        if (! $includeDepartmentMonitoring && $departmentId === 16) {
             $districtMonitoring = $monitoring->forChurches(
                 [$districtRecord->church_id],
                 $departmentId,
@@ -143,14 +166,6 @@ class ChurchController extends Controller
             );
             $districtRecord->monitoring = $districtMonitoring[$districtRecord->church_id] ?? [];
         }
-        $churches->each(function (Church $church) use ($monitoringByChurch) {
-            $church->monitoring = $monitoringByChurch[$church->church_id] ?? [
-                'q1' => null,
-                'q2' => null,
-                'q3' => null,
-                'q4' => null,
-            ];
-        });
 
         return response()->json([
             'success' => true,
