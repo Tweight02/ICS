@@ -1,3 +1,4 @@
+
 <div class="flex min-h-screen items-start justify-center bg-[#f5f7fa] px-3 py-4 max-[576px]:p-2">
   <div class="mx-auto w-full max-w-[540px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.06)] max-[576px]:max-w-full max-[576px]:rounded-[10px]">
 
@@ -153,7 +154,7 @@
                 <button
                   *ngFor="let church of filteredChurches"
                   type="button"
-                  class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] text-slate-700 transition-colors hover:bg-emerald-50 focus-visible:bg-emerald-50 focus-visible:outline-none"
+                  class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] text-slate-700 transition-all duration-150 ease-in-out hover:bg-emerald-100 hover:text-emerald-900 hover:shadow-sm active:bg-emerald-200 focus-visible:bg-emerald-100 focus-visible:text-emerald-900 focus-visible:outline-none"
                   role="option"
                   [class.bg-emerald-50]="sameChurch(church.church_id, baptism.church_id)"
                   [class.text-emerald-800]="sameChurch(church.church_id, baptism.church_id)"
