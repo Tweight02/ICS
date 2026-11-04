@@ -16,6 +16,7 @@ interface TransferMove {
   pastor: string;
   from: string | null;
   to: string | null;
+  action: 'Assign' | 'Transfer' | 'Made inactive';
 }
 
 interface TransferPreview {
@@ -102,7 +103,7 @@ export class AssignUser implements OnInit {
     return pastor ? (this.pastorDistricts().get(pastor.user_id) ?? null) : null;
   });
 
-  /** Balanced before/after summary: one entry per pastor affected by the change. */
+  /** Summary of the selected pastor's move and any displaced pastor. */
   readonly preview = computed<TransferPreview | null>(() => {
     const target = this.transferTarget();
     const pastor = this.selectedPastor();
@@ -113,30 +114,24 @@ export class AssignUser implements OnInit {
     const from = this.selectedPastorFrom();
     const hasOccupant = target.pastor_user_id !== null;
 
-    const moves: TransferMove[] = [
-      { pastor: pastor.full_name, from: from?.district_name ?? null, to: target.district_name },
-    ];
+    const moves: TransferMove[] = [{
+      pastor: pastor.full_name,
+      from: from?.district_name ?? null,
+      to: target.district_name,
+      action: from ? 'Transfer' : 'Assign',
+    }];
 
     if (hasOccupant) {
       moves.push({
         pastor: target.pastor_name ?? 'Current pastor',
         from: target.district_name,
-        to: from?.district_name ?? null, // swaps into the other pastor's district, or becomes unassigned
+        to: null,
+        action: 'Made inactive',
       });
     }
 
-    let title: string;
-    let note: string | null = null;
-    if (hasOccupant && from) {
-      title = 'These two pastors will swap districts';
-    } else if (hasOccupant) {
-      title = 'Replace pastor';
-    } else if (from) {
-      title = 'Transfer pastor';
-      note = `${from.district_name} will have no pastor after this transfer.`;
-    } else {
-      title = 'Assign pastor';
-    }
+    const title = hasOccupant ? 'Replace pastor' : from ? 'Transfer pastor' : 'Assign pastor';
+    const note = from ? `${from.district_name} will have no pastor after this transfer.` : null;
 
     return { title, moves, note };
   });
@@ -348,9 +343,9 @@ export class AssignUser implements OnInit {
     const replaced = isChange ? target.pastor_name : null;
 
     const confirmationText = replaced && from
-      ? `${pastor.full_name} will move from ${from.district_name} to ${target.district_name}, and ${replaced} will move to ${from.district_name}.`
+      ? `${pastor.full_name} will move from ${from.district_name} to ${target.district_name}, and ${replaced} will be made inactive, leaving ${from.district_name} without a pastor.`
       : replaced
-        ? `${pastor.full_name} will replace ${replaced} in ${target.district_name}; ${replaced} will be unassigned.`
+        ? `${pastor.full_name} will replace ${replaced} in ${target.district_name}; ${replaced} will be made inactive.`
         : from
           ? `${pastor.full_name} will move from ${from.district_name} to ${target.district_name}, leaving ${from.district_name} without a pastor.`
           : `${pastor.full_name} will be assigned to ${target.district_name}.`;
@@ -406,8 +401,8 @@ export class AssignUser implements OnInit {
   private successText(pastor: string, to: string, from: string | null, replaced: string | null): string {
     if (replaced) {
       return from
-        ? `${pastor} moved to ${to}, and ${replaced} moved to ${from}.`
-        : `${pastor} now serves ${to}, replacing ${replaced}.`;
+        ? `${pastor} moved from ${from} to ${to}, and ${replaced} was made inactive, leaving ${from} without a pastor.`
+        : `${pastor} now serves ${to}, replacing ${replaced}, who was made inactive.`;
     }
     return from ? `${pastor} moved from ${from} to ${to}.` : `${pastor} is now assigned to ${to}.`;
   }

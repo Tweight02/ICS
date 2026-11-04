@@ -51,4 +51,5 @@ export interface DistrictPastorAssignment {
 export interface AssignablePastor {
     user_id: number;
     full_name: string;
+    status: 'active' | 'inactive';
 }

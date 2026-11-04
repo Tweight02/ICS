@@ -167,15 +167,6 @@
 						}
 					</span>
 
-					<!-- Action indicator -->
-					<svg
-						class="h-4 w-4 shrink-0 text-slate-400 transition-colors group-hover:text-[#0F4A30]"
-						viewBox="0 0 20 20"
-						fill="currentColor"
-						aria-hidden="true"
-					>
-						<path fill-rule="evenodd" d="M7.2 4.3a1 1 0 011.4 0l5 5a1 1 0 010 1.4l-5 5a1 1 0 01-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 010-1.4z" clip-rule="evenodd" />
-					</svg>
 				</button>
 			}
 		</div>
@@ -277,6 +268,9 @@
 								(keydown.enter)="!isHere && !saving() && selectPastor(p)">
 								<td class="px-3 py-2 font-medium text-slate-900">
 									<span class="break-words">{{ p.full_name }}</span>
+									@if (p.status === 'inactive') {
+									<span class="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">Inactive</span>
+									}
 								</td>
 								<td class="px-3 py-2">
 									@if (isHere) {
@@ -291,7 +285,7 @@
 							} @empty {
 							<tr>
 								<td colspan="2" class="px-3 py-6 text-center text-sm text-slate-500">
-									{{ pastors().length === 0 ? 'There are no active pastors available.' : 'No pastors
+									{{ pastors().length === 0 ? 'There are no pastors available.' : 'No pastors
 									match your search.' }}
 								</td>
 							</tr>
