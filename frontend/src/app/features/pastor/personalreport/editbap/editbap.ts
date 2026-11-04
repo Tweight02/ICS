@@ -61,19 +61,67 @@ export class EditbapComponent implements OnInit {
   churches: Church[] = [];
   churchesLoading = false;
   churchesLoaded = false;
-  churchesError = '';
 
   loading = true;
   saving = false;
 
-  errorMessage = '';
+  private _errorMessage = '';
+  private _churchesError = '';
+  private _baptismDateError = '';
+  private baptismDateErrorShown = false;
+
+  get errorMessage(): string {
+    return this._errorMessage;
+  }
+
+  set errorMessage(message: string) {
+    this._errorMessage = message;
+    if (message) this.showErrorAlert(message);
+  }
+
+  get churchesError(): string {
+    return this._churchesError;
+  }
+
+  set churchesError(message: string) {
+    this._churchesError = message;
+    if (message) this.showErrorAlert(message);
+  }
+
+  get baptismDateError(): string {
+    return this._baptismDateError;
+  }
+
+  set baptismDateError(message: string) {
+    this._baptismDateError = message;
+    this.baptismDateErrorShown = false;
+  }
+
+  private showErrorAlert(message: string): void {
+    showAppAlert({
+      icon: 'error',
+      title: 'Error!',
+      text: message,
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#0c502f'
+    });
+  }
+
+  showBaptismDateError(): void {
+    if (!this._baptismDateError || this.baptismDateErrorShown) {
+      return;
+    }
+
+    this.baptismDateErrorShown = true;
+    this.showErrorAlert(this._baptismDateError);
+  }
+
   successMessage = '';
 
   today = this.getTodayDate();
 
-  // Minimum permitted baptism date: one day after birthdate.
+  // Minimum permitted baptism date: the member's 8th birthday.
   minimumBaptismDate = '';
-  baptismDateError = '';
 
   baptism: BaptismForm = this.emptyBaptism();
 
@@ -157,7 +205,7 @@ export class EditbapComponent implements OnInit {
 
   /**
    * Calculate the earliest permitted baptism date.
-   * Baptism must be at least one calendar day after birth.
+   * A member must be at least 8 years old on the baptism date.
    */
   updateMinimumBaptismDate(): void {
     this.baptismDateError = '';
@@ -175,13 +223,12 @@ export class EditbapComponent implements OnInit {
       .map(Number);
 
     // Use the local calendar date to avoid timezone shifts.
+    // The minimum date is the member's 8th birthday.
     const minimumDate = new Date(
-      year,
+      year + 8,
       month - 1,
       day
     );
-
-    minimumDate.setDate(minimumDate.getDate() + 1);
 
     const minimumYear = minimumDate.getFullYear();
     const minimumMonth = String(
@@ -200,8 +247,8 @@ export class EditbapComponent implements OnInit {
   }
 
   /**
-   * Reject a baptism date that is the same as
-   * or earlier than the birthdate.
+   * Reject a baptism date earlier than the member's 8th birthday.
+   * The 8th birthday itself is an allowed baptism date.
    */
   validateBaptismDate(): void {
     this.baptismDateError = '';
@@ -209,16 +256,16 @@ export class EditbapComponent implements OnInit {
     const birthdate = this.baptism.birthdate;
     const baptismDate = this.baptism.date_of_baptism;
 
-    if (!birthdate || !baptismDate) {
+    if (!birthdate || !baptismDate || !this.minimumBaptismDate) {
       return;
     }
 
     // YYYY-MM-DD strings can be compared directly.
-    if (baptismDate <= birthdate) {
+    if (baptismDate < this.minimumBaptismDate) {
       this.baptism.date_of_baptism = '';
 
       this.baptismDateError =
-        'Date of baptism must be at least one day after the birthdate.';
+        "Date of baptism must be on or after the member's 8th birthday.";
     }
   }
 
@@ -226,13 +273,12 @@ export class EditbapComponent implements OnInit {
    * Additional validation before saving.
    */
   isBaptismDateInvalid(): boolean {
-    const birthdate = this.baptism.birthdate;
     const baptismDate = this.baptism.date_of_baptism;
 
     return (
-      !!birthdate &&
       !!baptismDate &&
-      baptismDate <= birthdate
+      !!this.minimumBaptismDate &&
+      baptismDate < this.minimumBaptismDate
     );
   }
 
@@ -565,8 +611,7 @@ export class EditbapComponent implements OnInit {
           };
 
           // Calculate the minimum date immediately after loading.
-          // This also detects an existing baptism date that is
-          // the same as or earlier than the birthdate.
+          // This also detects a date earlier than the member's 8th birthday.
           this.updateMinimumBaptismDate();
 
           this.ensureSelectedChurchBelongsToDistrict();
@@ -655,22 +700,21 @@ export class EditbapComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    // Block an invalid baptism date before other form validation.
+    // Block a baptism date earlier than the member's 8th birthday.
     if (
-      this.baptism.birthdate &&
       this.baptism.date_of_baptism &&
-      this.baptism.date_of_baptism <=
-        this.baptism.birthdate
+      this.minimumBaptismDate &&
+      this.baptism.date_of_baptism < this.minimumBaptismDate
     ) {
       this.baptismDateError =
-        'Date of baptism must be at least one day after the birthdate.';
+        "Date of baptism must be on or after the member's 8th birthday.";
 
-      this.errorMessage = this.baptismDateError;
+      this.showBaptismDateError();
       return;
     }
 
     if (this.baptismDateError) {
-      this.errorMessage = this.baptismDateError;
+      this.showBaptismDateError();
       return;
     }
 
@@ -745,16 +789,15 @@ export class EditbapComponent implements OnInit {
       return;
     }
 
-    // Final date check: a baptism date must be strictly
-    // later than the birthdate, never equal to or earlier.
+    // Final date check: the member must be at least 8 years old.
     if (
-      this.baptism.birthdate &&
       this.baptism.date_of_baptism &&
-      this.baptism.date_of_baptism <=
-        this.baptism.birthdate
+      this.minimumBaptismDate &&
+      this.baptism.date_of_baptism < this.minimumBaptismDate
     ) {
-      this.errorMessage =
-        'Date of baptism must be at least one day after the birthdate.';
+      this.baptismDateError =
+        "Date of baptism must be on or after the member's 8th birthday.";
+      this.showBaptismDateError();
       return;
     }
 
