@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -10,8 +11,9 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { EMPTY } from 'rxjs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { timeout } from 'rxjs/operators';
+import { expand, reduce, timeout } from 'rxjs/operators';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
 import { showAppAlert } from '../../../../shared/utils/app-alert';
@@ -96,13 +98,7 @@ export class BapaddrecComponent implements OnInit {
     officiating_minister: '',
     place_of_baptism: '',
     date_of_baptism: '',
-
-    // Keep this property name for Laravel API compatibility.
     marital_status: null as string | null,
-
-    // null = not selected
-    // false = Newly Baptized
-    // true = Reclaimed Member
     is_reclaimed: null as boolean | null
   };
 
@@ -148,9 +144,6 @@ export class BapaddrecComponent implements OnInit {
   churchSearch = '';
   churchDropdownOpen = false;
 
-  /**
-   * Filter church names while typing.
-   */
   get filteredChurches(): Church[] {
     const search = this.churchSearch.trim().toLowerCase();
 
@@ -159,9 +152,6 @@ export class BapaddrecComponent implements OnInit {
     );
   }
 
-  /**
-   * Get the name of the currently selected church.
-   */
   getSelectedChurchName(): string {
     const selectedChurch = this.churches.find(church =>
       String(church.church_id) === String(this.baptism.church_id)
@@ -170,9 +160,6 @@ export class BapaddrecComponent implements OnInit {
     return selectedChurch?.name || '';
   }
 
-  /**
-   * Compare church IDs safely.
-   */
   sameChurch(
     id1: number | null | undefined,
     id2: number | null | undefined
@@ -184,9 +171,6 @@ export class BapaddrecComponent implements OnInit {
     );
   }
 
-  /**
-   * Open the dropdown when the search field receives focus.
-   */
   openChurchDropdown(): void {
     if (this.churches.length === 0) {
       return;
@@ -198,9 +182,6 @@ export class BapaddrecComponent implements OnInit {
     }
   }
 
-  /**
-   * Update the search as the user types.
-   */
   onChurchSearch(event: Event): void {
     this.churchSearch =
       (event.target as HTMLInputElement).value;
@@ -208,9 +189,6 @@ export class BapaddrecComponent implements OnInit {
     this.churchDropdownOpen = true;
   }
 
-  /**
-   * Toggle the dropdown using its arrow button.
-   */
   toggleChurchDropdown(): void {
     if (this.churchDropdownOpen) {
       this.closeChurchDropdown();
@@ -223,18 +201,12 @@ export class BapaddrecComponent implements OnInit {
     }
   }
 
-  /**
-   * Select a church and update the existing form model.
-   */
   selectChurch(church: Church): void {
     this.baptism.church_id = church.church_id;
     this.churchSearch = '';
     this.churchDropdownOpen = false;
   }
 
-  /**
-   * Close the dropdown when clicking outside it.
-   */
   @HostListener('document:click', ['$event'])
   onChurchDocumentClick(event: MouseEvent): void {
     const target = event.target as Node | null;
@@ -248,17 +220,15 @@ export class BapaddrecComponent implements OnInit {
     }
   }
 
-  /**
-   * Close the dropdown and clear the search text.
-   */
   closeChurchDropdown(): void {
     this.churchDropdownOpen = false;
     this.churchSearch = '';
   }
 
-  /**
-   * Get today's local date.
-   */
+  /* =========================================
+     DATE VALIDATION
+  ========================================= */
+
   private getTodayDate(): string {
     const date = new Date();
 
@@ -269,13 +239,6 @@ export class BapaddrecComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
-  /* =========================================
-     DATE VALIDATION
-  ========================================= */
-
-  /**
-   * Check whether a date is a real YYYY-MM-DD date.
-   */
   private isValidDateString(value: string): boolean {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
       return false;
@@ -297,25 +260,18 @@ export class BapaddrecComponent implements OnInit {
   }
 
   /**
-   * Set the minimum baptism date to one day after
-   * the selected birthdate.
+   * Calculate the member's 8th birthday.
+   * The baptism date must be on or after this date.
    */
-  updateMinimumBaptismDate(): void {
-    this.baptismDateError = '';
-
-    const birthdate = this.baptism.birthdate;
-
+  private getMinimumBaptismDate(birthdate: string): string {
     if (!birthdate || !this.isValidDateString(birthdate)) {
-      this.minimumBaptismDate = '';
-      return;
+      return '';
     }
 
     const [year, month, day] = birthdate.split('-').map(Number);
 
-    const minimumDate = new Date(year, month - 1, day);
-
-    // Baptism must be at least one day after birth.
-    minimumDate.setDate(minimumDate.getDate() + 1);
+    // Add 8 years to the birthdate.
+    const minimumDate = new Date(year + 8, month - 1, day);
 
     const minimumYear = minimumDate.getFullYear();
     const minimumMonth = String(
@@ -325,17 +281,29 @@ export class BapaddrecComponent implements OnInit {
       minimumDate.getDate()
     ).padStart(2, '0');
 
-    this.minimumBaptismDate =
-      `${minimumYear}-${minimumMonth}-${minimumDay}`;
+    return `${minimumYear}-${minimumMonth}-${minimumDay}`;
+  }
 
-    // Check the currently selected baptism date again
-    // whenever the birthdate changes.
+  /**
+   * Update the minimum baptism date whenever
+   * the birthdate changes.
+   */
+  updateMinimumBaptismDate(): void {
+    this.baptismDateError = '';
+
+    this.minimumBaptismDate =
+      this.getMinimumBaptismDate(this.baptism.birthdate);
+
     this.validateBaptismDate();
   }
 
   /**
-   * Prevent baptism on or before the birthdate
-   * and prevent a future baptism date.
+   * Validate the date of baptism.
+   *
+   * Rules:
+   * 1. Date of baptism must be valid.
+   * 2. Member must be at least 8 years old.
+   * 3. Date of baptism cannot be later than today.
    */
   validateBaptismDate(): void {
     this.baptismDateError = '';
@@ -365,20 +333,19 @@ export class BapaddrecComponent implements OnInit {
       return;
     }
 
-    if (
-      birthdate &&
-      this.isValidDateString(birthdate) &&
-      baptismDate <= birthdate
-    ) {
+    const minimumDate =
+      this.getMinimumBaptismDate(birthdate);
+
+    if (minimumDate && baptismDate < minimumDate) {
       this.baptism.date_of_baptism = '';
 
       this.baptismDateError =
-        'Date of baptism must be at least one day after the birthdate.';
+        `Date of baptism must be on or after the member's 8th birthday (${minimumDate}).`;
     }
   }
 
   /**
-   * Additional validation before saving.
+   * Check whether the baptism date is invalid.
    */
   isBaptismDateInvalid(): boolean {
     const birthdate = this.baptism.birthdate;
@@ -388,14 +355,13 @@ export class BapaddrecComponent implements OnInit {
       return false;
     }
 
+    const minimumDate =
+      this.getMinimumBaptismDate(birthdate);
+
     return (
       !this.isValidDateString(baptismDate) ||
       baptismDate > this.today ||
-      (
-        !!birthdate &&
-        this.isValidDateString(birthdate) &&
-        baptismDate <= birthdate
-      )
+      (!!minimumDate && baptismDate < minimumDate)
     );
   }
 
@@ -403,10 +369,6 @@ export class BapaddrecComponent implements OnInit {
      FORM VALIDATION
   ========================================= */
 
-  /**
-   * Validate all required fields and incorrect input
-   * before checking for duplicate records.
-   */
   private getValidationErrors(): string[] {
     const errors: string[] = [];
 
@@ -428,7 +390,7 @@ export class BapaddrecComponent implements OnInit {
       errors.push('First Name must contain valid letters only.');
     }
 
-    // Middle Name is optional, but must be valid if entered.
+    // Middle Name
     if (middleName && !namePattern.test(middleName)) {
       errors.push('Middle Name contains invalid characters.');
     }
@@ -440,7 +402,7 @@ export class BapaddrecComponent implements OnInit {
       errors.push('Last Name must contain valid letters only.');
     }
 
-    // Extension Name is optional.
+    // Extension Name
     if (extensionName && !extensionPattern.test(extensionName)) {
       errors.push('Extension Name contains invalid characters.');
     }
@@ -476,15 +438,17 @@ export class BapaddrecComponent implements OnInit {
     } else if (!this.isValidDateString(this.baptism.date_of_baptism)) {
       errors.push('Please enter a valid date of baptism.');
     } else {
-      if (
-        this.isValidDateString(this.baptism.birthdate) &&
-        this.baptism.date_of_baptism <= this.baptism.birthdate
-      ) {
+      const minimumDate =
+        this.getMinimumBaptismDate(this.baptism.birthdate);
+
+      // Member must be at least 8 years old.
+      if (minimumDate && this.baptism.date_of_baptism < minimumDate) {
         errors.push(
-          'Date of Baptism must be at least one day after the birthdate.'
+          `Date of Baptism must be on or after the member's 8th birthday (${minimumDate}).`
         );
       }
 
+      // Baptism cannot be in the future.
       if (this.baptism.date_of_baptism > this.today) {
         errors.push('Date of Baptism cannot be later than today.');
       }
@@ -523,9 +487,6 @@ export class BapaddrecComponent implements OnInit {
     return errors;
   }
 
-  /**
-   * Display validation errors.
-   */
   private showValidationErrors(errors: string[]): void {
     showAppAlert({
       icon: 'warning',
@@ -541,15 +502,6 @@ export class BapaddrecComponent implements OnInit {
      DUPLICATE RECORD VALIDATION
   ========================================= */
 
-  /**
-   * Normalize text before comparing existing records.
-   *
-   * This handles:
-   * - Uppercase and lowercase differences.
-   * - Extra spaces.
-   * - Leading and trailing spaces.
-   * - Different Unicode representations of accented letters.
-   */
   private normalizeText(value: string | null | undefined): string {
     return String(value ?? '')
       .normalize('NFKD')
@@ -559,25 +511,12 @@ export class BapaddrecComponent implements OnInit {
       .toLocaleLowerCase();
   }
 
-  /**
-   * Normalize API dates that may include a time component.
-   */
   private normalizeDate(value: string | null | undefined): string {
     return String(value ?? '').trim().slice(0, 10);
   }
 
   /**
-   * Check whether an existing record belongs to the same person.
-   *
-   * A duplicate is identified using:
-   * - First Name
-   * - Middle Name
-   * - Last Name
-   * - Extension Name
-   * - Birthdate
-   *
-   * Church, quarter, and date of baptism are intentionally
-   * excluded so changing those fields cannot bypass the check.
+   * Check the five identifying fields.
    */
   private isDuplicateBaptism(
     existing: ExistingBaptism
@@ -613,13 +552,7 @@ export class BapaddrecComponent implements OnInit {
   }
 
   /**
-   * Safely extract baptism records from common Laravel
-   * response formats:
-   *
-   * 1. [...]
-   * 2. { data: [...] }
-   * 3. { data: { data: [...] } }
-   * 4. { baptisms: [...] }
+   * Extract records from common Laravel response formats.
    */
   private extractExistingBaptisms(
     response: any
@@ -645,40 +578,85 @@ export class BapaddrecComponent implements OnInit {
       return response.data.baptisms;
     }
 
+    if (Array.isArray(response?.records)) {
+      return response.records;
+    }
+
+    if (Array.isArray(response?.data?.records)) {
+      return response.data.records;
+    }
+
+    if (Array.isArray(response?.result?.data)) {
+      return response.result.data;
+    }
+
+    if (Array.isArray(response?.items)) {
+      return response.items;
+    }
+
     return null;
   }
 
   /**
-   * Check existing records immediately before saving.
-   * Saving is stopped when the same person already exists.
+   * Get the next Laravel pagination URL.
+   */
+  private getNextBaptismPageUrl(response: any): string | null {
+    const candidates = [
+      response?.next_page_url,
+      response?.links?.next,
+      response?.data?.next_page_url,
+      response?.data?.links?.next,
+      response?.meta?.links?.find((link: any) =>
+        String(link?.label ?? '').toLowerCase().includes('next')
+      )?.url,
+      response?.links?.find?.((link: any) =>
+        String(link?.label ?? '').toLowerCase().includes('next')
+      )?.url
+    ];
+
+    const nextUrl = candidates.find(
+      (value): value is string =>
+        typeof value === 'string' &&
+        value.trim() !== '' &&
+        value.trim() !== '#'
+    );
+
+    return nextUrl?.trim() || null;
+  }
+
+  /**
+   * Check every page of existing baptism records before saving.
    */
   private checkDuplicateBeforeSaving(payload: any): void {
     this.http
       .get<any>('/api/baptisms')
-      .pipe(timeout(10000))
-      .subscribe({
+      .pipe(
+        timeout(10000),
 
-        next: (response) => {
-          const existingRecords =
+        expand(response => {
+          const nextPageUrl =
+            this.getNextBaptismPageUrl(response);
+
+          return nextPageUrl
+            ? this.http.get<any>(nextPageUrl).pipe(timeout(10000))
+            : EMPTY;
+        }),
+
+        reduce((allRecords: ExistingBaptism[], response: any) => {
+          const pageRecords =
             this.extractExistingBaptisms(response);
 
-          // Stop saving when the API response cannot be verified.
-          if (!existingRecords) {
-            this.saving = false;
-
-            showAppAlert({
-              icon: 'error',
-              title: 'Unable to Verify Records',
-              text: 'The existing baptism records could not be checked. No record was saved. Please try again.',
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#176b52',
-              customClass: this.swalCustomClass
-            });
-
-            return;
+          if (!pageRecords) {
+            throw new Error(
+              'The existing baptism records could not be read. No record was saved.'
+            );
           }
 
-          // Check whether the same person already has a record.
+          return allRecords.concat(pageRecords);
+        }, [] as ExistingBaptism[])
+      )
+      .subscribe({
+        next: (existingRecords) => {
           const duplicateExists = existingRecords.some(
             (record: ExistingBaptism) =>
               this.isDuplicateBaptism(record)
@@ -690,7 +668,7 @@ export class BapaddrecComponent implements OnInit {
             showAppAlert({
               icon: 'warning',
               title: 'Duplicate Baptism Record',
-              text: 'This person already has an existing baptism record. A member with the same first name, middle name, last name, extension name, and birthdate cannot be added again.',
+              text: 'This member already has a baptism record. A member with the same first name, middle name, last name, extension name, and birthdate cannot be added again.',
               confirmButtonText: 'OK',
               confirmButtonColor: '#176b52',
               customClass: this.swalCustomClass
@@ -699,7 +677,6 @@ export class BapaddrecComponent implements OnInit {
             return;
           }
 
-          // No duplicate found. Proceed with saving.
           this.submitBaptismRecord(payload);
         },
 
@@ -720,6 +697,8 @@ export class BapaddrecComponent implements OnInit {
           } else if (error?.status === 0) {
             errorMessage =
               'Cannot connect to Laravel. Make sure php artisan serve is running.';
+          } else if (error?.message) {
+            errorMessage = error.message;
           } else if (error?.error?.message) {
             errorMessage = error.error.message;
           }
@@ -740,9 +719,6 @@ export class BapaddrecComponent implements OnInit {
      LOAD DISTRICT CHURCHES
   ========================================= */
 
-  /**
-   * Load only churches assigned to the signed-in pastor's district.
-   */
   loadChurches(): void {
     this.churchesLoading = true;
 
@@ -761,7 +737,7 @@ export class BapaddrecComponent implements OnInit {
               title: 'Unable to Load District Churches',
               text: 'Your assigned district could not be identified.',
               confirmButtonText: 'OK',
-              confirmButtonColor: '#176b52',
+              confirmButtonColor: '#765b52',
               customClass: this.swalCustomClass
             });
 
@@ -805,9 +781,6 @@ export class BapaddrecComponent implements OnInit {
      AGE CALCULATION
   ========================================= */
 
-  /**
-   * Calculate age from birthdate.
-   */
   calculateAge(): void {
     if (!this.baptism.birthdate) {
       this.age = null;
@@ -848,9 +821,6 @@ export class BapaddrecComponent implements OnInit {
      SAVE BAPTISM RECORD
   ========================================= */
 
-  /**
-   * Save baptism record after validation and duplicate checking.
-   */
   saveBaptism(): void {
     if (this.saving) {
       return;
@@ -889,10 +859,6 @@ export class BapaddrecComponent implements OnInit {
     this.baptism.quarter =
       this.baptism.quarter.trim();
 
-    /*
-     * false = Newly Baptized
-     * true  = Reclaimed Member
-     */
     const payload = {
       ...this.baptism,
       church_id: Number(this.baptism.church_id),
