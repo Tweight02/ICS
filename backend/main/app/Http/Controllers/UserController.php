@@ -323,7 +323,6 @@ class UserController extends Controller
 
         $pastors = User::query()
             ->where('role', 'pastor')
-            ->where('status', 'active')
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get([
@@ -333,9 +332,12 @@ class UserController extends Controller
                 'middle_name',
                 'last_name',
                 'extension_name',
+                'status',
             ]);
 
-        $pastorsByDistrict = $pastors->keyBy('church_id');
+        $pastorsByDistrict = $pastors
+            ->where('status', 'active')
+            ->keyBy('church_id');
 
         return response()->json([
             'assignments' => $districts->map(function (Church $district) use ($pastorsByDistrict): array {
@@ -363,6 +365,7 @@ class UserController extends Controller
                     $pastor->last_name,
                     $pastor->extension_name,
                 ])),
+                'status' => $pastor->status,
             ])->values(),
         ]);
     }
@@ -371,34 +374,6 @@ class UserController extends Controller
     {
         $user->update(['status' => 'inactive']);
         $user->tokens()->delete();
-    }
-
-    /** New record in the target district, or reactivate the person's earlier record there. */
-    private function place(User $source, int $churchId): User
-    {
-        $existing = User::where('email', $source->email)
-            ->where('church_id', $churchId)
-            ->first();
-
-        if ($existing) {
-            $existing->forceFill([
-                ...$source->only([
-                    'department_id', 'first_name', 'middle_name', 'last_name',
-                    'extension_name', 'birthdate', 'gender', 'profile_image', 'password',
-                ]),
-                'status' => 'active',
-            ])->save();
-
-            return $existing;
-        }
-
-        $new = $source->replicate();      // primary key is not copied
-        $new->church_id = $churchId;
-        $new->status = 'active';
-        $new->remember_token = null;
-        $new->save();
-
-        return $new;
     }
 
     public function assignPastorToDistrict(Request $request, int $districtId): JsonResponse
@@ -420,13 +395,13 @@ class UserController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($pastor->role !== 'pastor' || $pastor->status !== 'active') {
+            if ($pastor->role !== 'pastor') {
                 throw ValidationException::withMessages([
-                    'user_id' => 'Select an active pastor to assign.',
+                    'user_id' => 'Select a pastor to assign.',
                 ]);
             }
 
-            if ((int) $pastor->church_id === $districtId) {
+            if ($pastor->status === 'active' && (int) $pastor->church_id === $districtId) {
                 throw ValidationException::withMessages([
                     'user_id' => 'This pastor is already assigned to the selected district.',
                 ]);
@@ -440,19 +415,14 @@ class UserController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            $fromChurchId = (int) $pastor->church_id;
-
-            // Retire the old records first (rows and their past data stay as they are)
-            $this->retire($pastor);
             if ($assignedPastor) {
                 $this->retire($assignedPastor);
             }
 
-            // Then place each person in their new district
-            $this->place($pastor, $district->church_id);
-            if ($assignedPastor) {
-                $this->place($assignedPastor, $fromChurchId);
-            }
+            $pastor->update([
+                'church_id' => $district->church_id,
+                'status' => 'active',
+            ]);
         });
 
         return response()->json([

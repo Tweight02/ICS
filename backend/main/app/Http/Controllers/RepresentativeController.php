@@ -327,23 +327,21 @@ class RepresentativeController extends Controller
                 ]);
             }
 
-            $destinationOccupied = User::query()
+            $destinationRepresentative = User::query()
                 ->where('role', 'representative')
                 ->where('status', 'active')
                 ->where('church_id', $destinationChurch->church_id)
                 ->where('user_id', '!=', $representative->user_id)
-                ->exists();
+                ->lockForUpdate()
+                ->first();
 
-            if ($destinationOccupied) {
-                throw ValidationException::withMessages([
-                    'church_id' => 'This church already has an active representative.',
-                ]);
+            if ($destinationRepresentative) {
+                $this->retire($destinationRepresentative);
             }
 
-            // Transfer: old row stays (inactive), new row in the destination church
-            $this->retire($representative);
+            $representative->update($data);
 
-            return $this->place($representative, $destinationChurch->church_id, $data);
+            return $representative;
         });
 
         $representative->load(['department', 'church']);
@@ -355,7 +353,7 @@ class RepresentativeController extends Controller
     }
 
     /**
-     * Transfer active representatives to churches in the pastor's district.
+     * Assign or transfer representatives to churches in the pastor's district.
      */
     public function bulk_transfer(Request $request)
     {
@@ -395,7 +393,6 @@ class RepresentativeController extends Controller
             $representatives = User::query()
                 ->whereIn('user_id', $userIds)
                 ->where('role', 'representative')
-                ->where('status', 'active')
                 ->with('church:church_id,parent_id')
                 ->orderBy('user_id')
                 ->lockForUpdate()
@@ -404,7 +401,7 @@ class RepresentativeController extends Controller
 
             if ($representatives->count() !== count($userIds)) {
                 throw ValidationException::withMessages([
-                    'transfers' => 'One or more selected users are not active representatives.',
+                    'transfers' => 'One or more selected users are not representatives.',
                 ]);
             }
 
@@ -434,7 +431,10 @@ class RepresentativeController extends Controller
                 $representative = $representatives->get((int) $transfer['user_id']);
                 $destination = $destinations->get((int) $transfer['church_id']);
 
-                if ((int) $representative->church_id === (int) $destination->church_id) {
+                if (
+                    $representative->status === 'active' &&
+                    (int) $representative->church_id === (int) $destination->church_id
+                ) {
                     throw ValidationException::withMessages([
                         'transfers' => "{$representative->first_name} {$representative->last_name} is already assigned to this church.",
                     ]);
@@ -443,36 +443,32 @@ class RepresentativeController extends Controller
                 if ((int) $destination->parent_id !== $districtId) {
                     abort(403, 'You can only transfer representatives to churches in your district.');
                 }
-
-                $occupied = User::query()
-                    ->where('role', 'representative')
-                    ->where('status', 'active')
-                    ->where('church_id', $destination->church_id)
-                    ->whereNotIn('user_id', $userIds)
-                    ->exists();
-
-                if ($occupied) {
-                    throw ValidationException::withMessages([
-                        'transfers' => "{$destination->name} already has an active representative.",
-                    ]);
-                }
             }
 
-            // Retire everyone first so chained moves (A->B while B->C) never collide
-            foreach ($representatives as $representative) {
-                $this->retire($representative);
+            $displacedRepresentatives = User::query()
+                ->where('role', 'representative')
+                ->where('status', 'active')
+                ->whereIn('church_id', $destinationIds)
+                ->whereNotIn('user_id', $userIds)
+                ->orderBy('user_id')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($displacedRepresentatives as $displacedRepresentative) {
+                $this->retire($displacedRepresentative);
             }
 
             foreach ($transfers as $transfer) {
-                $this->place(
-                    $representatives->get((int) $transfer['user_id']),
-                    (int) $transfer['church_id']
-                );
+                $representatives->get((int) $transfer['user_id'])
+                    ->update([
+                        'church_id' => (int) $transfer['church_id'],
+                        'status' => 'active',
+                    ]);
             }
         });
 
         return response()->json([
-            'message' => count($transfers) . ' representative(s) transferred successfully.',
+            'message' => count($transfers).' representative(s) transferred successfully.',
             'transferred_count' => count($transfers),
         ]);
     }
@@ -580,42 +576,6 @@ class RepresentativeController extends Controller
     {
         $user->update(['status' => 'inactive']);
         $user->tokens()->delete();
-    }
-
-    /**
-     * Put a person in a new church.
-     * Reactivates their earlier record there if one exists (same email), otherwise creates a new one.
-     * $overrides applies edited form data (e.g. from update()) to the new record.
-     */
-    private function place(User $source, int $churchId, array $overrides = []): User
-    {
-        $existing = User::where('email', $source->email)
-            ->where('church_id', $churchId)
-            ->first();
-
-        if ($existing) {
-            $existing->forceFill([
-                ...$source->only([
-                    'department_id', 'first_name', 'middle_name', 'last_name',
-                    'extension_name', 'birthdate', 'gender', 'profile_image', 'password',
-                ]),
-                ...$overrides,
-                'church_id' => $churchId,
-                'status' => 'active',
-            ])->save();
-
-            return $existing;
-        }
-
-        $new = $source->replicate();
-        $new->forceFill([
-            ...$overrides,
-            'church_id' => $churchId,
-            'status' => 'active',
-            'remember_token' => null,
-        ])->save();
-
-        return $new;
     }
 
     /**

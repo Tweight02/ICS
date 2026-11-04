@@ -93,6 +93,24 @@ test('assignment data is available to authenticated assistants', function () {
         ->assertJsonPath('assignments.1.pastor_name', null);
 });
 
+test('assignment data includes inactive pastors without presenting them as assigned', function () {
+    $fixture = districtPastorAssignmentFixture();
+    $pastor = districtPastorAssignmentUser(
+        $fixture['firstDistrictId'],
+        $fixture['departmentId'],
+        'pastor',
+        'inactive',
+        'assignment-inactive-candidate@example.com'
+    );
+
+    $this->actingAs($fixture['assistant'], 'sanctum')
+        ->getJson('/api/assistant/district-pastor-assignments')
+        ->assertOk()
+        ->assertJsonPath('assignments.0.pastor_user_id', null)
+        ->assertJsonPath('pastors.0.user_id', $pastor->user_id)
+        ->assertJsonPath('pastors.0.status', 'inactive');
+});
+
 test('an assistant can assign an active pastor to a vacant district', function () {
     $fixture = districtPastorAssignmentFixture();
     $pastor = districtPastorAssignmentUser(
@@ -113,6 +131,29 @@ test('an assistant can assign an active pastor to a vacant district', function (
     $this->assertDatabaseHas('users', [
         'user_id' => $pastor->user_id,
         'church_id' => $fixture['secondDistrictId'],
+    ]);
+});
+
+test('an assistant can assign and reactivate an inactive pastor', function () {
+    $fixture = districtPastorAssignmentFixture();
+    $pastor = districtPastorAssignmentUser(
+        $fixture['firstDistrictId'],
+        $fixture['departmentId'],
+        'pastor',
+        'inactive',
+        'assignment-reactivated-pastor@example.com'
+    );
+
+    $this->actingAs($fixture['assistant'], 'sanctum')
+        ->putJson("/api/assistant/district-pastor-assignments/{$fixture['secondDistrictId']}", [
+            'user_id' => $pastor->user_id,
+        ])
+        ->assertOk();
+
+    $this->assertDatabaseHas('users', [
+        'user_id' => $pastor->user_id,
+        'church_id' => $fixture['secondDistrictId'],
+        'status' => 'active',
     ]);
 });
 
@@ -144,7 +185,7 @@ test('assignment writes require an authenticated assistant', function () {
     ]);
 });
 
-test('Head Assistant swaps pastors when assigning to an occupied district', function () {
+test('Head Assistant deactivates the existing pastor when assigning to an occupied district', function () {
     $fixture = districtPastorAssignmentFixture();
     $movingPastor = districtPastorAssignmentUser(
         $fixture['firstDistrictId'],
@@ -171,14 +212,17 @@ test('Head Assistant swaps pastors when assigning to an occupied district', func
     $this->assertDatabaseHas('users', [
         'user_id' => $movingPastor->user_id,
         'church_id' => $fixture['secondDistrictId'],
+        'status' => 'active',
     ]);
     $this->assertDatabaseHas('users', [
         'user_id' => $currentPastor->user_id,
-        'church_id' => $fixture['firstDistrictId'],
+        'church_id' => $fixture['secondDistrictId'],
+        'status' => 'inactive',
     ]);
+    expect(DB::table('users')->where('email', $movingPastor->email)->count())->toBe(1);
 });
 
-test('assignment rejects inactive pastors and non-district churches', function () {
+test('assignment rejects non-pastors and non-district churches', function () {
     $fixture = districtPastorAssignmentFixture();
     $inactivePastor = districtPastorAssignmentUser(
         $fixture['firstDistrictId'],
@@ -199,13 +243,6 @@ test('assignment rejects inactive pastors and non-district churches', function (
         'address' => 'North District',
         'parent_id' => $fixture['firstDistrictId'],
     ]);
-
-    $this->actingAs($fixture['headAssistant'], 'sanctum')
-        ->putJson("/api/assistant/district-pastor-assignments/{$fixture['secondDistrictId']}", [
-            'user_id' => $inactivePastor->user_id,
-        ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors('user_id');
 
     $this->putJson("/api/assistant/district-pastor-assignments/{$fixture['secondDistrictId']}", [
         'user_id' => $representative->user_id,
