@@ -190,6 +190,16 @@ Route::get('/reports/mission-summary', [
     'missionSummary',
 ])->middleware('auth:sanctum');
 
+Route::get('/reports/mission-summary/baptisms', [
+    ReportController::class,
+    'missionBaptismRecords',
+])->middleware('auth:sanctum');
+
+Route::get('/reports/mission-summary/deaths', [
+    ReportController::class,
+    'missionDeathRecords',
+])->middleware('auth:sanctum');
+
 /*
 |--------------------------------------------------------------------------
 | DEPARTMENTS & PROGRAMS

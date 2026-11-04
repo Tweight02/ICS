@@ -14,7 +14,11 @@ import {
   Church
 } from '../../models/church.model';
 import { Department } from '../../models/department.model';
-import { MissionReportSummary } from '../../models/report.model';
+import {
+  BaptismSummaryRecord,
+  DeathSummaryRecord,
+  MissionReportSummary
+} from '../../models/report.model';
 
 export interface DistrictResponse {
   success: boolean;
@@ -81,7 +85,7 @@ getMyDistrictChurches(year?: number): Observable<MyDistrictChurchesResponse> {
     );
   }
 
-  getMissionReportSummary(year: number): Observable<{
+  getMissionReportSummary(year: number, departmentId?: number): Observable<{
     success: boolean;
     data: MissionReportSummary;
   }> {
@@ -89,7 +93,34 @@ getMyDistrictChurches(year?: number): Observable<MyDistrictChurchesResponse> {
       success: boolean;
       data: MissionReportSummary;
     }>(`${this.apiUrl}/reports/mission-summary`, {
-      params: { year }
+      params: {
+        year,
+        ...(departmentId ? { department_id: departmentId } : {})
+      }
+    });
+  }
+
+  getBaptismRecordsForQuarter(year: number, quarter: string): Observable<{
+    success: boolean;
+    data: BaptismSummaryRecord[];
+  }> {
+    return this.http.get<{
+      success: boolean;
+      data: BaptismSummaryRecord[];
+    }>(`${this.apiUrl}/reports/mission-summary/baptisms`, {
+      params: { year, quarter }
+    });
+  }
+
+  getDeathRecordsForQuarter(year: number, quarter: string): Observable<{
+    success: boolean;
+    data: DeathSummaryRecord[];
+  }> {
+    return this.http.get<{
+      success: boolean;
+      data: DeathSummaryRecord[];
+    }>(`${this.apiUrl}/reports/mission-summary/deaths`, {
+      params: { year, quarter }
     });
   }
 
@@ -102,7 +133,8 @@ getMyDistrictChurches(year?: number): Observable<MyDistrictChurchesResponse> {
   getChurches(
     districtId: number,
     departmentId?: number,
-    year?: number
+    year?: number,
+    includeDepartmentMonitoring = false
   ): Observable<ChurchesResponse> {
 
     return this.http.get<ChurchesResponse>(
@@ -110,7 +142,10 @@ getMyDistrictChurches(year?: number): Observable<MyDistrictChurchesResponse> {
       {
         params: {
           ...(departmentId ? { department_id: departmentId } : {}),
-          ...(year ? { year } : {})
+          ...(year ? { year } : {}),
+          ...(includeDepartmentMonitoring
+            ? { include_department_monitoring: '1' }
+            : {})
         }
       }
     );

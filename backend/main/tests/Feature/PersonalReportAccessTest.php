@@ -98,6 +98,51 @@ function personalReportAccessFixture(): array
     ];
 }
 
+test('baptism records can be filtered by report year and quarter', function () {
+    $fixture = personalReportAccessFixture();
+    DB::table('baptisms')->insert([
+        [
+            'church_id' => $fixture['churchId'],
+            'quarter' => 'Q2',
+            'first_name' => 'Second',
+            'middle_name' => '',
+            'last_name' => 'Quarter',
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'address' => 'Example Address',
+            'officiating_minister' => 'Pastor Example',
+            'place_of_baptism' => 'Example Church',
+            'date_of_baptism' => '2026-04-01',
+            'marital_status' => 'single',
+            'is_reclaimed' => false,
+        ],
+        [
+            'church_id' => $fixture['churchId'],
+            'quarter' => 'Q1',
+            'first_name' => 'Previous',
+            'middle_name' => '',
+            'last_name' => 'Year',
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'address' => 'Example Address',
+            'officiating_minister' => 'Pastor Example',
+            'place_of_baptism' => 'Example Church',
+            'date_of_baptism' => '2025-01-01',
+            'marital_status' => 'single',
+            'is_reclaimed' => false,
+        ],
+    ]);
+
+    $this->actingAs($fixture['headDirector'], 'sanctum')
+        ->getJson('/api/baptisms?year=2026&quarter=Q1')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.baptism_id', $fixture['baptismIds'][0])
+        ->assertJsonPath('data.0.church_name', 'Assigned Church');
+});
+
 test('head directors can access personal records within their assigned district', function () {
     $fixture = personalReportAccessFixture();
 

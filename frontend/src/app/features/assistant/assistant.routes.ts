@@ -29,6 +29,12 @@ export const AssistantRoute: Routes = [
                 .then(m => m.Reports)
     },
     {
+        path: 'reports/summary',
+        loadComponent: () =>
+            import('../director/report-summary/report-summary')
+                .then(m => m.DirectorReportSummary)
+    },
+    {
         path: 'reports/new',
         loadComponent: () =>
             import('./report_a/new-report/new-report')

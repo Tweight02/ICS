@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Baptism;
+use App\Models\Death;
 use App\Services\ReportMonitoringService;
 use App\Support\ReportParticipantCoverage;
 use Illuminate\Http\JsonResponse;
@@ -136,13 +138,16 @@ class ReportController extends Controller
             ? $this->normalizeRole((string) ($user->role ?? ''))
             : '';
 
-        if (! $user || ! in_array($role, ['director', 'head director'], true)) {
+        $isAssistant = $user && $this->isAssistantRole($role);
+        $isDirector = $user && in_array($role, ['director', 'head director'], true);
+
+        if (! $isAssistant && ! $isDirector) {
             return response()->json([
-                'message' => 'Only directors can access the department report summary.',
+                'message' => 'Only assistants and directors can access the report summary.',
             ], 403);
         }
 
-        if (! $user->department_id) {
+        if ($isDirector && ! $user->department_id) {
             return response()->json([
                 'message' => 'A department must be assigned to your Director account.',
             ], 403);
@@ -150,17 +155,119 @@ class ReportController extends Controller
 
         $validated = $request->validate([
             'year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
+            'department_id' => ['sometimes', 'integer', 'exists:departments,department_id'],
         ]);
         $year = isset($validated['year'])
             ? (string) $validated['year']
             : (string) config('app.reporting_year', now()->year);
+        $summaryDepartmentId = $isAssistant
+            ? (isset($validated['department_id']) ? (int) $validated['department_id'] : null)
+            : (int) $user->department_id;
 
         return response()->json([
             'success' => true,
             'data' => $monitoring->missionSummary(
                 $year,
-                (int) $user->department_id
+                $summaryDepartmentId,
+                $summaryDepartmentId !== null
             ),
+        ]);
+    }
+
+    public function missionBaptismRecords(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $role = $user
+            ? $this->normalizeRole((string) ($user->role ?? ''))
+            : '';
+        $isAssistant = $user && $this->isAssistantRole($role);
+        $isBaptismDirector = $user
+            && in_array($role, ['director', 'head director'], true)
+            && (int) $user->department_id === 22;
+
+        if (! $isAssistant && ! $isBaptismDirector) {
+            return response()->json([
+                'message' => 'Only assistants and Baptism Record directors can access these records.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'year' => ['required', 'integer', 'min:1900', 'max:'.now()->year],
+            'quarter' => ['required', 'in:Q1,Q2,Q3,Q4'],
+        ]);
+
+        $records = Baptism::query()
+            ->join('churches', 'churches.church_id', '=', 'baptisms.church_id')
+            ->whereNotNull('baptisms.date_of_baptism')
+            ->whereYear('baptisms.date_of_baptism', $validated['year'])
+            ->whereRaw('UPPER(TRIM(baptisms.quarter)) = ?', [$validated['quarter']])
+            ->select(
+                'baptisms.*',
+                'churches.name as church_name'
+            )
+            ->orderByDesc('baptisms.date_of_baptism')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $records,
+        ]);
+    }
+
+    public function missionDeathRecords(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $role = $user
+            ? $this->normalizeRole((string) ($user->role ?? ''))
+            : '';
+        $isAssistant = $user && $this->isAssistantRole($role);
+        $isDeathDirector = $user
+            && in_array($role, ['director', 'head director'], true)
+            && (int) $user->department_id === 23;
+
+        if (! $isAssistant && ! $isDeathDirector) {
+            return response()->json([
+                'message' => 'Only assistants and Death Record directors can access these records.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'year' => ['required', 'integer', 'min:1900', 'max:'.now()->year],
+            'quarter' => ['required', 'in:Q1,Q2,Q3,Q4'],
+        ]);
+
+        $records = Death::query()
+            ->join('baptisms', 'baptisms.baptism_id', '=', 'deaths.baptism_id')
+            ->join('churches', 'churches.church_id', '=', 'baptisms.church_id')
+            ->whereNotNull('deaths.date_of_death')
+            ->whereYear('deaths.date_of_death', $validated['year'])
+            ->whereRaw('UPPER(TRIM(deaths.quarter)) = ?', [$validated['quarter']])
+            ->select(
+                'deaths.death_id',
+                'deaths.baptism_id',
+                'deaths.quarter',
+                'deaths.date_of_death',
+                'baptisms.church_id',
+                'baptisms.first_name',
+                'baptisms.middle_name',
+                'baptisms.last_name',
+                'baptisms.extension_name',
+                'baptisms.gender',
+                'baptisms.birthdate',
+                'baptisms.address',
+                'baptisms.marital_status',
+                'baptisms.date_of_baptism',
+                'baptisms.place_of_baptism',
+                'baptisms.officiating_minister',
+                'baptisms.is_reclaimed',
+                'churches.name as church_name'
+            )
+            ->orderByDesc('deaths.date_of_death')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $records,
         ]);
     }
 
@@ -331,6 +438,12 @@ class ReportController extends Controller
             (int) $churchId,
             (int) $departmentId
         );
+        $user = $request->user();
+        $isPastorEditingOwnPersonalReport = $user
+            && $this->isPastorRole($this->normalizeRole((string) ($user->role ?? '')))
+            && in_array((int) $departmentId, [16, 20], true)
+            && $church->parent_id === null
+            && (int) $user->church_id === (int) $churchId;
 
         $reportPrograms = [];
 
@@ -372,18 +485,25 @@ class ReportController extends Controller
                         (string) $particular->particular_name
                     );
                     $particularQuarters = $quarters->map(
-                        function ($quarter) use ($particular, $supportsMonthlyValues, $participantCounts, $completedEventCounts) {
+                        function ($quarter) use ($particular, $supportsMonthlyValues, $participantCounts, $completedEventCounts, $user, $isPastorEditingOwnPersonalReport) {
+                            $canViewData = $this->canViewQuarterReportData(
+                                $user,
+                                $quarter,
+                                $isPastorEditingOwnPersonalReport
+                            );
                             $savedItem = DB::table('particular_items')
                                 ->where('particular_id', $particular->particular_id)
                                 ->where('quarter_id', $quarter->quarter_id)
                                 ->first();
-                            $participantCount = (int) (
+                            $participantCount = $canViewData ? (int) (
                                 $participantCounts[$quarter->quarter_id.':'.$particular->particular_id]->participant_count ?? 0
-                            );
-                            $eventCount = (int) (
+                            ) : 0;
+                            $eventCount = $canViewData ? (int) (
                                 $completedEventCounts[$quarter->quarter_id.':'.$particular->particular_id] ?? 0
-                            );
-                            $manualValue = $savedItem ? $savedItem->manual_value : null;
+                            ) : 0;
+                            $manualValue = $canViewData && $savedItem
+                                ? $savedItem->manual_value
+                                : null;
                             $quarterData = [
                                 'quarter_id' => (int) $quarter->quarter_id,
                                 'quarter' => $quarter->quarter,
@@ -402,7 +522,7 @@ class ReportController extends Controller
                             if ($supportsMonthlyValues) {
                                 $quarterData['monthly_values'] = [];
 
-                                if ($savedItem) {
+                                if ($canViewData && $savedItem) {
                                     $quarterData['monthly_values'] = DB::table('stewardships')
                                         ->where('item_id', $savedItem->item_id)
                                         ->pluck('value', 'month')
@@ -851,6 +971,28 @@ class ReportController extends Controller
     private function isApproved($value): bool
     {
         return $value !== null && trim((string) $value) !== '';
+    }
+
+    private function canViewQuarterReportData(
+        ?User $user,
+        object $quarter,
+        bool $isPastorEditingOwnPersonalReport
+    ): bool {
+        if (! $user) {
+            return false;
+        }
+
+        $role = $this->normalizeRole((string) ($user->role ?? ''));
+        if ($this->isPastorRole($role)) {
+            return $isPastorEditingOwnPersonalReport ||
+                $this->isApproved($quarter->date_submitted);
+        }
+
+        if ($this->isAssistantRole($role) || $this->isDirectorRole($user)) {
+            return $this->isApproved($quarter->district_endorse);
+        }
+
+        return true;
     }
 
     /* =========================================================

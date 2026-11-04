@@ -21,9 +21,28 @@ class BaptismController extends Controller
             return $this->forbiddenResponse();
         }
 
-        $baptisms = Baptism::whereIn('church_id', $churchIds)
+        $validated = $request->validate([
+            'year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
+            'quarter' => ['sometimes', 'in:Q1,Q2,Q3,Q4'],
+        ]);
+
+        $baptisms = Baptism::query()
+            ->join('churches', 'churches.church_id', '=', 'baptisms.church_id')
+            ->whereIn('baptisms.church_id', $churchIds)
             ->whereNotNull('date_of_baptism')
-            ->orderBy('date_of_baptism', 'desc')
+            ->when(
+                isset($validated['year']),
+                fn ($query) => $query->whereYear('baptisms.date_of_baptism', $validated['year'])
+            )
+            ->when(
+                isset($validated['quarter']),
+                fn ($query) => $query->whereRaw(
+                    'UPPER(TRIM(baptisms.quarter)) = ?',
+                    [$validated['quarter']]
+                )
+            )
+            ->select('baptisms.*', 'churches.name as church_name')
+            ->orderByDesc('baptisms.date_of_baptism')
             ->get();
 
         return response()->json([
