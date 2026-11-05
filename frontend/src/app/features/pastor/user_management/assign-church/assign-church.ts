@@ -80,11 +80,18 @@ export class AssignChurch implements OnInit {
     () => this.churchOptions().find((option) => option.value === this.selectedChurchId())?.label ?? 'All churches'
   );
 
-  readonly visibleAssignments = computed(() => {
+  readonly visibleAssignmentColumns = computed(() => {
     const id = this.selectedChurchId();
-    return id
+    const assignments = (id
       ? this.assignments().filter((assignment) => String(assignment.church_id) === id)
-      : this.assignments();
+      : this.assignments())
+      .slice()
+      .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }));
+    const rowsPerColumn = Math.ceil(assignments.length / 3);
+
+    return Array.from({ length: Math.min(3, assignments.length) }, (_, columnIndex) =>
+      assignments.slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
+    );
   });
 
   readonly transferTarget = signal<ChurchAssignment | null>(null);
@@ -437,6 +444,7 @@ export class AssignChurch implements OnInit {
     });
     if (!confirmation.isConfirmed) {
       this.saving.set(false);
+      this.clearRepresentative();
       return;
     }
 
@@ -452,22 +460,28 @@ export class AssignChurch implements OnInit {
           this.applyTransfers(transfers, church.representative?.user_id ?? null);
           this.closeAssignment();
 
-          // Fire-and-forget: do not await the toast.
-          void showAppAlert({
+          const assignmentNotice = showAppAlert({
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: church.representative ? 'Representative changed' : sourceChurch ? 'Representative transferred' : 'Representative assigned',
-            text: this.successText(
-              this.fullName(representative),
-              church.name,
-              sourceChurch?.name ?? null,
-              church.representative ? this.fullName(church.representative) : null
-            ),
+            title: 'Representative assigned',
+            text: `${this.fullName(representative)} is now assigned to ${church.name}.`,
             showConfirmButton: false,
-            timer: 3500,
+            timer: 3000,
             timerProgressBar: true,
           });
+          if (church.representative) {
+            void assignmentNotice.then(() => showAppAlert({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: 'Previous representative made inactive',
+              text: `${this.fullName(church.representative!)} is now inactive and unassigned from ${church.name}.`,
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true,
+            }));
+          }
 
           // Background refresh to sync with the server, without the loading skeleton.
           this.loadAssignments(true);
@@ -482,23 +496,6 @@ export class AssignChurch implements OnInit {
           );
         },
       });
-  }
-
-  private successText(
-    representative: string,
-    to: string,
-    from: string | null,
-    replaced: string | null
-  ): string {
-    if (replaced && from) {
-      return `${representative} moved from ${from} to ${to}, and ${replaced} was made inactive, leaving ${from} without a representative.`;
-    }
-    if (replaced) {
-      return `${representative} now serves ${to}, replacing ${replaced}, who was made inactive.`;
-    }
-    return from
-      ? `${representative} moved from ${from} to ${to}.`
-      : `${representative} is now assigned to ${to}.`;
   }
 
   private notifyError(title: string, text: string): void {

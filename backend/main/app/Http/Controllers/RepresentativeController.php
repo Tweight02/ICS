@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Church;
 use App\Models\User;
+use App\Support\UserIdentity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -173,9 +174,7 @@ class RepresentativeController extends Controller
             'email' => [
                 'required',
                 'email',
-                // unique per church (same email may exist in other churches)
-                Rule::unique('users', 'email')->where('church_id', $request->input('church_id')),
-                $this->noActiveEmailInOtherRole('representative'),
+                Rule::unique('users', 'email'),
             ],
             'password' => 'required|string|min:8',
         ]);
@@ -199,6 +198,18 @@ class RepresentativeController extends Controller
         if (! $authUser->department_id) {
             throw ValidationException::withMessages([
                 'department_id' => 'Your account has no department assigned.',
+            ]);
+        }
+
+        if (UserIdentity::existsFor(
+            $data['first_name'],
+            $data['middle_name'] ?? null,
+            $data['last_name'],
+            $data['extension_name'] ?? null,
+            $data['birthdate']
+        )) {
+            throw ValidationException::withMessages([
+                'first_name' => ['This person already has an account.'],
             ]);
         }
 

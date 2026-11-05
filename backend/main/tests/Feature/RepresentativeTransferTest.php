@@ -134,6 +134,44 @@ test('bulk transfer activates an inactive representative when assigning them', f
     ]);
 });
 
+test('representative creation rejects an email used by an account at another church', function () {
+    $fixture = representativeTransferFixture();
+
+    $this->actingAs($fixture['pastor'], 'sanctum')
+        ->postJson('/api/pastor/representatives', [
+            'church_id' => $fixture['destinationChurchId'],
+            'first_name' => 'Different',
+            'middle_name' => '',
+            'last_name' => 'Person',
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'email' => $fixture['movingRepresentative']->email,
+            'password' => 'password123',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('email');
+});
+
+test('representative creation rejects a person who already has another role', function () {
+    $fixture = representativeTransferFixture();
+
+    $this->actingAs($fixture['pastor'], 'sanctum')
+        ->postJson('/api/pastor/representatives', [
+            'church_id' => $fixture['destinationChurchId'],
+            'first_name' => 'Test',
+            'middle_name' => '',
+            'last_name' => 'Pastor',
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'email' => 'new-person-account@example.com',
+            'password' => 'password123',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('first_name');
+});
+
 test('editing a representative transfer keeps their user record and deactivates the destination representative', function () {
     $fixture = representativeTransferFixture();
     $representative = $fixture['movingRepresentative'];

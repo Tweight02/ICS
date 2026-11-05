@@ -65,9 +65,18 @@ export class AssignUser implements OnInit {
   );
 
   /** Cards shown in "Current assignments" after applying the district filter. */
-  readonly visibleAssignments = computed(() => {
+  readonly visibleAssignmentColumns = computed(() => {
     const id = this.selectedDistrictId();
-    return id ? this.assignments().filter((a) => String(a.church_id) === id) : this.assignments();
+    const assignments = (id
+      ? this.assignments().filter((assignment) => String(assignment.church_id) === id)
+      : this.assignments())
+      .slice()
+      .sort((left, right) => left.district_name.localeCompare(right.district_name, undefined, { sensitivity: 'base' }));
+    const rowsPerColumn = Math.ceil(assignments.length / 3);
+
+    return Array.from({ length: Math.min(3, assignments.length) }, (_, columnIndex) =>
+      assignments.slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
+    );
   });
 
   // ---------- Transfer modal ----------
@@ -363,6 +372,7 @@ export class AssignUser implements OnInit {
     });
     if (!confirmation.isConfirmed) {
       this.saving.set(false);
+      this.clearPastor();
       return;
     }
 
@@ -374,16 +384,28 @@ export class AssignUser implements OnInit {
           this.closeTransfer();
           this.loadAssignments();
 
-          showAppAlert({
+          const assignmentNotice = showAppAlert({
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: isChange ? 'Pastor changed' : from ? 'Pastor transferred' : 'Pastor assigned',
-            text: this.successText(pastor.full_name, target.district_name, from?.district_name ?? null, replaced),
+            title: 'Pastor assigned',
+            text: `${pastor.full_name} is now assigned to ${target.district_name}.`,
             showConfirmButton: false,
-            timer: 4000,
+            timer: 3000,
             timerProgressBar: true,
           });
+          if (replaced) {
+            void assignmentNotice.then(() => showAppAlert({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: 'Previous pastor made inactive',
+              text: `${replaced} is now inactive and unassigned from ${target.district_name}.`,
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true,
+            }));
+          }
         },
         error: (error: HttpErrorResponse) => {
           this.saving.set(false);
@@ -396,15 +418,6 @@ export class AssignUser implements OnInit {
           );
         },
       });
-  }
-
-  private successText(pastor: string, to: string, from: string | null, replaced: string | null): string {
-    if (replaced) {
-      return from
-        ? `${pastor} moved from ${from} to ${to}, and ${replaced} was made inactive, leaving ${from} without a pastor.`
-        : `${pastor} now serves ${to}, replacing ${replaced}, who was made inactive.`;
-    }
-    return from ? `${pastor} moved from ${from} to ${to}.` : `${pastor} is now assigned to ${to}.`;
   }
 
   private notifyError(title: string, text: string): void {
