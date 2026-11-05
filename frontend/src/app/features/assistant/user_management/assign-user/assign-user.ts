@@ -285,6 +285,14 @@ export class AssignUser implements OnInit {
     this.modalOpener = null;
   }
 
+  cancelTransfer(): void {
+    if (this.selectedPastorId() !== null) {
+      this.clearPastor();
+      return;
+    }
+    this.closeTransfer();
+  }
+
   selectPastor(pastor: AssignablePastor): void {
     this.selectedPastorId.set(pastor.user_id);
   }
