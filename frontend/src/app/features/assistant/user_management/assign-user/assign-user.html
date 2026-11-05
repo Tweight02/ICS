@@ -118,7 +118,9 @@
 		</div>
 		} @else if (!loadError()) {
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-			@for (assignment of visibleAssignments(); track assignment.church_id) {
+			@for (column of visibleAssignmentColumns(); track $index) {
+			<div class="flex flex-col gap-3">
+			@for (assignment of column; track assignment.church_id) {
 				<button
 					type="button"
 					(click)="openTransfer(assignment)"
@@ -168,6 +170,8 @@
 					</span>
 
 				</button>
+			}
+			</div>
 			}
 		</div>
 	}
@@ -268,9 +272,6 @@
 								(keydown.enter)="!isHere && !saving() && selectPastor(p)">
 								<td class="px-3 py-2 font-medium text-slate-900">
 									<span class="break-words">{{ p.full_name }}</span>
-									@if (p.status === 'inactive') {
-									<span class="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">Inactive</span>
-									}
 								</td>
 								<td class="px-3 py-2">
 									@if (isHere) {
@@ -285,7 +286,7 @@
 							} @empty {
 							<tr>
 								<td colspan="2" class="px-3 py-6 text-center text-sm text-slate-500">
-									{{ pastors().length === 0 ? 'There are no pastors available.' : 'No pastors
+									{{ pastors().length === 0 ? 'There are no active pastors available.' : 'No pastors
 									match your search.' }}
 								</td>
 							</tr>
@@ -354,12 +355,6 @@
 				</button>
 				<button app-button variant="submit" size="md" type="button" (click)="submitTransfer()" [disabled]="!selectedPastor() || saving()" [loading]="saving()"
 					class="inline-flex h-9 items-center justify-center !rounded-md bg-[#0F4A30] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0B3925] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-					@if (saving()) {
-					<svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-					</svg>
-					}
 					{{ saving() ? 'Saving...' : (target.pastor_user_id !== null ? 'Change pastor' :
 					(selectedPastorFrom() ? 'Transfer pastor' : 'Assign pastor')) }}
 				</button>

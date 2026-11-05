@@ -356,6 +356,62 @@ test('assistants can create, edit, activate, and deactivate pastors', function (
     ]);
 });
 
+test('assistant cannot create a pastor when a person with the same identity already exists', function () {
+    $fixture = districtPastorAssignmentFixture();
+    districtPastorAssignmentUser(
+        $fixture['firstDistrictId'],
+        $fixture['departmentId'],
+        'representative',
+        'inactive',
+        'existing-representative@example.com'
+    );
+
+    $this->actingAs($fixture['assistant'], 'sanctum')
+        ->postJson('/api/assistant/users', [
+            'department_id' => $fixture['departmentId'],
+            'church_id' => $fixture['secondDistrictId'],
+            'first_name' => 'Test',
+            'middle_name' => '',
+            'last_name' => 'Representative',
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'email' => 'new-representative-account@example.com',
+            'password' => 'password123',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('first_name');
+
+    expect(User::query()->where('email', 'new-representative-account@example.com')->exists())->toBeFalse();
+});
+
+test('assistant cannot create a pastor with an email used by another role', function () {
+    $fixture = districtPastorAssignmentFixture();
+    districtPastorAssignmentUser(
+        $fixture['firstDistrictId'],
+        $fixture['departmentId'],
+        'representative',
+        'inactive',
+        'cross-role-email@example.com'
+    );
+
+    $this->actingAs($fixture['assistant'], 'sanctum')
+        ->postJson('/api/assistant/users', [
+            'department_id' => $fixture['departmentId'],
+            'church_id' => $fixture['secondDistrictId'],
+            'first_name' => 'Different',
+            'middle_name' => '',
+            'last_name' => 'Person',
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'email' => 'cross-role-email@example.com',
+            'password' => 'password123',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('email');
+});
+
 test('profile updates cannot change a pastor district', function () {
     $fixture = districtPastorAssignmentFixture();
     $pastor = districtPastorAssignmentUser(

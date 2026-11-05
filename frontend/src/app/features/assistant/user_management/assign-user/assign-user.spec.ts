@@ -47,6 +47,23 @@ describe('AssignUser', () => {
     expect(component).toBeTruthy();
   });
 
+  it('sorts district cards alphabetically down each of three columns', () => {
+    const names = ['Zulu', 'Alpha', 'Echo', 'Charlie', 'Bravo', 'Golf', 'Delta'];
+    component.assignments.set(names.map((district_name, index) => ({
+      church_id: index + 10,
+      district_name,
+      pastor_user_id: null,
+      pastor_name: null,
+    })));
+
+    expect(component.visibleAssignmentColumns().map((column) => column.map(({ district_name }) => district_name)))
+      .toEqual([
+        ['Alpha', 'Bravo', 'Charlie'],
+        ['Delta', 'Echo', 'Golf'],
+        ['Zulu'],
+      ]);
+  });
+
   it('opens a change-pastor dialog for an occupied district', () => {
     const changeButton = fixture.nativeElement.querySelector(
       'button[aria-label="Manage pastor assignment for North District"]'
@@ -103,6 +120,15 @@ describe('AssignUser', () => {
     }));
     expect(assignPastorToDistrict).toHaveBeenCalledWith(1, 6);
     expect(getDistrictPastorAssignments).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() => expect(swalFire).toHaveBeenCalledTimes(3));
+    expect(swalFire.mock.calls[1][0]).toMatchObject({
+      title: 'Pastor assigned',
+      text: 'Jonah Pastor is now assigned to North District.',
+    });
+    expect(swalFire.mock.calls[2][0]).toMatchObject({
+      title: 'Previous pastor made inactive',
+      text: 'Amina Pastor is now inactive and unassigned from North District.',
+    });
   });
 
   it('does not submit the transfer when confirmation is cancelled', async () => {
@@ -123,8 +149,12 @@ describe('AssignUser', () => {
     expect(fixture.nativeElement.textContent).toContain('Unassigned');
 
     await component.submitTransfer();
+    fixture.detectChanges();
 
     expect(assignPastorToDistrict).not.toHaveBeenCalled();
     expect(component.saving()).toBe(false);
+    expect(component.transferTarget()).toBe(response.assignments[0]);
+    expect(component.selectedPastorId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('#pastor-search')).not.toBeNull();
   });
 });

@@ -108,7 +108,7 @@
 		</h2>
 
 		@if (loading()) {
-		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" role="status"
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3" role="status"
 			aria-label="Loading church assignments">
 			@for (n of [1, 2, 3, 4, 5, 6]; track n) {
 			<div class="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-100"></div>
@@ -124,8 +124,10 @@
 			</p>
 		</div>
 		} @else if (!loadError()) {
-		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-			@for (assignment of visibleAssignments(); track assignment.church_id) {
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+			@for (column of visibleAssignmentColumns(); track $index) {
+			<div class="flex flex-col gap-3">
+			@for (assignment of column; track assignment.church_id) {
 			<button type="button" (click)="openAssignment(assignment)" [disabled]="saving()"
 				[attr.aria-label]="'Manage representative assignment for ' + assignment.name"
 				class="flex min-h-[76px] w-full items-center gap-3 rounded-lg border bg-white p-4 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
@@ -172,6 +174,8 @@
 				</span>
 			</button>
 			}
+			</div>
+			}
 		</div>
 		}
 	</section>
@@ -184,7 +188,7 @@
 		<div id="assignment-dialog" role="dialog" aria-modal="true" aria-labelledby="assignment-title"
 			aria-describedby="assignment-description" tabindex="-1" (click)="$event.stopPropagation()"
 			(keydown)="onModalKeydown($event)"
-			class="my-auto flex max-h-[90dvh] w-full max-w-4xl flex-col rounded-xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none">
+			class="my-auto flex max-h-[90dvh] w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none">
 
 			<!-- Header -->
 			<div class="flex items-start gap-3 border-b border-slate-200 p-4">
@@ -215,7 +219,7 @@
 			</div>
 
 			<!-- Body -->
-			<div class="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+			<div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
 
 				<section class="min-w-0 space-y-3" aria-label="Select a representative">
 					@if (selectedRepresentative(); as sr) {
@@ -242,7 +246,7 @@
 				} @else {
 				<div>
 					<label for="representative-search" class="mb-1 block text-sm font-medium text-slate-700">{{
-						!target.representative ? 'Active representative' : 'New representative' }} <span
+						!target.representative ? 'Representative' : 'New representative' }} <span
 							class="text-red-700">*</span></label>
 					<input id="representative-search" type="text" autocomplete="off" spellcheck="false"
 						placeholder="Search representative..." [value]="representativeQuery()"
@@ -300,24 +304,29 @@
 				}
 				</section>
 
-				<div class="min-w-0" aria-live="polite">
+				<div aria-live="polite">
 					@if (preview(); as pv) {
 					<div class="rounded-lg border border-amber-200 bg-amber-50 p-3">
 						<p class="mb-2 break-words text-xs font-semibold uppercase tracking-wide text-amber-800">{{
 							pv.title }}</p>
 
-						<div class="grid grid-cols-1 items-stretch gap-2 md:grid-cols-2">
-							@for (m of pv.moves; track m.representative) {
-							<div class="min-w-0 rounded-md bg-white p-3 ring-1 ring-amber-200">
-								<div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+						<div class="grid grid-cols-1 items-stretch gap-2"
+							[class]="pv.moves.length === 2 ? 'sm:grid-cols-[1fr_auto_1fr]' : ''">
+							@for (m of pv.moves; track m.representative; let i = $index) {
+							@if (i === 1) {
+							<div class="flex items-center justify-center text-amber-700" aria-hidden="true">
+								<svg class="h-5 w-5 rotate-90 sm:rotate-0" viewBox="0 0 20 20" fill="none"
+									stroke="currentColor" stroke-width="2" stroke-linecap="round"
+									stroke-linejoin="round">
+									<path d="M4 7h11l-3-3M16 13H5l3 3" />
+								</svg>
+							</div>
+							}
+							<div class="min-w-0 rounded-md bg-white p-2.5 ring-1 ring-amber-200">
+								<div class="mb-2 flex items-center gap-2">
 									<span
 										class="min-w-0 break-words text-sm font-semibold leading-snug text-slate-900">{{
 										m.representative }}</span>
-									<span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-										[class.bg-amber-100]="m.action === 'Made inactive'"
-										[class.text-amber-800]="m.action === 'Made inactive'"
-										[class.bg-emerald-100]="m.action !== 'Made inactive'"
-										[class.text-emerald-800]="m.action !== 'Made inactive'">{{ m.action }}</span>
 								</div>
 								<div class="space-y-1 text-xs">
 									<div class="flex items-baseline gap-2">
@@ -342,19 +351,6 @@
 						}
 					</div>
 					}
-					@if (!preview()) {
-					<div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-						<p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Assignment destination</p>
-						<p class="mt-1 break-words text-base font-semibold text-slate-900">{{ target.name }}</p>
-						@if (target.representative) {
-						<p class="mt-3 text-xs text-slate-500">Current representative</p>
-						<p class="mt-0.5 break-words text-sm font-medium text-slate-800">{{ fullName(target.representative) }}</p>
-						<p class="mt-1 text-xs text-amber-700">Will be made inactive when replaced</p>
-						} @else {
-						<p class="mt-3 text-sm text-emerald-700">No representative is currently assigned.</p>
-						}
-					</div>
-					}
 				</div>
 			</div>
 
@@ -367,12 +363,6 @@
 				<button app-button variant="submit" size="md" type="button" (click)="submitAssignment()"
 					[disabled]="!selectedRepresentative() || saving()" [loading]="saving()"
 					class="inline-flex h-9 items-center justify-center !rounded-md bg-[#0F4A30] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0B3925] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-					@if (saving()) {
-					<svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-					</svg>
-					}
 					{{ saving() ? 'Saving...' : (target.representative ? 'Change representative' :
 					(selectedRepresentativeFrom() ? 'Transfer representative' : 'Assign representative')) }}
 				</button>

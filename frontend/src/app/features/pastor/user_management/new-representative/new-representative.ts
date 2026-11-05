@@ -222,6 +222,22 @@ export class NewRepresentative implements OnInit {
                         }
                         this.fieldErrors.set(mapped);
                         this.error.set('Please fix the highlighted fields.');
+
+                        if (/already been taken/i.test(mapped['email'] ?? '')) {
+                            showAppAlert({
+                                icon: 'warning',
+                                title: 'Email already in use',
+                                text: 'An account with this email address already exists.',
+                                confirmButtonColor: '#166534'
+                            });
+                        } else if (Object.values(mapped).some((message) => /this person already has an account/i.test(message))) {
+                            showAppAlert({
+                                icon: 'warning',
+                                title: 'User already exists',
+                                text: 'An account with this name already exists.',
+                                confirmButtonColor: '#166534'
+                            });
+                        }
                     } else {
                         this.error.set(
                             err?.error?.message ?? 'Unable to add representative. Please try again.'
