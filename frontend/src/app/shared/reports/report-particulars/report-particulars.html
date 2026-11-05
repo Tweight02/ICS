@@ -460,16 +460,20 @@
         </aside>
       </div>
 
-      <div *ngIf="autoSaveStatus !== 'idle'" class="flex justify-end pb-2">
+      <div *ngIf="autoSaveStatus === 'saved'"
+        role="status" aria-live="polite"
+        class="autosave-saved-notification fixed right-5 top-5 z-[100] flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-800 shadow-lg">
+        All changes saved
+      </div>
+
+      <div *ngIf="autoSaveStatus !== 'idle' && autoSaveStatus !== 'saved'" class="flex justify-end pb-2">
         <span class="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold backdrop-blur-md" [ngClass]="{
           'text-emerald-900/70': autoSaveStatus === 'pending' || autoSaveStatus === 'saving',
-          'text-emerald-700': autoSaveStatus === 'saved',
           'text-red-600': autoSaveStatus === 'error'
         }">
           <ng-container [ngSwitch]="autoSaveStatus">
             <ng-container *ngSwitchCase="'pending'">Unsaved changes…</ng-container>
             <ng-container *ngSwitchCase="'saving'">Saving…</ng-container>
-            <ng-container *ngSwitchCase="'saved'">✓ All changes saved</ng-container>
             <ng-container *ngSwitchCase="'error'">Auto-save failed</ng-container>
           </ng-container>
         </span>

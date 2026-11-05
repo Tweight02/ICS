@@ -284,20 +284,20 @@ describe('ReportParticulars', () => {
     expect(programButton.classList.contains('shadow-md')).toBe(false);
   });
 
-  it('hides the saved confirmation after five seconds', () => {
+  it('shows the saved notification for three seconds', () => {
     vi.useFakeTimers();
     component.autoSaveStatus = 'saved';
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('All changes saved');
+    expect(fixture.nativeElement.querySelector('.autosave-saved-notification')?.textContent).toContain('All changes saved');
 
-    vi.advanceTimersByTime(4999);
+    vi.advanceTimersByTime(2999);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('All changes saved');
+    expect(fixture.nativeElement.querySelector('.autosave-saved-notification')?.textContent).toContain('All changes saved');
 
     vi.advanceTimersByTime(1);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).not.toContain('All changes saved');
+    expect(fixture.nativeElement.querySelector('.autosave-saved-notification')).toBeNull();
     vi.useRealTimers();
   });
 

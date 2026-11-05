@@ -368,7 +368,7 @@ export class ReportParticulars implements OnInit, OnDestroy, AfterViewInit {
           this.autoSaveStatusState.set('idle');
           this.refreshView();
         }
-      }, 5000);
+      }, 3000);
     }
   }
   private readonly autoSaveDelayMs = 800;
