@@ -1,31 +1,66 @@
+<header
+  *ngIf="isReadOnly"
+  class="relative isolate mx-auto mb-4 mt-1 flex min-h-24 max-w-7xl flex-col justify-center gap-4 overflow-hidden rounded-2xl border border-white/80 bg-emerald-50 p-4 shadow-sm shadow-emerald-950/10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+  <img
+    src="/assets/headerMountain.png"
+    alt=""
+    aria-hidden="true"
+    class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-50">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/90 to-emerald-100/45"></div>
+  <div class="relative min-w-0">
+    <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800/80">
+      {{ departmentId === 16 ? 'District pastor report' : 'Personal reports' }}
+    </p>
+    <h1 class="!text-xl font-bold tracking-tight text-emerald-950 sm:!text-2xl">
+      {{ departmentId === 16
+        ? 'District Pastor Report'
+        : selectedRecord === 'baptism'
+          ? 'Baptism Record'
+          : selectedRecord === 'death'
+            ? 'Death Record'
+            : selectedRecord === 'ministerial'
+              ? 'Ministerial & Evangelism'
+              : 'Adventist Mission' }}
+    </h1>
+    <p class="mt-1 text-xs font-medium text-emerald-900/70">
+      {{ departmentId === 16
+        ? 'Pastor personal reports for the selected district'
+        : 'View personal records for the selected reporting period' }}
+    </p>
+  </div>
+  <button
+    type="button"
+    (click)="backToReports()"
+    class="relative inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-full border border-emerald-800/20 bg-white/90 px-4 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 sm:self-auto"
+    style="border-radius: 9999px">
+    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12.5 4 6.5 10l6 6M7 10h10" />
+    </svg>
+    Back to reports
+  </button>
+</header>
 
-<header class="px-[clamp(18px,4vw,40px)] pt-1">
+<header *ngIf="!isReadOnly" class="px-[clamp(18px,4vw,40px)] pt-1">
   <div class="d-flex align-items-center justify-content-between">
-    <div class="flex items-center gap-3">
-      <button
-        app-button
-        variant="back"
-        size="md"
-        *ngIf="isReadOnly"
-        type="button"
-        class="border-[#dce5e1] text-[13px] text-[#275a46] transition-[background-color,border-color] duration-150 hover:border-[#cbdcd3] hover:bg-[#f3f7f5] focus-visible:outline-3 focus-visible:outline-[#2a8463]/30 focus-visible:outline-offset-2"
-        (click)="backToReports()">
-        ← Back to Reports
-      </button>
-    </div>
+    <div class="flex items-center gap-3"></div>
   </div>
 </header>
 
 <!-- Main Content -->
-<main class="px-[clamp(18px,4vw,40px)] pt-2 pb-6 max-[767px]:px-[14px] max-[767px]:pt-2 max-[767px]:pb-5">
+<main
+  class="px-[clamp(18px,4vw,40px)] pt-2 pb-6 max-[767px]:px-[14px] max-[767px]:pt-2 max-[767px]:pb-5"
+  [ngClass]="{ 'mx-auto max-w-7xl': isReadOnly }">
   <div class="row g-3">
 
     <!-- Records -->
     <div class="min-w-0 p-0 col-12">
-      <section class="overflow-hidden rounded-[18px] border border-[#e2e9e6] bg-white shadow-[0_8px_28px_rgba(17,54,43,0.06)]">
+      <section
+        [ngClass]="isDistrictPersonalSummaryTab
+          ? 'overflow-visible border-0 bg-transparent shadow-none'
+          : 'overflow-hidden rounded-[18px] border border-[#e2e9e6] bg-white shadow-[0_8px_28px_rgba(17,54,43,0.06)]'">
 
         <!-- Report Header -->
-        <header class="flex items-center justify-between gap-4 border-b border-[#edf1ef] px-6 py-4 max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-3 max-[767px]:px-4 max-[767px]:py-4 [&_h2]:m-0 [&_h2]:text-[clamp(21px,2.3vw,27px)] [&_h2]:font-bold [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em] [&_h2]:text-[#193c32]">
+        <header *ngIf="!isReadOnly" class="flex items-center justify-between gap-4 border-b border-[#edf1ef] px-6 py-4 max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-3 max-[767px]:px-4 max-[767px]:py-4 [&_h2]:m-0 [&_h2]:text-[clamp(21px,2.3vw,27px)] [&_h2]:font-bold [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em] [&_h2]:text-[#193c32]">
           <div>
             <p class="mb-[5px] mt-0 text-[11px] font-extrabold tracking-[0.12em] text-[#32806b]">
               PERSONAL REPORTS
@@ -68,7 +103,11 @@
         </header>
 
         <!-- REPORT TYPE -->
-        <div class="flex items-center gap-3 border-b border-[#edf1ef] px-6 py-3 max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-2 max-[767px]:px-4 max-[767px]:py-3">
+        <div
+          class="flex items-center gap-3 border-b border-[#edf1ef] px-6 py-3 max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-2 max-[767px]:px-4 max-[767px]:py-3"
+          [ngClass]="isDistrictPersonalSummaryTab
+            ? 'rounded-t-[18px] border border-b-0 border-[#e2e9e6] bg-white'
+            : ''">
           <span class="whitespace-nowrap text-[10px] font-extrabold tracking-[0.1em] text-[#687a72]">
             REPORT TYPE
           </span>
@@ -145,9 +184,114 @@
           </div>
         </div>
 
+        <section
+          *ngIf="isDistrictPersonalSummaryTab"
+          id="district-personal-report-summary"
+          class="overflow-hidden rounded-b-[18px] border border-t-0 border-[#e2e9e6] bg-white shadow-[0_8px_28px_rgba(17,54,43,0.06)]">
+          <div class="px-6 py-4 max-[767px]:px-4">
+            <label for="district-personal-report-year" class="grid w-fit grid-cols-1 gap-1.5">
+              <span class="text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">REPORTING YEAR</span>
+              <select
+                id="district-personal-report-year"
+                class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+                [ngModel]="selectedYear"
+                (ngModelChange)="onYearChange($event)">
+                <option *ngFor="let year of availableYears" [ngValue]="year">{{ year }}</option>
+              </select>
+            </label>
+          </div>
+
+          <p *ngIf="selectedRecord === 'baptism' && loadingBaptisms"
+            class="px-6 py-5 text-sm text-slate-500" role="status">
+            Loading baptism records...
+          </p>
+          <p *ngIf="selectedRecord === 'death' && loadingDeaths"
+            class="px-6 py-5 text-sm text-slate-500" role="status">
+            Loading death records...
+          </p>
+          <p *ngIf="selectedRecord === 'baptism' && !loadingBaptisms && baptismError"
+            class="px-6 py-4 text-sm text-red-700" role="alert">
+            {{ baptismError }}
+          </p>
+          <p *ngIf="selectedRecord === 'death' && !loadingDeaths && deathError"
+            class="px-6 py-4 text-sm text-red-700" role="alert">
+            {{ deathError }}
+          </p>
+
+          <div
+            *ngIf="selectedRecord === 'baptism' && !loadingBaptisms && !baptismError"
+            class="overflow-x-auto">
+            <table class="w-full min-w-[48rem] border-collapse text-left text-sm">
+              <thead>
+                <tr class="border-y border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" class="px-4 py-3">Report / particular</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q1</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q2</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q3</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q4</th>
+                  <th scope="col" class="px-4 py-3 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-slate-100 text-slate-700">
+                  <th scope="row" class="px-4 py-3 font-medium">Baptisms Reported</th>
+                  <td *ngFor="let quarter of quarterOptions" class="px-3 py-3 text-center tabular-nums">
+                    <button
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedSummaryQuarter === quarter"
+                      aria-controls="district-personal-records"
+                      (click)="selectSummaryQuarter(quarter)">
+                      {{ districtBaptismQuarterTotals[quarter] | number }}
+                    </button>
+                  </td>
+                  <td class="px-4 py-3 text-right font-semibold tabular-nums">
+                    {{ districtBaptismTotal | number }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            *ngIf="selectedRecord === 'death' && !loadingDeaths && !deathError"
+            class="overflow-x-auto">
+            <table class="w-full min-w-[48rem] border-collapse text-left text-sm">
+              <thead>
+                <tr class="border-y border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" class="px-4 py-3">Report / particular</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q1</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q2</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q3</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q4</th>
+                  <th scope="col" class="px-4 py-3 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-slate-100 text-slate-700">
+                  <th scope="row" class="px-4 py-3 font-medium">Deaths Reported</th>
+                  <td *ngFor="let quarter of quarterOptions" class="px-3 py-3 text-center tabular-nums">
+                    <button
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedSummaryQuarter === quarter"
+                      aria-controls="district-personal-records"
+                      (click)="selectSummaryQuarter(quarter)">
+                      {{ districtDeathQuarterTotals[quarter] | number }}
+                    </button>
+                  </td>
+                  <td class="px-4 py-3 text-right font-semibold tabular-nums">
+                    {{ districtDeathTotal | number }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <!-- YEAR, QUARTER AND SEARCH -->
         <div
-          *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
+          *ngIf="(selectedRecord === 'baptism' || selectedRecord === 'death') && !isDistrictPersonalSummaryTab"
           class="grid grid-cols-1 items-end gap-3 border-b border-[#edf1ef] px-6 py-3 sm:grid-cols-[max-content_auto_minmax(240px,1fr)] sm:gap-x-3 max-[767px]:px-4 max-[767px]:py-3">
 
           <span class="hidden sm:block" aria-hidden="true"></span>
@@ -199,7 +343,7 @@
 
         <!-- RECORD TABLES -->
         <div
-          *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
+          *ngIf="(selectedRecord === 'baptism' || selectedRecord === 'death') && !isDistrictPersonalSummaryTab"
           class="overflow-x-auto px-6 pb-4 max-[767px]:px-4 max-[767px]:pb-3">
 
           <!-- BAPTISM RECORD TABLE -->
@@ -472,6 +616,123 @@
 
         </div>
 
+        <section
+          *ngIf="isDistrictPersonalSummaryTab && selectedSummaryQuarter"
+          id="district-personal-records"
+          class="mt-1 overflow-hidden rounded-[18px] border border-[#e2e9e6] bg-white shadow-[0_8px_28px_rgba(17,54,43,0.06)]">
+          <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-6 py-4 max-[767px]:px-4">
+            <div>
+              <h2 class="m-0 text-[clamp(21px,2.3vw,27px)] font-bold leading-tight tracking-[-0.025em] text-[#193c32]">
+                {{ selectedSummaryQuarter }} {{ selectedRecord === 'baptism' ? 'baptism' : 'death' }} records
+              </h2>
+              <p class="mb-0 mt-1 text-xs text-slate-500">
+                Records for {{ selectedYear }} from the database.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              (click)="closeSummaryQuarter()">
+              Close
+            </button>
+          </header>
+
+          <p *ngIf="selectedRecord === 'baptism' && loadingBaptisms"
+            class="px-6 py-6 text-sm text-slate-500" role="status">
+            Loading baptism records...
+          </p>
+          <p *ngIf="selectedRecord === 'death' && loadingDeaths"
+            class="px-6 py-6 text-sm text-slate-500" role="status">
+            Loading death records...
+          </p>
+          <p *ngIf="selectedRecord === 'baptism' && !loadingBaptisms && baptismError"
+            class="px-6 py-4 text-sm text-red-700" role="alert">
+            {{ baptismError }}
+          </p>
+          <p *ngIf="selectedRecord === 'death' && !loadingDeaths && deathError"
+            class="px-6 py-4 text-sm text-red-700" role="alert">
+            {{ deathError }}
+          </p>
+
+          <div
+            *ngIf="selectedRecord === 'baptism' && !loadingBaptisms && !baptismError"
+            class="overflow-x-auto">
+            <table class="w-full min-w-[64rem] border-collapse text-left text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" class="px-4 py-3">Name</th>
+                  <th scope="col" class="px-4 py-3">Church</th>
+                  <th scope="col" class="px-3 py-3">Date of baptism</th>
+                  <th scope="col" class="px-4 py-3">Officiating minister</th>
+                  <th scope="col" class="px-4 py-3">Place of baptism</th>
+                  <th scope="col" class="px-3 py-3">Gender</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let baptism of districtSummaryBaptisms"
+                  class="cursor-pointer border-b border-slate-100 text-slate-700 transition hover:bg-emerald-50/70 focus-visible:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-emerald-600"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-label]="'View details for ' + getFullName(baptism)"
+                  (click)="openBaptismModal(baptism)"
+                  (keydown.enter)="openBaptismModal(baptism)"
+                  (keydown.space)="openBaptismModal(baptism); $event.preventDefault()">
+                  <th scope="row" class="px-4 py-3 font-medium">{{ getFullName(baptism) }}</th>
+                  <td class="px-4 py-3">{{ getChurchName(baptism.church_id) }}</td>
+                  <td class="px-3 py-3 tabular-nums">{{ formatDate(baptism.date_of_baptism) }}</td>
+                  <td class="px-4 py-3">{{ baptism.officiating_minister || '—' }}</td>
+                  <td class="px-4 py-3">{{ baptism.place_of_baptism || '—' }}</td>
+                  <td class="px-3 py-3">{{ baptism.gender || '—' }}</td>
+                </tr>
+                <tr *ngIf="districtSummaryBaptisms.length === 0">
+                  <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                    No baptism records are available for this quarter and year.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            *ngIf="selectedRecord === 'death' && !loadingDeaths && !deathError"
+            class="overflow-x-auto">
+            <table class="w-full min-w-[52rem] border-collapse text-left text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" class="px-4 py-3">Name</th>
+                  <th scope="col" class="px-4 py-3">Church</th>
+                  <th scope="col" class="px-3 py-3">Date of death</th>
+                  <th scope="col" class="px-3 py-3">Gender</th>
+                  <th scope="col" class="px-3 py-3">Quarter</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let death of districtSummaryDeaths"
+                  class="cursor-pointer border-b border-slate-100 text-slate-700 transition hover:bg-emerald-50/70 focus-visible:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-emerald-600"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-label]="'View details for ' + getFullName(getDeathBaptism(death))"
+                  (click)="openDeathModal(death)"
+                  (keydown.enter)="openDeathModal(death)"
+                  (keydown.space)="openDeathModal(death); $event.preventDefault()">
+                  <th scope="row" class="px-4 py-3 font-medium">{{ getFullName(getDeathBaptism(death)) }}</th>
+                  <td class="px-4 py-3">{{ getChurchName(getDeathBaptism(death)?.church_id) }}</td>
+                  <td class="px-3 py-3 tabular-nums">{{ formatDate(death.date_of_death) }}</td>
+                  <td class="px-3 py-3">{{ getDeathBaptism(death)?.gender || '—' }}</td>
+                  <td class="px-3 py-3">{{ death.quarter }}</td>
+                </tr>
+                <tr *ngIf="districtSummaryDeaths.length === 0">
+                  <td colspan="5" class="px-4 py-8 text-center text-slate-500">
+                    No death records are available for this quarter and year.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <!-- CHURCH REPORTS -->
         <ng-container *ngIf="selectedDepartmentId as departmentId">
 
@@ -520,7 +781,7 @@
     </div>
 
     <!-- COMMENTS -->
-    <ng-container *ngIf="!isReadOnly">
+    <ng-container *ngIf="!isReadOnly || isHeadAssistant">
 
       <aside
         *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
@@ -1183,7 +1444,6 @@
 
   </div>
 </main>
-
 <link
   href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
   rel="stylesheet">

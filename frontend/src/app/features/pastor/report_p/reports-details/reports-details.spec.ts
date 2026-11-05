@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { ReportService } from '../../../../core/services/report/report';
+import { CURRENT_REPORT_YEAR } from '../../../../core/utils/report-year';
 import { ReportsDetails } from './reports-details';
 
 describe('ReportsDetails', () => {
@@ -32,6 +34,14 @@ describe('ReportsDetails', () => {
     await TestBed.configureTestingModule({
       imports: [ReportsDetails],
       providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              queryParamMap: convertToParamMap({})
+            }
+          }
+        },
         {
           provide: ChurchService,
           useValue: {
@@ -88,7 +98,7 @@ describe('ReportsDetails', () => {
 
     expect(component.isChurchOpen(church.church_id)).toBe(true);
     expect(getDepartments).toHaveBeenCalledOnce();
-    expect(getDepartments).toHaveBeenCalledWith(church.church_id);
+    expect(getDepartments).toHaveBeenCalledWith(church.church_id, CURRENT_REPORT_YEAR);
     expect(fixture.nativeElement.textContent).toContain('Youth');
     expect(fixture.nativeElement.textContent).toContain('Needs completion');
     expect(fixture.nativeElement.textContent).toContain('Submitted for review');

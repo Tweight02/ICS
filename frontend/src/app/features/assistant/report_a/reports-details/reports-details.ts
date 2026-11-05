@@ -117,7 +117,8 @@ export class ReportsDetails implements OnInit {
       {
         queryParams: {
           district_id: this.districtId,
-          district_name: this.districtName
+          district_name: this.districtName,
+          ...this.monitoringReturnParams()
         }
       }
     );
@@ -127,7 +128,8 @@ export class ReportsDetails implements OnInit {
   backToDistricts(): void {
 
     this.router.navigate(
-      [`${this.portalPrefix()}/reports`]
+      [`${this.portalPrefix()}/reports`],
+      { queryParams: this.monitoringReturnParams() }
     );
 
   }
@@ -144,9 +146,37 @@ export class ReportsDetails implements OnInit {
         `${this.portalPrefix()}/reports/programs`,
         this.districtId,
         church.church_id
-      ]
+      ],
+      {
+        queryParams: {
+          district_id: this.districtId,
+          district_name: this.districtName,
+          church_id: church.church_id,
+          church_name: church.name,
+          ...this.monitoringReturnParams()
+        }
+      }
     );
 
+  }
+
+  private monitoringReturnParams(): Record<string, string> {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const keys = [
+      'return_to',
+      'return_department',
+      'return_expanded',
+      'return_search',
+      'return_scroll'
+    ];
+
+    return keys.reduce<Record<string, string>>((params, key) => {
+      const value = queryParams.get(key);
+      if (value !== null) {
+        params[key] = value;
+      }
+      return params;
+    }, {});
   }
 
   private portalPrefix(): '/director' | '/assistant' {

@@ -8,6 +8,7 @@ use App\Support\EventsOrg;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PublicEventController extends Controller
 {
@@ -55,7 +56,28 @@ class PublicEventController extends Controller
         $data['event_id'] = $event->event_id;
         $data['church_id'] = $churchId ?? $event->church_id;
         $data['middle_name'] ??= '';
+        $data['extension_name'] ??= '';
         $data['registration_status'] = 'pending';
+
+        $duplicateExists = $event->participants()
+            ->where('church_id', $data['church_id'])
+            ->whereRaw('LOWER(TRIM(first_name)) = ?', [mb_strtolower(trim($data['first_name']))])
+            ->whereRaw('LOWER(TRIM(COALESCE(middle_name, ?))) = ?', [
+                '',
+                mb_strtolower(trim($data['middle_name'])),
+            ])
+            ->whereRaw('LOWER(TRIM(last_name)) = ?', [mb_strtolower(trim($data['last_name']))])
+            ->whereRaw('LOWER(TRIM(COALESCE(extension_name, ?))) = ?', [
+                '',
+                mb_strtolower(trim($data['extension_name'])),
+            ])
+            ->exists();
+
+        if ($duplicateExists) {
+            throw ValidationException::withMessages([
+                'first_name' => ['This participant is already registered for this event.'],
+            ]);
+        }
 
         $participant = DB::transaction(fn () => $event->participants()->create($data));
 
@@ -88,6 +110,7 @@ class PublicEventController extends Controller
             'This church-specific registration link is invalid.'
         );
 
+        abort_unless($event->coversChurch((int) $churchId), 422, 'This event is not scheduled for this church.');
         EventRegistrationAttribution::quarterId((int) $event->quarter_id, (int) $churchId);
 
         return (int) $churchId;
@@ -97,9 +120,13 @@ class PublicEventController extends Controller
     {
         $church = EventsOrg::church((int) $event->church_id);
         $districts = $event->districts()->get(['churches.name']);
+        $churches = $event->churches()->get(['churches.name']);
         $scopeNames = $districts->pluck('name')->all();
         $allDistrictsSelected = $districts->isNotEmpty()
             && $districts->count() === EventsOrg::districts()->count();
+        if ($scopeNames === []) {
+            $scopeNames = $churches->pluck('name')->all();
+        }
         if ($scopeNames === [] && $church) {
             $scopeNames[] = $church->name;
         }
@@ -114,7 +141,9 @@ class PublicEventController extends Controller
             'start_time' => substr($event->start_time, 0, 5),
             'end_time' => substr($event->end_time, 0, 5),
             'description' => $event->notes,
-            'church_name' => $church->name ?? null,
+            'church_name' => $churches->count() > 1
+                ? 'Multiple churches'
+                : ($churches->first()->name ?? $church->name ?? null),
             'scope' => $scopeNames,
             'all_districts' => $allDistrictsSelected,
             'created_by' => match ($creatorRole) {

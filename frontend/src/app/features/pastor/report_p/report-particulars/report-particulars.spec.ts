@@ -11,7 +11,9 @@ describe('ReportParticulars', () => {
   let component: ReportParticulars;
   let fixture: ComponentFixture<ReportParticulars>;
   let saveDepartmentReport: ReturnType<typeof vi.fn>;
+  let addComment: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
+  let routerUrl: string;
 
   beforeEach(async () => {
     vi.spyOn(Swal, 'fire').mockResolvedValue({
@@ -41,15 +43,35 @@ describe('ReportParticulars', () => {
             particulars: [{
               particular_id: 3,
               particular_name: 'Members visited',
-              quarters: [{
-                quarter_id: 9,
-                quarter: 'Q1',
-                year: 2026,
-                value: 10,
-                date_submitted: null,
-                district_endorse: null,
-                mission_approve: null
-              }]
+              quarters: [
+                {
+                  quarter_id: 9,
+                  quarter: 'Q1',
+                  year: 2026,
+                  value: 10,
+                  date_submitted: null,
+                  district_endorse: null,
+                  mission_approve: null
+                },
+                {
+                  quarter_id: 10,
+                  quarter: 'Q2',
+                  year: 2026,
+                  value: null,
+                  date_submitted: null,
+                  district_endorse: null,
+                  mission_approve: null
+                },
+                {
+                  quarter_id: 11,
+                  quarter: 'Q4',
+                  year: 2025,
+                  value: null,
+                  date_submitted: null,
+                  district_endorse: null,
+                  mission_approve: null
+                }
+              ]
             }]
           },
           { program_id: 4, program_name: 'Second Section', particulars: [] }
@@ -57,7 +79,19 @@ describe('ReportParticulars', () => {
       }]
     };
     saveDepartmentReport = vi.fn().mockReturnValue(of({ message: 'Report saved successfully.' }));
+    addComment = vi.fn().mockReturnValue(of({
+      data: {
+        comment_id: 1,
+        quarter_id: 9,
+        church_id: 2,
+        department_id: 16,
+        commented_by: 1,
+        details: 'Test comment',
+        date_commented: '2026-10-30'
+      }
+    }));
     navigate = vi.fn();
+    routerUrl = '/pastor/reports/particulars/16/1/2';
 
     await TestBed.configureTestingModule({
       imports: [ReportParticulars],
@@ -66,10 +100,21 @@ describe('ReportParticulars', () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: of(paramMap),
-            snapshot: { paramMap, queryParamMap }
+            snapshot: {
+              paramMap,
+              queryParamMap: convertToParamMap({
+                church_name: 'Test Church',
+                district_name: 'Test District',
+                return_to: 'monitoring',
+                return_department: '21',
+                return_expanded: '7',
+                return_search: 'North',
+                return_scroll: '240'
+              })
+            }
           }
         },
-        { provide: Router, useValue: { navigate, url: '/pastor/reports/particulars/16/1/2' } },
+        { provide: Router, useValue: { navigate, get url() { return routerUrl; } } },
         { provide: AuthService, useValue: { getCurrentUser: () => null } },
         { provide: ChurchService, useValue: {} },
         {
@@ -77,6 +122,7 @@ describe('ReportParticulars', () => {
           useValue: {
             getDepartmentComments: () => of({ data: [] }),
             getDepartmentReport: () => of(report),
+            addComment,
             saveDepartmentReport
           }
         }
@@ -90,6 +136,66 @@ describe('ReportParticulars', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('opens the requested year and quarter from monitoring navigation', () => {
+    const route = TestBed.inject(ActivatedRoute);
+    Object.defineProperty(route.snapshot, 'queryParamMap', {
+      value: convertToParamMap({
+        year: '2025',
+        quarter: 'Q4',
+        church_name: 'Test Church',
+        district_name: 'Test District'
+      }),
+      configurable: true
+    });
+
+    component.loadReport();
+
+    expect(component.selectedYear).toBe(2025);
+    expect(component.getSelectedQuarter()).toEqual({
+      quarter_id: 11,
+      quarter: 'Q4',
+      year: 2025
+    });
+  });
+
+  it('lets Head Assistants comment but not approve reports', () => {
+    component.currentUserRole = 'head assistant';
+
+    expect(component.canComment).toBe(true);
+    expect(component.canApprove).toBe(false);
+  });
+
+  it('publishes a comment without showing a success alert', () => {
+    component.currentUserRole = 'head assistant';
+    component.newComment = 'Test comment';
+    vi.mocked(Swal.fire).mockClear();
+
+    component.publishComment();
+
+    expect(addComment).toHaveBeenCalledWith(9, 2, 16, 'Test comment');
+    expect(Swal.fire).not.toHaveBeenCalled();
+    expect(component.comments[0].details).toBe('Test comment');
+  });
+
+  it('returns to monitoring with the previous monitoring view state', () => {
+    routerUrl = '/assistant/reports/particulars/16/1/2';
+
+    component.backToPrograms();
+
+    expect(navigate).toHaveBeenCalledWith(
+      ['/assistant/reports'],
+      {
+        queryParams: {
+          return_to: 'monitoring',
+          return_department: '21',
+          return_expanded: '7',
+          return_search: 'North',
+          return_scroll: '240'
+        }
+      }
+    );
   });
 
   it('shows confirmed event participants in personal report particular inputs', () => {

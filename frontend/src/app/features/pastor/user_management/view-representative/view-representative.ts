@@ -4,7 +4,7 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, finalize, Subject } from 'rxjs';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 
 import { RepresentativeService } from '../../../../core/services/representative/representative-service'; // adjust to your real path
 import {
@@ -221,7 +221,7 @@ export class ViewRepresentative implements OnInit {
     async deleteRepresentative(representative: Representative): Promise<void> {
         const name = `${representative.first_name} ${representative.last_name}`;
 
-        const result = await Swal.fire({
+        const result = await showAppAlert({
             title: 'Delete representative?',
             text: `${name} will be permanently removed. This cannot be undone.`,
             icon: 'warning',
@@ -248,7 +248,7 @@ export class ViewRepresentative implements OnInit {
                 );
                 this.total.update((t) => Math.max(0, t - 1));
 
-                Swal.fire({
+                showAppAlert({
                     toast: true,
                     position: 'top-end',
                     icon: 'success',

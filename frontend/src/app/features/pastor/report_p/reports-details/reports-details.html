@@ -12,6 +12,16 @@
       </div>
 
       <div class="flex items-center gap-3">
+        <label for="pastor-report-year" class="flex items-center gap-2 text-sm font-medium text-emerald-900/70">
+          <span>Year</span>
+          <select
+            id="pastor-report-year"
+            class="h-10 rounded-lg border border-emerald-900/15 bg-white px-3 text-sm font-semibold text-emerald-950 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+            [value]="selectedYear()"
+            (change)="onYearChange($event)">
+            <option *ngFor="let year of reportYears" [value]="year">{{ year }}</option>
+          </select>
+        </label>
         <span class="text-sm font-medium text-emerald-900/70">
           <strong class="mr-1 text-emerald-950">{{ churches().length }}</strong>
           {{ churches().length === 1 ? 'Church' : 'Churches' }}

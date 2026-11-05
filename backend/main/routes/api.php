@@ -59,7 +59,7 @@ Route::get('/sample', [
 Route::post('/users', [
     UserController::class,
     'create_user',
-]);
+])->middleware('auth:sanctum');
 
 Route::get('/users/{id}', [
     UserController::class,
@@ -117,7 +117,7 @@ Route::prefix('assistant')->group(function () {
     Route::post('/users', [
         UserController::class,
         'create_user',
-    ]);
+    ])->middleware('auth:sanctum');
 
     Route::get('/pastors', [
         UserController::class,
@@ -132,17 +132,17 @@ Route::prefix('assistant')->group(function () {
     Route::put('/pastors/{id}', [
         UserController::class,
         'update_pastor',
-    ])->whereNumber('id');
+    ])->whereNumber('id')->middleware('auth:sanctum');
 
     Route::post('/pastors/{id}/activate', [
         UserController::class,
         'activate_pastor',
-    ])->whereNumber('id');
+    ])->whereNumber('id')->middleware('auth:sanctum');
 
     Route::delete('/pastors/{id}', [
         UserController::class,
         'deactivate_pastor',
-    ])->whereNumber('id');
+    ])->whereNumber('id')->middleware('auth:sanctum');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/district-pastor-assignments', [
@@ -184,6 +184,21 @@ Route::middleware('auth:sanctum')->prefix('churches/{churchId}')->group(function
         'departmentComments',
     ]);
 });
+
+Route::get('/reports/mission-summary', [
+    ReportController::class,
+    'missionSummary',
+])->middleware('auth:sanctum');
+
+Route::get('/reports/mission-summary/baptisms', [
+    ReportController::class,
+    'missionBaptismRecords',
+])->middleware('auth:sanctum');
+
+Route::get('/reports/mission-summary/deaths', [
+    ReportController::class,
+    'missionDeathRecords',
+])->middleware('auth:sanctum');
 
 /*
 |--------------------------------------------------------------------------

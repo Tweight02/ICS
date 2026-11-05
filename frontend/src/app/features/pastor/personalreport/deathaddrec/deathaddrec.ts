@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -10,9 +11,10 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
-import Swal from 'sweetalert2';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 import { Button } from '../../../../shared/components/button/button';
+import { ChurchService } from '../../../../core/services/church/church-service';
 
 interface Baptism {
   baptism_id: number;
@@ -36,9 +38,20 @@ interface Church {
 
 interface DeathRecord {
   death_id: number;
-  baptism_id: number;
+  baptism_id: number | null;
   quarter: string;
   date_of_death: string;
+
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
+  extension_name?: string | null;
+  church_id?: number | null;
+  birthdate?: string | null;
+  gender?: string | null;
+  marital_status?: string | null;
+
+  baptism?: Partial<Baptism> | null;
 }
 
 @Component({
@@ -55,13 +68,21 @@ interface DeathRecord {
 export class DeathaddrecComponent implements OnInit {
 
   private http = inject(HttpClient);
+  private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private churchService = inject(ChurchService);
 
   baptisms: Baptism[] = [];
   churches: Church[] = [];
   deaths: DeathRecord[] = [];
 
   selectedBaptism: Baptism | null = null;
+
+  // baptized = select existing baptism record
+  // new = manually enter deceased person
+  entryMode: 'baptized' | 'new' = 'baptized';
+
+  churchesLoading = false;
 
   // Searchable Baptized Member dropdown
   @ViewChild('memberDropdown')
@@ -70,9 +91,15 @@ export class DeathaddrecComponent implements OnInit {
   baptismSearch = '';
   memberDropdownOpen = false;
 
-  // Use the browser's local date, not a UTC date.
+  // Use browser local date, not UTC date.
   today = this.getTodayDate();
 
+  // Use the selected reporting year when supplied by the previous page.
+  // Otherwise, use the current calendar year.
+  deathDateYear = new Date().getFullYear();
+
+  deathDateError = '';
+  baptismLoadError = false;
   deathLoadError = false;
 
   private readonly loadingBaptismsState = signal(false);
@@ -117,14 +144,73 @@ export class DeathaddrecComponent implements OnInit {
   death = {
     baptism_id: null as number | null,
     quarter: '',
-    date_of_death: ''
+    date_of_death: '',
+
+    // Manually entered deceased person information.
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    extension_name: '',
+    church_id: null as number | null,
+    birthdate: '',
+    gender: null as string | null,
+    marital_status: null as string | null
   };
 
   ngOnInit(): void {
+    const requestedYear = Number(
+      this.route.snapshot.queryParamMap.get('year')
+    );
+
+    if (
+      Number.isInteger(requestedYear) &&
+      requestedYear >= 1900 &&
+      requestedYear <= new Date().getFullYear()
+    ) {
+      this.deathDateYear = requestedYear;
+    }
+
     this.loadBaptisms();
     this.loadChurches();
     this.loadDeaths();
   }
+
+  /* ==========================================
+     ENTRY MODE
+  ========================================== */
+
+  /**
+   * Switch between existing baptism member
+   * and manually entered death record.
+   */
+  setEntryMode(mode: 'baptized' | 'new'): void {
+    if (this.saving || this.entryMode === mode) {
+      return;
+    }
+
+    this.entryMode = mode;
+
+    this.closeBaptismDropdown();
+
+    this.selectedBaptism = null;
+
+    this.death.baptism_id = null;
+    this.death.date_of_death = '';
+
+    this.death.first_name = '';
+    this.death.middle_name = '';
+    this.death.last_name = '';
+    this.death.extension_name = '';
+    this.death.church_id = null;
+    this.death.birthdate = '';
+    this.death.gender = null;
+    this.death.marital_status = null;
+    this.deathDateError = '';
+  }
+
+  /* ==========================================
+     DATE HELPERS
+  ========================================== */
 
   /**
    * Return today's date in local YYYY-MM-DD format.
@@ -140,43 +226,288 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Return the earliest allowed death date:
-   * one calendar day after the selected member's birthdate.
+   * Validate real YYYY-MM-DD dates.
    */
-  getMinimumDeathDate(): string {
-    const birthdate = this.selectedBaptism?.birthdate;
-
-    if (!birthdate) {
-      return '';
+  private isValidDate(value: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return false;
     }
 
-    const birthDate = new Date(
-      birthdate.substring(0, 10) + 'T00:00:00'
+    const [year, month, day] = value.split('-').map(Number);
+
+    const date = new Date(year, month - 1, day);
+
+    return (
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day
     );
-
-    if (isNaN(birthDate.getTime())) {
-      return '';
-    }
-
-    birthDate.setDate(birthDate.getDate() + 1);
-
-    const year = birthDate.getFullYear();
-    const month = String(birthDate.getMonth() + 1).padStart(2, '0');
-    const day = String(birthDate.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
   }
 
   /**
-   * Baptized members who do not already have a death record.
+   * Return the birthdate for the current entry mode.
    */
-  get availableBaptisms(): Baptism[] {
-    const deceasedIds = new Set(
-      this.deaths.map(record => Number(record.baptism_id))
+  getDeathBirthdate(): string {
+    if (this.entryMode === 'baptized') {
+      return this.selectedBaptism?.birthdate?.substring(0, 10) || '';
+    }
+
+    return this.death.birthdate?.substring(0, 10) || '';
+  }
+
+  /**
+   * Return the earliest allowed death date:
+   * one day after birthdate.
+   */
+  getMinimumDeathDate(): string {
+    const birthdate = this.getDeathBirthdate();
+
+    if (!birthdate || !this.isValidDate(birthdate)) {
+      return '';
+    }
+
+    const [year, month, day] = birthdate.split('-').map(Number);
+
+    const birthDate = new Date(year, month - 1, day);
+
+    birthDate.setDate(birthDate.getDate() + 1);
+
+    const minimumYear = birthDate.getFullYear();
+    const minimumMonth = String(
+      birthDate.getMonth() + 1
+    ).padStart(2, '0');
+    const minimumDay = String(
+      birthDate.getDate()
+    ).padStart(2, '0');
+
+    return `${minimumYear}-${minimumMonth}-${minimumDay}`;
+  }
+
+  /**
+   * Return the start and end dates for the selected quarter
+   * within the reporting year.
+   */
+  private getQuarterDateBounds(): { start: string; end: string } | null {
+    const quarterRanges: Record<
+      string,
+      { startMonth: number; endMonth: number }
+    > = {
+      Q1: { startMonth: 1, endMonth: 3 },
+      Q2: { startMonth: 4, endMonth: 6 },
+      Q3: { startMonth: 7, endMonth: 9 },
+      Q4: { startMonth: 10, endMonth: 12 }
+    };
+
+    const range = quarterRanges[this.death.quarter];
+
+    if (!range) {
+      return null;
+    }
+
+    const start =
+      `${this.deathDateYear}-${String(range.startMonth).padStart(2, '0')}-01`;
+
+    const lastDay = new Date(
+      this.deathDateYear,
+      range.endMonth,
+      0
     );
 
-    return this.baptisms.filter(
-      baptism => !deceasedIds.has(Number(baptism.baptism_id))
+    const end = [
+      lastDay.getFullYear(),
+      String(lastDay.getMonth() + 1).padStart(2, '0'),
+      String(lastDay.getDate()).padStart(2, '0')
+    ].join('-');
+
+    return { start, end };
+  }
+
+  /**
+   * The earliest selectable death date must be:
+   * - within the selected quarter; and
+   * - at least one day after the member's birthdate.
+   */
+  getMinimumDeathDateForQuarter(): string {
+    const bounds = this.getQuarterDateBounds();
+
+    if (!bounds) {
+      return '';
+    }
+
+    const minimumAfterBirth = this.getMinimumDeathDate();
+
+    return minimumAfterBirth && minimumAfterBirth > bounds.start
+      ? minimumAfterBirth
+      : bounds.start;
+  }
+
+  /**
+   * The latest selectable death date must be within the quarter
+   * and cannot be later than today.
+   */
+  getMaximumDeathDate(): string {
+    const bounds = this.getQuarterDateBounds();
+
+    if (!bounds) {
+      return this.today;
+    }
+
+    return bounds.end < this.today
+      ? bounds.end
+      : this.today;
+  }
+
+  /**
+   * Check if the selected quarter has at least one valid date.
+   */
+  get hasValidDeathDateRange(): boolean {
+    if (!this.death.quarter) {
+      return false;
+    }
+
+    return (
+      this.getMinimumDeathDateForQuarter() <=
+      this.getMaximumDeathDate()
+    );
+  }
+
+  /**
+   * Check whether a date belongs to the selected quarter and year.
+   */
+  private isDateWithinSelectedQuarter(value: string): boolean {
+    const bounds = this.getQuarterDateBounds();
+
+    return !!bounds &&
+      this.isValidDate(value) &&
+      value >= bounds.start &&
+      value <= bounds.end;
+  }
+
+  /**
+   * Update the selected quarter and remove an incompatible death date.
+   */
+  onQuarterChange(quarter: string): void {
+    this.death.quarter = quarter;
+    this.deathDateError = '';
+
+    if (!this.death.date_of_death) {
+      return;
+    }
+
+    if (!this.isDateWithinSelectedQuarter(this.death.date_of_death)) {
+      this.death.date_of_death = '';
+      this.deathDateError =
+        `The selected date was cleared because it does not belong to ${quarter} of ${this.deathDateYear}.`;
+      return;
+    }
+
+    this.validateDeathDate();
+  }
+
+  /**
+   * Validate a date entered or selected in the Date of Death field.
+   */
+  validateDeathDate(): void {
+    this.deathDateError = '';
+
+    const dateOfDeath = this.death.date_of_death;
+
+    if (!dateOfDeath) {
+      return;
+    }
+
+    if (!this.isValidDate(dateOfDeath)) {
+      this.death.date_of_death = '';
+      this.deathDateError = 'Please enter a valid date of death.';
+      return;
+    }
+
+    if (!this.death.quarter) {
+      this.death.date_of_death = '';
+      this.deathDateError = 'Please select a quarter before selecting the date of death.';
+      return;
+    }
+
+    if (!this.isDateWithinSelectedQuarter(dateOfDeath)) {
+      this.death.date_of_death = '';
+      this.deathDateError =
+        `Date of Death must fall within ${this.death.quarter} of ${this.deathDateYear}.`;
+      return;
+    }
+
+    const minimumDate = this.getMinimumDeathDate();
+
+    if (minimumDate && dateOfDeath < minimumDate) {
+      this.death.date_of_death = '';
+      this.deathDateError =
+        'Date of Death must be at least one day after the birthdate.';
+      return;
+    }
+
+    if (dateOfDeath > this.today) {
+      this.death.date_of_death = '';
+      this.deathDateError = 'Date of Death cannot be later than today.';
+      return;
+    }
+
+    if (!this.hasValidDeathDateRange) {
+      this.death.date_of_death = '';
+      this.deathDateError =
+        'There is no valid date available within the selected quarter.';
+    }
+  }
+
+  /**
+   * Calculate age on date of death.
+   */
+  calculateAgeAtDeath(
+    birthdate: string,
+    dateOfDeath: string
+  ): number | string {
+
+    if (!birthdate || !dateOfDeath) {
+      return '';
+    }
+
+    const birth = birthdate.substring(0, 10);
+    const death = dateOfDeath.substring(0, 10);
+
+    if (
+      !this.isValidDate(birth) ||
+      !this.isValidDate(death) ||
+      death <= birth
+    ) {
+      return '';
+    }
+
+    const [birthYear, birthMonth, birthDay] =
+      birth.split('-').map(Number);
+
+    const [deathYear, deathMonth, deathDay] =
+      death.split('-').map(Number);
+
+    let age = deathYear - birthYear;
+
+    if (
+      deathMonth < birthMonth ||
+      (
+        deathMonth === birthMonth &&
+        deathDay < birthDay
+      )
+    ) {
+      age--;
+    }
+
+    return age;
+  }
+
+  /**
+   * Calculate displayed age for either entry mode.
+   */
+  getAgeAtDeath(): number | string {
+    return this.calculateAgeAtDeath(
+      this.getDeathBirthdate(),
+      this.death.date_of_death
     );
   }
 
@@ -185,7 +516,28 @@ export class DeathaddrecComponent implements OnInit {
   ========================================== */
 
   /**
-   * Filter eligible baptized members by name.
+   * Return members in the current user's district
+   * who do not already have a death record.
+   */
+  get availableBaptisms(): Baptism[] {
+    const deceasedIds = new Set(
+      this.deaths
+        .filter(record => record.baptism_id !== null)
+        .map(record => Number(record.baptism_id))
+    );
+
+    const districtChurchIds = new Set(
+      this.churches.map(church => Number(church.church_id))
+    );
+
+    return this.baptisms.filter(baptism =>
+      districtChurchIds.has(Number(baptism.church_id)) &&
+      !deceasedIds.has(Number(baptism.baptism_id))
+    );
+  }
+
+  /**
+   * Filter available members by name.
    */
   get filteredAvailableBaptisms(): Baptism[] {
     const search = this.baptismSearch.trim().toLowerCase();
@@ -198,7 +550,7 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Display the selected member's full name.
+   * Display selected member's full name.
    */
   getSelectedBaptismName(): string {
     return this.selectedBaptism
@@ -223,12 +575,13 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Open the dropdown when the search input receives focus.
+   * Open dropdown when search input receives focus.
    */
   openBaptismDropdown(): void {
     if (
       this.loadingBaptisms ||
       this.loadingDeaths ||
+      this.churchesLoading ||
       this.deathLoadError ||
       this.availableBaptisms.length === 0
     ) {
@@ -252,7 +605,7 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Toggle the dropdown arrow.
+   * Toggle dropdown arrow.
    */
   toggleBaptismDropdown(): void {
     if (this.memberDropdownOpen) {
@@ -263,6 +616,7 @@ export class DeathaddrecComponent implements OnInit {
     if (
       !this.loadingBaptisms &&
       !this.loadingDeaths &&
+      !this.churchesLoading &&
       !this.deathLoadError &&
       this.availableBaptisms.length > 0
     ) {
@@ -272,7 +626,7 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Select a member and update the existing form fields.
+   * Select a member.
    */
   chooseBaptism(baptism: Baptism): void {
     this.selectBaptism(baptism.baptism_id);
@@ -280,7 +634,7 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Close the dropdown when clicking outside it.
+   * Close dropdown when clicking outside it.
    */
   @HostListener('document:click', ['$event'])
   onMemberDocumentClick(event: MouseEvent): void {
@@ -296,15 +650,19 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Close the dropdown and clear the search text.
+   * Close dropdown and clear search text.
    */
   closeBaptismDropdown(): void {
     this.memberDropdownOpen = false;
     this.baptismSearch = '';
   }
 
+  /* ==========================================
+     DUPLICATE DEATH VALIDATION
+  ========================================== */
+
   /**
-   * Check whether a person already has a death record.
+   * Check whether a member already has a death record.
    */
   isAlreadyDeceased(baptismId: number | null): boolean {
     if (baptismId === null) {
@@ -312,24 +670,134 @@ export class DeathaddrecComponent implements OnInit {
     }
 
     return this.deaths.some(
-      record => Number(record.baptism_id) === Number(baptismId)
+      record =>
+        record.baptism_id !== null &&
+        Number(record.baptism_id) === Number(baptismId)
     );
   }
 
   /**
-   * Load baptism records from Laravel.
+   * Normalize text for duplicate comparison.
+   */
+  private normalizeText(value: string | null | undefined): string {
+    return String(value ?? '')
+      .normalize('NFKC')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+  }
+
+  /**
+   * Check whether a manually entered new death record already exists
+   * in the Baptism table using first, middle, and last name only.
+   *
+   * A blank or NULL middle name is treated as the same value.
+   */
+  private isExistingBaptismName(): boolean {
+    const firstName = this.normalizeText(this.death.first_name);
+    const middleName = this.normalizeText(this.death.middle_name);
+    const lastName = this.normalizeText(this.death.last_name);
+
+    if (!firstName || !lastName) {
+      return false;
+    }
+
+    return this.baptisms.some(baptism =>
+      this.normalizeText(baptism.first_name) === firstName &&
+      this.normalizeText(baptism.middle_name) === middleName &&
+      this.normalizeText(baptism.last_name) === lastName
+    );
+  }
+
+  /**
+   * Check duplicate manually entered death records.
+   */
+  private isDuplicateNewDeath(): boolean {
+    return this.deaths.some(record => {
+
+      const person = record.baptism ?? record;
+
+      const sameFirstName =
+        this.normalizeText(person.first_name) ===
+        this.normalizeText(this.death.first_name);
+
+      const sameMiddleName =
+        this.normalizeText(person.middle_name) ===
+        this.normalizeText(this.death.middle_name);
+
+      const sameLastName =
+        this.normalizeText(person.last_name) ===
+        this.normalizeText(this.death.last_name);
+
+      const sameExtension =
+        this.normalizeText(person.extension_name) ===
+        this.normalizeText(this.death.extension_name);
+
+      const sameBirthdate =
+        String(person.birthdate ?? '').substring(0, 10) ===
+        String(this.death.birthdate).substring(0, 10);
+
+      const sameChurch =
+        Number(person.church_id) ===
+        Number(this.death.church_id);
+
+      return (
+        sameFirstName &&
+        sameMiddleName &&
+        sameLastName &&
+        sameExtension &&
+        sameBirthdate &&
+        sameChurch
+      );
+    });
+  }
+
+  /* ==========================================
+     LOAD RECORDS
+  ========================================== */
+
+  /**
+   * Load baptism records.
+   * These records must be verified before either death-entry mode can save,
+   * because manual death entries must be checked against the Baptism table.
    */
   loadBaptisms(): void {
     this.loadingBaptisms = true;
+    this.baptismLoadError = false;
 
     this.http
       .get<any>('/api/baptisms')
       .subscribe({
-        next: (response) => {
-          const data = response?.data ?? response;
 
-          this.baptisms = Array.isArray(data) ? data : [];
+        next: (response) => {
+          const data = Array.isArray(response)
+            ? response
+            : Array.isArray(response?.data)
+              ? response.data
+              : Array.isArray(response?.data?.data)
+                ? response.data.data
+                : null;
+
           this.loadingBaptisms = false;
+
+          if (!data) {
+            this.baptisms = [];
+            this.baptismLoadError = true;
+
+            showAppAlert({
+              icon: 'error',
+              title: 'Unable to Verify Baptism Records',
+              text: 'The existing baptism records could not be read. No new death record can be saved until the records are verified.',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#176b52',
+              customClass: this.swalCustomClass
+            });
+
+            return;
+          }
+
+          this.baptisms = data;
+          this.baptismLoadError = false;
 
           console.log('Baptism records loaded:', this.baptisms);
         },
@@ -339,11 +807,12 @@ export class DeathaddrecComponent implements OnInit {
 
           this.baptisms = [];
           this.loadingBaptisms = false;
+          this.baptismLoadError = true;
 
-          Swal.fire({
+          showAppAlert({
             icon: 'error',
-            title: 'Unable to Load Members',
-            text: 'Baptism records could not be loaded. Please try again.',
+            title: 'Unable to Verify Baptism Records',
+            text: 'Existing baptism records could not be loaded. A new death record cannot be added until the Baptism table has been checked. Please refresh the page and try again.',
             confirmButtonText: 'OK',
             confirmButtonColor: '#176b52',
             customClass: this.swalCustomClass
@@ -353,8 +822,7 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Load existing death records.
-   * These records are used to prevent duplicate selections.
+   * Load existing death records for duplicate checking.
    */
   loadDeaths(): void {
     this.loadingDeaths = true;
@@ -363,13 +831,13 @@ export class DeathaddrecComponent implements OnInit {
     this.http
       .get<any>('/api/deaths')
       .subscribe({
+
         next: (response) => {
           const data = response?.data ?? response;
 
           this.deaths = Array.isArray(data) ? data : [];
           this.loadingDeaths = false;
 
-          // Clear a selected member if a death record now exists.
           if (this.isAlreadyDeceased(this.death.baptism_id)) {
             this.death.baptism_id = null;
             this.selectedBaptism = null;
@@ -386,9 +854,10 @@ export class DeathaddrecComponent implements OnInit {
           this.deaths = [];
           this.loadingDeaths = false;
           this.deathLoadError = true;
+
           this.closeBaptismDropdown();
 
-          Swal.fire({
+          showAppAlert({
             icon: 'error',
             title: 'Unable to Verify Records',
             text: 'Existing death records could not be checked. Please refresh the page and try again.',
@@ -401,42 +870,65 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Load churches.
+   * Load only churches assigned to the signed-in
+   * pastor's district.
    */
   loadChurches(): void {
-    this.http
-      .get<any>('/api/churches')
-      .subscribe({
-        next: (response) => {
-          const data = response?.data ?? response;
+    this.churchesLoading = true;
 
-          if (Array.isArray(data)) {
-            this.churches = data.map(
-              (church: any): Church => ({
-                church_id: Number(church.church_id),
-                name: church.name ?? '',
-                address: church.address ?? '',
-                parent_id:
-                  church.parent_id !== null &&
-                  church.parent_id !== undefined
-                    ? Number(church.parent_id)
-                    : null
-              })
-            );
-          } else {
+    this.churchService
+      .getMyDistrictChurches()
+      .subscribe({
+
+        next: (response) => {
+          const districtId = Number(response.district?.church_id);
+
+          if (!Number.isInteger(districtId) || districtId <= 0) {
             this.churches = [];
+            this.churchesLoading = false;
+
+            showAppAlert({
+              icon: 'error',
+              title: 'Unable to Load District Churches',
+              text: 'Your assigned district could not be identified.',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#176b52',
+              customClass: this.swalCustomClass
+            });
+
+            return;
           }
+
+          // Keep only churches assigned to this district.
+          this.churches = (response.data ?? [])
+            .filter(
+              church => Number(church.parent_id) === districtId
+            )
+            .map(church => ({
+              church_id: Number(church.church_id),
+              name: church.name ?? '',
+              address: church.address ?? '',
+              parent_id: church.parent_id === null
+                ? null
+                : Number(church.parent_id)
+            }));
+
+          this.churchesLoading = false;
+
+          console.log('District churches loaded:', this.churches);
         },
 
         error: (error) => {
-          console.error('Failed to load churches:', error);
+          console.error('Failed to load district churches:', error);
 
           this.churches = [];
+          this.churchesLoading = false;
 
-          Swal.fire({
+          showAppAlert({
             icon: 'error',
-            title: 'Unable to Load Churches',
-            text: 'Please check your Laravel server connection.',
+            title: 'Unable to Load District Churches',
+            text: error.error?.message ||
+              'Churches for your district could not be loaded.',
             confirmButtonText: 'OK',
             confirmButtonColor: '#176b52',
             customClass: this.swalCustomClass
@@ -445,10 +937,15 @@ export class DeathaddrecComponent implements OnInit {
       });
   }
 
+  /* ==========================================
+     MEMBER SELECTION
+  ========================================== */
+
   /**
    * Select a member who has not already been recorded as deceased.
    */
   selectBaptism(baptismId: number | null): void {
+
     if (baptismId === null || baptismId === undefined) {
       this.selectedBaptism = null;
       this.death.baptism_id = null;
@@ -463,7 +960,7 @@ export class DeathaddrecComponent implements OnInit {
       this.selectedBaptism = null;
       this.death.date_of_death = '';
 
-      Swal.fire({
+      showAppAlert({
         icon: 'warning',
         title: 'Death Record Already Exists',
         text: 'This member already has a death record and cannot be added again.',
@@ -488,7 +985,6 @@ export class DeathaddrecComponent implements OnInit {
       return;
     }
 
-    // Clear the date if it is not valid for the newly selected member.
     if (
       this.death.date_of_death &&
       this.death.date_of_death <=
@@ -499,6 +995,10 @@ export class DeathaddrecComponent implements OnInit {
 
     console.log('Selected baptism:', this.selectedBaptism);
   }
+
+  /* ==========================================
+     MEMBER AND CHURCH HELPERS
+  ========================================== */
 
   /**
    * Get full name.
@@ -528,7 +1028,7 @@ export class DeathaddrecComponent implements OnInit {
   /**
    * Get church name.
    */
-  getChurchName(churchId: number | undefined): string {
+  getChurchName(churchId: number | undefined | null): string {
     if (churchId === undefined || churchId === null) {
       return '';
     }
@@ -540,101 +1040,176 @@ export class DeathaddrecComponent implements OnInit {
     return church ? church.name : 'Unknown Church';
   }
 
+  /* ==========================================
+     FORM VALIDATION
+  ========================================== */
+
   /**
-   * Calculate current age.
+   * Validate the selected person's information.
    */
-  calculateAge(birthdate: string): number | string {
-    if (!birthdate) {
-      return '';
+  private validateDeathForm(): string[] {
+    const errors: string[] = [];
+
+    const validQuarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+
+    if (!validQuarters.includes(this.death.quarter)) {
+      errors.push('Please select a valid quarter.');
     }
 
-    const birthDate = new Date(
-      birthdate.substring(0, 10) + 'T00:00:00'
-    );
+    if (!this.death.date_of_death) {
+      errors.push('Date of Death is required.');
+    } else if (!this.isValidDate(this.death.date_of_death)) {
+      errors.push('Please enter a valid date of death.');
+    } else {
+      if (!this.isDateWithinSelectedQuarter(this.death.date_of_death)) {
+        errors.push(
+          `Date of Death must fall within ${this.death.quarter} of ${this.deathDateYear}.`
+        );
+      }
 
-    if (isNaN(birthDate.getTime())) {
-      return '';
+      if (this.death.date_of_death > this.today) {
+        errors.push('Date of Death cannot be later than today.');
+      }
+
+      if (!this.hasValidDeathDateRange) {
+        errors.push(
+          'There is no valid date available within the selected quarter based on the birthdate and today.'
+        );
+      }
     }
 
-    const today = new Date();
+    const birthdate = this.getDeathBirthdate();
 
-    let age = today.getFullYear() - birthDate.getFullYear();
+    if (this.entryMode === 'baptized') {
 
-    const monthDifference =
-      today.getMonth() - birthDate.getMonth();
+      if (!this.selectedBaptism || !this.death.baptism_id) {
+        errors.push('Please select a baptized member.');
+      } else if (
+        !this.churches.some(
+          church => Number(church.church_id) === Number(this.selectedBaptism?.church_id)
+        )
+      ) {
+        errors.push('The selected member does not belong to your assigned district.');
+      }
+
+    } else {
+
+      const namePattern =
+        /^[A-Za-zÀ-ÖØ-öø-ÿÑñ][A-Za-zÀ-ÖØ-öø-ÿÑñ .'-]*$/;
+
+      const extensionPattern =
+        /^[A-Za-z0-9][A-Za-z0-9 .'-]*$/;
+
+      if (!this.death.first_name.trim()) {
+        errors.push('First Name is required.');
+      } else if (!namePattern.test(this.death.first_name.trim())) {
+        errors.push('Please enter a valid First Name.');
+      }
+
+      if (
+        this.death.middle_name.trim() &&
+        !namePattern.test(this.death.middle_name.trim())
+      ) {
+        errors.push('Please enter a valid Middle Name.');
+      }
+
+      if (!this.death.last_name.trim()) {
+        errors.push('Last Name is required.');
+      } else if (!namePattern.test(this.death.last_name.trim())) {
+        errors.push('Please enter a valid Last Name.');
+      }
+
+      // Do not allow manual death entry when the same person is already
+      // registered in the Baptism table. Use Existing Baptism Record instead.
+      if (
+        this.death.first_name.trim() &&
+        this.death.last_name.trim() &&
+        this.isExistingBaptismName()
+      ) {
+        errors.push(
+          'A member with the same first name, middle name, and last name already exists in the Baptism records. Select Existing Baptism Record instead.'
+        );
+      }
+
+      if (
+        this.death.extension_name.trim() &&
+        !extensionPattern.test(this.death.extension_name.trim())
+      ) {
+        errors.push('Please enter a valid Extension Name.');
+      }
+
+      const validChurch = this.churches.some(
+        church => Number(church.church_id) === Number(this.death.church_id)
+      );
+
+      if (!this.death.church_id || !validChurch) {
+        errors.push('Please select a valid church assigned to your district.');
+      }
+
+      if (!this.death.birthdate) {
+        errors.push('Birthdate is required.');
+      } else if (!this.isValidDate(this.death.birthdate)) {
+        errors.push('Please enter a valid birthdate.');
+      } else if (this.death.birthdate > this.today) {
+        errors.push('Birthdate cannot be later than today.');
+      }
+
+      if (
+        this.death.gender !== 'Male' &&
+        this.death.gender !== 'Female'
+      ) {
+        errors.push('Please select a valid gender.');
+      }
+
+      const validCivilStatuses = [
+        'Single',
+        'Married',
+        'Widowed'
+      ];
+
+      if (
+        !this.death.marital_status ||
+        !validCivilStatuses.includes(this.death.marital_status)
+      ) {
+        errors.push('Please select a valid civil status.');
+      }
+    }
 
     if (
-      monthDifference < 0 ||
-      (
-        monthDifference === 0 &&
-        today.getDate() < birthDate.getDate()
-      )
+      this.death.date_of_death &&
+      this.isValidDate(this.death.date_of_death) &&
+      birthdate &&
+      this.isValidDate(birthdate) &&
+      this.death.date_of_death <= birthdate
     ) {
-      age--;
+      errors.push(
+        'Date of Death must be at least one day after the birthdate.'
+      );
     }
 
-    return age;
+    return errors;
   }
 
-  /**
-   * Calculate age on the date of death.
-   * The date of death must be strictly later than the birthdate.
-   */
-  calculateAgeAtDeath(
-    birthdate: string,
-    dateOfDeath: string
-  ): number | string {
-    if (!birthdate || !dateOfDeath) {
-      return '';
-    }
-
-    const birthDate = new Date(
-      birthdate.substring(0, 10) + 'T00:00:00'
-    );
-
-    const deathDate = new Date(
-      dateOfDeath.substring(0, 10) + 'T00:00:00'
-    );
-
-    if (
-      isNaN(birthDate.getTime()) ||
-      isNaN(deathDate.getTime()) ||
-      deathDate <= birthDate
-    ) {
-      return '';
-    }
-
-    let age = deathDate.getFullYear() - birthDate.getFullYear();
-
-    const monthDifference =
-      deathDate.getMonth() - birthDate.getMonth();
-
-    if (
-      monthDifference < 0 ||
-      (
-        monthDifference === 0 &&
-        deathDate.getDate() < birthDate.getDate()
-      )
-    ) {
-      age--;
-    }
-
-    return age;
-  }
+  /* ==========================================
+     SAVE DEATH RECORD
+  ========================================== */
 
   /**
-   * Save a death record.
+   * Save a death record for either an existing
+   * baptism member or a manually entered person.
    */
   saveDeath(): void {
-    if (
-      this.loadingBaptisms ||
-      this.loadingDeaths ||
-      this.deathLoadError
-    ) {
-      Swal.fire({
+
+    if (this.saving) {
+      return;
+    }
+
+    // Existing death records must be loaded first.
+    if (this.loadingDeaths || this.deathLoadError) {
+      showAppAlert({
         icon: 'warning',
         title: 'Records Not Ready',
-        text: 'Please wait until the existing records have been loaded and verified.',
+        text: 'Please wait until existing death records have been loaded and verified.',
         confirmButtonText: 'OK',
         confirmButtonColor: '#176b52',
         customClass: this.swalCustomClass
@@ -643,15 +1218,13 @@ export class DeathaddrecComponent implements OnInit {
       return;
     }
 
-    if (
-      this.death.baptism_id === null ||
-      !this.death.quarter.trim() ||
-      !this.death.date_of_death
-    ) {
-      Swal.fire({
+    // Baptism records must be loaded successfully for both modes.
+    // Manual entries are checked against the Baptism table by member name.
+    if (this.loadingBaptisms || this.baptismLoadError) {
+      showAppAlert({
         icon: 'warning',
-        title: 'Incomplete Information',
-        text: 'Please select a member, quarter, and date of death.',
+        title: 'Baptism Records Not Verified',
+        text: 'Please wait until the existing baptism records have been loaded and verified. A new death record cannot be saved without checking for an existing member.',
         confirmButtonText: 'OK',
         confirmButtonColor: '#176b52',
         customClass: this.swalCustomClass
@@ -660,31 +1233,12 @@ export class DeathaddrecComponent implements OnInit {
       return;
     }
 
-    const baptismId = Number(this.death.baptism_id);
-
-    if (!Number.isInteger(baptismId) || baptismId <= 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Invalid Selection',
-        text: 'Please select a valid baptized member.',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#176b52',
-        customClass: this.swalCustomClass
-      });
-
-      return;
-    }
-
-    // Check again before submitting to prevent duplicates.
-    if (this.isAlreadyDeceased(baptismId)) {
-      this.death.baptism_id = null;
-      this.selectedBaptism = null;
-      this.death.date_of_death = '';
-
-      Swal.fire({
+    // Church records must be loaded before manual entry.
+    if (this.churchesLoading || this.churches.length === 0) {
+      showAppAlert({
         icon: 'warning',
-        title: 'Death Record Already Exists',
-        text: 'This member already has a death record.',
+        title: 'Churches Not Available',
+        text: 'Your district churches could not be loaded. Please try again.',
         confirmButtonText: 'OK',
         confirmButtonColor: '#176b52',
         customClass: this.swalCustomClass
@@ -693,16 +1247,14 @@ export class DeathaddrecComponent implements OnInit {
       return;
     }
 
-    // Verify that the selected member exists.
-    const member = this.baptisms.find(
-      baptism => Number(baptism.baptism_id) === baptismId
-    );
+    // Validate user inputs.
+    const validationErrors = this.validateDeathForm();
 
-    if (!member) {
-      Swal.fire({
+    if (validationErrors.length > 0) {
+      showAppAlert({
         icon: 'warning',
-        title: 'Invalid Selection',
-        text: 'Please select a valid baptized member.',
+        title: 'Please Check Your Information',
+        text: validationErrors.join('\n'),
         confirmButtonText: 'OK',
         confirmButtonColor: '#176b52',
         customClass: this.swalCustomClass
@@ -711,61 +1263,118 @@ export class DeathaddrecComponent implements OnInit {
       return;
     }
 
-    // Do not allow a future date.
-    if (this.death.date_of_death > this.today) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Invalid Date',
-        text: 'The date of death cannot be in the future.',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#176b52',
-        customClass: this.swalCustomClass
-      });
+    let payload: any;
 
-      return;
+    if (this.entryMode === 'baptized') {
+
+      // EXISTING BAPTISM RECORD
+      const baptismId = Number(this.death.baptism_id);
+
+      if (
+        !Number.isInteger(baptismId) ||
+        baptismId <= 0 ||
+        !this.selectedBaptism
+      ) {
+        showAppAlert({
+          icon: 'error',
+          title: 'Invalid Selection',
+          text: 'Please select a valid baptized member.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#176b52',
+          customClass: this.swalCustomClass
+        });
+
+        return;
+      }
+
+      if (this.isAlreadyDeceased(baptismId)) {
+        showAppAlert({
+          icon: 'warning',
+          title: 'Death Record Already Exists',
+          text: 'This member already has a death record.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#176b52',
+          customClass: this.swalCustomClass
+        });
+
+        return;
+      }
+
+      payload = {
+        baptism_id: baptismId,
+        quarter: this.death.quarter.trim(),
+        date_of_death: this.death.date_of_death
+      };
+
+    } else {
+
+      // NEW DEATH RECORD WITHOUT BAPTISM
+      if (this.isExistingBaptismName()) {
+        showAppAlert({
+          icon: 'warning',
+          title: 'Member Already Exists in Baptism Records',
+          text: 'A member with the same first name, middle name, and last name already exists in the Baptism table. Select Existing Baptism Record instead of adding a new death record.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#176b52',
+          customClass: this.swalCustomClass
+        });
+
+        return;
+      }
+
+      if (this.isDuplicateNewDeath()) {
+        showAppAlert({
+          icon: 'error',
+          title: 'Duplicate Death Record',
+          text: 'A death record already exists for this person with the same name, birthdate, and church.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#176b52',
+          customClass: this.swalCustomClass
+        });
+
+        return;
+      }
+
+      payload = {
+        baptism_id: null,
+
+        first_name: this.death.first_name.trim(),
+        middle_name: this.death.middle_name.trim() || null,
+        last_name: this.death.last_name.trim(),
+        extension_name: this.death.extension_name.trim() || null,
+
+        church_id: Number(this.death.church_id),
+        birthdate: this.death.birthdate,
+        gender: this.death.gender,
+        marital_status: this.death.marital_status,
+
+        quarter: this.death.quarter.trim(),
+        date_of_death: this.death.date_of_death
+      };
     }
-
-    // Do not allow the death date to be the same as or earlier than birthdate.
-    const birthdate = member.birthdate.substring(0, 10);
-
-    if (
-      this.death.date_of_death <= birthdate ||
-      !this.selectedBaptism ||
-      Number(this.selectedBaptism.baptism_id) !== baptismId ||
-      this.calculateAgeAtDeath(
-        member.birthdate,
-        this.death.date_of_death
-      ) === ''
-    ) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Invalid Date of Death',
-        text: 'The date of death must be at least one day after the birthdate. The two dates cannot be the same.',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#176b52',
-        customClass: this.swalCustomClass
-      });
-
-      return;
-    }
-
-    const payload = {
-      baptism_id: baptismId,
-      quarter: this.death.quarter.trim(),
-      date_of_death: this.death.date_of_death
-    };
 
     this.saving = true;
+
+    console.log('Saving death record:', payload);
+
+    this.submitDeath(payload);
+  }
+
+  /**
+   * Submit death record to Laravel.
+   */
+  private submitDeath(payload: any): void {
 
     this.http
       .post<any>('/api/deaths', payload)
       .subscribe({
+
         next: (response) => {
           console.log('Death record saved:', response);
 
           this.saving = false;
 
-          Swal.fire({
+          showAppAlert({
             icon: 'success',
             title: 'Saved Successfully',
             text: 'Death record has been saved successfully.',
@@ -775,7 +1384,7 @@ export class DeathaddrecComponent implements OnInit {
             customClass: this.swalCustomClass
           }).then((result) => {
             if (result.isConfirmed) {
-              this.router.navigate(['/pastor/deathbap']);
+              this.navigateBackToDeathRecords();
             }
           });
         },
@@ -785,8 +1394,6 @@ export class DeathaddrecComponent implements OnInit {
 
           this.saving = false;
 
-          // If another request created the death record,
-          // refresh the list of unavailable members.
           if (
             error.status === 422 &&
             error.error?.errors?.baptism_id
@@ -798,7 +1405,7 @@ export class DeathaddrecComponent implements OnInit {
             ? Object.values(error.error.errors).flat().join('\n')
             : '';
 
-          Swal.fire({
+          showAppAlert({
             icon: 'error',
             title: error.status === 422
               ? 'Unable to Save Record'
@@ -818,10 +1425,38 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
+   * Return to the Death Record table while preserving the reporting period.
+   */
+  private navigateBackToDeathRecords(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const requestedQuarter = queryParams.get('quarter');
+    const selectedQuarter = this.death.quarter || requestedQuarter;
+
+    const validQuarter =
+      selectedQuarter === 'Q1' ||
+      selectedQuarter === 'Q2' ||
+      selectedQuarter === 'Q3' ||
+      selectedQuarter === 'Q4'
+        ? selectedQuarter
+        : null;
+
+    this.router.navigate(['/pastor/deathbap'], {
+      queryParams: {
+        record: 'death',
+        ...(Number.isInteger(this.deathDateYear) && this.deathDateYear > 0
+          ? { year: this.deathDateYear }
+          : {}),
+        ...(validQuarter ? { quarter: validQuarter } : {}),
+        ...(queryParams.get('annual') === 'true' ? { annual: true } : {})
+      }
+    });
+  }
+
+  /**
    * Cancel adding a death record.
    */
   cancelForm(): void {
-    this.router.navigate(['/pastor/deathbap']);
+    this.navigateBackToDeathRecords();
   }
 
 }

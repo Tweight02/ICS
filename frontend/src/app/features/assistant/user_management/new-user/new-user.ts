@@ -5,7 +5,7 @@ import {
   ReactiveFormsModule,
   Validators
 } from '@angular/forms';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 import { UserService } from '../../../../core/services/user/user-service';
 import { Church } from '../../../../core/models/church.model';
 import { RouterLink } from '@angular/router';
@@ -192,7 +192,7 @@ export class NewUser implements OnInit {
           const name = res.pastor
             ? `${res.pastor.first_name} ${res.pastor.last_name}`
             : null;
-          Swal.fire({
+          showAppAlert({
             icon: 'warning',
             title: 'District already has a pastor',
             text: name
@@ -239,7 +239,7 @@ export class NewUser implements OnInit {
         this.districtFilter = '';
         this.districtOpen = false;
 
-        Swal.fire({
+        showAppAlert({
           icon: 'success',
           title: 'User created',
           text: 'The pastor account was created successfully.',
@@ -255,7 +255,7 @@ export class NewUser implements OnInit {
           ? Object.fromEntries(Object.entries(errors).map(([field, messages]) => [field, messages[0]]))
           : {};
         if (emailAlreadyUsed) {
-          Swal.fire({
+          showAppAlert({
             icon: 'warning',
             title: 'Email already in use',
             text: 'An account with this email address already exists.',

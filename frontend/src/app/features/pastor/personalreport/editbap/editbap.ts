@@ -12,7 +12,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, timeout } from 'rxjs/operators';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
 
@@ -61,19 +61,70 @@ export class EditbapComponent implements OnInit {
   churches: Church[] = [];
   churchesLoading = false;
   churchesLoaded = false;
-  churchesError = '';
 
   loading = true;
   saving = false;
 
-  errorMessage = '';
+  private _errorMessage = '';
+  private _churchesError = '';
+  private _baptismDateError = '';
+  private baptismDateErrorShown = false;
+
+  get errorMessage(): string {
+    return this._errorMessage;
+  }
+
+  set errorMessage(message: string) {
+    this._errorMessage = message;
+    if (message) this.showErrorAlert(message);
+  }
+
+  get churchesError(): string {
+    return this._churchesError;
+  }
+
+  set churchesError(message: string) {
+    this._churchesError = message;
+    if (message) this.showErrorAlert(message);
+  }
+
+  get baptismDateError(): string {
+    return this._baptismDateError;
+  }
+
+  set baptismDateError(message: string) {
+    this._baptismDateError = message;
+    this.baptismDateErrorShown = false;
+  }
+
+  private showErrorAlert(message: string): void {
+    showAppAlert({
+      icon: 'error',
+      title: 'Error!',
+      text: message,
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#0c502f'
+    });
+  }
+
+  showBaptismDateError(): void {
+    if (!this._baptismDateError || this.baptismDateErrorShown) {
+      return;
+    }
+
+    this.baptismDateErrorShown = true;
+    this.showErrorAlert(this._baptismDateError);
+  }
+
   successMessage = '';
 
   today = this.getTodayDate();
 
-  // Minimum permitted baptism date: one day after birthdate.
+  // Minimum permitted baptism date: the member's 8th birthday.
   minimumBaptismDate = '';
-  baptismDateError = '';
+
+  // The selected quarter is applied within the baptism record's year.
+  baptismQuarterYear = new Date().getFullYear();
 
   baptism: BaptismForm = this.emptyBaptism();
 
@@ -155,9 +206,90 @@ export class EditbapComponent implements OnInit {
      BAPTISM DATE VALIDATION
   ========================================= */
 
+  /* =========================================
+     QUARTER DATE RANGE
+  ========================================= */
+
+  /**
+   * The selected quarter is restricted to the calendar year of the
+   * currently loaded baptism date. If there is no date yet, the current
+   * year is used.
+   */
+  get quarterStartDate(): string {
+    const quarterNumber =
+      Number(this.normalizeQuarter(this.baptism.quarter).substring(1)) || 1;
+    const firstMonth = (quarterNumber - 1) * 3 + 1;
+
+    return `${this.baptismQuarterYear}-${String(firstMonth).padStart(2, '0')}-01`;
+  }
+
+  get quarterEndDate(): string {
+    const quarterNumber =
+      Number(this.normalizeQuarter(this.baptism.quarter).substring(1)) || 1;
+    const lastMonth = quarterNumber * 3;
+    const lastDay = new Date(
+      this.baptismQuarterYear,
+      lastMonth,
+      0
+    ).getDate();
+
+    return `${this.baptismQuarterYear}-${String(lastMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  }
+
+  /**
+   * Combine the selected quarter with the existing age requirement.
+   * The date picker cannot allow a date before the member's 8th birthday.
+   */
+  get dateOfBaptismMin(): string {
+    if (
+      this.minimumBaptismDate &&
+      this.minimumBaptismDate > this.quarterStartDate
+    ) {
+      return this.minimumBaptismDate;
+    }
+
+    return this.quarterStartDate;
+  }
+
+  /**
+   * The latest selectable date is the earlier of the quarter end and today.
+   */
+  get dateOfBaptismMax(): string {
+    return this.quarterEndDate < this.today
+      ? this.quarterEndDate
+      : this.today;
+  }
+
+  /**
+   * Clear the existing date if it does not belong to the newly selected quarter.
+   */
+  onQuarterChange(): void {
+    const baptismDate = this.baptism.date_of_baptism;
+
+    if (
+      baptismDate &&
+      (
+        baptismDate < this.quarterStartDate ||
+        baptismDate > this.quarterEndDate
+      )
+    ) {
+      this.baptism.date_of_baptism = '';
+    }
+
+    this.baptismDateError = '';
+    this.validateBaptismDate();
+  }
+
+  /**
+   * Validate a date selected from the quarter-limited date picker.
+   */
+  onBaptismDateChange(): void {
+    this.validateBaptismDate();
+  }
+
   /**
    * Calculate the earliest permitted baptism date.
-   * Baptism must be at least one calendar day after birth.
+   * A member must be at least 8 years old on the baptism date.
    */
   updateMinimumBaptismDate(): void {
     this.baptismDateError = '';
@@ -175,13 +307,12 @@ export class EditbapComponent implements OnInit {
       .map(Number);
 
     // Use the local calendar date to avoid timezone shifts.
+    // The minimum date is the member's 8th birthday.
     const minimumDate = new Date(
-      year,
+      year + 8,
       month - 1,
       day
     );
-
-    minimumDate.setDate(minimumDate.getDate() + 1);
 
     const minimumYear = minimumDate.getFullYear();
     const minimumMonth = String(
@@ -200,8 +331,8 @@ export class EditbapComponent implements OnInit {
   }
 
   /**
-   * Reject a baptism date that is the same as
-   * or earlier than the birthdate.
+   * Reject a baptism date earlier than the member's 8th birthday.
+   * The 8th birthday itself is an allowed baptism date.
    */
   validateBaptismDate(): void {
     this.baptismDateError = '';
@@ -209,16 +340,29 @@ export class EditbapComponent implements OnInit {
     const birthdate = this.baptism.birthdate;
     const baptismDate = this.baptism.date_of_baptism;
 
-    if (!birthdate || !baptismDate) {
+    if (!baptismDate) {
       return;
     }
 
     // YYYY-MM-DD strings can be compared directly.
-    if (baptismDate <= birthdate) {
+    if (
+      baptismDate < this.quarterStartDate ||
+      baptismDate > this.quarterEndDate
+    ) {
+      this.baptismDateError =
+        'Date of baptism must be within the selected quarter.';
+      return;
+    }
+
+    if (!birthdate || !this.minimumBaptismDate) {
+      return;
+    }
+
+    if (baptismDate < this.minimumBaptismDate) {
       this.baptism.date_of_baptism = '';
 
       this.baptismDateError =
-        'Date of baptism must be at least one day after the birthdate.';
+        "Date of baptism must be on or after the member's 8th birthday.";
     }
   }
 
@@ -226,13 +370,19 @@ export class EditbapComponent implements OnInit {
    * Additional validation before saving.
    */
   isBaptismDateInvalid(): boolean {
-    const birthdate = this.baptism.birthdate;
     const baptismDate = this.baptism.date_of_baptism;
 
+    if (!baptismDate) {
+      return false;
+    }
+
     return (
-      !!birthdate &&
-      !!baptismDate &&
-      baptismDate <= birthdate
+      (
+        !!this.minimumBaptismDate &&
+        baptismDate < this.minimumBaptismDate
+      ) ||
+      baptismDate < this.quarterStartDate ||
+      baptismDate > this.quarterEndDate
     );
   }
 
@@ -564,9 +714,12 @@ export class EditbapComponent implements OnInit {
             )
           };
 
+          this.baptismQuarterYear = this.baptism.date_of_baptism
+            ? Number(this.baptism.date_of_baptism.substring(0, 4))
+            : Number(this.today.substring(0, 4));
+
           // Calculate the minimum date immediately after loading.
-          // This also detects an existing baptism date that is
-          // the same as or earlier than the birthdate.
+          // This also detects a date earlier than the member's 8th birthday.
           this.updateMinimumBaptismDate();
 
           this.ensureSelectedChurchBelongsToDistrict();
@@ -655,22 +808,36 @@ export class EditbapComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    // Block an invalid baptism date before other form validation.
+    // Do not allow a baptism date outside the selected quarter.
     if (
-      this.baptism.birthdate &&
       this.baptism.date_of_baptism &&
-      this.baptism.date_of_baptism <=
-        this.baptism.birthdate
+      (
+        this.baptism.date_of_baptism < this.quarterStartDate ||
+        this.baptism.date_of_baptism > this.quarterEndDate
+      )
     ) {
       this.baptismDateError =
-        'Date of baptism must be at least one day after the birthdate.';
+        'Date of baptism must be within the selected quarter.';
 
-      this.errorMessage = this.baptismDateError;
+      this.showBaptismDateError();
+      return;
+    }
+
+    // Block a baptism date earlier than the member's 8th birthday.
+    if (
+      this.baptism.date_of_baptism &&
+      this.minimumBaptismDate &&
+      this.baptism.date_of_baptism < this.minimumBaptismDate
+    ) {
+      this.baptismDateError =
+        "Date of baptism must be on or after the member's 8th birthday.";
+
+      this.showBaptismDateError();
       return;
     }
 
     if (this.baptismDateError) {
-      this.errorMessage = this.baptismDateError;
+      this.showBaptismDateError();
       return;
     }
 
@@ -745,16 +912,15 @@ export class EditbapComponent implements OnInit {
       return;
     }
 
-    // Final date check: a baptism date must be strictly
-    // later than the birthdate, never equal to or earlier.
+    // Final date check: the member must be at least 8 years old.
     if (
-      this.baptism.birthdate &&
       this.baptism.date_of_baptism &&
-      this.baptism.date_of_baptism <=
-        this.baptism.birthdate
+      this.minimumBaptismDate &&
+      this.baptism.date_of_baptism < this.minimumBaptismDate
     ) {
-      this.errorMessage =
-        'Date of baptism must be at least one day after the birthdate.';
+      this.baptismDateError =
+        "Date of baptism must be on or after the member's 8th birthday.";
+      this.showBaptismDateError();
       return;
     }
 
@@ -821,7 +987,7 @@ export class EditbapComponent implements OnInit {
           this.successMessage = message;
           this.cdr.detectChanges();
 
-          Swal.fire({
+          showAppAlert({
             icon: 'success',
             title: 'Saved Successfully!',
             text: message,

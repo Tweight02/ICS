@@ -10,7 +10,7 @@ import { UserService } from '../../../../core/services/user/user-service';
 import { Button } from '../../../../shared/components/button/button';
 import { Pastor } from '../../../../core/models/pastor.model';
 import { Department } from '../../../../core/models/department.model';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 
 
 @Component({
@@ -191,7 +191,7 @@ async onRemove(): Promise<void> {
   const p = this.pastor();
   if (!p) return;
 
-  const result = await Swal.fire({
+  const result = await showAppAlert({
     title: 'Deactivate Pastor?',
     text: `Deactivate ${p.first_name} ${p.last_name}? Their account and records will be kept, but they will no longer be able to sign in.`,
     icon: 'warning',
@@ -219,7 +219,7 @@ async onRemove(): Promise<void> {
     next: async () => {
       this.removing.set(false);
 
-      await Swal.fire({
+      await showAppAlert({
         title: 'Pastor Deactivated',
         text: `${p.first_name} ${p.last_name} was deactivated. Their account and records were kept.`,
         icon: 'success',
@@ -238,7 +238,7 @@ async onRemove(): Promise<void> {
 
       this.submitErrors.set([message]);
 
-      await Swal.fire({
+      await showAppAlert({
         title: 'Deactivation Failed',
         text: message,
         icon: 'error',
@@ -255,7 +255,7 @@ async onRemove(): Promise<void> {
     const p = this.pastor();
     if (!p) return;
 
-    const result = await Swal.fire({
+    const result = await showAppAlert({
       title: 'Activate Pastor?',
       text: `Activate ${p.first_name} ${p.last_name} and restore access to this district?`,
       icon: 'question',
@@ -283,7 +283,7 @@ async onRemove(): Promise<void> {
         this.activating.set(false);
         this.pastor.update((current) => current ? { ...current, status: 'active' } : current);
 
-        await Swal.fire({
+        await showAppAlert({
           title: 'Pastor Activated',
           text: `${p.first_name} ${p.last_name} is now active again.`,
           icon: 'success',
@@ -303,7 +303,7 @@ async onRemove(): Promise<void> {
 
         this.submitErrors.set([message]);
 
-        await Swal.fire({
+        await showAppAlert({
           title: 'Activation Failed',
           text: message,
           icon: 'error',

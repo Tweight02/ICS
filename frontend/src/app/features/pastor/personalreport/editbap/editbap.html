@@ -21,14 +21,10 @@
         Loading baptism record...
       </div>
 
-      <!-- Error -->
+      <!-- Back button when the selected record cannot be loaded -->
       <div
-        *ngIf="!loading && errorMessage"
-        class="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#f4c7c7] bg-[#fff3f2] px-3 py-2 text-[13px] leading-[1.5] text-[#a52b2b]"
-        role="alert">
-
-        <span>{{ errorMessage }}</span>
-
+        *ngIf="!loading && errorMessage && !baptism.baptism_id"
+        class="mb-3 flex justify-end">
         <button
           app-button
           variant="back"
@@ -145,6 +141,7 @@
                 type="date"
                 [(ngModel)]="baptism.birthdate"
                 (change)="updateMinimumBaptismDate()"
+                (blur)="showBaptismDateError()"
                 [max]="today"
                 required />
             </div>
@@ -180,11 +177,10 @@
                 name="marital_status"
                 [(ngModel)]="baptism.marital_status">
 
-                
                 <option value="Single">Single</option>
                 <option value="Married">Married</option>
                 <option value="Widowed">Widowed</option>
-           
+
               </select>
             </div>
 
@@ -299,10 +295,10 @@
                   <button
                     *ngFor="let church of filteredChurches"
                     type="button"
-                    class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] text-slate-700 transition-colors hover:bg-emerald-50 focus-visible:bg-emerald-50 focus-visible:outline-none"
+                    class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-800 focus-visible:bg-blue-50 focus-visible:text-blue-800 focus-visible:outline-none"
                     role="option"
-                    [class.bg-emerald-50]="sameChurch(church.church_id, baptism.church_id)"
-                    [class.text-emerald-800]="sameChurch(church.church_id, baptism.church_id)"
+                    [class.bg-blue-50]="sameChurch(church.church_id, baptism.church_id)"
+                    [class.text-blue-800]="sameChurch(church.church_id, baptism.church_id)"
                     [attr.aria-selected]="sameChurch(church.church_id, baptism.church_id)"
                     (click)="selectChurch(church)">
                     {{ church.name }}
@@ -323,12 +319,6 @@
                 [(ngModel)]="baptism.church_id"
                 required>
 
-              <p
-                *ngIf="churchesError"
-                class="text-[12px] leading-[1.5] text-[#a52b2b]"
-                role="alert">
-                {{ churchesError }}
-              </p>
             </div>
 
             <!-- Quarter -->
@@ -342,6 +332,7 @@
                 id="quarter"
                 name="quarter"
                 [(ngModel)]="baptism.quarter"
+                (ngModelChange)="onQuarterChange()"
                 required>
 
                 <option value="Q1">Q1</option>
@@ -363,18 +354,12 @@
                 name="date_of_baptism"
                 type="date"
                 [(ngModel)]="baptism.date_of_baptism"
-                [min]="minimumBaptismDate || null"
-                [max]="today"
-                (change)="validateBaptismDate()"
+                [min]="dateOfBaptismMin"
+                [max]="dateOfBaptismMax"
+                (change)="onBaptismDateChange()"
+                (blur)="showBaptismDateError()"
                 required />
 
-              <!-- Baptism Date Validation Message -->
-              <p
-                *ngIf="baptismDateError"
-                class="text-[12px] leading-[1.5] text-[#a52b2b]"
-                role="alert">
-                {{ baptismDateError }}
-              </p>
             </div>
 
             <!-- Officiating Minister -->
@@ -440,18 +425,18 @@
           </button>
 
           <!-- Save Changes Button -->
-         <button
-  app-button
-  variant="edit"
-  size="md"
-  type="submit"
-  [loading]="saving"
-  class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-[#0c502f] px-[18px] text-[13px] font-semibold !text-white transition-colors duration-200 hover:!border-[#0c502f] hover:!bg-[#0c502f] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
-  [disabled]="saving || baptismForm.invalid || isBaptismDateInvalid()">
+          <button
+            app-button
+            variant="edit"
+            size="md"
+            type="submit"
+            [loading]="saving"
+            class="inline-flex h-[30px] w-[140px] cursor-pointer items-center justify-center !rounded-[9px] !border !border-[#0c502f] !bg-[#0c502f] px-[18px] text-[13px] font-semibold !text-white transition-colors duration-200 hover:!border-[#0c502f] hover:!bg-[#0c502f] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none max-[650px]:w-full"
+            [disabled]="saving || baptismForm.invalid || isBaptismDateInvalid()">
 
-  <span *ngIf="!saving">Save Changes</span>
-  <span *ngIf="saving">Saving...</span>
-</button>
+            <span *ngIf="!saving">Save Changes</span>
+            <span *ngIf="saving">Saving...</span>
+          </button>
 
         </div>
       </form>

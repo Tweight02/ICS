@@ -119,65 +119,59 @@
 		} @else if (!loadError()) {
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 			@for (assignment of visibleAssignments(); track assignment.church_id) {
-			<button type="button" (click)="openTransfer(assignment)"
-				[attr.aria-label]="'Manage pastor assignment for ' + assignment.district_name"
-				class="group flex min-h-[76px] w-full items-center gap-3 rounded-lg border bg-white p-4 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-2"
-				[class.border-amber-200]="assignment.pastor_user_id === null"
-				[class.hover:border-amber-300]="assignment.pastor_user_id === null"
-				[class.border-slate-200]="assignment.pastor_user_id !== null"
-				[class.hover:border-emerald-300]="assignment.pastor_user_id !== null">
-				<!-- Status indicator -->
-				<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-					[class.bg-amber-50]="assignment.pastor_user_id === null"
-					[class.text-amber-700]="assignment.pastor_user_id === null"
-					[class.bg-emerald-50]="assignment.pastor_user_id !== null"
-					[class.text-emerald-800]="assignment.pastor_user_id !== null" aria-hidden="true">
-					@if (assignment.pastor_user_id === null) {
-					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-						<path fill-rule="evenodd"
-							d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 4a1 1 0 10-2 0v3a1 1 0 002 0V6zm-1 7a1.1 1.1 0 100-2.2A1.1 1.1 0 0010 13z"
-							clip-rule="evenodd" />
-					</svg>
-					} @else {
-					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-						<path fill-rule="evenodd"
-							d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.7 5.3a1 1 0 00-1.4-1.4L9 9.2 7.7 7.9a1 1 0 00-1.4 1.4l2 2a1 1 0 001.4 0l4-4z"
-							clip-rule="evenodd" />
-					</svg>
-					}
-				</span>
-
-				<!-- District information -->
-				<span class="min-w-0 flex-1">
-					<span class="block break-words text-sm font-semibold leading-5 text-slate-900">
-						{{ assignment.district_name }}
+				<button
+					type="button"
+					(click)="openTransfer(assignment)"
+					[attr.aria-label]="'Manage pastor assignment for ' + assignment.district_name"
+					class="group flex min-h-[76px] w-full items-center gap-3 rounded-lg border bg-white p-4 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-2"
+					[class.border-amber-200]="assignment.pastor_user_id === null"
+					[class.hover:border-amber-300]="assignment.pastor_user_id === null"
+					[class.border-slate-200]="assignment.pastor_user_id !== null"
+					[class.hover:border-emerald-300]="assignment.pastor_user_id !== null"
+				>
+					<!-- Status indicator -->
+					<span
+						class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+						[class.bg-amber-50]="assignment.pastor_user_id === null"
+						[class.text-amber-700]="assignment.pastor_user_id === null"
+						[class.bg-emerald-50]="assignment.pastor_user_id !== null"
+						[class.text-emerald-800]="assignment.pastor_user_id !== null"
+						aria-hidden="true"
+					>
+						@if (assignment.pastor_user_id === null) {
+							<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 4a1 1 0 10-2 0v3a1 1 0 002 0V6zm-1 7a1.1 1.1 0 100-2.2A1.1 1.1 0 0010 13z" clip-rule="evenodd" />
+							</svg>
+						} @else {
+							<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.7 5.3a1 1 0 00-1.4-1.4L9 9.2 7.7 7.9a1 1 0 00-1.4 1.4l2 2a1 1 0 001.4 0l4-4z" clip-rule="evenodd" />
+							</svg>
+						}
 					</span>
 
-					@if (assignment.pastor_user_id === null) {
-					<span class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
-						<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-						Vacant · No pastor assigned
-					</span>
-					} @else {
-					<span class="mt-1 block break-words text-sm text-slate-600">
-						{{ assignment.pastor_name }}
-					</span>
-					}
-				</span>
+					<!-- District information -->
+					<span class="min-w-0 flex-1">
+						<span class="block break-words text-sm font-semibold leading-5 text-slate-900">
+							{{ assignment.district_name }}
+						</span>
 
-				<!-- Action indicator -->
-				<svg class="h-4 w-4 shrink-0 text-slate-400 transition-colors group-hover:text-[#0F4A30]"
-					viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-					<path fill-rule="evenodd"
-						d="M7.2 4.3a1 1 0 011.4 0l5 5a1 1 0 010 1.4l-5 5a1 1 0 01-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 010-1.4z"
-						clip-rule="evenodd" />
-				</svg>
-			</button>
+						@if (assignment.pastor_user_id === null) {
+							<span class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
+								<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+								Vacant · No pastor assigned
+							</span>
+						} @else {
+							<span class="mt-1 block break-words text-sm text-slate-600">
+								{{ assignment.pastor_name }}
+							</span>
+						}
+					</span>
+
+				</button>
 			}
 		</div>
-		}
-	</section>
-
+	}
+</section>
 
 	<!-- Assign / change / transfer modal -->
 	@if (transferTarget(); as target) {
@@ -274,6 +268,9 @@
 								(keydown.enter)="!isHere && !saving() && selectPastor(p)">
 								<td class="px-3 py-2 font-medium text-slate-900">
 									<span class="break-words">{{ p.full_name }}</span>
+									@if (p.status === 'inactive') {
+									<span class="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">Inactive</span>
+									}
 								</td>
 								<td class="px-3 py-2">
 									@if (isHere) {
@@ -288,7 +285,7 @@
 							} @empty {
 							<tr>
 								<td colspan="2" class="px-3 py-6 text-center text-sm text-slate-500">
-									{{ pastors().length === 0 ? 'There are no active pastors available.' : 'No pastors
+									{{ pastors().length === 0 ? 'There are no pastors available.' : 'No pastors
 									match your search.' }}
 								</td>
 							</tr>
@@ -355,8 +352,7 @@
 					class="inline-flex h-9 items-center justify-center !rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60">
 					Cancel
 				</button>
-				<button app-button variant="submit" size="md" type="button" (click)="submitTransfer()"
-					[disabled]="!selectedPastor() || saving()" [loading]="saving()"
+				<button app-button variant="submit" size="md" type="button" (click)="submitTransfer()" [disabled]="!selectedPastor() || saving()" [loading]="saving()"
 					class="inline-flex h-9 items-center justify-center !rounded-md bg-[#0F4A30] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0B3925] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
 					@if (saving()) {
 					<svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">

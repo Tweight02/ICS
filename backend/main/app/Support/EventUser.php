@@ -19,6 +19,7 @@ final class EventUser
         public ?int $churchId,
         public ?int $districtId,
         public ?int $departmentId,
+        public bool $isHeadAssistant,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -36,6 +37,7 @@ final class EventUser
         $raw = $u->role instanceof \BackedEnum ? $u->role->value : (string) $u->role;
         $role = self::normalize($raw);
         abort_if($role === 'none', 403, 'Your role cannot use the events module.');
+        $normalizedRawRole = strtolower(trim(str_replace(['-', '_'], ' ', $raw)));
 
         $id = (int) ($u->user_id ?? $u->getKey());
         $name = trim(implode(' ', array_filter([$u->first_name ?? null, $u->last_name ?? null]))) ?: (string) ($u->name ?? 'User');
@@ -47,7 +49,16 @@ final class EventUser
 
         $departmentId = ! empty($u->department_id) ? (int) $u->department_id : null;
 
-        return new self($id, $name, (string) ($u->email ?? ''), $role, $churchId, $districtId, $departmentId);
+        return new self(
+            $id,
+            $name,
+            (string) ($u->email ?? ''),
+            $role,
+            $churchId,
+            $districtId,
+            $departmentId,
+            $normalizedRawRole === 'head assistant'
+        );
     }
 
     /** Your stored role names (several spellings) -> the 4 module roles. */
@@ -70,9 +81,9 @@ final class EventUser
             'church_representative' => 'Church Representative'][$role] ?? $role;
     }
 
-    /** Directors are read-only. */
+    /** Directors and head assistants are read-only. */
     public function canWrite(): bool
     {
-        return $this->role !== 'director';
+        return $this->role !== 'director' && ! $this->isHeadAssistant;
     }
 }

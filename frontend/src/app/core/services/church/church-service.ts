@@ -14,6 +14,11 @@ import {
   Church
 } from '../../models/church.model';
 import { Department } from '../../models/department.model';
+import {
+  BaptismSummaryRecord,
+  DeathSummaryRecord,
+  MissionReportSummary
+} from '../../models/report.model';
 
 export interface DistrictResponse {
   success: boolean;
@@ -51,9 +56,10 @@ export class ChurchService {
   }>(`${this.apiUrl}/pastor/my-district`);
 }
 
-getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
+getMyDistrictChurches(year?: number): Observable<MyDistrictChurchesResponse> {
   return this.http.get<MyDistrictChurchesResponse>(
-    `${this.apiUrl}/pastor/my-district/churches`
+    `${this.apiUrl}/pastor/my-district/churches`,
+    { params: year ? { year } : {} }
   );
 }
 
@@ -64,9 +70,12 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
     private readonly http: HttpClient
   ) {}
 
-  getDistricts(departmentId?: number): Observable<DistrictResponse> {
+  getDistricts(departmentId?: number, year?: number): Observable<DistrictResponse> {
     return this.http.get<DistrictResponse>(`${this.apiUrl}/districts`, {
-      params: departmentId ? { department_id: departmentId } : {}
+      params: {
+        ...(departmentId ? { department_id: departmentId } : {}),
+        ...(year ? { year } : {})
+      }
     });
   }
 
@@ -74,6 +83,45 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
     return this.http.get<{ success: boolean; data: Department[] }>(
       `${this.apiUrl}/departments`
     );
+  }
+
+  getMissionReportSummary(year: number, departmentId?: number): Observable<{
+    success: boolean;
+    data: MissionReportSummary;
+  }> {
+    return this.http.get<{
+      success: boolean;
+      data: MissionReportSummary;
+    }>(`${this.apiUrl}/reports/mission-summary`, {
+      params: {
+        year,
+        ...(departmentId ? { department_id: departmentId } : {})
+      }
+    });
+  }
+
+  getBaptismRecordsForQuarter(year: number, quarter: string): Observable<{
+    success: boolean;
+    data: BaptismSummaryRecord[];
+  }> {
+    return this.http.get<{
+      success: boolean;
+      data: BaptismSummaryRecord[];
+    }>(`${this.apiUrl}/reports/mission-summary/baptisms`, {
+      params: { year, quarter }
+    });
+  }
+
+  getDeathRecordsForQuarter(year: number, quarter: string): Observable<{
+    success: boolean;
+    data: DeathSummaryRecord[];
+  }> {
+    return this.http.get<{
+      success: boolean;
+      data: DeathSummaryRecord[];
+    }>(`${this.apiUrl}/reports/mission-summary/deaths`, {
+      params: { year, quarter }
+    });
   }
 
   getAllChurches(): Observable<ChurchDirectoryResponse> {
@@ -84,12 +132,22 @@ getMyDistrictChurches(): Observable<MyDistrictChurchesResponse> {
 
   getChurches(
     districtId: number,
-    departmentId?: number
+    departmentId?: number,
+    year?: number,
+    includeDepartmentMonitoring = false
   ): Observable<ChurchesResponse> {
 
     return this.http.get<ChurchesResponse>(
       `${this.apiUrl}/districts/${districtId}/churches`,
-      { params: departmentId ? { department_id: departmentId } : {} }
+      {
+        params: {
+          ...(departmentId ? { department_id: departmentId } : {}),
+          ...(year ? { year } : {}),
+          ...(includeDepartmentMonitoring
+            ? { include_department_monitoring: '1' }
+            : {})
+        }
+      }
     );
   }
 }

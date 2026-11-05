@@ -11,8 +11,16 @@ class QuarterlyReportDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $year = (string) config('app.reporting_year', now()->year);
+        $this->seedYear((string) config('app.reporting_year', now()->year), false);
+    }
 
+    public function runForYear(string $year): void
+    {
+        $this->seedYear($year, true);
+    }
+
+    private function seedYear(string $year, bool $completeYear): void
+    {
         if (! preg_match('/^\d{4}$/', $year)) {
             throw new RuntimeException('Invalid reporting year. Use a four-digit year.');
         }
@@ -24,9 +32,9 @@ class QuarterlyReportDataSeeder extends Seeder
             throw new RuntimeException('Sample reports cannot be generated for a future reporting year.');
         }
 
-        $lastQuarter = $reportingYear === $today->year
-            ? (int) ceil($today->month / 3)
-            : 4;
+        $lastQuarter = ($completeYear || $reportingYear < $today->year)
+            ? 4
+            : (int) ceil($today->month / 3);
         $programs = DB::table('programs')
             ->whereNull('parent_id')
             ->whereBetween('department_id', [13, 21])
@@ -96,6 +104,7 @@ class QuarterlyReportDataSeeder extends Seeder
             $particularsByProgram,
             $reportingYear,
             $lastQuarter,
+            $completeYear,
             $today,
             &$seeded
         ): void {
@@ -104,7 +113,9 @@ class QuarterlyReportDataSeeder extends Seeder
             foreach ($quarters as $quarter) {
                 $quarterNumber = $this->quarterNumber((string) $quarter->quarter);
 
-                if ($quarterNumber === null || $quarterNumber > $lastQuarter || $quarterNumber === 4) {
+                if ($quarterNumber === null
+                    || $quarterNumber > $lastQuarter
+                    || ($quarterNumber === 4 && ! $completeYear)) {
                     continue;
                 }
 
@@ -122,9 +133,9 @@ class QuarterlyReportDataSeeder extends Seeder
                 $key = "{$quarter->church_id}|{$quarter->program_id}|{$reportingYear}|{$quarterNumber}";
                 $q3IsEndorsed = $quarterNumber === 3 && $q3WorkflowIndex++ % 2 === 0;
                 $quarterEnd = Carbon::create($reportingYear, $quarterNumber * 3, 1)->endOfMonth();
-                $submitted = $quarterNumber <= 2 || $q3IsEndorsed;
-                $endorsed = $quarterNumber <= 2 || $q3IsEndorsed;
-                $approved = $quarterNumber <= 2;
+                $submitted = $completeYear || $quarterNumber <= 2 || $q3IsEndorsed;
+                $endorsed = $completeYear || $quarterNumber <= 2 || $q3IsEndorsed;
+                $approved = $completeYear || $quarterNumber <= 2;
                 $dates = $this->statusDates($key, $quarterEnd, $today, $submitted, $endorsed, $approved);
 
                 DB::table('quarters')
@@ -195,7 +206,8 @@ class QuarterlyReportDataSeeder extends Seeder
             }
         });
 
-        $this->command?->info("Quarterly sample reports created: {$seeded} for {$year} through Q3.");
+        $throughQuarter = $completeYear ? 4 : 3;
+        $this->command?->info("Quarterly sample reports created: {$seeded} for {$year} through Q{$throughQuarter}.");
     }
 
     private function quarterNumber(string $quarter): ?int

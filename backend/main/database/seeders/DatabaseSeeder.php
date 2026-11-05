@@ -1,3 +1,4 @@
+
 <?php
 
 namespace Database\Seeders;
@@ -13,10 +14,13 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ReportingSetupSeeder::class,
+            SampleReport2025Seeder::class,
             QuarterlyReportDataSeeder::class,
             UserSeeder::class,
             CompletedEventSeeder::class,
+            SampleEventSeeder::class,
             PersonalReportDataSeeder::class,
+            LastYearReportSeeder::class,
         ]);
     }
 }

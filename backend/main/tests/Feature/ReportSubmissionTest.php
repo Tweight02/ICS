@@ -109,6 +109,12 @@ function createReportAssistant(int $churchId, int $departmentId): User
 test('completed event purposes add one report count per event instead of per participant', function () {
     $fixture = reportSubmissionFixture();
     $assistant = createReportAssistant($fixture['churchId'], $fixture['departmentId']);
+    DB::table('quarters')
+        ->where('quarter_id', $fixture['quarterId'])
+        ->update([
+            'date_submitted' => '2026-03-01',
+            'district_endorse' => '2026-03-02',
+        ]);
     $campingId = DB::table('particulars')->insertGetId([
         'program_id' => $fixture['sectionId'],
         'particular_name' => 'Camping',
@@ -177,6 +183,12 @@ test('completed event purposes add one report count per event instead of per par
 test('reverting a confirmed event participant to pending removes their report counts', function () {
     $fixture = reportSubmissionFixture();
     $assistant = createReportAssistant($fixture['churchId'], $fixture['departmentId']);
+    DB::table('quarters')
+        ->where('quarter_id', $fixture['quarterId'])
+        ->update([
+            'date_submitted' => '2026-03-01',
+            'district_endorse' => '2026-03-02',
+        ]);
     $particularId = $fixture['particularIds'][0];
 
     DB::table('particular_items')->insert([
@@ -331,6 +343,79 @@ test('reverting a confirmed event participant to pending removes their report co
         'registration_status' => 'pending',
     ]);
     $this->assertDatabaseCount('event_participant_contributions', 0);
+});
+
+test('report values are visible by workflow stage to pastors, assistants, and assigned directors', function () {
+    $fixture = reportSubmissionFixture();
+    $pastor = createDistrictPastor($fixture['churchId'], $fixture['departmentId']);
+    $assistant = createReportAssistant($fixture['churchId'], $fixture['departmentId']);
+    $director = User::query()->create([
+        'department_id' => $fixture['departmentId'],
+        'church_id' => $fixture['churchId'],
+        'first_name' => 'Assigned',
+        'middle_name' => '',
+        'last_name' => 'Director',
+        'birthdate' => '1980-01-01',
+        'gender' => 'other',
+        'role' => 'director',
+        'email' => 'assigned-report-director@example.com',
+        'password' => Hash::make('password'),
+        'status' => 'active',
+    ]);
+    $representative = createRepresentative(
+        $fixture['churchId'],
+        $fixture['departmentId']
+    );
+    $reportUrl = "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report";
+
+    $this->actingAs($representative, 'sanctum')
+        ->postJson($reportUrl.'/save', [
+            'items' => [[
+                'particular_id' => $fixture['particularIds'][0],
+                'quarter_id' => $fixture['quarterId'],
+                'value' => 12,
+            ]],
+        ])
+        ->assertOk();
+
+    $assertQuarterValue = function (
+        User $user,
+        ?float $expectedValue
+    ) use ($reportUrl): void {
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson($reportUrl)
+            ->assertOk();
+
+        $quarter = $response->json('programs.0.sections.0.particulars.0.quarters.0');
+        if ($expectedValue === null) {
+            expect($quarter['value'])->toBeNull()
+                ->and($quarter['combined_value'])->toBeNull()
+                ->and($quarter['participant_count'])->toBe(0)
+                ->and($quarter['completed_event_count'])->toBe(0);
+        } else {
+            expect((float) $quarter['value'])->toBe($expectedValue)
+                ->and((float) $quarter['combined_value'])->toBe($expectedValue);
+        }
+    };
+
+    $assertQuarterValue($pastor, null);
+    $assertQuarterValue($assistant, null);
+    $assertQuarterValue($director, null);
+
+    DB::table('quarters')
+        ->where('quarter_id', $fixture['quarterId'])
+        ->update(['date_submitted' => '2026-03-01']);
+
+    $assertQuarterValue($pastor, 12.0);
+    $assertQuarterValue($assistant, null);
+    $assertQuarterValue($director, null);
+
+    DB::table('quarters')
+        ->where('quarter_id', $fixture['quarterId'])
+        ->update(['district_endorse' => '2026-03-02']);
+
+    $assertQuarterValue($assistant, 12.0);
+    $assertQuarterValue($director, 12.0);
 });
 
 test('confirmed participants from district churches roll up to district age-group reports', function () {
@@ -596,47 +681,49 @@ test('assistant can comment on baptism and death reports when no quarter exists 
         ]);
     }
 
-    $assistant = User::query()->create([
-        'department_id' => 22,
-        'church_id' => $churchId,
-        'first_name' => 'Report',
-        'middle_name' => '',
-        'last_name' => 'Assistant',
-        'birthdate' => '1980-01-01',
-        'gender' => 'other',
-        'role' => 'assistant',
-        'email' => 'personal-report-assistant@example.com',
-        'password' => Hash::make('password'),
-        'status' => 'active',
-    ]);
+    foreach (['assistant', 'head assistant'] as $role) {
+        $assistant = User::query()->create([
+            'department_id' => 16,
+            'church_id' => $churchId,
+            'first_name' => 'Report',
+            'middle_name' => '',
+            'last_name' => ucfirst($role),
+            'birthdate' => '1980-01-01',
+            'gender' => 'other',
+            'role' => $role,
+            'email' => "personal-report-{$role}@example.com",
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
 
-    foreach ([22 => 'Baptism Record', 23 => 'Death Record'] as $departmentId => $name) {
-        $response = $this->actingAs($assistant, 'sanctum')
-            ->postJson('/api/comments', [
+        foreach ([22 => 'Baptism Record', 23 => 'Death Record'] as $departmentId => $name) {
+            $response = $this->actingAs($assistant, 'sanctum')
+                ->postJson('/api/comments', [
+                    'church_id' => $churchId,
+                    'department_id' => $departmentId,
+                    'year' => 2026,
+                    'quarter' => 'Q1',
+                    'details' => "{$role} comment for {$name}.",
+                ])
+                ->assertCreated()
+                ->assertJsonPath('data.details', "{$role} comment for {$name}.");
+
+            $quarterId = $response->json('data.quarter_id');
+
+            $this->assertDatabaseHas('quarters', [
+                'quarter_id' => $quarterId,
+                'church_id' => $churchId,
+                'quarter' => 'Q1',
+                'year' => '2026',
+            ]);
+
+            $this->assertDatabaseHas('comments', [
+                'quarter_id' => $quarterId,
                 'church_id' => $churchId,
                 'department_id' => $departmentId,
-                'year' => 2026,
-                'quarter' => 'Q1',
-                'details' => "Comment for {$name}.",
-            ])
-            ->assertCreated()
-            ->assertJsonPath('data.details', "Comment for {$name}.");
-
-        $quarterId = $response->json('data.quarter_id');
-
-        $this->assertDatabaseHas('quarters', [
-            'quarter_id' => $quarterId,
-            'church_id' => $churchId,
-            'quarter' => 'Q1',
-            'year' => '2026',
-        ]);
-
-        $this->assertDatabaseHas('comments', [
-            'quarter_id' => $quarterId,
-            'church_id' => $churchId,
-            'department_id' => $departmentId,
-            'details' => "Comment for {$name}.",
-        ]);
+                'details' => "{$role} comment for {$name}.",
+            ]);
+        }
     }
 });
 
@@ -1096,6 +1183,80 @@ test('endorsement is rejected until every report quarter has been submitted', fu
         );
 });
 
+test('pastor personal report submission automatically endorses and remains pending assistant approval', function () {
+    $churchId = DB::table('churches')->insertGetId([
+        'name' => 'Personal Report District',
+        'address' => 'Test region',
+        'parent_id' => null,
+    ]);
+    $departmentId = 16;
+    DB::table('departments')->insert([
+        'department_id' => $departmentId,
+        'department_name' => 'Ministerial & Evangelism',
+    ]);
+    $programId = DB::table('programs')->insertGetId([
+        'department_id' => $departmentId,
+        'program_name' => 'Personal Report',
+        'parent_id' => null,
+    ]);
+    $sectionId = DB::table('programs')->insertGetId([
+        'department_id' => $departmentId,
+        'program_name' => 'Activities',
+        'parent_id' => $programId,
+    ]);
+    $particularId = DB::table('particulars')->insertGetId([
+        'program_id' => $sectionId,
+        'particular_name' => 'Members visited',
+    ]);
+    $quarterId = DB::table('quarters')->insertGetId([
+        'program_id' => $programId,
+        'church_id' => $churchId,
+        'quarter' => 'Q1',
+        'year' => '2026',
+        'date_submitted' => null,
+        'district_endorse' => null,
+        'mission_approve' => null,
+    ]);
+    $pastor = createDistrictPastor($churchId, $departmentId);
+    $reportUrl = "/api/churches/{$churchId}/departments/{$departmentId}/report";
+
+    $this->actingAs($pastor, 'sanctum')
+        ->postJson("{$reportUrl}/save", [
+            'items' => [[
+                'particular_id' => $particularId,
+                'quarter_id' => $quarterId,
+                'value' => 12,
+            ]],
+            'submitted' => true,
+        ])
+        ->assertOk()
+        ->assertJsonPath(
+            'message',
+            'Personal report submitted and endorsed. The assistant can now review it.'
+        );
+
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $quarterId,
+        'date_submitted' => now()->toDateString(),
+        'district_endorse' => now()->toDateString(),
+        'mission_approve' => null,
+    ]);
+
+    $assistant = createReportAssistant($churchId, $departmentId);
+    $this->actingAs($assistant, 'sanctum')
+        ->postJson("{$reportUrl}/approve", [
+            'program_id' => $programId,
+            'year' => 2026,
+            'quarter' => 'Q1',
+        ])
+        ->assertOk();
+
+    $this->assertDatabaseHas('quarters', [
+        'quarter_id' => $quarterId,
+        'mission_approve' => now()->toDateString(),
+    ]);
+});
+
 test('approved report values cannot be changed', function () {
     $fixture = reportSubmissionFixture();
     DB::table('quarters')
@@ -1246,4 +1407,60 @@ test('church monitoring can be scoped to one department and exposes report workf
         ->assertJsonPath('data.0.monitoring.q1_submitted', true)
         ->assertJsonPath('data.0.monitoring.q1_endorsed', false)
         ->assertJsonPath('data.0.monitoring.q1_approved', false);
+
+    $this->getJson("{$url}?include_department_monitoring=1")
+        ->assertOk()
+        ->assertJsonPath(
+            "data.0.monitoring_by_department.{$fixture['departmentId']}.q1_submitted",
+            true
+        )
+        ->assertJsonPath(
+            "data.0.monitoring_by_department.{$otherDepartmentId}.q1_submitted",
+            true
+        )
+        ->assertJsonPath(
+            "data.0.monitoring_by_department.{$otherDepartmentId}.q1_approved",
+            false
+        );
+});
+
+test('district church response includes direct district pastor report monitoring', function () {
+    $fixture = reportSubmissionFixture();
+    $districtId = $fixture['churchId'];
+    $childChurchId = DB::table('churches')->insertGetId([
+        'name' => 'District Pastor Monitoring Church',
+        'address' => 'District Address',
+        'parent_id' => $districtId,
+    ]);
+    DB::table('departments')->insert([
+        'department_id' => 16,
+        'department_name' => 'Ministerial & Evangelism',
+    ]);
+    $programId = DB::table('programs')->insertGetId([
+        'department_id' => 16,
+        'program_name' => 'Ministerial Personal Report',
+        'parent_id' => null,
+    ]);
+
+    foreach ([[$districtId, '2026-10-13'], [$childChurchId, null]] as [$churchId, $submittedAt]) {
+        DB::table('quarters')->insert([
+            'program_id' => $programId,
+            'church_id' => $churchId,
+            'quarter' => 'Q1',
+            'year' => '2026',
+            'date_submitted' => $submittedAt,
+            'district_endorse' => null,
+            'mission_approve' => null,
+        ]);
+    }
+
+    $this->getJson("/api/districts/{$districtId}/churches?department_id=16")
+        ->assertOk()
+        ->assertJsonPath('district.monitoring.q1_submitted', true)
+        ->assertJsonPath('data.0.monitoring.q1_submitted', false);
+
+    $this->getJson("/api/districts/{$districtId}/churches?include_department_monitoring=1")
+        ->assertOk()
+        ->assertJsonPath('district.monitoring.q1_submitted', true)
+        ->assertJsonPath('data.0.monitoring_by_department.16.q1_submitted', false);
 });

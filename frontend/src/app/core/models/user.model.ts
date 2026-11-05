@@ -30,7 +30,7 @@ export interface User {
   profile_image?: string | null;
   role: UserRole;
   status?: 'active' | 'inactive';
-  department_id?: number;
+  department_id?: number | null;
   church_id?: number;
   created_at?: string;
   updated_at?: string;

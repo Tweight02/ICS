@@ -44,7 +44,7 @@ class PersonalReportDataSeeder extends Seeder
     private function sampleChurchId(): int
     {
         $districtId = DB::table('users')
-            ->where('email', 'seed.head-assistant@example.com')
+            ->where('email', 'seed.assistant@example.com')
             ->value('church_id');
 
         if ($districtId === null) {
