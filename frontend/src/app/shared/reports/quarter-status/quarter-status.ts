@@ -21,23 +21,32 @@ export interface QuarterStatusValue {
 export function resolveQuarterStatus(quarter: {
   progress: number | null;
   approved: boolean;
+  endorsed?: boolean;
   submitted: boolean;
 }): QuarterStatusValue {
-  if (quarter.progress === null) {
-    return { label: '-', tone: 'empty' };
-  }
-
   if (quarter.approved) {
     return { label: 'Approved', tone: 'approved' };
   }
 
-  if (quarter.submitted) {
-    return { label: 'Submitted for review', tone: 'submitted' };
+  if (quarter.endorsed) {
+    return { label: 'Endorsed', tone: 'endorsed' };
   }
 
-  return quarter.progress >= 100
-    ? { label: 'Ready to submit', tone: 'ready' }
-    : { label: 'Needs completion', tone: 'incomplete' };
+  if (quarter.submitted) {
+    return { label: 'Submitted', tone: 'submitted' };
+  }
+
+  if (quarter.progress === null) {
+    return { label: '—', tone: 'empty' };
+  }
+
+  if (quarter.progress === 100) {
+    return { label: 'Ready to submit', tone: 'ready' };
+  }
+
+  return quarter.progress > 0
+    ? { label: 'In progress', tone: 'in-progress' }
+    : { label: 'Not started', tone: 'not-started' };
 }
 
 @Component({

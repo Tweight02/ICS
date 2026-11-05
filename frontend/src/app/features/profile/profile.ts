@@ -36,6 +36,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
   readonly imagePreview = signal<string | null>(null);
   readonly user = signal<User | null>(null);
 
+  get showDepartmentAssignment(): boolean {
+    const role = String(this.user()?.role ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]/g, ' ');
+    return role === 'director' || role === 'head director';
+  }
+
   readonly form = this.fb.nonNullable.group({
     first_name: ['', [Validators.required, Validators.maxLength(255)]],
     middle_name: ['', Validators.maxLength(255)],
@@ -212,31 +220,37 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   private loadAssignments(user: User): void {
     this.assignmentError.set('');
-    this.departmentName.set(user.department_id ? 'Loading…' : 'Not assigned');
+    this.departmentName.set(
+      this.showDepartmentAssignment
+        ? (user.department_id ? 'Loading…' : 'Not assigned')
+        : ''
+    );
     this.locationName.set(user.church_id ? 'Loading…' : 'Not assigned');
     this.locationType.set('Church or district');
     this.districtName.set('');
 
-    this.churchService.getDepartments().subscribe({
-      next: (response) => {
-        if (!response.success || !Array.isArray(response.data)) {
-          this.assignmentError.set('Could not load your department assignment.');
-          this.departmentName.set('Unavailable');
-          return;
-        }
+    if (this.showDepartmentAssignment) {
+      this.churchService.getDepartments().subscribe({
+        next: (response) => {
+          if (!response.success || !Array.isArray(response.data)) {
+            this.assignmentError.set('Could not load your department assignment.');
+            this.departmentName.set('Unavailable');
+            return;
+          }
 
-        this.departmentName.set(
-          response.data.find(
-            (department) => Number(department.department_id) === Number(user.department_id)
-          )?.department_name ?? (user.department_id ? 'Department not found' : 'Not assigned')
-        );
-      },
-      error: (error) => {
-        console.error('Failed to load the profile department:', error);
-        this.departmentName.set('Unavailable');
-        this.assignmentError.set('Could not load your department assignment.');
-      },
-    });
+          this.departmentName.set(
+            response.data.find(
+              (department) => Number(department.department_id) === Number(user.department_id)
+            )?.department_name ?? (user.department_id ? 'Department not found' : 'Not assigned')
+          );
+        },
+        error: (error) => {
+          console.error('Failed to load the profile department:', error);
+          this.departmentName.set('Unavailable');
+          this.assignmentError.set('Could not load your department assignment.');
+        },
+      });
+    }
 
     this.churchService.getAllChurches().subscribe({
       next: (response) => {

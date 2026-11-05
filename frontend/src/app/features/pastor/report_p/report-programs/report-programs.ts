@@ -15,6 +15,10 @@ import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
 import { QuarterStatus, resolveQuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
 import {
+  captureReportReturnQueryParams,
+  clearReportReturnQueryParams
+} from '../../../../shared/utils/report-navigation';
+import {
   CURRENT_REPORT_YEAR,
   REPORT_YEAR_OPTIONS,
   resolveReportYear
@@ -36,6 +40,7 @@ interface Monitoring {
 interface QuarterMonitoring {
   progress: number | null;
   approved: boolean;
+  endorsed: boolean;
   submitted: boolean;
 }
 
@@ -59,6 +64,8 @@ export class ReportPrograms implements OnInit {
   churchName = '';
   readonly reportYears = REPORT_YEAR_OPTIONS;
   readonly selectedYear = signal(CURRENT_REPORT_YEAR);
+  readonly returnedDepartmentId = signal<number | null>(null);
+  readonly returnedQuarter = signal<string | null>(null);
 
   departments: Department[] = [];
 
@@ -74,17 +81,26 @@ export class ReportPrograms implements OnInit {
   }
 
   errorMessage = '';
+  private reportReturnQueryParams: Record<string, string> = {};
 
   ngOnInit(): void {
+    this.reportReturnQueryParams = captureReportReturnQueryParams(this.route);
     this.selectedYear.set(
       resolveReportYear(this.route.snapshot.queryParamMap.get('year'))
     );
 
     if (this.isRepresentativePortal) {
+      if (this.route.snapshot.queryParamMap.get('return_to') === 'programs') {
+        const departmentId = Number(this.route.snapshot.queryParamMap.get('return_department'));
+        const quarter = this.route.snapshot.queryParamMap.get('return_quarter')?.toLowerCase() ?? null;
+        this.returnedDepartmentId.set(Number.isInteger(departmentId) && departmentId > 0 ? departmentId : null);
+        this.returnedQuarter.set(['q1', 'q2', 'q3', 'q4'].includes(quarter ?? '') ? quarter : null);
+      }
       this.resolveRepresentativeChurch();
       return;
     }
 
+    clearReportReturnQueryParams(this.router, this.route);
     this.route.paramMap.subscribe(pathParams => {
       const queryParams = this.route.snapshot.queryParamMap;
       this.selectedYear.set(resolveReportYear(queryParams.get('year')));
@@ -156,6 +172,12 @@ export class ReportPrograms implements OnInit {
     );
   }
 
+  getDepartmentLabel(departmentName: string): string {
+    return departmentName === 'Womens Ministries'
+      ? "Women's Ministries"
+      : departmentName;
+  }
+
   isRepresentativeReport(department: Department): boolean {
     const name = String(department.department_name || '').trim().toLowerCase();
     const excludedReports = [
@@ -189,7 +211,9 @@ export class ReportPrograms implements OnInit {
       this.router.navigate([
         '/representative/reports/particulars',
         department.department_id
-      ]);
+      ], {
+        queryParams: this.representativeReturnParams(department.department_id)
+      });
       return;
     }
 
@@ -230,6 +254,52 @@ export class ReportPrograms implements OnInit {
     );
   }
 
+  openDepartmentQuarter(
+    department: Department,
+    quarter: 'q1' | 'q2' | 'q3' | 'q4'
+  ): void {
+    if (!department?.department_id) {
+      return;
+    }
+
+    void this.router.navigate(
+      ['/representative/reports/particulars', department.department_id],
+      {
+        queryParams: {
+          year: this.selectedYear(),
+          quarter: quarter.toUpperCase(),
+          ...this.representativeReturnParams(department.department_id, quarter)
+        }
+      }
+    );
+  }
+
+  private representativeReturnParams(
+    departmentId: number,
+    quarter?: 'q1' | 'q2' | 'q3' | 'q4'
+  ): Record<string, string> {
+    const params: Record<string, string> = {
+      year: String(this.selectedYear()),
+      return_to: 'programs',
+      return_department: String(departmentId),
+      return_scroll: String(window.scrollY)
+    };
+    if (quarter) {
+      params['return_quarter'] = quarter;
+    }
+    return params;
+  }
+
+  isReturnedDepartment(department: Department): boolean {
+    return this.isRepresentativePortal &&
+      this.returnedDepartmentId() === Number(department.department_id);
+  }
+
+  isReturnedQuarter(department: Department, quarter: string): boolean {
+    return this.isReturnedDepartment(department) &&
+      this.returnedQuarter() === quarter.toLowerCase();
+  }
+
   trackDepartment(index: number, department: Department): number {
     return department.department_id || index;
   }
@@ -241,7 +311,9 @@ export class ReportPrograms implements OnInit {
     }
 
     if (this.portalPrefix() === '/pastor') {
-      this.router.navigate(['/pastor/reports/details']);
+      this.router.navigate(['/pastor/reports/details'], {
+        queryParams: { year: String(this.selectedYear()) }
+      });
       return;
     }
 
@@ -263,23 +335,7 @@ export class ReportPrograms implements OnInit {
   }
 
   private monitoringReturnParams(): Record<string, string> {
-    const queryParams = this.route.snapshot.queryParamMap;
-    const keys = [
-      'return_to',
-      'return_department',
-      'return_expanded',
-      'return_search',
-      'return_scroll',
-      'year'
-    ];
-
-    const params = keys.reduce<Record<string, string>>((result, key) => {
-      const value = queryParams.get(key);
-      if (value !== null) {
-        result[key] = value;
-      }
-      return result;
-    }, {});
+    const params = { ...this.reportReturnQueryParams };
     params['year'] = String(this.selectedYear());
 
     return params;
@@ -415,6 +471,7 @@ export class ReportPrograms implements OnInit {
         this.departments = Array.isArray(data) ? data : [];
         this.loading = false;
         this.cdr.detectChanges();
+        this.restoreRepresentativeSelection();
       },
       error: error => {
         if (requestedYear !== this.selectedYear()) {
@@ -429,11 +486,32 @@ export class ReportPrograms implements OnInit {
     });
   }
 
+  private restoreRepresentativeSelection(): void {
+    if (!this.isRepresentativePortal) {
+      return;
+    }
+
+    if (this.route.snapshot.queryParamMap.get('return_to') !== 'programs') {
+      clearReportReturnQueryParams(this.router, this.route);
+      return;
+    }
+
+    const scrollPosition = Number(
+      this.route.snapshot.queryParamMap.get('return_scroll')
+    );
+    setTimeout(() => {
+      if (Number.isFinite(scrollPosition) && scrollPosition >= 0) {
+        window.scrollTo(0, scrollPosition);
+      }
+      clearReportReturnQueryParams(this.router, this.route);
+    });
+  }
+
   private readonly emptyMonitoring: Monitoring = {
-    q1: { progress: null, approved: false, submitted: false },
-    q2: { progress: null, approved: false, submitted: false },
-    q3: { progress: null, approved: false, submitted: false },
-    q4: { progress: null, approved: false, submitted: false }
+    q1: { progress: null, approved: false, endorsed: false, submitted: false },
+    q2: { progress: null, approved: false, endorsed: false, submitted: false },
+    q3: { progress: null, approved: false, endorsed: false, submitted: false },
+    q4: { progress: null, approved: false, endorsed: false, submitted: false }
   };
 
   getMonitoring(index: number): Monitoring {
@@ -462,21 +540,25 @@ export class ReportPrograms implements OnInit {
       q1: {
         progress: department.q1_data_progress ?? null,
         approved: !!department.q1_approved,
+        endorsed: !!department.q1_endorsed,
         submitted: !!department.q1_submitted
       },
       q2: {
         progress: department.q2_data_progress ?? null,
         approved: !!department.q2_approved,
+        endorsed: !!department.q2_endorsed,
         submitted: !!department.q2_submitted
       },
       q3: {
         progress: department.q3_data_progress ?? null,
         approved: !!department.q3_approved,
+        endorsed: !!department.q3_endorsed,
         submitted: !!department.q3_submitted
       },
       q4: {
         progress: department.q4_data_progress ?? null,
         approved: !!department.q4_approved,
+        endorsed: !!department.q4_endorsed,
         submitted: !!department.q4_submitted
       }
     };

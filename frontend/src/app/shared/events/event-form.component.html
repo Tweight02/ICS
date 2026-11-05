@@ -1,57 +1,88 @@
-  <div class="shrink-0">
+  <div class="flex shrink-0 flex-wrap items-center justify-between gap-3">
     <a *ngIf="isEdit || step === 1" app-button variant="back" size="sm" [routerLink]="cancelLink()" class="self-start">
       <i class="bi bi-chevron-left"></i> Back
     </a>
     <button *ngIf="!isEdit && step === 2" app-button variant="back" size="sm" type="button" (click)="step = 1" class="self-start">
       <i class="bi bi-chevron-left"></i> Back
     </button>
-</div>
 
-  <br>
-
-  <!-- Header: title on the left, progress + extra action on the right -->
-  <div class="shrink-0 flex items-start justify-between gap-4">
-    <div>
-      <!-- <p class="text-[11px] font-bold tracking-wide uppercase text-[#1b4d3e]">{{ eyebrow() }}</p> -->
-       <br>
-      <h1 class="text-[26px] leading-8 font-bold text-gray-900 tracking-tight">{{ title() }}</h1>
-      <p class="text-sm text-gray-500">{{ subtitle() }}</p>
-    </div>
-
-    <div class="flex items-center gap-3 shrink-0">
-      <button *ngIf="isEdit && step === 2" app-button variant="edit" size="md" type="button" (click)="changeParticulars()"
-              class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-[#1b4d3e] bg-white hover:bg-gray-50 transition">
-        <i class="bi bi-arrow-left-right"></i> Change particulars
-      </button>
-
-      <!-- Progress (two steps, always visible) -->
-      <div class="hidden md:flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm">
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-[#1b4d3e] text-white text-xs font-bold flex items-center justify-center">
-            <i *ngIf="step === 2" class="bi bi-check-lg"></i><ng-container *ngIf="step === 1">1</ng-container>
-          </span>
-          <div class="leading-tight">
-            <p class="text-xs font-bold text-gray-900">{{ canChooseDepartment ? 'Department & particulars' : 'Your department & particulars' }}</p>
-            <p class="text-[10px] text-gray-500">{{ step1Caption() }}</p>
-          </div>
-        </div>
-        <i class="bi bi-chevron-right text-gray-400"></i>
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center"
-                [ngClass]="step === 2 ? 'bg-[#1b4d3e] text-white' : 'bg-gray-200 text-gray-600'">2</span>
-          <div class="leading-tight">
-            <p class="text-xs font-bold" [ngClass]="step === 2 ? 'text-gray-900' : 'text-gray-500'">Event details</p>
-            <p class="text-[10px] text-gray-500">{{ step === 2 ? 'Current step' : 'Up next' }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
-  <br>
-      <!-- ===================== FOOTER 2: Apenas Next / Create ===================== -->
-    <div shellFooter class="flex items-center justify-between gap-4">
-      <p class="flex-1 text-center text-xs" [ngClass]="hintIsError() ? 'text-red-600 font-semibold' : 'text-gray-500'" aria-live="polite">{{ hint() }}</p>
+  <header class="relative isolate shrink-0 overflow-hidden rounded-2xl border border-emerald-100/80 bg-white px-5 py-4 shadow-[0_8px_24px_rgba(27,83,66,0.08)] sm:px-7">
+    <img src="/assets/headerMountain.png" alt="" aria-hidden="true"
+      class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-35">
+    <div class="absolute inset-0 -z-10 bg-gradient-to-br from-white/95 via-white/90 to-emerald-50/75"></div>
+
+    <div class="relative z-[1] flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+      <div class="min-w-0 flex-1">
+        <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800">{{ eyebrow() }}</p>
+        <h1 class="!m-0 !text-[clamp(1.5rem,2.5vw,2rem)] !font-extrabold !leading-tight !tracking-tight !text-slate-900">{{ title() }}</h1>
+        <p class="mt-1 max-w-2xl text-sm leading-5 text-slate-600">{{ subtitle() }}</p>
+      </div>
+
+      <div class="flex min-w-0 flex-col items-start gap-3 sm:items-end">
+        <ol aria-label="Event creation progress" class="flex min-w-0 items-center gap-2 rounded-full border border-emerald-100 bg-white/90 px-3 py-2 shadow-sm sm:gap-3 sm:px-4">
+          <li class="flex min-w-0 items-center gap-2">
+            <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-800 text-xs font-bold text-white shadow-sm" aria-hidden="true">
+              <i *ngIf="step === 2" class="bi bi-check-lg"></i><ng-container *ngIf="step === 1">1</ng-container>
+            </span>
+            <span class="min-w-0">
+              <span class="block truncate text-[11px] font-bold text-slate-800 sm:text-xs">{{ canChooseDepartment ? 'Department & particulars' : 'Your department & particulars' }}</span>
+              <span class="block text-[10px] text-slate-500">{{ step1Caption() }}</span>
+            </span>
+          </li>
+          <li aria-hidden="true" class="text-emerald-700/60"><i class="bi bi-chevron-right"></i></li>
+          <li class="flex min-w-0 items-center gap-2">
+            <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold"
+              [ngClass]="step === 2 ? 'bg-emerald-800 text-white' : 'bg-slate-100 text-slate-500'">2</span>
+            <span class="min-w-0">
+              <span class="block truncate text-[11px] font-bold sm:text-xs" [ngClass]="step === 2 ? 'text-slate-800' : 'text-slate-500'">Event details</span>
+              <span class="block text-[10px] text-slate-500">{{ step === 2 ? 'Current step' : 'Up next' }}</span>
+            </span>
+          </li>
+        </ol>
+        <button *ngIf="isEdit && step === 2" app-button variant="edit" size="md" type="button" (click)="changeParticulars()"
+          class="relative inline-flex shrink-0 items-center gap-2 rounded-xl border border-emerald-900/15 bg-white/90 px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-white">
+          <i class="bi bi-arrow-left-right"></i> Change particulars
+        </button>
+      </div>
+    </div>
+
+    <section *ngIf="step === 2" aria-label="Selection summary" class="relative z-[1] mt-4 border-t border-emerald-900/10 pt-3">
+      <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+        <div class="flex min-w-0 flex-wrap items-baseline gap-x-5 gap-y-1">
+          <div>
+            <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-900/60">Department</p>
+            <p class="mt-0.5 text-sm font-bold text-slate-900">{{ deptName() || '—' }}</p>
+          </div>
+          <p class="text-xs font-medium text-slate-600">
+            <i class="bi bi-check2-circle mr-1 text-emerald-700" aria-hidden="true"></i>
+            {{ selectedParticularIds.length }} particular{{ selectedParticularIds.length === 1 ? '' : 's' }} selected
+          </p>
+        </div>
+        <button *ngIf="!isEdit" type="button" (click)="changeParticulars()"
+                class="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-emerald-900 underline-offset-2 hover:underline">
+          <i class="bi bi-arrow-left-right" aria-hidden="true"></i> Change particulars
+        </button>
+      </div>
+      <div *ngIf="summaryGroups().length" class="mt-3 grid grid-cols-1 gap-3 border-t border-emerald-900/10 pt-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div *ngFor="let g of summaryGroups()" class="min-w-0">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-900/60">{{ g.name }}</p>
+          <p *ngFor="let item of g.items" class="mt-1 break-words text-xs leading-5 text-slate-700">{{ item }}</p>
+        </div>
+      </div>
+    </section>
+  </header>
+
+  <div shellFooter class="flex items-center justify-between gap-4 border-t border-emerald-900/10 bg-transparent px-2 py-2 sm:px-4">
+      <div class="min-w-0 flex-1" aria-live="polite" aria-atomic="true">
+        <p *ngIf="hintIsError() && hint()" role="alert"
+          class="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-left text-sm font-semibold leading-5 text-red-800 shadow-sm">
+          <i class="bi bi-exclamation-circle mt-0.5 shrink-0" aria-hidden="true"></i>
+          <span>{{ hint() }}</span>
+        </p>
+        <p *ngIf="!hintIsError()" class="text-center text-xs text-gray-500">{{ hint() }}</p>
+      </div>
 
       <button *ngIf="step === 1" app-button variant="create" size="md" type="button" (click)="next()">
         Next <i class="bi bi-arrow-right"></i>
@@ -60,9 +91,7 @@
         <i class="bi" [ngClass]="saving ? 'bi-hourglass-split' : 'bi-check-lg'"></i>
         {{ saving ? 'Saving…' : (isEdit ? 'Update event' : 'Create event') }}
       </button>
-    </div>
-
-  <br>
+  </div>
 
   <!-- Loading / error while opening an event to edit -->
   <div *ngIf="loadingExisting" class="flex-1 min-h-0 bg-white border border-gray-200 rounded-xl animate-pulse"></div>
@@ -121,7 +150,7 @@
 
     <div class="min-h-0 flex flex-col bg-white border rounded-xl p-4 shadow-sm"
          [ngClass]="tried1 && deptId && !selectedParticularIds.length ? 'border-red-300' : 'border-gray-200'">
-      <div class="shrink-0 flex items-center justify-between">
+      <div class="shrink-0 flex items-center justify-between gap-3">
         <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
           <i class="bi bi-list-check text-[#1b4d3e]"></i> Select particulars *
         </h3>
@@ -178,79 +207,134 @@
   </div>
 
   <!-- ===================== STEP 2 ===================== -->
-  <div *ngIf="step === 2 && !loadingExisting && !loadError" class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-3">
+  <div *ngIf="step === 2 && !loadingExisting && !loadError" class="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
     <!-- Left: what, when, notes -->
-    <div class="min-h-0 overflow-y-auto [scrollbar-width:thin]">
-      <div class="shrink-0 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-        <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-calendar-plus text-[#1b4d3e]"></i> Event information</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+    <div class="min-h-0 overflow-y-auto pr-1 [scrollbar-width:thin]">
+      <div class="shrink-0 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)] sm:p-5">
+        <div class="mb-3 flex items-center gap-3">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-lg text-emerald-800"><i class="bi bi-calendar-plus"></i></span>
           <div>
-            <label for="title" class="block text-[11px] font-semibold text-gray-800 mb-1">Event title *</label>
+            <h3 class="!m-0 !text-base !font-bold !leading-5 !text-slate-900">Event information</h3>
+            <p class="mt-1 text-xs text-slate-500">Add the key details people need to attend.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label for="title" class="mb-1 block text-xs font-semibold text-slate-700">Event title *</label>
             <input id="title" type="text" [ngModel]="form.title" (ngModelChange)="updateFormField('title', $event)" (blur)="touch('title')" placeholder="Annual Youth Leadership Camp"
-                   class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('title')" />
+                   class="min-h-10 w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700/20" [ngClass]="inputClass('title')" />
             <p class="text-[11px] mt-1" [ngClass]="fieldError('title') ? 'text-red-600' : 'text-gray-400'">{{ fieldError('title') || 'Use a clear title that participants will recognize.' }}</p>
           </div>
           <div>
-            <label for="location" class="block text-[11px] font-semibold text-gray-800 mb-1">Location *</label>
+            <label for="location" class="mb-1 block text-xs font-semibold text-slate-700">Location *</label>
             <div class="relative">
               <input id="location" type="text" [ngModel]="form.location" (ngModelChange)="updateFormField('location', $event)" (blur)="touch('location')" placeholder="District Campsite"
-                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 pr-9 focus:ring-2 focus:outline-none" [ngClass]="inputClass('location')" />
+                     class="min-h-10 w-full rounded-lg border bg-white px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700/20" [ngClass]="inputClass('location')" />
               <i class="bi bi-geo-alt absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
             </div>
             <p class="text-[11px] mt-1" [ngClass]="fieldError('location') ? 'text-red-600' : 'text-gray-400'">{{ fieldError('location') || 'Where will people meet?' }}</p>
           </div>
         </div>
-        <section class="mt-4 border-t border-gray-100 pt-4">
-          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-clock text-[#1b4d3e]"></i> Date &amp; time</h3>
-          <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-3">
+        <section class="mt-4 border-t border-slate-100 pt-3">
+          <h3 class="!m-0 !flex !items-center !gap-2 !text-sm !font-bold !leading-5 !text-slate-900"><i class="bi bi-clock text-emerald-800"></i> Date &amp; time</h3>
+          <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div>
-              <label for="start_date" class="block text-[11px] font-semibold text-gray-800 mb-1">Start date *</label>
+              <label for="start_date" class="mb-1 block text-xs font-semibold text-slate-700">Start date *</label>
               <input id="start_date" type="date" [ngModel]="form.start_date" (ngModelChange)="updateFormField('start_date', $event)" (blur)="touch('start_date')"
-                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('start_date')" />
+                     class="min-h-10 w-full rounded-lg border bg-white px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700/20" [ngClass]="inputClass('start_date')" />
               <p *ngIf="fieldError('start_date')" class="text-[11px] mt-1 text-red-600">{{ fieldError('start_date') }}</p>
             </div>
             <div>
-              <label for="end_date" class="block text-[11px] font-semibold text-gray-800 mb-1">End date *</label>
+              <label for="end_date" class="mb-1 block text-xs font-semibold text-slate-700">End date *</label>
               <input id="end_date" type="date" [ngModel]="form.end_date" (ngModelChange)="updateFormField('end_date', $event)" (blur)="touch('end_date')" [min]="form.start_date"
-                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('end_date')" />
+                     class="min-h-10 w-full rounded-lg border bg-white px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700/20" [ngClass]="inputClass('end_date')" />
               <p *ngIf="fieldError('end_date')" class="text-[11px] mt-1 text-red-600">{{ fieldError('end_date') }}</p>
             </div>
             <div>
-              <label for="start_time" class="block text-[11px] font-semibold text-gray-800 mb-1">Start time *</label>
+              <label for="start_time" class="mb-1 block text-xs font-semibold text-slate-700">Start time *</label>
               <input id="start_time" type="time" [ngModel]="form.start_time" (ngModelChange)="updateFormField('start_time', $event)" (blur)="touch('start_time')"
-                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('start_time')" />
+                     class="min-h-10 w-full rounded-lg border bg-white px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700/20" [ngClass]="inputClass('start_time')" />
               <p *ngIf="fieldError('start_time')" class="text-[11px] mt-1 text-red-600">{{ fieldError('start_time') }}</p>
             </div>
             <div>
-              <label for="end_time" class="block text-[11px] font-semibold text-gray-800 mb-1">End time *</label>
+              <label for="end_time" class="mb-1 block text-xs font-semibold text-slate-700">End time *</label>
               <input id="end_time" type="time" [ngModel]="form.end_time" (ngModelChange)="updateFormField('end_time', $event)" (blur)="touch('end_time')"
-                     class="w-full text-sm bg-white border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none" [ngClass]="inputClass('end_time')" />
+                     class="min-h-10 w-full rounded-lg border bg-white px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700/20" [ngClass]="inputClass('end_time')" />
               <p *ngIf="fieldError('end_time')" class="text-[11px] mt-1 text-red-600">{{ fieldError('end_time') }}</p>
             </div>
           </div>
-          <p class="text-[11px] text-gray-400 mt-2">Times are in Philippine Standard Time (UTC+8).</p>
+          <p class="mt-1.5 text-[11px] text-slate-500">Times are in Philippine Standard Time (UTC+8).</p>
         </section>
 
-        <section class="mt-4 border-t border-gray-100 pt-4">
-          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-journal-text text-[#1b4d3e]"></i> Announcement</h3>
+        <section class="mt-4 border-t border-slate-100 pt-3">
+          <h3 class="!m-0 !flex !items-center !gap-2 !text-sm !font-bold !leading-5 !text-slate-900"><i class="bi bi-journal-text text-emerald-800"></i> Announcement</h3>
           <textarea #announcement [ngModel]="form.notes" (ngModelChange)="updateAnnouncement($event, announcement)" aria-label="Notes" placeholder="Include information that helps your team prepare for the event."
-                    rows="4" class="mt-2 min-h-[96px] w-full overflow-hidden text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-[#1b4d3e] focus:outline-none"></textarea>
+                    rows="4" class="mt-2 min-h-[88px] w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700/20"></textarea>
+          <p class="mt-1 text-[11px] text-slate-500">No character limit.</p>
         </section>
       </div>
     </div>
 
     <!-- Right: who is invited + summary -->
-    <div class="flex flex-col gap-3 min-h-0 overflow-y-auto [scrollbar-width:thin]">
+    <div class="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1 [scrollbar-width:thin]">
+      <section class="shrink-0 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]"
+               [ngClass]="tried2 && hostChurchError() ? 'border-red-300' : ''">
+        <h3 class="!m-0 !flex !items-center !gap-2 !text-sm !font-bold !leading-5 !text-slate-900">
+          <i class="bi bi-building text-emerald-800"></i> Host church *
+        </h3>
+        <input *ngIf="config.coverage === 'church'" type="text" [value]="selectedHostChurchName || 'Your assigned church'"
+               disabled aria-label="Host church (locked)"
+               class="mt-3 min-h-11 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600" />
+        <div *ngIf="config.coverage !== 'church'" class="relative mt-3">
+          <button type="button" role="combobox" aria-label="Host church"
+                  aria-controls="host-church-options" [attr.aria-expanded]="hostChurchDropdownOpen"
+                  [disabled]="hostChurchLoading || hostChurchOptions().length === 0"
+                  (click)="openHostChurchDropdown()"
+                  class="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-left text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400">
+            <span class="truncate">{{ selectedHostChurchName || 'Choose a host church' }}</span>
+            <i class="bi bi-chevron-down shrink-0 text-slate-700"></i>
+          </button>
+          <div *ngIf="hostChurchDropdownOpen"
+               class="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+            <div class="relative border-b border-slate-100 p-2">
+              <input type="search" [(ngModel)]="hostChurchSearch" placeholder="Search churches"
+                     aria-label="Search host churches"
+                     class="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 pr-9 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
+              <i class="bi bi-search absolute right-5 top-1/2 -translate-y-1/2 text-sm text-slate-500"></i>
+            </div>
+            <div id="host-church-options" role="listbox" aria-label="Available host churches"
+                 class="max-h-52 overflow-y-auto p-1 [scrollbar-width:thin]">
+              <button *ngFor="let church of filteredHostChurchOptions()" type="button" role="option"
+                      [attr.aria-selected]="church.id === selectedHostChurchId"
+                      (click)="selectHostChurch(church.id)"
+                      class="flex min-h-10 w-full items-center rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-emerald-50 focus:bg-emerald-50 focus:outline-none"
+                      [ngClass]="church.id === selectedHostChurchId ? 'bg-emerald-50 font-semibold text-emerald-900' : ''">
+                {{ church.name }}
+              </button>
+              <p *ngIf="filteredHostChurchOptions().length === 0"
+                 class="px-3 py-3 text-sm text-slate-500">No churches match “{{ hostChurchSearch }}”.</p>
+            </div>
+          </div>
+        </div>
+        <p *ngIf="hostChurchLoading" class="mt-2 text-xs text-slate-500" role="status">Loading host churches…</p>
+        <p *ngIf="hostChurchesError" class="mt-2 text-xs text-red-600" role="alert">
+          {{ hostChurchesError }}
+          <button *ngIf="config.coverage === 'districts'" type="button" (click)="loadHostChurches()" class="font-semibold underline">Try again</button>
+        </p>
+        <p *ngIf="tried2 && hostChurchError()" class="mt-2 text-xs text-red-600" role="alert">{{ hostChurchError() }}</p>
+        <p class="mt-2 text-xs leading-5 text-slate-500">Choose the church hosting this event from the churches included in its coverage.</p>
+      </section>
+
       <!-- A) Church representative: the church is fixed -->
-      <div *ngIf="config.coverage === 'church'" class="shrink-0 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-        <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><i class="bi bi-building text-[#1b4d3e]"></i> Church assignment</h3>
-        <label class="block text-[11px] font-semibold text-gray-800 mt-3 mb-1">Church *</label>
+      <div *ngIf="config.coverage === 'church'" class="shrink-0 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
+        <h3 class="!m-0 !flex !items-center !gap-2 !text-sm !font-bold !leading-5 !text-slate-900"><i class="bi bi-building text-emerald-800"></i> Church assignment</h3>
+        <label class="mb-1.5 mt-4 block text-xs font-semibold text-slate-700">Church *</label>
         <div class="relative">
           <input type="text" [value]="userChurchName || 'Your assigned church'" disabled aria-label="Church (locked)"
-                 class="w-full text-sm bg-gray-50 text-gray-500 border border-gray-200 rounded-lg px-3 py-2 pr-9 cursor-not-allowed" />
+                 class="min-h-11 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 pr-10 text-sm text-slate-600" />
           <i class="bi bi-lock absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
         </div>
-        <p class="text-[11px] text-gray-500 mt-1.5">This is your assigned church. Church representatives cannot change this value.</p>
+        <p class="mt-2 text-xs leading-5 text-slate-500">This is your assigned church. Church representatives cannot change this value.</p>
       </div>
 
       <!-- B) Assistant: districts (accordion) -->
@@ -341,30 +425,5 @@
         <p *ngIf="!(tried2 && coverageError())" class="shrink-0 text-[11px] text-gray-500 mt-1.5">Choose one or more churches in your assigned district. Each selected church gets its own event entry.</p>
       </div>
 
-      <!-- Selection summary (accordion) -->
-      <div class="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col overflow-hidden"
-           [ngClass]="config.coverage === 'church' ? 'flex-1 min-h-0' : 'shrink-0'">
-        <button type="button" (click)="summaryOpen = !summaryOpen" [attr.aria-expanded]="summaryOpen"
-                class="shrink-0 w-full px-4 py-3 flex items-center justify-between text-left">
-          <span class="flex items-center gap-2 text-sm font-bold text-gray-900"><i class="bi bi-clipboard-check text-[#1b4d3e]"></i> Selection summary</span>
-          <span class="flex items-center gap-2 text-xs text-gray-500">
-            <i class="bi" [ngClass]="summaryOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-          </span>
-        </button>
-        <div *ngIf="summaryOpen" class="px-4 pb-3 overflow-y-auto [scrollbar-width:thin] text-sm"
-             [ngClass]="config.coverage === 'church' ? 'flex-1 min-h-0' : 'max-h-[170px]'">
-          <p class="text-[11px] uppercase text-gray-500">Department</p>
-          <p class="font-bold text-gray-900">{{ deptName() || '—' }}</p>
-          <p class="text-xs text-gray-600 mt-1">{{ selectedParticularIds.length }} particular{{ selectedParticularIds.length === 1 ? '' : 's' }} selected</p>
-          <div *ngFor="let g of summaryGroups()" class="mt-2.5 pt-2.5 border-t border-gray-100">
-            <p class="text-[11px] uppercase text-gray-500">{{ g.name }}</p>
-            <p *ngFor="let item of g.items" class="text-xs text-gray-800 mt-0.5">{{ item }}</p>
-          </div>
-          <button type="button" (click)="changeParticulars()"
-                  class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-[#1b4d3e] bg-white hover:bg-gray-50">
-            <i class="bi bi-arrow-left-right"></i> Change particulars
-          </button>
-        </div>
-      </div>
     </div>
   </div>

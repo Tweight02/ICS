@@ -193,19 +193,31 @@ class EventSaveTest extends TestCase
             'church_ids' => $churchIds,
             'department_id' => $departmentId,
             'particular_ids' => [$particularId],
+            'host_church_id' => $churchIds[1],
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-10',
             'start_time' => '09:00',
             'end_time' => '11:00',
+            'notes' => str_repeat('Community event details. ', 15),
         ]);
 
         $response->assertCreated()
             ->assertJsonPath('data.scope.churches.0.id', $churchIds[0])
-            ->assertJsonPath('data.scope.churches.1.id', $churchIds[1]);
+            ->assertJsonPath('data.scope.churches.1.id', $churchIds[1])
+            ->assertJsonPath('data.host_church_id', $churchIds[1])
+            ->assertJsonPath('data.host_church_name', 'South Church')
+            ->assertJsonPath('data.notes', str_repeat('Community event details. ', 15));
         $eventId = $response->json('data.id');
+        $this->getJson(
+            '/api/public/events/'.$eventId.'?church_id='.$churchIds[0]
+                .'&registration_token='.EventRegistrationAttribution::token($eventId, $churchIds[0])
+        )->assertOk()
+            ->assertJsonPath('data.host_church_name', 'South Church')
+            ->assertJsonPath('data.created_by', 'District Pastor');
         $this->assertDatabaseHas('events', [
             'event_id' => $eventId,
             'church_id' => $churchIds[0],
+            'host_church_id' => $churchIds[1],
             'title' => 'Multi-church Youth Gathering',
         ]);
         foreach ($churchIds as $churchId) {
@@ -577,6 +589,93 @@ class EventSaveTest extends TestCase
             'age' => 25,
             'gender' => 'other',
         ])->assertNotFound();
+    }
+
+    public function test_a_district_pastor_sees_events_across_departments_within_their_district(): void
+    {
+        $pastorDepartmentId = DB::table('departments')->insertGetId(
+            ['department_name' => 'Pastor Department'],
+            'department_id'
+        );
+        $otherDepartmentId = DB::table('departments')->insertGetId(
+            ['department_name' => 'Other Department'],
+            'department_id'
+        );
+        $districtId = DB::table('churches')->insertGetId([
+            'name' => 'Pastor District',
+            'address' => 'Pastor District',
+            'parent_id' => null,
+        ], 'church_id');
+        $churchId = DB::table('churches')->insertGetId([
+            'name' => 'Pastor District Church',
+            'address' => 'Pastor District Church',
+            'parent_id' => $districtId,
+        ], 'church_id');
+        $otherDistrictId = DB::table('churches')->insertGetId([
+            'name' => 'Other District',
+            'address' => 'Other District',
+            'parent_id' => null,
+        ], 'church_id');
+
+        $programId = DB::table('programs')->insertGetId([
+            'department_id' => $otherDepartmentId,
+            'program_name' => 'Other Department Program',
+            'parent_id' => null,
+        ], 'program_id');
+        $inDistrictQuarterId = DB::table('quarters')->insertGetId([
+            'program_id' => $programId,
+            'church_id' => $churchId,
+            'quarter' => 'Q4',
+            'year' => '2026',
+        ], 'quarter_id');
+        $outsideDistrictQuarterId = DB::table('quarters')->insertGetId([
+            'program_id' => $programId,
+            'church_id' => $otherDistrictId,
+            'quarter' => 'Q4',
+            'year' => '2026',
+        ], 'quarter_id');
+        $eventData = [
+            'title' => 'Other Department Event',
+            'date_start' => '2026-11-10',
+            'date_end' => '2026-11-10',
+            'time_start' => '09:00',
+            'time_end' => '11:00',
+            'details' => '',
+            'status' => 'upcoming',
+            'location' => 'Church',
+        ];
+        $inDistrictEventId = DB::table('events')->insertGetId([
+            ...$eventData,
+            'quarter_id' => $inDistrictQuarterId,
+            'church_id' => $churchId,
+        ], 'event_id');
+        $outsideDistrictEventId = DB::table('events')->insertGetId([
+            ...$eventData,
+            'title' => 'Outside District Event',
+            'quarter_id' => $outsideDistrictQuarterId,
+            'church_id' => $otherDistrictId,
+        ], 'event_id');
+        $pastor = User::create([
+            'department_id' => $pastorDepartmentId,
+            'church_id' => $churchId,
+            'first_name' => 'Jordan',
+            'last_name' => 'Pastor',
+            'birthdate' => '1990-01-01',
+            'gender' => 'Other',
+            'role' => 'pastor',
+            'email' => 'all-district-events-pastor@example.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
+
+        Sanctum::actingAs($pastor);
+        $this->getJson('/api/events?status=all')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $inDistrictEventId)
+            ->assertJsonPath('data.0.title', 'Other Department Event');
+        $this->getJson('/api/events/'.$inDistrictEventId)->assertOk();
+        $this->getJson('/api/events/'.$outsideDistrictEventId)->assertNotFound();
     }
 
     public function test_a_church_representative_saves_an_event_using_the_final_erd_columns(): void

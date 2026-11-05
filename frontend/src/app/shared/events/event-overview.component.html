@@ -4,78 +4,83 @@
   </a>
 </div>
 
-<div class="mx-auto mt-3 flex w-full max-w-[1400px] flex-col gap-3 px-4 pb-5 sm:px-6 lg:gap-4">
-  <header class="relative isolate overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-5 shadow-[0_8px_24px_rgba(39,91,77,0.07)] sm:rounded-3xl sm:p-8 lg:p-10">
-    <img src="/assets/headerMountain.png" alt="" aria-hidden="true" class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-40">
-    <div class="absolute inset-0 -z-10 bg-gradient-to-br from-white/95 via-white/90 to-sky-50/80"></div>
-    <div class="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)] lg:gap-8">
+<div class="mx-auto mt-3 flex w-full max-w-[1400px] flex-col gap-3 px-4 pb-5 sm:px-6 lg:gap-3">
+  <header class="relative isolate overflow-hidden rounded-2xl border border-emerald-100/80 bg-white/90 p-4 shadow-[0_8px_24px_rgba(39,91,77,0.07)] sm:rounded-3xl sm:p-5 lg:p-6">
+    <img src="/assets/headerMountain.png" alt="" aria-hidden="true" class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-30">
+    <div class="absolute inset-0 -z-10 bg-gradient-to-br from-white/95 via-white/90 to-emerald-50/80"></div>
+    <div class="relative z-10 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.62fr)] lg:gap-6">
       <div *ngIf="event" class="min-w-0">
-        <h1 class="break-words text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+        <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800">Event overview</p>
+        <h1 class="break-words text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-4xl">
           {{ event.title || 'Event overview' }}
         </h1>
 
-        <div class="mt-6 space-y-3 text-sm sm:text-base">
-          <p *ngIf="dateRange || timeRange" class="flex flex-wrap items-center gap-2">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100/90 text-lg text-emerald-800">
-              <i class="bi bi-clock" aria-hidden="true"></i>
-            </span>
-            <span *ngIf="dateRange" class="rounded-full bg-emerald-100/80 px-4 py-2 font-semibold text-emerald-950">{{ dateRange }}</span>
-            <span *ngIf="dateRange && timeRange" class="text-slate-400" aria-hidden="true">|</span>
-            <span *ngIf="timeRange" class="rounded-full bg-amber-100/80 px-4 py-2 font-semibold text-amber-950">
-              <i class="bi bi-clock mr-1.5" aria-hidden="true"></i>{{ timeRange }}
-            </span>
-          </p>
-          <p *ngIf="event.location" class="flex flex-wrap items-center gap-2">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100/90 text-lg text-sky-800">
-              <i class="bi bi-geo-alt" aria-hidden="true"></i>
-            </span>
-            <span class="rounded-full bg-sky-100/80 px-4 py-2 font-semibold text-sky-950">{{ event.location }}</span>
-          </p>
-          <p *ngIf="coverage.title !== 'Coverage'" class="flex flex-wrap items-center gap-2">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100/90 text-lg text-violet-800">
-              <i class="bi bi-map" aria-hidden="true"></i>
-            </span>
-            <span class="rounded-full bg-violet-100/80 px-4 py-2 font-semibold text-violet-950">{{ coverage.text }}</span>
-          </p>
-          <p *ngIf="event.created_by" class="flex items-center gap-3 text-slate-600">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center text-lg text-slate-500">
-              <i class="bi bi-person" aria-hidden="true"></i>
-            </span>
-            <span>Created by {{ event.created_by }}</span>
-          </p>
+        <div class="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+          <div *ngIf="dateRange || timeRange" class="flex min-w-0 items-start gap-2.5">
+            <i class="bi bi-calendar-event mt-0.5 w-4 shrink-0 text-emerald-800" aria-hidden="true"></i>
+            <div class="min-w-0">
+              <p class="!m-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Date &amp; time</p>
+              <p class="!mb-0 mt-0.5 break-words text-sm font-semibold text-slate-800">
+                <span *ngIf="dateRange">{{ dateRange }}</span>
+                <span *ngIf="dateRange && timeRange" class="mx-1.5 font-normal text-slate-400" aria-hidden="true">·</span>
+                <span *ngIf="timeRange" class="font-normal text-slate-600">{{ timeRange }}</span>
+              </p>
+            </div>
+          </div>
+          <div *ngIf="event.location" class="flex min-w-0 items-start gap-2.5">
+            <i class="bi bi-geo-alt mt-0.5 w-4 shrink-0 text-sky-800" aria-hidden="true"></i>
+            <div class="min-w-0">
+              <p class="!m-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Location</p>
+              <p class="!mb-0 mt-0.5 break-words text-sm font-semibold text-slate-800">{{ event.location }}</p>
+            </div>
+          </div>
+          <div *ngIf="event.host_church_name || event.host_church?.name" class="flex min-w-0 items-start gap-2.5">
+            <i class="bi bi-building mt-0.5 w-4 shrink-0 text-emerald-800" aria-hidden="true"></i>
+            <div class="min-w-0">
+              <p class="!m-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Host church</p>
+              <p class="!mb-0 mt-0.5 break-words text-sm font-semibold text-slate-800">
+                {{ event.host_church_name || event.host_church?.name }}
+              </p>
+            </div>
+          </div>
+          <div *ngIf="coverage.title !== 'Coverage'" class="flex min-w-0 items-start gap-2.5 sm:col-span-2">
+            <i class="bi bi-map mt-0.5 w-4 shrink-0 text-violet-800" aria-hidden="true"></i>
+            <div class="min-w-0">
+              <p class="!m-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">{{ coverage.title }}</p>
+              <p class="!mb-0 mt-0.5 break-words text-sm font-semibold text-slate-800">{{ coverage.text }}</p>
+            </div>
+          </div>
         </div>
 
-        <section class="mt-6 border-t border-slate-200/80 pt-5">
-          <h2 class="flex items-center gap-3 text-xl font-extrabold text-slate-900 sm:text-2xl">
-            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 text-violet-800">
+        <section class="mt-4 flex items-start gap-3 border-t border-slate-200/80 pt-3">
+          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-violet-50 text-violet-800">
               <i class="bi bi-megaphone" aria-hidden="true"></i>
-            </span>
-            Announcement
-          </h2>
-          <p class="mt-2 whitespace-pre-line break-words pl-[52px] text-sm leading-7 text-slate-600">{{ event.notes || 'No synopsis was added for this event.' }}</p>
+          </span>
+          <div class="min-w-0">
+            <h2 class="!m-0 text-sm font-bold text-slate-900">Announcement</h2>
+            <p class="!mb-0 mt-1 whitespace-pre-line break-words text-sm leading-5 text-slate-600">{{ event.notes || 'No synopsis was added for this event.' }}</p>
+          </div>
         </section>
       </div>
 
-      <div *ngIf="event" class="flex min-w-0 flex-col items-center lg:items-end">
-        <div class="flex w-full flex-wrap items-center justify-end gap-2">
+      <div *ngIf="event" class="flex min-w-0 flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
           <a *ngIf="config.canManage && canManageEvent" app-button variant="event-edit" size="md"
              [routerLink]="[config.basePath, eventId, 'edit']" class="shrink-0">
             <i class="bi bi-pencil" aria-hidden="true"></i> Edit event
           </a>
-        </div>
-        <div class="mt-3 flex flex-wrap justify-end gap-2">
-          <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100/80 px-4 py-2 text-sm font-bold text-emerald-900">
+          <span class="inline-flex items-center gap-2 text-xs font-bold text-emerald-900">
             <i class="bi bi-circle-fill text-[8px]" aria-hidden="true"></i>{{ statusLabel(status) }}
           </span>
-          <span *ngIf="periodLabel" class="inline-flex items-center gap-2 rounded-full bg-emerald-100/80 px-4 py-2 text-sm font-bold text-emerald-900">
+          <span *ngIf="periodLabel" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-900">
             <i class="bi bi-calendar-event" aria-hidden="true"></i>{{ periodLabel }}
           </span>
-          <span *ngIf="config.badge" class="rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-emerald-900">
+          <span *ngIf="config.badge" class="text-xs font-semibold text-emerald-900">
             {{ config.badge }}
           </span>
         </div>
         <img src="/assets/event-calendar.svg" alt="" aria-hidden="true"
-             class="mt-2 h-48 w-full max-w-[440px] object-contain sm:h-60 lg:mt-4 lg:h-[280px]">
+             class="mx-auto h-32 w-full max-w-[300px] object-contain sm:h-36 lg:mt-auto lg:h-40">
       </div>
     </div>
   </header>
@@ -94,8 +99,8 @@
   <ng-container *ngIf="event">
 
     <div class="grid min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,0.48fr)]">
-      <div class="flex min-w-0 flex-col gap-5">
-        <section class="flex min-h-[18rem] flex-col rounded-3xl border border-emerald-100 bg-white/90 p-5 shadow-[0_8px_24px_rgba(39,91,77,0.06)] sm:p-6">
+      <div class="flex min-w-0 flex-col gap-3">
+        <section class="flex min-h-[16rem] flex-col rounded-2xl border border-emerald-100 bg-white/90 p-4 shadow-[0_8px_24px_rgba(39,91,77,0.06)] sm:p-5">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 class="flex items-center gap-2 text-lg font-bold text-gray-900">
@@ -108,17 +113,17 @@
             </div>
           </div>
 
-          <div class="mt-5 flex-1 space-y-3 overflow-y-auto [scrollbar-width:thin]">
-            <div *ngFor="let g of groups" class="overflow-hidden rounded-2xl border border-emerald-100">
+          <div class="mt-4 flex-1 space-y-2 overflow-y-auto [scrollbar-width:thin]">
+            <div *ngFor="let g of groups" class="overflow-hidden rounded-xl border border-emerald-100">
               <button type="button" (click)="toggleGroup(g)" [attr.aria-expanded]="g.expanded"
-                      class="flex w-full items-center justify-between gap-3 bg-emerald-50/70 px-4 py-3 text-left transition hover:bg-emerald-100/70">
+                      class="flex w-full items-center justify-between gap-3 bg-emerald-50/70 px-4 py-2.5 text-left transition hover:bg-emerald-100/70">
                 <span class="flex items-center gap-3 text-sm font-bold text-gray-900">
                   <i class="bi text-emerald-800" [ngClass]="g.expanded ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
                   {{ g.name }}
                 </span>
                 <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-emerald-900">{{ g.items.length }} selected</span>
               </button>
-              <div *ngIf="g.expanded" class="space-y-2 bg-white px-5 py-4">
+              <div *ngIf="g.expanded" class="space-y-2 bg-white px-4 py-3">
                 <p *ngFor="let item of g.items" class="flex items-start gap-3 text-sm leading-relaxed text-gray-700">
                   <i class="bi bi-check-circle-fill mt-0.5 text-emerald-700"></i>{{ item }}
                 </p>
@@ -131,46 +136,48 @@
 
       </div>
 
-      <aside class="flex min-w-0 flex-col gap-5">
-        <section class="rounded-3xl border border-emerald-100 bg-white/90 p-5 shadow-[0_8px_24px_rgba(39,91,77,0.06)] sm:p-6">
+      <aside class="flex min-w-0 flex-col gap-3">
+        <section class="rounded-2xl border border-emerald-100 bg-white/90 p-3 shadow-[0_8px_24px_rgba(39,91,77,0.06)] sm:p-4">
           <h2 class="flex items-center gap-2 text-lg font-bold text-gray-900">
             <i class="bi bi-people text-emerald-800"></i> Participants
           </h2>
-          <div class="mt-4 grid grid-cols-3 gap-2 text-center">
-            <div class="rounded-xl bg-gray-50 p-3">
+          <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-xl bg-gray-50 p-2.5">
               <p class="text-lg font-extrabold text-gray-900">{{ stats.total }}</p>
               <p class="mt-0.5 text-[11px] font-medium text-gray-500">Listed</p>
             </div>
-            <div class="rounded-xl bg-emerald-50 p-3">
+            <div class="rounded-xl bg-emerald-50 p-2.5">
               <p class="text-lg font-extrabold text-emerald-900">{{ stats.confirmed }}</p>
               <p class="mt-0.5 text-[11px] font-medium text-gray-600">Confirmed</p>
             </div>
-            <div class="rounded-xl bg-amber-50 p-3">
+            <div class="rounded-xl bg-amber-50 p-2.5">
               <p class="text-lg font-extrabold text-amber-900">{{ stats.pending }}</p>
               <p class="mt-0.5 text-[11px] font-medium text-gray-600">Pending</p>
             </div>
           </div>
-          <a app-button variant="view-participants" size="md" [routerLink]="[config.basePath, eventId, 'participants']" class="mt-4 w-full justify-center">
+          <a app-button variant="view-participants" size="md" [routerLink]="[config.basePath, eventId, 'participants']" class="mt-3 w-full justify-center">
             <i class="bi bi-arrow-right"></i> View participants
           </a>
 
-          <div *ngIf="canShareRegistrationLink" class="mt-5 border-t border-gray-100 pt-5">
+          <div *ngIf="canShareRegistrationLink" class="mt-4 border-t border-gray-100 pt-4">
             <label for="event-registration-link" class="block text-sm font-semibold text-gray-800">Participant registration link</label>
-            <div *ngIf="registrationLink; else generateChurchRegistrationLink" class="mt-2 flex gap-2">
+            <div *ngIf="registrationLink; else generateChurchRegistrationLink" class="mt-2 space-y-2">
               <input id="event-registration-link" type="text" readonly [value]="registrationLink"
-                     class="min-w-0 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs text-gray-700" />
+                     class="min-h-10 w-full min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 focus:outline-none" />
               <button type="button" (click)="copyRegistrationLink()"
-                      class="shrink-0 rounded-xl bg-[#1b4d3e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#143c30]">
-                <i class="bi bi-copy"></i> Copy
+                      class="inline-flex min-h-10 w-full items-center justify-center gap-2 !rounded-full border border-[#1b4d3e] bg-white px-3 py-2.5 text-sm font-semibold text-[#1b4d3e] transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-700/25">
+                <i class="bi" [ngClass]="registrationLinkCopied ? 'bi-check-lg' : 'bi-copy'"></i>
+                {{ registrationLinkCopied ? 'Copied' : 'Copy registration link' }}
               </button>
             </div>
             <ng-template #generateChurchRegistrationLink>
               <button type="button" (click)="generateRegistrationLink()" [disabled]="registrationLinkLoading"
-                      class="mt-2 rounded-xl bg-[#1b4d3e] px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-[#143c30] disabled:cursor-wait disabled:opacity-60">
-                {{ registrationLinkLoading ? 'Generating…' : 'Generate church registration link' }}
+                      class="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap !rounded-full bg-[#1b4d3e] px-2.5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#143c30] focus:outline-none focus:ring-2 focus:ring-emerald-700/30 focus:ring-offset-2 disabled:cursor-wait disabled:opacity-60 sm:text-sm">
+                <i class="bi" [ngClass]="registrationLinkLoading ? 'bi-hourglass-split' : 'bi-link-45deg'"></i>
+                <span>{{ registrationLinkLoading ? 'Generating…' : 'Generate church registration link' }}</span>
               </button>
             </ng-template>
-            <p class="mt-2 text-xs leading-relaxed text-gray-500">Share this link with participants. Their registration will be assigned to your church and report.</p>
+            <p class="mt-1.5 text-xs leading-relaxed text-gray-500">Share this link with participants. Their registration will be assigned to your church and report.</p>
             <p *ngIf="registrationLinkMessage" class="mt-2 text-xs font-semibold text-emerald-800" aria-live="polite">{{ registrationLinkMessage }}</p>
           </div>
         </section>

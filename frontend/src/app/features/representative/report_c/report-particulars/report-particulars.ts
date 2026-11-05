@@ -1,5 +1,6 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import {
+  AfterViewInit,
   Component,
   OnInit,
   OnDestroy,
@@ -17,8 +18,22 @@ import { CommentReadStateService } from '../../../../core/services/report/commen
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
-import { ReportPeriodSelector } from '../../../../shared/reports/period-selector/report-period-selector';
+import {
+  ReportPeriodSelector,
+  type ReportPeriodStatus
+} from '../../../../shared/reports/period-selector/report-period-selector';
 import { showAppAlert } from '../../../../shared/utils/app-alert';
+import {
+  captureReportReturnQueryParams,
+  clearReportReturnQueryParams
+} from '../../../../shared/utils/report-navigation';
+import {
+  buildQuarterlyFormCsvItems,
+  buildQuarterlyFormCsvRows,
+  csvFilenamePart,
+  downloadCsv,
+  downloadStyledQuarterlyExcel
+} from '../../../../shared/utils/csv-export';
 
 interface QuarterRecord {
   quarter_id: number;
@@ -105,15 +120,26 @@ const STEWARDSHIP_MONTHS = [
   imports: [CommonModule, FormsModule, Button, ReportPeriodSelector],
   templateUrl: '../../../../shared/reports/report-particulars/report-particulars.html'
 })
-export class ReportParticulars implements OnInit, OnDestroy {
+export class ReportParticulars implements OnInit, OnDestroy, AfterViewInit {
   embedded = false;
   expandFirstSection = true;
   showInputsWhenReadOnly = true;
   churchName = '';
   districtName = '';
+  districtPastorName = '';
+  districtId = 0;
+
+  blurNumberInputOnWheel(event: WheelEvent): void {
+    if (event.currentTarget instanceof HTMLInputElement) {
+      event.currentTarget.blur();
+    }
+  }
 
   @ViewChild('commentMessages')
   private commentMessages?: ElementRef<HTMLUListElement>;
+
+  @ViewChild('quarterlyReportPreviewOverlay')
+  private quarterlyReportPreviewOverlay?: ElementRef<HTMLElement>;
 
   // Add these lines here
   private readonly route = inject(ActivatedRoute);
@@ -124,6 +150,9 @@ export class ReportParticulars implements OnInit, OnDestroy {
   private readonly ngZone = inject(NgZone);
   private readonly auth = inject(AuthService);
   private readonly churchService = inject(ChurchService);
+  private readonly document = inject(DOCUMENT);
+  private quarterlyReportPreviewParent: Node | null = null;
+  private reportReturnQueryParams: Record<string, string> = {};
 
   churchId = 0;
 
@@ -136,6 +165,10 @@ export class ReportParticulars implements OnInit, OnDestroy {
   selectedYear: number | null = null;
   selectedQuarterId: number | null = null;
   selectedProgramId: number | null = null;
+  quarterlyReportPreviewOpen = false;
+  quarterlyReportPreviewRows: unknown[][] = [];
+  quarterlyReportPreviewColumnCount = 1;
+  exportingQuarterReportExcel = false;
   isAnnualView = false;
   private readonly loadingState = signal(false);
   get loading(): boolean {
@@ -172,6 +205,110 @@ export class ReportParticulars implements OnInit, OnDestroy {
   get canEditDepartmentReport(): boolean {
     const quarter = this.getSelectedQuarter();
     return !this.isAnnualView && !!quarter;
+  }
+
+  get canExportQuarterReport(): boolean {
+    const role = String(this.auth.getCurrentUser()?.role ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]/g, ' ');
+    return [
+      'director',
+      'head director',
+      'assistant',
+      'administrative assistant',
+      'head assistant',
+      'pastor',
+      'district pastor',
+      'representative'
+    ]
+      .includes(role);
+  }
+
+  openQuarterReportPreview(): void {
+    const quarter = this.getSelectedQuarter();
+    const program = this.getSelectedProgram();
+    if (!this.canExportQuarterReport || this.isAnnualView || !quarter || !program) {
+      return;
+    }
+
+    this.quarterlyReportPreviewRows = this.buildQuarterReportRows(quarter, program);
+    this.quarterlyReportPreviewColumnCount = Math.max(
+      1,
+      ...this.quarterlyReportPreviewRows.map(row => row.length)
+    );
+    this.quarterlyReportPreviewOpen = true;
+  }
+
+  closeQuarterReportPreview(): void {
+    this.quarterlyReportPreviewOpen = false;
+  }
+
+  isQuarterlyReportHeaderRow(row: readonly unknown[]): boolean {
+    return row.some(cell =>
+      typeof cell === 'string' &&
+      ['PARTICULAR', 'CHURCH', 'CHURCHES/COMPANY', 'QUARTER'].includes(cell.toUpperCase())
+    );
+  }
+
+  exportQuarterReportCsv(): void {
+    if (!this.canExportQuarterReport || !this.quarterlyReportPreviewRows.length) {
+      return;
+    }
+
+    const quarter = this.getSelectedQuarter();
+    const filename = `${csvFilenamePart(this.report?.department?.department_name ?? 'department')}-${quarter?.year ?? this.selectedYear}-${quarter?.quarter.toLowerCase() ?? 'quarter'}-report.csv`;
+    downloadCsv(filename, this.quarterlyReportPreviewRows);
+  }
+
+  async exportQuarterReportExcel(): Promise<void> {
+    if (!this.canExportQuarterReport || !this.quarterlyReportPreviewRows.length || this.exportingQuarterReportExcel) {
+      return;
+    }
+
+    const quarter = this.getSelectedQuarter();
+    const filename = `${csvFilenamePart(this.report?.department?.department_name ?? 'department')}-${quarter?.year ?? this.selectedYear}-${quarter?.quarter.toLowerCase() ?? 'quarter'}-report.xlsx`;
+    this.exportingQuarterReportExcel = true;
+    try {
+      await downloadStyledQuarterlyExcel(filename, this.quarterlyReportPreviewRows);
+    } catch (error) {
+      console.error('Unable to export the quarterly report as Excel.', error);
+      void showAppAlert({
+        icon: 'error',
+        title: 'Export failed',
+        text: 'Unable to create the formatted Excel report. Please try again.'
+      });
+    } finally {
+      this.exportingQuarterReportExcel = false;
+    }
+  }
+
+  printQuarterReport(): void {
+    if (!this.canExportQuarterReport || !this.quarterlyReportPreviewRows.length) {
+      return;
+    }
+    window.print();
+  }
+
+  private buildQuarterReportRows(quarter: Quarter, program: Program): unknown[][] {
+    const quarterCode = quarter.quarter.toUpperCase() as 'Q1' | 'Q2' | 'Q3' | 'Q4';
+    const items = buildQuarterlyFormCsvItems(
+      program.sections,
+      quarter.year,
+      quarterCode
+    );
+    return buildQuarterlyFormCsvRows({
+      departmentId: Number(this.report?.department?.department_id ?? this.departmentId),
+      departmentName: this.report?.department?.department_name ?? 'Department',
+      programName: program.program_name,
+      churchName: this.churchName,
+      districtName: this.districtName,
+      districtPastorName: this.districtPastorName,
+      year: quarter.year,
+      quarter: quarterCode,
+      items,
+      months: this.isStewardshipReport ? this.getQuarterMonthNames(quarter) : []
+    });
   }
 
   get canEndorse(): boolean {
@@ -243,6 +380,9 @@ export class ReportParticulars implements OnInit, OnDestroy {
 
 
 ngOnInit(): void {
+  this.reportReturnQueryParams = captureReportReturnQueryParams(this.route);
+  clearReportReturnQueryParams(this.router, this.route);
+
   const user = this.auth.getCurrentUser();
 
   if (!user?.church_id) {
@@ -301,11 +441,38 @@ ngOnInit(): void {
         }
 
         this.churchId = Number(reportChurch.church_id);
+        this.churchName = reportChurch.name;
+        this.districtId = assignedChurch.parent_id === null
+          ? Number(assignedChurch.church_id)
+          : Number(assignedChurch.parent_id);
+        this.resolveDistrictPastor();
         this.loadReport();
       },
       error: () => {
         this.loading = false;
         this.errorMessage = 'Unable to load church information for this report.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private resolveDistrictPastor(): void {
+    if (!this.districtId) {
+      this.districtPastorName = '';
+      return;
+    }
+
+    this.churchService.getDistricts().subscribe({
+      next: response => {
+        const district = response.data.find(
+          item => Number(item.church_id) === this.districtId
+        );
+        this.districtName = this.districtName || district?.name || '';
+        this.districtPastorName = district?.pastor_name ?? '';
+        this.cdr.detectChanges();
+      },
+      error: error => {
+        console.error('Unable to resolve assigned district pastor:', error);
         this.cdr.detectChanges();
       }
     });
@@ -324,6 +491,25 @@ ngOnInit(): void {
     // Save anything still waiting before leaving the page.
     this.flushAutoSave();
     this.stopCommentPolling();
+    this.restoreQuarterlyReportPreviewOverlay();
+  }
+
+  ngAfterViewInit(): void {
+    const overlay = this.quarterlyReportPreviewOverlay?.nativeElement;
+    if (!overlay || !this.document.body) {
+      return;
+    }
+
+    this.quarterlyReportPreviewParent = overlay.parentNode;
+    this.document.body.appendChild(overlay);
+  }
+
+  private restoreQuarterlyReportPreviewOverlay(): void {
+    const overlay = this.quarterlyReportPreviewOverlay?.nativeElement;
+    if (overlay && this.quarterlyReportPreviewParent) {
+      this.quarterlyReportPreviewParent.appendChild(overlay);
+      this.quarterlyReportPreviewParent = null;
+    }
   }
 
   loadReport(): void {
@@ -413,11 +599,21 @@ ngOnInit(): void {
       ...new Set(this.availableQuarters.map(q => q.year))
     ].sort((a, b) => b - a);
 
-    if (
-      this.selectedYear === null ||
-      !this.availableYears.includes(this.selectedYear)
-    ) {
-      this.selectedYear = this.availableYears[0] ?? null;
+    const requestedYear = Number(this.route.snapshot.queryParamMap.get('year'));
+    this.selectedYear = this.availableYears.includes(requestedYear)
+      ? requestedYear
+      : this.selectedYear !== null && this.availableYears.includes(this.selectedYear)
+        ? this.selectedYear
+        : this.availableYears[0] ?? null;
+
+    const requestedQuarterNumber = this.quarterNumber(
+      this.route.snapshot.queryParamMap.get('quarter') ?? ''
+    );
+    const requestedQuarter = this.getQuartersForYear().find(
+      quarter => this.quarterNumber(quarter.quarter) === requestedQuarterNumber
+    );
+    if (requestedQuarter) {
+      this.selectedQuarterId = requestedQuarter.quarter_id;
     }
 
     if (
@@ -442,6 +638,18 @@ ngOnInit(): void {
     return this.availableQuarters.filter(
       q => q.year === this.selectedYear
     );
+  }
+
+  getQuarterStatuses(): Record<number, ReportPeriodStatus> {
+    const statuses: Record<number, ReportPeriodStatus> = {};
+    for (const quarter of this.getQuartersForYear()) {
+      statuses[quarter.quarter_id] = this.isQuarterApproved(quarter)
+        ? 'approved'
+        : this.isQuarterEndorsed(quarter)
+          ? 'endorsed'
+          : null;
+    }
+    return statuses;
   }
 
   getVisibleQuarters(): Quarter[] {
@@ -545,6 +753,11 @@ ngOnInit(): void {
 
   get isStewardshipReport(): boolean {
     return Number(this.report?.department?.department_id ?? this.departmentId) === 14;
+  }
+
+  get isAyQuarterlyStatisticsReport(): boolean {
+    return Number(this.report?.department?.department_id ?? this.departmentId) === 17 &&
+      /statistics/i.test(this.getSelectedProgram()?.program_name ?? '');
   }
 
   getVisibleSections(program: Program): Section[] {
@@ -1400,7 +1613,24 @@ ngOnInit(): void {
 
   backToPrograms(): void {
     this.flushAutoSave();
-    this.router.navigate(['/representative/reports/programs']);
+    const returnContext = Object.keys(this.reportReturnQueryParams).length
+      ? this.reportReturnQueryParams
+      : captureReportReturnQueryParams(this.route);
+    const returnParams: Record<string, string> = {
+      year: String(this.selectedYear)
+    };
+    if (returnContext['return_to'] === 'programs') {
+      returnParams['return_to'] = 'programs';
+      for (const key of ['return_department', 'return_quarter', 'return_scroll']) {
+        const value = returnContext[key];
+        if (value !== undefined) {
+          returnParams[key] = value;
+        }
+      }
+    }
+    this.router.navigate(['/representative/reports/programs'], {
+      queryParams: returnParams
+    });
   }
 
   trackQuarter(_index: number, quarter: Quarter): number {

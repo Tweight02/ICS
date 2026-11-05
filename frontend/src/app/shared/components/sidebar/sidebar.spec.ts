@@ -65,7 +65,7 @@ describe('Sidebar', () => {
     expect(collapsedChange).toHaveBeenCalledWith(true);
   });
 
-  it('displays the assigned department beneath the user name', async () => {
+  it('does not display the assigned department for non-directors', async () => {
     fixture.componentRef.setInput('user', {
       user_id: 1,
       first_name: 'Amina',
@@ -80,6 +80,25 @@ describe('Sidebar', () => {
 
     const profileText = fixture.nativeElement.querySelector('footer a').textContent;
     expect(profileText).toContain('Amina Assistant');
+    expect(profileText).not.toContain('Ministerial & Evangelism');
+    expect(component.departmentName).toBe('');
+  });
+
+  it('displays the assigned department for directors', async () => {
+    fixture.componentRef.setInput('user', {
+      user_id: 2,
+      first_name: 'Dora',
+      last_name: 'Director',
+      email: 'dora@example.com',
+      role: 'director',
+      department_id: 16
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const profileText = fixture.nativeElement.querySelector('footer a').textContent;
+    expect(profileText).toContain('Dora Director');
     expect(profileText).toContain('Ministerial & Evangelism');
   });
 });

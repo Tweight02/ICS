@@ -29,12 +29,21 @@
       </button>
     </div>
 
-    <div *ngIf="loadingDepartments()"
-      class="mx-auto flex w-fit items-center gap-3 rounded-2xl border border-white/60 bg-white/60
-             px-8 py-6 text-emerald-900 shadow-lg shadow-emerald-950/5 backdrop-blur-xl">
-      <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"
-        aria-hidden="true"></span>
-      <span class="text-sm font-medium">Loading departments...</span>
+    <div *ngIf="loadingDepartments()" class="overflow-hidden rounded-2xl border border-emerald-900/10 bg-white/90 shadow-sm" role="status" aria-label="Loading report departments" aria-busy="true">
+      <div class="border-b border-emerald-900/10 bg-emerald-50/80 px-5 py-4 sm:px-6">
+        <span class="report-skeleton-block report-skeleton-block-dark h-6 w-56"></span>
+      </div>
+      <div class="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:px-6 sm:py-6">
+        <div class="space-y-2 sm:col-span-2">
+          <span class="report-skeleton-block h-3 w-24"></span>
+          <span class="report-skeleton-block h-11 w-full rounded-lg"></span>
+        </div>
+        <div *ngFor="let field of [1, 2, 3, 4]" class="space-y-2">
+          <span class="report-skeleton-block h-3 w-32"></span>
+          <span class="report-skeleton-block h-11 w-full rounded-lg"></span>
+        </div>
+      </div>
+      <span class="sr-only">Loading report form options.</span>
     </div>
 
     <form *ngIf="!loadingDepartments() && departments.length > 0" [formGroup]="form"
@@ -49,10 +58,22 @@
           <label for="report-department" class="block text-sm font-semibold text-emerald-950">
             Department <span class="text-red-600" aria-hidden="true">*</span>
           </label>
-          <input id="report-department" type="text"
+          <input *ngIf="assignedDepartment; else chooseReportDepartment" id="report-department" type="text"
             [value]="assignedDepartment?.department_name ?? ''"
             readonly aria-readonly="true"
             class="!h-11 !min-h-0 w-full rounded-lg border border-emerald-900/15 bg-slate-50 px-3 py-2 text-sm text-emerald-950">
+          <ng-template #chooseReportDepartment>
+            <select id="report-department" formControlName="department_id" aria-required="true"
+              class="!h-11 !min-h-0 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm text-emerald-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20">
+              <option [ngValue]="null" disabled>Choose a department</option>
+              <option *ngFor="let department of departments" [ngValue]="department.department_id">
+                {{ department.department_name }}
+              </option>
+            </select>
+            <p class="text-xs text-emerald-900/70">Choose the department this report structure belongs to.</p>
+          </ng-template>
+          <p *ngIf="form.controls.department_id.touched && form.controls.department_id.invalid"
+            class="text-xs text-red-700">Choose a department for this report.</p>
         </div>
 
         <div class="space-y-1.5">

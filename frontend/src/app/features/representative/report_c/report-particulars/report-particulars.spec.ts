@@ -14,8 +14,12 @@ describe('ReportParticulars', () => {
   let saveDepartmentReport: ReturnType<typeof vi.fn>;
   let getDepartmentReport: ReturnType<typeof vi.fn>;
   let addComment: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.fn>;
+  let routeQueryParams = convertToParamMap({});
 
   beforeEach(async () => {
+    routeQueryParams = convertToParamMap({});
+    navigate = vi.fn();
     vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: false,
       isDenied: false,
@@ -113,11 +117,30 @@ describe('ReportParticulars', () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: of(convertToParamMap({ departmentId: '3' })),
-            snapshot: { queryParamMap: convertToParamMap({}) }
+            snapshot: {
+              get queryParamMap() {
+                return routeQueryParams;
+              }
+            }
           }
         },
         { provide: AuthService, useValue: { getCurrentUser: () => ({ church_id: 1, user_id: 7, role: 'representative' }) } },
-        { provide: ChurchService, useValue: { getAllChurches } },
+        {
+          provide: ChurchService,
+          useValue: {
+            getAllChurches,
+            getDistricts: () => of({
+              success: true,
+              data: [{
+                church_id: 1,
+                name: 'Batanes',
+                address: null,
+                parent_id: null,
+                pastor_name: 'Assigned Pastor'
+              }]
+            })
+          }
+        },
         {
           provide: ReportService,
           useValue: {
@@ -127,7 +150,7 @@ describe('ReportParticulars', () => {
             addComment
           }
         },
-        { provide: Router, useValue: { navigate: vi.fn(), url: '/representative/reports/particulars/3' } }
+        { provide: Router, useValue: { navigate, url: '/representative/reports/particulars/3' } }
       ]
     }).compileComponents();
 
@@ -138,6 +161,106 @@ describe('ReportParticulars', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('shows Export / Print for church representatives on every quarter report', () => {
+    expect(component.canExportQuarterReport).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Export / Print');
+  });
+
+  it('includes the assigned church name in the representative preview and export rows', () => {
+    expect(component.churchName).toBe('Pasuc');
+
+    component.openQuarterReportPreview();
+    fixture.detectChanges();
+
+    const preview = document.querySelector('#quarterly-report-preview-title')?.parentElement;
+    expect(preview?.textContent).toContain('Pasuc');
+    expect(component.quarterlyReportPreviewRows.flat().join(' ')).toContain('Pasuc');
+  });
+
+  it('returns to the same representative report list selection', () => {
+    routeQueryParams = convertToParamMap({
+      year: '2025',
+      return_to: 'programs',
+      return_department: '3',
+      return_quarter: 'q3',
+      return_scroll: '350'
+    });
+    component.backToPrograms();
+
+    expect(navigate).toHaveBeenCalledWith(
+      ['/representative/reports/programs'],
+      {
+        queryParams: {
+          year: String(component.selectedYear),
+          return_to: 'programs',
+          return_department: '3',
+          return_quarter: 'q3',
+          return_scroll: '350'
+        }
+      }
+    );
+  });
+
+  it('selects the quarter requested by the monitoring link', () => {
+    const particular = component.report!.programs[0].sections[0].particulars[0];
+    particular.quarters.push({
+      quarter_id: 10,
+      quarter: 'Q2',
+      year: 2026,
+      value: null,
+      mission_approve: null
+    });
+    routeQueryParams = convertToParamMap({ year: '2026', quarter: 'Q2' });
+
+    component.loadReport();
+    fixture.detectChanges();
+
+    expect(component.getSelectedQuarter()?.quarter).toBe('Q2');
+  });
+
+  it('applies the preview title alignment only to AY Quarterly Statistics', () => {
+    const department = component.report!.department!;
+    const program = component.getSelectedProgram()!;
+
+    department.department_id = 17;
+    program.program_name = 'AY QUARTERLY STATISTICS';
+    expect(component.isAyQuarterlyStatisticsReport).toBe(true);
+
+    program.program_name = 'AY QUARTERLY REPORT';
+    expect(component.isAyQuarterlyStatisticsReport).toBe(false);
+
+    department.department_id = 3;
+    program.program_name = 'AY QUARTERLY STATISTICS';
+    expect(component.isAyQuarterlyStatisticsReport).toBe(false);
+  });
+
+  it('shows the endorsed marker below its quarter button', () => {
+    const particulars = component.report!.programs[0].sections[0].particulars;
+    for (const particular of particulars) {
+      particular.quarters[0].district_endorse = '2026-10-21';
+    }
+
+    fixture.detectChanges();
+
+    expect(component.isQuarterEndorsed()).toBe(true);
+    const status = fixture.nativeElement.querySelector('[aria-label="Q1 endorsed"]');
+    expect(status?.textContent).toContain('Endorsed');
+    expect(fixture.nativeElement.querySelector('[data-testid="report-quarter-status"]')).toBeNull();
+  });
+
+  it('shows an approval checkmark below its quarter button', () => {
+    const particulars = component.report!.programs[0].sections[0].particulars;
+    for (const particular of particulars) {
+      particular.quarters[0].mission_approve = '2026-10-22';
+    }
+
+    fixture.detectChanges();
+
+    expect(component.isQuarterApproved()).toBe(true);
+    expect(fixture.nativeElement.querySelector('[aria-label="Q1 approved"] .bi-check-circle-fill')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="report-quarter-status"]')).toBeNull();
   });
 
   it('does not show the confirmed participant label in report inputs', () => {
