@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Church;
+use App\Models\User;
 use App\Services\ReportMonitoringService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,19 @@ class ChurchController extends Controller
                 'parent_id',
             ]);
 
+        $pastorsByDistrict = User::query()
+            ->where('role', 'pastor')
+            ->where('status', 'active')
+            ->whereIn('church_id', $districts->pluck('church_id'))
+            ->get([
+                'church_id',
+                'first_name',
+                'middle_name',
+                'last_name',
+                'extension_name',
+            ])
+            ->keyBy('church_id');
+
         $churchesByDistrict = Church::query()
             ->whereIn('parent_id', $districts->pluck('church_id'))
             ->get([
@@ -49,9 +63,18 @@ class ChurchController extends Controller
             $year
         );
 
-        $districts->each(function (Church $district) use ($churchesByDistrict, $monitoringByChurch) {
+        $districts->each(function (Church $district) use ($churchesByDistrict, $monitoringByChurch, $pastorsByDistrict) {
             $churches = $churchesByDistrict->get($district->church_id, collect());
             $district->church_count = $churches->count();
+            $pastor = $pastorsByDistrict->get($district->church_id);
+            $district->pastor_name = $pastor
+                ? implode(' ', array_filter([
+                    $pastor->first_name,
+                    $pastor->middle_name,
+                    $pastor->last_name,
+                    $pastor->extension_name,
+                ]))
+                : null;
 
             foreach (range(1, 4) as $quarterNumber) {
                 $values = $churches

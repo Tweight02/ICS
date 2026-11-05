@@ -30,9 +30,19 @@
       <button type="button" (click)="loadChurches()" class="shrink-0 font-semibold underline underline-offset-2 hover:text-red-900">Retry</button>
     </div>
 
-    <div *ngIf="loadingChurches" class="mx-auto flex w-fit items-center gap-3 rounded-2xl border border-emerald-900/10 bg-white px-8 py-6 text-sm font-medium text-emerald-900 shadow-sm">
-      <app-running-loader></app-running-loader>
-      <span>Loading churches...</span>
+    <div *ngIf="loadingChurches" class="overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-sm" role="status" aria-label="Loading churches" aria-busy="true">
+      <div class="overflow-x-auto">
+        <div class="min-w-[680px] divide-y divide-emerald-950/10">
+        <div *ngFor="let row of [1, 2, 3, 4]" class="grid min-h-[68px] grid-cols-[minmax(220px,36%)_repeat(4,minmax(110px,1fr))] items-center gap-3 px-5 py-3">
+          <div class="flex items-center gap-3">
+            <span class="report-skeleton-block h-9 w-9 rounded-xl"></span>
+            <span class="report-skeleton-block report-skeleton-block-dark h-4 w-3/5"></span>
+          </div>
+          <span *ngFor="let quarter of ['q1', 'q2', 'q3', 'q4']" class="report-skeleton-block mx-auto h-7 w-16 rounded-lg"></span>
+        </div>
+        </div>
+      </div>
+      <span class="sr-only">Loading church report rows.</span>
     </div>
 
     <section *ngIf="!loadingChurches && !errorMessage && churches.length > 0" class="overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-sm">

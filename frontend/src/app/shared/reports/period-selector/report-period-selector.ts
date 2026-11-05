@@ -21,8 +21,9 @@ export class ReportPeriodSelector {
   quarters = input<ReportQuarterOption[]>([]);
   selectedYear = input<number | null>(null);
   selectedQuarterId = input<number | null>(null);
+  quarterStatuses = input<Record<number, ReportPeriodStatus>>({});
   annualView = input(false);
-  status = input<ReportPeriodStatus>(null);
+  showYear = input(true);
 
   yearChanged = output<number>();
   quarterSelected = output<ReportQuarterOption>();

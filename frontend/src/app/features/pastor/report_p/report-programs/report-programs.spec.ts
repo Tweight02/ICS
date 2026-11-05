@@ -75,13 +75,14 @@ describe('ReportPrograms', () => {
     expect(component.getMonitoring(0).q1).toEqual({
       progress: 50,
       approved: false,
+      endorsed: false,
       submitted: false
     });
 
     const cells = Array.from(fixture.nativeElement.querySelectorAll('tbody tr:first-child td')) as HTMLTableCellElement[];
-    expect(cells[0].textContent).toContain('Needs completion');
+    expect(cells[0].textContent).toContain('In progress');
     expect(cells[0].textContent).not.toContain('%');
-    expect(cells[1].textContent).toContain('Submitted for review');
+    expect(cells[1].textContent).toContain('Submitted');
     expect(cells[2].textContent.trim()).toBe('✓');
     expect(cells[2].querySelector('[aria-label="Approved"]')).not.toBeNull();
   });

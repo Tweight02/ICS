@@ -49,9 +49,18 @@
       </button>
     </div>
 
-    <!-- Loading -->
-    <div *ngIf="loadingDistricts()" class="mx-auto flex w-fit items-center  px-8 py-6 text-sm font-medium">
-      <app-running-loader></app-running-loader>
+    <div *ngIf="loadingDistricts()" class="space-y-3" role="status" aria-label="Loading report monitoring" aria-busy="true">
+      <article *ngFor="let row of [1, 2, 3]" class="overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-4 shadow-sm sm:p-5">
+        <div class="flex items-center gap-3">
+          <span class="report-skeleton-block h-11 w-11 rounded-xl"></span>
+          <div class="min-w-0 flex-1 space-y-2">
+            <span class="report-skeleton-block report-skeleton-block-dark h-4 w-2/5"></span>
+            <span class="report-skeleton-block h-3 w-1/4"></span>
+          </div>
+          <span class="report-skeleton-block h-5 w-5 rounded-full"></span>
+        </div>
+      </article>
+      <span class="sr-only">Loading districts and report monitoring.</span>
     </div>
 
     <section
@@ -155,8 +164,13 @@
 
         <div *ngIf="isDistrictOpen(district.church_id)" class="border-t border-emerald-900/10 bg-white/80 px-2 py-3 sm:px-4">
 
-          <div *ngIf="loadingDistrictChurches()[district.church_id]" class="flex justify-center py-8">
-            <app-running-loader size="small"></app-running-loader>
+          <div *ngIf="loadingDistrictChurches()[district.church_id]" class="space-y-3 py-3" role="status" aria-label="Loading church reports" aria-busy="true">
+            <div *ngFor="let row of [1, 2, 3]" class="flex items-center gap-3 rounded-xl border border-emerald-900/5 px-4 py-3">
+              <span class="report-skeleton-block h-9 w-9 rounded-lg"></span>
+              <span class="report-skeleton-block h-4 flex-1"></span>
+              <span *ngFor="let quarter of quarterKeys" class="report-skeleton-block h-8 w-12 rounded-lg"></span>
+            </div>
+            <span class="sr-only">Loading church report rows.</span>
           </div>
 
           <div

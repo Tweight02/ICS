@@ -49,8 +49,19 @@ export class SidebarComponent implements OnChanges {
       const role = this.user.role as UserRole;
       this.menuItems = this.sidebarService.getMenu(role);
       this.roleName = this.sidebarService.getRoleName(role);
-      this.loadDepartmentName();
+      this.departmentName = '';
+      if (this.showDepartmentName) {
+        this.loadDepartmentName();
+      }
     }
+  }
+
+  get showDepartmentName(): boolean {
+    const role = String(this.user?.role ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]/g, ' ');
+    return role === 'director' || role === 'head director';
   }
 
   private loadDepartmentName(): void {

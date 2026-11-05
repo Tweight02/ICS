@@ -14,12 +14,17 @@ import {
   REPORT_YEAR_OPTIONS,
   resolveReportYear
 } from '../../../core/utils/report-year';
-import { RunningLoader } from '../../../shared/components/running-loader/running-loader';
+import { showAppAlert } from '../../../shared/utils/app-alert';
+import { downloadCsv, downloadStyledQuarterlyExcel } from '../../../shared/utils/csv-export';
+import {
+  captureReportReturnQueryParams,
+  clearReportReturnQueryParams
+} from '../../../shared/utils/report-navigation';
 
 @Component({
   selector: 'app-director-report-summary',
   standalone: true,
-  imports: [CommonModule, RunningLoader],
+  imports: [CommonModule],
   templateUrl: './report-summary.html'
 })
 export class DirectorReportSummary implements OnInit {
@@ -29,6 +34,9 @@ export class DirectorReportSummary implements OnInit {
   readonly reportYears = REPORT_YEAR_OPTIONS;
   readonly selectedYear = signal(CURRENT_REPORT_YEAR);
   readonly summary = signal<MissionReportSummary | null>(null);
+  readonly summaryPreviewOpen = signal(false);
+  readonly summaryPreviewRows = signal<unknown[][]>([]);
+  readonly exportingSummaryExcel = signal(false);
   readonly departments = signal<Department[]>([]);
   readonly selectedDepartmentId = signal<number | null>(null);
   readonly departmentDetails = signal<MissionReportSummary | null>(null);
@@ -39,6 +47,7 @@ export class DirectorReportSummary implements OnInit {
   readonly errorMessage = signal('');
   readonly departmentsErrorMessage = signal('');
   readonly departmentDetailsErrorMessage = signal('');
+  private reportReturnQueryParams: Record<string, string> = {};
   readonly selectedRecordQuarter = signal<'Q1' | 'Q2' | 'Q3' | 'Q4' | null>(null);
   readonly selectedBaptismQuarter = this.selectedRecordQuarter;
   readonly baptismRecords = signal<BaptismSummaryRecord[]>([]);
@@ -78,6 +87,130 @@ export class DirectorReportSummary implements OnInit {
     return this.isAssistantPortal;
   }
 
+  buildSummaryCsvRows(): unknown[][] {
+    const reportSummary = this.summary();
+    if (!reportSummary) {
+      return [];
+    }
+
+    const rows: unknown[][] = [
+      ['Report summary', this.isAssistantPortal ? 'Mission-wide' : this.selectedDepartmentName()],
+      ['Year', this.selectedYear()],
+      [],
+      [
+        'Type',
+        'Department',
+        'Report',
+        'Particular',
+        'Submitted reports',
+        'Q1',
+        'Q2',
+        'Q3',
+        'Q4',
+        'Total report value'
+      ]
+    ];
+
+    for (const department of reportSummary.departments) {
+      rows.push([
+        'Department',
+        department.department_name,
+        '',
+        '',
+        department.submitted_reports,
+        department.quarter_totals.q1,
+        department.quarter_totals.q2,
+        department.quarter_totals.q3,
+        department.quarter_totals.q4,
+        department.total_report_value
+      ]);
+
+      for (const report of department.reports) {
+        rows.push([
+          'Report',
+          department.department_name,
+          report.report_name,
+          '',
+          report.submitted_reports,
+          report.quarter_totals.q1,
+          report.quarter_totals.q2,
+          report.quarter_totals.q3,
+          report.quarter_totals.q4,
+          report.total_report_value
+        ]);
+
+        for (const particular of report.particulars ?? []) {
+          rows.push([
+            'Particular',
+            department.department_name,
+            report.report_name,
+            particular.particular_name,
+            particular.submitted_reports,
+            particular.quarter_totals.q1,
+            particular.quarter_totals.q2,
+            particular.quarter_totals.q3,
+            particular.quarter_totals.q4,
+            particular.total_report_value
+          ]);
+        }
+      }
+    }
+
+    return rows;
+  }
+
+  exportSummaryCsv(): void {
+    if (!this.summaryPreviewRows().length) {
+      return;
+    }
+
+    downloadCsv(`report-summary-${this.selectedYear()}.csv`, this.summaryPreviewRows());
+  }
+
+  async exportSummaryExcel(): Promise<void> {
+    if (!this.summaryPreviewRows().length || this.exportingSummaryExcel()) {
+      return;
+    }
+
+    this.exportingSummaryExcel.set(true);
+    try {
+      await downloadStyledQuarterlyExcel(
+        `report-summary-${this.selectedYear()}.xlsx`,
+        this.summaryPreviewRows()
+      );
+    } catch (error) {
+      console.error('Unable to export the report summary as Excel.', error);
+      void showAppAlert({
+        icon: 'error',
+        title: 'Export failed',
+        text: 'Unable to create the Excel report. Please try again.'
+      });
+    } finally {
+      this.exportingSummaryExcel.set(false);
+    }
+  }
+
+  openSummaryPreview(): void {
+    if (!this.summary()) {
+      return;
+    }
+
+    this.summaryPreviewRows.set(this.buildSummaryCsvRows());
+    this.summaryPreviewOpen.set(true);
+  }
+
+  closeSummaryPreview(): void {
+    this.summaryPreviewOpen.set(false);
+  }
+
+  printSummaryReport(): void {
+    if (!this.summaryPreviewRows().length) {
+      return;
+    }
+
+    window.print();
+  }
+
   get isBaptismDirector(): boolean {
     return !this.isAssistantPortal &&
       this.assignedDepartmentId === DirectorReportSummary.BAPTISM_RECORD_DEPARTMENT_ID;
@@ -105,6 +238,9 @@ export class DirectorReportSummary implements OnInit {
   }
 
   ngOnInit(): void {
+    this.reportReturnQueryParams = captureReportReturnQueryParams(this.route);
+    clearReportReturnQueryParams(this.router, this.route);
+
     this.selectedYear.set(
       resolveReportYear(this.route.snapshot.queryParamMap.get('year'))
     );
@@ -274,8 +410,11 @@ export class DirectorReportSummary implements OnInit {
 
   backToReports(): void {
     const portalPrefix = this.isAssistantPortal ? '/assistant' : '/director';
+    const returnParams: Record<string, string | number> = { year: this.selectedYear() };
+    Object.assign(returnParams, this.reportReturnQueryParams);
+
     void this.router.navigate([`${portalPrefix}/reports`], {
-      queryParams: { year: this.selectedYear() }
+      queryParams: returnParams
     });
   }
 

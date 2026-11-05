@@ -26,6 +26,16 @@ import {
   ReportPeriodSelector,
   ReportQuarterOption
 } from '../../../../shared/reports/period-selector/report-period-selector';
+import {
+  csvFilenamePart,
+  downloadCsv,
+  downloadStyledQuarterlyExcel
+} from '../../../../shared/utils/csv-export';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
+import {
+  captureReportReturnQueryParams,
+  clearReportReturnQueryParams
+} from '../../../../shared/utils/report-navigation';
 
 const PERSONAL_RECORD_ACCESS_MESSAGE =
   'Baptism and death records must be accessed through the personal records page.';
@@ -86,6 +96,7 @@ export class DeathbapComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private reportReturnQueryParams: Record<string, string> = {};
 
   selectedRecord: 'baptism' | 'death' | 'ministerial' | 'mission' = 'baptism';
 
@@ -103,6 +114,9 @@ export class DeathbapComponent implements OnInit {
 
   selectedQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q1';
   selectedSummaryQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' | null = null;
+  personalRecordPreviewOpen = false;
+  personalRecordPreviewRows: unknown[][] = [];
+  exportingPersonalRecordExcel = false;
 
   quarterOptions: ('Q1' | 'Q2' | 'Q3' | 'Q4')[] = [
     'Q1',
@@ -178,6 +192,8 @@ export class DeathbapComponent implements OnInit {
   deathError = '';
 
   ngOnInit(): void {
+    this.reportReturnQueryParams = captureReportReturnQueryParams(this.route);
+    clearReportReturnQueryParams(this.router, this.route);
 
     this.departmentId =
       Number(this.route.snapshot.paramMap.get('departmentId')) || 0;
@@ -301,6 +317,144 @@ export class DeathbapComponent implements OnInit {
   get districtDeathTotal(): number {
     return Object.values(this.districtDeathQuarterTotals)
       .reduce((total, quarterTotal) => total + quarterTotal, 0);
+  }
+
+  get personalRecordTitle(): string {
+    return this.selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record';
+  }
+
+  buildPersonalRecordExportRows(): unknown[][] {
+    const period = this.isDistrictPersonalSummaryTab && !this.selectedSummaryQuarter
+      ? `Annual ${this.selectedYear}`
+      : `${this.selectedSummaryQuarter ?? (this.isAnnualView ? 'Annual' : this.selectedQuarter)} ${this.selectedYear}`;
+    const rows: unknown[][] = [
+      ['Year', this.selectedYear],
+      ['Reporting period', period],
+      ['Church / District', this.reportLocation || this.districtName || '—'],
+      []
+    ];
+
+    if (this.selectedRecord === 'baptism') {
+      if (this.isDistrictPersonalSummaryTab && !this.selectedSummaryQuarter) {
+        rows.push(['Quarter', 'Baptisms Reported']);
+        for (const quarter of this.quarterOptions) {
+          rows.push([quarter, this.districtBaptismQuarterTotals[quarter]]);
+        }
+        rows.push(['Total', this.districtBaptismTotal]);
+        return rows;
+      }
+
+      rows.push([
+        'No.',
+        'Name',
+        'Church',
+        'Date of Baptism',
+        'Officiating Minister',
+        'Place of Baptism',
+        'Gender'
+      ]);
+      const records = this.isDistrictPersonalSummaryTab
+        ? this.districtSummaryBaptisms
+        : this.displayedBaptisms;
+      records.forEach((record, index) => rows.push([
+        index + 1,
+        this.getFullName(record),
+        this.getChurchName(record.church_id),
+        this.formatDate(record.date_of_baptism),
+        record.officiating_minister || '—',
+        record.place_of_baptism || '—',
+        record.gender || '—'
+      ]));
+      return rows;
+    }
+
+    if (this.isDistrictPersonalSummaryTab && !this.selectedSummaryQuarter) {
+      rows.push(['Quarter', 'Deaths Reported']);
+      for (const quarter of this.quarterOptions) {
+        rows.push([quarter, this.districtDeathQuarterTotals[quarter]]);
+      }
+      rows.push(['Total', this.districtDeathTotal]);
+      return rows;
+    }
+
+    rows.push([
+      'No.',
+      'Name',
+      'Church',
+      'Birthdate',
+      'Date of Death',
+      'Age at Death',
+      'Gender',
+      'Marital Status'
+    ]);
+    const records = this.isDistrictPersonalSummaryTab
+      ? this.districtSummaryDeaths
+      : this.displayedDeaths;
+    records.forEach((record, index) => {
+      const baptism = this.getDeathBaptism(record);
+      rows.push([
+        index + 1,
+        this.getFullName(baptism),
+        this.getChurchName(baptism?.church_id),
+        this.formatDate(baptism?.birthdate || ''),
+        this.formatDate(record.date_of_death),
+        this.calculateAgeAtDeath(baptism?.birthdate || '', record.date_of_death),
+        baptism?.gender || '—',
+        baptism?.marital_status || '—'
+      ]);
+    });
+    return rows;
+  }
+
+  openPersonalRecordPreview(): void {
+    this.personalRecordPreviewRows = this.buildPersonalRecordExportRows();
+    this.personalRecordPreviewOpen = true;
+  }
+
+  closePersonalRecordPreview(): void {
+    this.personalRecordPreviewOpen = false;
+  }
+
+  exportPersonalRecordCsv(): void {
+    if (!this.personalRecordPreviewRows.length) {
+      return;
+    }
+
+    downloadCsv(
+      `${csvFilenamePart(this.personalRecordTitle)}-${this.selectedYear}.csv`,
+      this.personalRecordPreviewRows
+    );
+  }
+
+  async exportPersonalRecordExcel(): Promise<void> {
+    if (!this.personalRecordPreviewRows.length || this.exportingPersonalRecordExcel) {
+      return;
+    }
+
+    this.exportingPersonalRecordExcel = true;
+    try {
+      await downloadStyledQuarterlyExcel(
+        `${csvFilenamePart(this.personalRecordTitle)}-${this.selectedYear}.xlsx`,
+        this.personalRecordPreviewRows
+      );
+    } catch (error) {
+      console.error(`Unable to export ${this.personalRecordTitle} as Excel.`, error);
+      void showAppAlert({
+        icon: 'error',
+        title: 'Export failed',
+        text: 'Unable to create the Excel file. Please try again.'
+      });
+    } finally {
+      this.exportingPersonalRecordExcel = false;
+    }
+  }
+
+  printPersonalRecord(): void {
+    if (!this.personalRecordPreviewRows.length) {
+      return;
+    }
+
+    window.print();
   }
 
   get districtSummaryBaptisms(): Baptism[] {
@@ -1017,22 +1171,10 @@ export class DeathbapComponent implements OnInit {
   }
 
   private monitoringReturnParams(): Record<string, string> {
-    const queryParams = this.route.snapshot.queryParamMap;
-    const keys = [
-      'return_to',
-      'return_department',
-      'return_expanded',
-      'return_search',
-      'return_scroll'
-    ];
-
-    return keys.reduce<Record<string, string>>((params, key) => {
-      const value = queryParams.get(key);
-      if (value !== null) {
-        params[key] = value;
-      }
-      return params;
-    }, { return_to: 'monitoring' });
+    const returnParams = Object.keys(this.reportReturnQueryParams).length
+      ? this.reportReturnQueryParams
+      : captureReportReturnQueryParams(this.route);
+    return { ...returnParams, return_to: 'monitoring' };
   }
 
   selectRecord(

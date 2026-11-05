@@ -257,6 +257,100 @@ describe('Deathbap', () => {
     expect(component.isDistrictPersonalSummaryTab).toBe(false);
     expect(fixture.nativeElement.querySelector('#district-personal-report-summary')).toBeNull();
     expect(fixture.nativeElement.querySelector('input[name="recordSearch"]')).not.toBeNull();
+    const exportButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).find(button => button.textContent?.includes('Export / Print'));
+    expect(exportButton).toBeTruthy();
+
+    exportButton?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[aria-labelledby="personal-record-preview-title"]'))
+      .not.toBeNull();
+  });
+
+  it('builds the baptism export from all currently displayed records', () => {
+    component.selectedRecord = 'baptism';
+    component.selectedYear = 2026;
+    component.selectedQuarter = 'Q1';
+    component.baptisms = [{
+      baptism_id: 3,
+      church_id: 9,
+      quarter: 'Q1',
+      first_name: 'Member',
+      middle_name: null,
+      last_name: 'Example',
+      extension_name: null,
+      birthdate: '1990-01-01',
+      gender: 'other',
+      address: 'Example address',
+      officiating_minister: 'Pastor Example',
+      place_of_baptism: 'North Church',
+      date_of_baptism: '2026-01-01',
+      marital_status: 'single',
+      is_reclaimed: false
+    }];
+
+    const rows = component.buildPersonalRecordExportRows();
+
+    expect(rows[4]).toEqual([
+      'No.',
+      'Name',
+      'Church',
+      'Date of Baptism',
+      'Officiating Minister',
+      'Place of Baptism',
+      'Gender'
+    ]);
+    expect(rows[5]).toEqual([
+      1,
+      'Member Example',
+      'Unknown Church',
+      'January 1, 2026',
+      'Pastor Example',
+      'North Church',
+      'other'
+    ]);
+  });
+
+  it('builds an annual death summary export for the district view', () => {
+    component.departmentId = 16;
+    component.isReadOnly = true;
+    component.selectedRecord = 'death';
+    component.selectedYear = 2026;
+    component.deaths = [{
+      death_id: 4,
+      baptism_id: 3,
+      quarter: 'Q1',
+      date_of_death: '2026-02-01',
+      baptism: {
+        baptism_id: 3,
+        church_id: 9,
+        quarter: 'Q1',
+        first_name: 'Member',
+        middle_name: null,
+        last_name: 'Example',
+        extension_name: null,
+        birthdate: '1990-01-01',
+        gender: 'other',
+        address: 'Example address',
+        officiating_minister: 'Pastor Example',
+        place_of_baptism: 'North Church',
+        date_of_baptism: '1990-01-01',
+        marital_status: 'single',
+        is_reclaimed: false
+      }
+    }];
+
+    const rows = component.buildPersonalRecordExportRows();
+
+    expect(rows[4]).toEqual(['Quarter', 'Deaths Reported']);
+    expect(rows.slice(5)).toEqual([
+      ['Q1', 1],
+      ['Q2', 0],
+      ['Q3', 0],
+      ['Q4', 0],
+      ['Total', 1]
+    ]);
   });
 
   it('keeps read-only personal reports scoped to the routed church', () => {

@@ -14,8 +14,10 @@ describe('ReportParticulars', () => {
   let addComment: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
   let routerUrl: string;
+  let currentUser: { role: string } | null;
 
   beforeEach(async () => {
+    currentUser = null;
     vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: false,
       isDenied: false,
@@ -115,8 +117,22 @@ describe('ReportParticulars', () => {
           }
         },
         { provide: Router, useValue: { navigate, get url() { return routerUrl; } } },
-        { provide: AuthService, useValue: { getCurrentUser: () => null } },
-        { provide: ChurchService, useValue: {} },
+        { provide: AuthService, useValue: { getCurrentUser: () => currentUser } },
+        {
+          provide: ChurchService,
+          useValue: {
+            getDistricts: () => of({
+              success: true,
+              data: [{
+                church_id: 1,
+                name: 'Test District',
+                address: null,
+                parent_id: null,
+                pastor_name: 'Assigned Pastor'
+              }]
+            })
+          }
+        },
         {
           provide: ReportService,
           useValue: {
@@ -136,6 +152,40 @@ describe('ReportParticulars', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('allows each report role to export quarterly reports', () => {
+    currentUser = { role: 'director' };
+    expect(component.canExportQuarterReport).toBe(true);
+
+    currentUser = { role: 'administrative assistant' };
+    expect(component.canExportQuarterReport).toBe(true);
+
+    currentUser = { role: 'pastor' };
+    expect(component.canExportQuarterReport).toBe(true);
+
+    currentUser = { role: 'district pastor' };
+    expect(component.canExportQuarterReport).toBe(true);
+
+    currentUser = { role: 'representative' };
+    expect(component.canExportQuarterReport).toBe(true);
+  });
+
+  it('shows the form preview before offering export and print actions', () => {
+    currentUser = { role: 'director' };
+    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+
+    component.openQuarterReportPreview();
+    fixture.detectChanges();
+
+    expect(component.quarterlyReportPreviewOpen).toBe(true);
+    expect(component.quarterlyReportPreviewRows.length).toBeGreaterThan(0);
+
+    component.printQuarterReport();
+    expect(print).toHaveBeenCalledOnce();
+    component.closeQuarterReportPreview();
+    expect(component.quarterlyReportPreviewOpen).toBe(false);
+    print.mockRestore();
   });
 
   it('opens the requested year and quarter from monitoring navigation', () => {
@@ -290,7 +340,16 @@ describe('ReportParticulars', () => {
   it('returns to Pastor monitoring when Back is clicked', () => {
     component.backToPrograms();
 
-    expect(navigate).toHaveBeenCalledWith(['/pastor/reports/details']);
+    expect(navigate).toHaveBeenCalledWith(['/pastor/reports/details'], {
+      queryParams: {
+        year: '2026',
+        return_to: 'monitoring',
+        return_department: '21',
+        return_expanded: '7',
+        return_search: 'North',
+        return_scroll: '240'
+      }
+    });
   });
 
   it('opens and closes the comments chathead panel', () => {

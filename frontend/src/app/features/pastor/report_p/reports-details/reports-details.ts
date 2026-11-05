@@ -14,7 +14,12 @@ import {
   Department,
   PERSONAL_REPORT_DEPARTMENT_IDS
 } from '../../../../core/models/report.model';
-import { QuarterStatus, QuarterStatusTone } from '../../../../shared/reports/quarter-status/quarter-status';
+import {
+  QuarterStatus,
+  QuarterStatusTone,
+  resolveQuarterStatus
+} from '../../../../shared/reports/quarter-status/quarter-status';
+import { clearReportReturnQueryParams } from '../../../../shared/utils/report-navigation';
 import {
   CURRENT_REPORT_YEAR,
   REPORT_YEAR_OPTIONS,
@@ -46,9 +51,9 @@ export class ReportsDetails implements OnInit {
   readonly churchDepartments = signal<Record<number, Department[]>>({});
   readonly loadingChurchDepartments = signal<Record<number, boolean>>({});
   readonly churchDepartmentErrors = signal<Record<number, string>>({});
-
   readonly quarterKeys = ['q1', 'q2', 'q3', 'q4'] as const;
   private readonly personalReportDepartmentIds = new Set<number>(PERSONAL_REPORT_DEPARTMENT_IDS);
+  private pendingScrollRestoration = false;
 
   getReportDepartments(departments: Department[]): Department[] {
     return departments.filter(department => {
@@ -66,6 +71,13 @@ export class ReportsDetails implements OnInit {
     this.selectedYear.set(
       resolveReportYear(this.route.snapshot.queryParamMap.get('year'))
     );
+    if (this.route.snapshot.queryParamMap.get('return_to') === 'district-reports') {
+      const churchId = Number(this.route.snapshot.queryParamMap.get('return_church'));
+      this.expandedChurchId.set(Number.isInteger(churchId) && churchId > 0 ? churchId : null);
+      this.pendingScrollRestoration = true;
+    } else {
+      clearReportReturnQueryParams(this.router, this.route);
+    }
     this.loadChurches();
   }
 
@@ -110,6 +122,8 @@ export class ReportsDetails implements OnInit {
         );
         if (expandedChurch) {
           this.loadChurchDepartments(expandedChurch);
+        } else {
+          this.restoreDistrictScroll();
         }
       },
       error: error => {
@@ -120,6 +134,7 @@ export class ReportsDetails implements OnInit {
         this.churches.set([]);
         this.district.set(null);
         this.loadingChurches.set(false);
+        this.restoreDistrictScroll();
         this.errorMessage.set(
           error.status === 401
             ? 'Your session has expired. Please log in again.'
@@ -187,6 +202,7 @@ export class ReportsDetails implements OnInit {
           ...current,
           [church.church_id]: false
         }));
+        this.restoreDistrictScroll();
       },
       error: error => {
         if (requestedYear !== this.selectedYear()) {
@@ -200,6 +216,7 @@ export class ReportsDetails implements OnInit {
           ...current,
           [church.church_id]: error?.error?.message || 'Unable to load church departments.'
         }));
+        this.restoreDistrictScroll();
       }
     });
   }
@@ -226,7 +243,12 @@ export class ReportsDetails implements OnInit {
       this.districtId(),
       church.church_id
     ], {
-      queryParams: { year: this.selectedYear() }
+      queryParams: {
+        year: this.selectedYear(),
+        return_to: 'district-reports',
+        return_church: String(church.church_id),
+        return_scroll: String(window.scrollY)
+      }
     });
   }
 
@@ -234,22 +256,36 @@ export class ReportsDetails implements OnInit {
     department: Department,
     quarter: typeof this.quarterKeys[number]
   ): { label: string; tone: QuarterStatusTone } {
-    if (department[`${quarter}_approved`]) {
-      return { label: 'Approved', tone: 'approved' };
+    const status = resolveQuarterStatus({
+      progress: department[`${quarter}_data_progress`] ?? null,
+      approved: !!department[`${quarter}_approved`],
+      endorsed: !!department[`${quarter}_endorsed`],
+      submitted: !!department[`${quarter}_submitted`]
+    });
+
+    return status.tone === 'empty'
+      ? { label: '—', tone: 'empty' }
+      : status;
+  }
+
+  private restoreDistrictScroll(): void {
+    if (!this.pendingScrollRestoration) {
+      return;
     }
 
-    if (department[`${quarter}_submitted`]) {
-      return { label: 'Submitted for review', tone: 'submitted' };
+    this.pendingScrollRestoration = false;
+    const scrollPosition = Number(
+      this.route.snapshot.queryParamMap.get('return_scroll')
+    );
+    if (!Number.isFinite(scrollPosition) || scrollPosition < 0) {
+      clearReportReturnQueryParams(this.router, this.route);
+      return;
     }
 
-    const progress = department[`${quarter}_data_progress`];
-    if (progress === null || progress === undefined) {
-      return { label: '—', tone: 'empty' };
-    }
-
-    return progress >= 100
-      ? { label: 'Ready to submit', tone: 'ready' }
-      : { label: 'Needs completion', tone: 'incomplete' };
+    setTimeout(() => {
+      window.scrollTo(0, scrollPosition);
+      clearReportReturnQueryParams(this.router, this.route);
+    });
   }
 
 }

@@ -16,9 +16,9 @@ import {
   PERSONAL_REPORT_GROUP_DEPARTMENT_ID
 } from '../../../../core/models/report.model';
 import { Department } from '../../../../core/models/department.model';
-import { RunningLoader } from '../../../../shared/components/running-loader/running-loader';
 import { Button } from '../../../../shared/components/button/button';
 import { QuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
+import { clearReportReturnQueryParams } from '../../../../shared/utils/report-navigation';
 import {
   CURRENT_REPORT_YEAR,
   REPORT_YEAR_OPTIONS,
@@ -50,7 +50,6 @@ const PERSONAL_REPORT_DEPARTMENTS = new Set([
 
   imports: [
     CommonModule,
-    RunningLoader,
     Button,
     QuarterStatus
   ],
@@ -486,7 +485,12 @@ export class Reports implements OnInit {
   private restoreMonitoringState(): void {
     const queryParams = this.route.snapshot.queryParamMap;
 
-    if (queryParams.get('return_to') !== 'monitoring' || this.returnStateApplied) {
+    if (queryParams.get('return_to') !== 'monitoring') {
+      clearReportReturnQueryParams(this.router, this.route);
+      return;
+    }
+
+    if (this.returnStateApplied) {
       return;
     }
 
@@ -525,11 +529,12 @@ export class Reports implements OnInit {
     );
     this.pendingScrollRestoration = false;
 
-    if (!Number.isFinite(scrollPosition) || scrollPosition <= 0) {
-      return;
-    }
-
-    setTimeout(() => window.scrollTo(0, scrollPosition));
+    setTimeout(() => {
+      if (Number.isFinite(scrollPosition) && scrollPosition > 0) {
+        window.scrollTo(0, scrollPosition);
+      }
+      clearReportReturnQueryParams(this.router, this.route);
+    });
   }
 
   private monitoringReturnParams(departmentId?: number): Record<string, string> {
@@ -722,7 +727,7 @@ export class Reports implements OnInit {
   }
 
   get canCreateReportTemplate(): boolean {
-    return this.isAssistantPortal && this.normalizedRole !== 'head assistant';
+    return this.isAssistantPortal;
   }
 
   get isDirectorPortal(): boolean {
@@ -745,7 +750,7 @@ export class Reports implements OnInit {
   openMissionSummary(): void {
     const portalPrefix = this.isAssistantPortal ? '/assistant' : '/director';
     void this.router.navigate([`${portalPrefix}/reports/summary`], {
-      queryParams: { year: this.selectedYear() }
+      queryParams: this.monitoringReturnParams()
     });
   }
 }

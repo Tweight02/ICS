@@ -209,8 +209,8 @@ describe('Reports', () => {
     expect(getDistricts).toHaveBeenLastCalledWith(undefined, CURRENT_REPORT_YEAR);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#report-department-filter')).toBeNull();
-    expect(component.canCreateReportTemplate).toBe(false);
-    expect(fixture.nativeElement.textContent).not.toContain('New report');
+    expect(component.canCreateReportTemplate).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('New report');
 
     component.toggleDistrict(7);
     component.toggleChurch(7, 8);
@@ -302,7 +302,13 @@ describe('Reports', () => {
     component.openMissionSummary();
     expect(navigation).toEqual({
       commands: ['/director/reports/summary'],
-      extras: { queryParams: { year: CURRENT_REPORT_YEAR } }
+      extras: {
+        queryParams: {
+          return_to: 'monitoring',
+          year: String(CURRENT_REPORT_YEAR),
+          return_department: '16'
+        }
+      }
     });
   });
 
@@ -318,7 +324,13 @@ describe('Reports', () => {
     component.openMissionSummary();
     expect(navigation).toEqual({
       commands: ['/assistant/reports/summary'],
-      extras: { queryParams: { year: CURRENT_REPORT_YEAR } }
+      extras: {
+        queryParams: {
+          return_to: 'monitoring',
+          year: String(CURRENT_REPORT_YEAR),
+          return_department: '16'
+        }
+      }
     });
   });
 
@@ -505,6 +517,42 @@ describe('Reports', () => {
 
     expect(component.searchTerm()).toBe('North');
     expect(getDistricts).toHaveBeenLastCalledWith(17, CURRENT_REPORT_YEAR);
+  });
+
+  it('removes temporary return parameters after restoring monitoring state', async () => {
+    returnQueryParams = {
+      year: String(CURRENT_REPORT_YEAR),
+      return_to: 'monitoring',
+      return_department: '17',
+      return_expanded: '7',
+      return_church: '8',
+      return_search: 'North',
+      return_scroll: '120'
+    };
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+
+    component.loadDistricts();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(component.searchTerm()).toBe('North');
+    expect(component.expandedDistrictId()).toBe(7);
+    expect(component.isChurchOpen(7, 8)).toBe(true);
+    expect(scrollTo).toHaveBeenCalledWith(0, 120);
+    expect(navigation?.commands).toEqual([]);
+    expect(navigation?.extras).toMatchObject({
+      queryParams: {
+        return_to: null,
+        return_department: null,
+        return_expanded: null,
+        return_church: null,
+        return_search: null,
+        return_scroll: null
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
+
+    scrollTo.mockRestore();
   });
 
   it('shows the signed-in department in the nested church accordion', () => {

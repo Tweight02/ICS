@@ -62,27 +62,36 @@ export class NewReport implements OnInit {
     this.assignedDepartment = null;
 
     const departmentId = Number(this.authService.getCurrentUser()?.department_id);
-    if (!Number.isInteger(departmentId) || departmentId < 1) {
-      this.errorMessage = 'Your account does not have an assigned department.';
-      this.loadingDepartments.set(false);
-      return;
-    }
+    const hasAssignedDepartment = Number.isInteger(departmentId) && departmentId > 0;
 
     this.userService.getDepartments().subscribe({
       next: response => {
-        const department = (response.data ?? []).find(
-          item => Number(item.department_id) === departmentId
-        );
-        if (!department) {
-          this.errorMessage = 'Your assigned department could not be found.';
+        const allDepartments = response.data ?? [];
+        if (!allDepartments.length) {
+          this.errorMessage = 'No departments are available for this report.';
           this.loadingDepartments.set(false);
           return;
         }
 
-        this.assignedDepartment = department;
-        this.departments = [department];
-        this.form.controls.department_id.setValue(departmentId);
-        this.form.controls.department_id.disable();
+        if (hasAssignedDepartment) {
+          const department = allDepartments.find(
+            item => Number(item.department_id) === departmentId
+          );
+          if (!department) {
+            this.errorMessage = 'Your assigned department could not be found.';
+            this.loadingDepartments.set(false);
+            return;
+          }
+
+          this.assignedDepartment = department;
+          this.departments = [department];
+          this.form.controls.department_id.setValue(departmentId);
+          this.form.controls.department_id.disable();
+        } else {
+          this.departments = allDepartments;
+          this.form.controls.department_id.enable();
+          this.form.controls.department_id.setValue(null);
+        }
         this.loadingDepartments.set(false);
       },
       error: (error: HttpErrorResponse) => {
