@@ -46,7 +46,11 @@
                 <i class="bi bi-building mt-0.5 shrink-0 text-white/80"></i>
                 <span class="text-white">Church: {{ selectedEvent?.registrationChurch }}</span>
               </p>
-              <p *ngIf="selectedEvent?.createdBy" class="flex min-w-0 items-start gap-3">
+              <p *ngIf="selectedEvent?.host" class="flex min-w-0 items-start gap-3">
+                <i class="bi bi-person-badge mt-0.5 shrink-0 text-white/80"></i>
+                <span class="text-white">Host: {{ selectedEvent?.host }}</span>
+              </p>
+              <p *ngIf="selectedEvent?.createdBy && !selectedEvent?.host" class="flex min-w-0 items-start gap-3">
                 <i class="bi bi-person mt-0.5 shrink-0 text-white/80"></i>
                 <span class="text-white">Created by {{ selectedEvent?.createdBy }}</span>
               </p>
