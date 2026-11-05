@@ -295,10 +295,10 @@
                   <button
                     *ngFor="let church of filteredChurches"
                     type="button"
-                    class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] text-slate-700 transition-colors hover:bg-emerald-50 focus-visible:bg-emerald-50 focus-visible:outline-none"
+                    class="block w-full cursor-pointer rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-800 focus-visible:bg-blue-50 focus-visible:text-blue-800 focus-visible:outline-none"
                     role="option"
-                    [class.bg-emerald-50]="sameChurch(church.church_id, baptism.church_id)"
-                    [class.text-emerald-800]="sameChurch(church.church_id, baptism.church_id)"
+                    [class.bg-blue-50]="sameChurch(church.church_id, baptism.church_id)"
+                    [class.text-blue-800]="sameChurch(church.church_id, baptism.church_id)"
                     [attr.aria-selected]="sameChurch(church.church_id, baptism.church_id)"
                     (click)="selectChurch(church)">
                     {{ church.name }}
@@ -332,6 +332,7 @@
                 id="quarter"
                 name="quarter"
                 [(ngModel)]="baptism.quarter"
+                (ngModelChange)="onQuarterChange()"
                 required>
 
                 <option value="Q1">Q1</option>
@@ -353,9 +354,9 @@
                 name="date_of_baptism"
                 type="date"
                 [(ngModel)]="baptism.date_of_baptism"
-                [min]="minimumBaptismDate || null"
-                [max]="today"
-                (change)="validateBaptismDate()"
+                [min]="dateOfBaptismMin"
+                [max]="dateOfBaptismMax"
+                (change)="onBaptismDateChange()"
                 (blur)="showBaptismDateError()"
                 required />
 

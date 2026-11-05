@@ -123,6 +123,9 @@ export class EditbapComponent implements OnInit {
   // Minimum permitted baptism date: the member's 8th birthday.
   minimumBaptismDate = '';
 
+  // The selected quarter is applied within the baptism record's year.
+  baptismQuarterYear = new Date().getFullYear();
+
   baptism: BaptismForm = this.emptyBaptism();
 
   /* =========================================
@@ -203,6 +206,87 @@ export class EditbapComponent implements OnInit {
      BAPTISM DATE VALIDATION
   ========================================= */
 
+  /* =========================================
+     QUARTER DATE RANGE
+  ========================================= */
+
+  /**
+   * The selected quarter is restricted to the calendar year of the
+   * currently loaded baptism date. If there is no date yet, the current
+   * year is used.
+   */
+  get quarterStartDate(): string {
+    const quarterNumber =
+      Number(this.normalizeQuarter(this.baptism.quarter).substring(1)) || 1;
+    const firstMonth = (quarterNumber - 1) * 3 + 1;
+
+    return `${this.baptismQuarterYear}-${String(firstMonth).padStart(2, '0')}-01`;
+  }
+
+  get quarterEndDate(): string {
+    const quarterNumber =
+      Number(this.normalizeQuarter(this.baptism.quarter).substring(1)) || 1;
+    const lastMonth = quarterNumber * 3;
+    const lastDay = new Date(
+      this.baptismQuarterYear,
+      lastMonth,
+      0
+    ).getDate();
+
+    return `${this.baptismQuarterYear}-${String(lastMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  }
+
+  /**
+   * Combine the selected quarter with the existing age requirement.
+   * The date picker cannot allow a date before the member's 8th birthday.
+   */
+  get dateOfBaptismMin(): string {
+    if (
+      this.minimumBaptismDate &&
+      this.minimumBaptismDate > this.quarterStartDate
+    ) {
+      return this.minimumBaptismDate;
+    }
+
+    return this.quarterStartDate;
+  }
+
+  /**
+   * The latest selectable date is the earlier of the quarter end and today.
+   */
+  get dateOfBaptismMax(): string {
+    return this.quarterEndDate < this.today
+      ? this.quarterEndDate
+      : this.today;
+  }
+
+  /**
+   * Clear the existing date if it does not belong to the newly selected quarter.
+   */
+  onQuarterChange(): void {
+    const baptismDate = this.baptism.date_of_baptism;
+
+    if (
+      baptismDate &&
+      (
+        baptismDate < this.quarterStartDate ||
+        baptismDate > this.quarterEndDate
+      )
+    ) {
+      this.baptism.date_of_baptism = '';
+    }
+
+    this.baptismDateError = '';
+    this.validateBaptismDate();
+  }
+
+  /**
+   * Validate a date selected from the quarter-limited date picker.
+   */
+  onBaptismDateChange(): void {
+    this.validateBaptismDate();
+  }
+
   /**
    * Calculate the earliest permitted baptism date.
    * A member must be at least 8 years old on the baptism date.
@@ -256,11 +340,24 @@ export class EditbapComponent implements OnInit {
     const birthdate = this.baptism.birthdate;
     const baptismDate = this.baptism.date_of_baptism;
 
-    if (!birthdate || !baptismDate || !this.minimumBaptismDate) {
+    if (!baptismDate) {
       return;
     }
 
     // YYYY-MM-DD strings can be compared directly.
+    if (
+      baptismDate < this.quarterStartDate ||
+      baptismDate > this.quarterEndDate
+    ) {
+      this.baptismDateError =
+        'Date of baptism must be within the selected quarter.';
+      return;
+    }
+
+    if (!birthdate || !this.minimumBaptismDate) {
+      return;
+    }
+
     if (baptismDate < this.minimumBaptismDate) {
       this.baptism.date_of_baptism = '';
 
@@ -275,10 +372,17 @@ export class EditbapComponent implements OnInit {
   isBaptismDateInvalid(): boolean {
     const baptismDate = this.baptism.date_of_baptism;
 
+    if (!baptismDate) {
+      return false;
+    }
+
     return (
-      !!baptismDate &&
-      !!this.minimumBaptismDate &&
-      baptismDate < this.minimumBaptismDate
+      (
+        !!this.minimumBaptismDate &&
+        baptismDate < this.minimumBaptismDate
+      ) ||
+      baptismDate < this.quarterStartDate ||
+      baptismDate > this.quarterEndDate
     );
   }
 
@@ -610,6 +714,10 @@ export class EditbapComponent implements OnInit {
             )
           };
 
+          this.baptismQuarterYear = this.baptism.date_of_baptism
+            ? Number(this.baptism.date_of_baptism.substring(0, 4))
+            : Number(this.today.substring(0, 4));
+
           // Calculate the minimum date immediately after loading.
           // This also detects a date earlier than the member's 8th birthday.
           this.updateMinimumBaptismDate();
@@ -699,6 +807,21 @@ export class EditbapComponent implements OnInit {
   saveChanges(formIsValid: boolean): void {
     this.errorMessage = '';
     this.successMessage = '';
+
+    // Do not allow a baptism date outside the selected quarter.
+    if (
+      this.baptism.date_of_baptism &&
+      (
+        this.baptism.date_of_baptism < this.quarterStartDate ||
+        this.baptism.date_of_baptism > this.quarterEndDate
+      )
+    ) {
+      this.baptismDateError =
+        'Date of baptism must be within the selected quarter.';
+
+      this.showBaptismDateError();
+      return;
+    }
 
     // Block a baptism date earlier than the member's 8th birthday.
     if (
