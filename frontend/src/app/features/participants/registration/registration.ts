@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { EventService } from '../../../core/services/events/events-api';
 import { Button } from '../../../shared/components/button/button';
 import { formatDateRange, formatTime } from '../../../shared/events/event.utils';
+import { showAppAlert } from '../../../shared/utils/app-alert';
 
 type RegistrationEvent = {
   id: number;
@@ -13,6 +14,7 @@ type RegistrationEvent = {
   church: string;
   registrationChurch: string;
   createdBy: string;
+  host: string;
   date: string;
   time: string;
   end: string;
@@ -101,6 +103,7 @@ export class Registration implements OnInit, OnDestroy {
     if (!Number.isInteger(id) || id < 1) {
       this.loadingEvent = false;
       this.eventError = 'Choose an upcoming event before registering.';
+      this.showErrorAlert(this.eventError);
       return;
     }
 
@@ -126,6 +129,7 @@ export class Registration implements OnInit, OnDestroy {
             || 'Not specified',
           registrationChurch: event.registration_church_name ?? '',
           createdBy: event.created_by ?? '',
+          host: event.host ?? event.host_name ?? event.created_by ?? '',
           date: formatDateRange(event.start_date, event.end_date),
           time: event.start_time,
           end: event.end_time,
@@ -139,6 +143,7 @@ export class Registration implements OnInit, OnDestroy {
         this.eventError = error?.status === 404
           ? 'This event is no longer open for registration.'
           : 'Could not load this event. Please return to the events page and try again.';
+        this.showErrorAlert(this.eventError);
         this.loadingEvent = false;
       },
     });
@@ -164,10 +169,32 @@ export class Registration implements OnInit, OnDestroy {
   async onSubmit(form: NgForm): Promise<void> {
     if (form.invalid || !this.selectedEvent) {
       form.form.markAllAsTouched();
+      const message = !this.selectedEvent
+        ? 'Please choose an event before submitting the form.'
+        : 'Please complete all required fields before submitting.';
+      this.showErrorAlert(message);
       return;
     }
 
     await this.submitRegistration();
+  }
+
+  private showErrorAlert(message: string): void {
+    void showAppAlert({
+      icon: 'error',
+      title: 'Registration failed',
+      text: message,
+      confirmButtonColor: '#166534',
+    });
+  }
+
+  private showSuccessAlert(fullName: string, eventTitle: string): void {
+    void showAppAlert({
+      icon: 'success',
+      title: 'Registration successful',
+      text: `${fullName} has been registered for ${eventTitle}.`,
+      confirmButtonColor: '#166534',
+    });
   }
 
   private async submitRegistration(): Promise<void> {
@@ -201,20 +228,19 @@ export class Registration implements OnInit, OnDestroy {
         age: '',
         gender: '',
       };
-      this.successModalVisible = true;
+      this.successModalVisible = false;
       if (this.successNotificationTimeout) {
         clearTimeout(this.successNotificationTimeout);
-      }
-      this.successNotificationTimeout = setTimeout(() => {
-        this.successModalVisible = false;
         this.successNotificationTimeout = null;
-      }, 5000);
+      }
+      this.showSuccessAlert(this.fullName, this.eventTitle);
     } catch (error: any) {
       console.error('Failed to save participant registration', error);
       this.errorMessage = error?.status === 422 && error?.error?.errors
         ? Object.values(error.error.errors).flat().join(' ')
         : 'Could not save your registration. Please try again.';
       this.errorVisible = true;
+      this.showErrorAlert(this.errorMessage);
     } finally {
       this.saving = false;
     }
