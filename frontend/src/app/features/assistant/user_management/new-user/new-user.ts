@@ -251,6 +251,9 @@ export class NewUser implements OnInit {
         console.error('Failed to create user:', error);
         const errors = error.error?.errors as Record<string, string[]> | undefined;
         const emailAlreadyUsed = errors?.['email']?.some((message) => /already been taken/i.test(message));
+        const personAlreadyExists = Object.values(errors ?? {}).some((messages) =>
+          messages.some((message) => /this person already has an account/i.test(message))
+        );
         this.serverErrors = errors
           ? Object.fromEntries(Object.entries(errors).map(([field, messages]) => [field, messages[0]]))
           : {};
@@ -259,6 +262,13 @@ export class NewUser implements OnInit {
             icon: 'warning',
             title: 'Email already in use',
             text: 'An account with this email address already exists.',
+            confirmButtonColor: '#166534',
+          });
+        } else if (personAlreadyExists) {
+          showAppAlert({
+            icon: 'warning',
+            title: 'User already exists',
+            text: 'An account with this name already exists.',
             confirmButtonColor: '#166534',
           });
         }

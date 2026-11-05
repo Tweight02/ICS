@@ -97,6 +97,22 @@ describe('AssignChurch', () => {
     expect(getRepresentatives).toHaveBeenCalledWith({ per_page: 100, page: 1 });
   });
 
+  it('sorts church cards alphabetically down each of three columns', () => {
+    const names = ['Zulu', 'Alpha', 'Echo', 'Charlie', 'Bravo', 'Golf', 'Delta'];
+    component.assignments.set(names.map((name, index) => ({
+      church_id: index + 100,
+      name,
+      representative: null,
+    })));
+
+    expect(component.visibleAssignmentColumns().map((column) => column.map(({ name }) => name)))
+      .toEqual([
+        ['Alpha', 'Bravo', 'Charlie'],
+        ['Delta', 'Echo', 'Golf'],
+        ['Zulu'],
+      ]);
+  });
+
   it('transfers the selected active representative to the vacant church', async () => {
     vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: true,
@@ -137,6 +153,25 @@ describe('AssignChurch', () => {
     expect(component.sourceFor(representativeList[1])).toBeNull();
   });
 
+  it('returns to representative selection when the transfer confirmation is cancelled', async () => {
+    vi.spyOn(Swal, 'fire').mockResolvedValue({
+      isConfirmed: false,
+      isDenied: false,
+      isDismissed: true,
+    });
+    const target = component.assignments()[1];
+    component.openAssignment(target);
+    component.selectRepresentative(representativeList[0]);
+
+    await component.submitAssignment();
+    fixture.detectChanges();
+
+    expect(component.transferTarget()).toBe(target);
+    expect(component.selectedRepresentativeId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('#representative-search')).not.toBeNull();
+    expect(transferRepresentatives).not.toHaveBeenCalled();
+  });
+
   it('deactivates the existing representative when transferring into an occupied church', async () => {
     vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: false,
@@ -167,7 +202,7 @@ describe('AssignChurch', () => {
       { representative: 'Noah Pastor', from: 'South Church', to: 'North Church', action: 'Transfer' },
       { representative: 'Amina Leader', from: 'North Church', to: null, action: 'Made inactive' },
     ]);
-    expect(fixture.nativeElement.textContent).toContain('Made inactive');
+    expect(fixture.nativeElement.textContent).toContain('Status');
     expect(fixture.nativeElement.textContent).toContain('Inactive');
     const swalFire = vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: true,
@@ -179,6 +214,15 @@ describe('AssignChurch', () => {
     expect(swalFire).toHaveBeenCalledWith(expect.objectContaining({
       text: 'Noah Pastor will move from South Church to North Church, and Amina Leader will be made inactive, leaving South Church without a representative.',
     }));
+    await vi.waitFor(() => expect(swalFire).toHaveBeenCalledTimes(3));
+    expect(swalFire.mock.calls[1][0]).toMatchObject({
+      title: 'Representative assigned',
+      text: 'Noah Pastor is now assigned to North Church.',
+    });
+    expect(swalFire.mock.calls[2][0]).toMatchObject({
+      title: 'Previous representative made inactive',
+      text: 'Amina Leader is now inactive and unassigned from North Church.',
+    });
     expect(component.transferTarget()).toBeNull();
     expect(transferRepresentatives).toHaveBeenCalledWith([
       { user_id: replacement.user_id, church_id: 10 },

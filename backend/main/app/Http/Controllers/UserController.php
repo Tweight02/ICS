@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Church;
 use App\Models\User;
+use App\Support\UserIdentity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,6 +81,18 @@ class UserController extends Controller
             'password' => 'required|string|min:8',
 
         ]);
+
+        if (UserIdentity::existsFor(
+            $data['first_name'],
+            $data['middle_name'] ?? null,
+            $data['last_name'],
+            $data['extension_name'] ?? null,
+            $data['birthdate']
+        )) {
+            throw ValidationException::withMessages([
+                'first_name' => ['This person already has an account.'],
+            ]);
+        }
 
         $data['role'] = 'pastor';
         $data['status'] = 'active';
