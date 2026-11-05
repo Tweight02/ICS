@@ -66,6 +66,12 @@ export class BapaddrecComponent implements OnInit {
   minimumBaptismDate = '';
   baptismDateError = '';
 
+  // The reporting year comes from the selected report when provided;
+  // otherwise, the current year is used for the selected quarter.
+  baptismDateYear = new Date().getFullYear();
+  baptismDateMin = '';
+  baptismDateMax = this.today;
+
   private readonly savingState = signal(false);
 
   get saving(): boolean {
@@ -103,6 +109,18 @@ export class BapaddrecComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    const requestedYear = Number(
+      this.route.snapshot.queryParamMap.get('year')
+    );
+
+    if (
+      Number.isInteger(requestedYear) &&
+      requestedYear >= 1900 &&
+      requestedYear <= new Date().getFullYear()
+    ) {
+      this.baptismDateYear = requestedYear;
+    }
+
     const quarter = this.route.snapshot.queryParamMap.get('quarter');
 
     if (
@@ -114,6 +132,7 @@ export class BapaddrecComponent implements OnInit {
       this.baptism.quarter = quarter;
     }
 
+    this.updateBaptismDateRange();
     this.loadChurches();
   }
 
@@ -285,8 +304,96 @@ export class BapaddrecComponent implements OnInit {
   }
 
   /**
-   * Update the minimum baptism date whenever
-   * the birthdate changes.
+   * Return the first and last month numbers for a selected quarter.
+   */
+  private getQuarterMonthRange(
+    quarter: string
+  ): { startMonth: number; endMonth: number } | null {
+    const ranges: Record<string, { startMonth: number; endMonth: number }> = {
+      Q1: { startMonth: 1, endMonth: 3 },
+      Q2: { startMonth: 4, endMonth: 6 },
+      Q3: { startMonth: 7, endMonth: 9 },
+      Q4: { startMonth: 10, endMonth: 12 }
+    };
+
+    return ranges[quarter] ?? null;
+  }
+
+  /**
+   * Check whether a date belongs to the selected quarter and reporting year.
+   */
+  private isDateWithinSelectedQuarter(value: string): boolean {
+    if (!value || !this.baptism.quarter || !this.isValidDateString(value)) {
+      return false;
+    }
+
+    const range = this.getQuarterMonthRange(this.baptism.quarter);
+
+    if (!range) {
+      return false;
+    }
+
+    const [year, month] = value.split('-').map(Number);
+
+    return (
+      year === this.baptismDateYear &&
+      month >= range.startMonth &&
+      month <= range.endMonth
+    );
+  }
+
+  /**
+   * Update the date picker's minimum and maximum dates based on:
+   * 1. The selected quarter and reporting year.
+   * 2. The member's 8th birthday.
+   * 3. Today's date.
+   */
+  updateBaptismDateRange(): void {
+    const range = this.getQuarterMonthRange(this.baptism.quarter);
+
+    if (!range) {
+      this.baptismDateMin = this.minimumBaptismDate || '';
+      this.baptismDateMax = this.today;
+      return;
+    }
+
+    const quarterStart = `${this.baptismDateYear}-${String(range.startMonth).padStart(2, '0')}-01`;
+    const quarterEndDate = new Date(
+      this.baptismDateYear,
+      range.endMonth,
+      0
+    );
+    const quarterEnd = [
+      quarterEndDate.getFullYear(),
+      String(quarterEndDate.getMonth() + 1).padStart(2, '0'),
+      String(quarterEndDate.getDate()).padStart(2, '0')
+    ].join('-');
+
+    const minimumDate = this.minimumBaptismDate;
+
+    this.baptismDateMin =
+      minimumDate && minimumDate > quarterStart
+        ? minimumDate
+        : quarterStart;
+
+    this.baptismDateMax =
+      quarterEnd < this.today
+        ? quarterEnd
+        : this.today;
+  }
+
+  /**
+   * Recalculate the allowed date range when the selected quarter changes.
+   */
+  onQuarterChange(quarter: string): void {
+    this.baptism.quarter = quarter;
+    this.baptismDateError = '';
+    this.updateBaptismDateRange();
+    this.validateBaptismDate();
+  }
+
+  /**
+   * Update the minimum baptism date whenever the birthdate changes.
    */
   updateMinimumBaptismDate(): void {
     this.baptismDateError = '';
@@ -294,6 +401,7 @@ export class BapaddrecComponent implements OnInit {
     this.minimumBaptismDate =
       this.getMinimumBaptismDate(this.baptism.birthdate);
 
+    this.updateBaptismDateRange();
     this.validateBaptismDate();
   }
 
@@ -304,6 +412,7 @@ export class BapaddrecComponent implements OnInit {
    * 1. Date of baptism must be valid.
    * 2. Member must be at least 8 years old.
    * 3. Date of baptism cannot be later than today.
+   * 4. Date of baptism must belong to the selected quarter and year.
    */
   validateBaptismDate(): void {
     this.baptismDateError = '';
@@ -317,19 +426,26 @@ export class BapaddrecComponent implements OnInit {
 
     if (!this.isValidDateString(baptismDate)) {
       this.baptism.date_of_baptism = '';
+      this.baptismDateError = 'Please enter a valid date of baptism.';
+      return;
+    }
 
+    if (!this.baptism.quarter) {
+      this.baptism.date_of_baptism = '';
+      this.baptismDateError = 'Please select a quarter before selecting the date of baptism.';
+      return;
+    }
+
+    if (!this.isDateWithinSelectedQuarter(baptismDate)) {
+      this.baptism.date_of_baptism = '';
       this.baptismDateError =
-        'Please enter a valid date of baptism.';
-
+        `Date of baptism must fall within ${this.baptism.quarter} of ${this.baptismDateYear}.`;
       return;
     }
 
     if (baptismDate > this.today) {
       this.baptism.date_of_baptism = '';
-
-      this.baptismDateError =
-        'Date of baptism cannot be later than today.';
-
+      this.baptismDateError = 'Date of baptism cannot be later than today.';
       return;
     }
 
@@ -338,7 +454,6 @@ export class BapaddrecComponent implements OnInit {
 
     if (minimumDate && baptismDate < minimumDate) {
       this.baptism.date_of_baptism = '';
-
       this.baptismDateError =
         `Date of baptism must be on or after the member's 8th birthday (${minimumDate}).`;
     }
@@ -360,6 +475,7 @@ export class BapaddrecComponent implements OnInit {
 
     return (
       !this.isValidDateString(baptismDate) ||
+      !this.isDateWithinSelectedQuarter(baptismDate) ||
       baptismDate > this.today ||
       (!!minimumDate && baptismDate < minimumDate)
     );
@@ -441,6 +557,16 @@ export class BapaddrecComponent implements OnInit {
       const minimumDate =
         this.getMinimumBaptismDate(this.baptism.birthdate);
 
+      // Date must belong to the selected quarter and reporting year.
+      if (
+        this.getQuarterMonthRange(this.baptism.quarter) &&
+        !this.isDateWithinSelectedQuarter(this.baptism.date_of_baptism)
+      ) {
+        errors.push(
+          `Date of Baptism must fall within ${this.baptism.quarter} of ${this.baptismDateYear}.`
+        );
+      }
+
       // Member must be at least 8 years old.
       if (minimumDate && this.baptism.date_of_baptism < minimumDate) {
         errors.push(
@@ -511,17 +637,13 @@ export class BapaddrecComponent implements OnInit {
       .toLocaleLowerCase();
   }
 
-  private normalizeDate(value: string | null | undefined): string {
-    return String(value ?? '').trim().slice(0, 10);
-  }
-
   /**
-   * Check the five identifying fields.
+   * Check the three identifying name fields.
+   * Extension name and birthdate are intentionally not part of this check.
    */
   private isDuplicateBaptism(
     existing: ExistingBaptism
   ): boolean {
-
     const sameFirstName =
       this.normalizeText(existing.first_name) ===
       this.normalizeText(this.baptism.first_name);
@@ -534,21 +656,7 @@ export class BapaddrecComponent implements OnInit {
       this.normalizeText(existing.last_name) ===
       this.normalizeText(this.baptism.last_name);
 
-    const sameExtensionName =
-      this.normalizeText(existing.extension_name) ===
-      this.normalizeText(this.baptism.extension_name);
-
-    const sameBirthdate =
-      this.normalizeDate(existing.birthdate) ===
-      this.normalizeDate(this.baptism.birthdate);
-
-    return (
-      sameFirstName &&
-      sameMiddleName &&
-      sameLastName &&
-      sameExtensionName &&
-      sameBirthdate
-    );
+    return sameFirstName && sameMiddleName && sameLastName;
   }
 
   /**
@@ -668,7 +776,7 @@ export class BapaddrecComponent implements OnInit {
             showAppAlert({
               icon: 'warning',
               title: 'Duplicate Baptism Record',
-              text: 'This member already has a baptism record. A member with the same first name, middle name, last name, extension name, and birthdate cannot be added again.',
+              text: 'This member already has a baptism record. A member with the same first name, middle name, and last name cannot be added again.',
               confirmButtonText: 'OK',
               confirmButtonColor: '#176b52',
               customClass: this.swalCustomClass

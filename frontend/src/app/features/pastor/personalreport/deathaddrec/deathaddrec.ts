@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { showAppAlert } from '../../../../shared/utils/app-alert';
 import { Button } from '../../../../shared/components/button/button';
 import { ChurchService } from '../../../../core/services/church/church-service';
@@ -68,6 +68,7 @@ interface DeathRecord {
 export class DeathaddrecComponent implements OnInit {
 
   private http = inject(HttpClient);
+  private route = inject(ActivatedRoute);
   private router = inject(Router);
   private churchService = inject(ChurchService);
 
@@ -93,6 +94,12 @@ export class DeathaddrecComponent implements OnInit {
   // Use browser local date, not UTC date.
   today = this.getTodayDate();
 
+  // Use the selected reporting year when supplied by the previous page.
+  // Otherwise, use the current calendar year.
+  deathDateYear = new Date().getFullYear();
+
+  deathDateError = '';
+  baptismLoadError = false;
   deathLoadError = false;
 
   private readonly loadingBaptismsState = signal(false);
@@ -151,6 +158,18 @@ export class DeathaddrecComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    const requestedYear = Number(
+      this.route.snapshot.queryParamMap.get('year')
+    );
+
+    if (
+      Number.isInteger(requestedYear) &&
+      requestedYear >= 1900 &&
+      requestedYear <= new Date().getFullYear()
+    ) {
+      this.deathDateYear = requestedYear;
+    }
+
     this.loadBaptisms();
     this.loadChurches();
     this.loadDeaths();
@@ -186,6 +205,7 @@ export class DeathaddrecComponent implements OnInit {
     this.death.birthdate = '';
     this.death.gender = null;
     this.death.marital_status = null;
+    this.deathDateError = '';
   }
 
   /* ==========================================
@@ -261,6 +281,180 @@ export class DeathaddrecComponent implements OnInit {
     ).padStart(2, '0');
 
     return `${minimumYear}-${minimumMonth}-${minimumDay}`;
+  }
+
+  /**
+   * Return the start and end dates for the selected quarter
+   * within the reporting year.
+   */
+  private getQuarterDateBounds(): { start: string; end: string } | null {
+    const quarterRanges: Record<
+      string,
+      { startMonth: number; endMonth: number }
+    > = {
+      Q1: { startMonth: 1, endMonth: 3 },
+      Q2: { startMonth: 4, endMonth: 6 },
+      Q3: { startMonth: 7, endMonth: 9 },
+      Q4: { startMonth: 10, endMonth: 12 }
+    };
+
+    const range = quarterRanges[this.death.quarter];
+
+    if (!range) {
+      return null;
+    }
+
+    const start =
+      `${this.deathDateYear}-${String(range.startMonth).padStart(2, '0')}-01`;
+
+    const lastDay = new Date(
+      this.deathDateYear,
+      range.endMonth,
+      0
+    );
+
+    const end = [
+      lastDay.getFullYear(),
+      String(lastDay.getMonth() + 1).padStart(2, '0'),
+      String(lastDay.getDate()).padStart(2, '0')
+    ].join('-');
+
+    return { start, end };
+  }
+
+  /**
+   * The earliest selectable death date must be:
+   * - within the selected quarter; and
+   * - at least one day after the member's birthdate.
+   */
+  getMinimumDeathDateForQuarter(): string {
+    const bounds = this.getQuarterDateBounds();
+
+    if (!bounds) {
+      return '';
+    }
+
+    const minimumAfterBirth = this.getMinimumDeathDate();
+
+    return minimumAfterBirth && minimumAfterBirth > bounds.start
+      ? minimumAfterBirth
+      : bounds.start;
+  }
+
+  /**
+   * The latest selectable death date must be within the quarter
+   * and cannot be later than today.
+   */
+  getMaximumDeathDate(): string {
+    const bounds = this.getQuarterDateBounds();
+
+    if (!bounds) {
+      return this.today;
+    }
+
+    return bounds.end < this.today
+      ? bounds.end
+      : this.today;
+  }
+
+  /**
+   * Check if the selected quarter has at least one valid date.
+   */
+  get hasValidDeathDateRange(): boolean {
+    if (!this.death.quarter) {
+      return false;
+    }
+
+    return (
+      this.getMinimumDeathDateForQuarter() <=
+      this.getMaximumDeathDate()
+    );
+  }
+
+  /**
+   * Check whether a date belongs to the selected quarter and year.
+   */
+  private isDateWithinSelectedQuarter(value: string): boolean {
+    const bounds = this.getQuarterDateBounds();
+
+    return !!bounds &&
+      this.isValidDate(value) &&
+      value >= bounds.start &&
+      value <= bounds.end;
+  }
+
+  /**
+   * Update the selected quarter and remove an incompatible death date.
+   */
+  onQuarterChange(quarter: string): void {
+    this.death.quarter = quarter;
+    this.deathDateError = '';
+
+    if (!this.death.date_of_death) {
+      return;
+    }
+
+    if (!this.isDateWithinSelectedQuarter(this.death.date_of_death)) {
+      this.death.date_of_death = '';
+      this.deathDateError =
+        `The selected date was cleared because it does not belong to ${quarter} of ${this.deathDateYear}.`;
+      return;
+    }
+
+    this.validateDeathDate();
+  }
+
+  /**
+   * Validate a date entered or selected in the Date of Death field.
+   */
+  validateDeathDate(): void {
+    this.deathDateError = '';
+
+    const dateOfDeath = this.death.date_of_death;
+
+    if (!dateOfDeath) {
+      return;
+    }
+
+    if (!this.isValidDate(dateOfDeath)) {
+      this.death.date_of_death = '';
+      this.deathDateError = 'Please enter a valid date of death.';
+      return;
+    }
+
+    if (!this.death.quarter) {
+      this.death.date_of_death = '';
+      this.deathDateError = 'Please select a quarter before selecting the date of death.';
+      return;
+    }
+
+    if (!this.isDateWithinSelectedQuarter(dateOfDeath)) {
+      this.death.date_of_death = '';
+      this.deathDateError =
+        `Date of Death must fall within ${this.death.quarter} of ${this.deathDateYear}.`;
+      return;
+    }
+
+    const minimumDate = this.getMinimumDeathDate();
+
+    if (minimumDate && dateOfDeath < minimumDate) {
+      this.death.date_of_death = '';
+      this.deathDateError =
+        'Date of Death must be at least one day after the birthdate.';
+      return;
+    }
+
+    if (dateOfDeath > this.today) {
+      this.death.date_of_death = '';
+      this.deathDateError = 'Date of Death cannot be later than today.';
+      return;
+    }
+
+    if (!this.hasValidDeathDateRange) {
+      this.death.date_of_death = '';
+      this.deathDateError =
+        'There is no valid date available within the selected quarter.';
+    }
   }
 
   /**
@@ -494,6 +688,28 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
+   * Check whether a manually entered new death record already exists
+   * in the Baptism table using first, middle, and last name only.
+   *
+   * A blank or NULL middle name is treated as the same value.
+   */
+  private isExistingBaptismName(): boolean {
+    const firstName = this.normalizeText(this.death.first_name);
+    const middleName = this.normalizeText(this.death.middle_name);
+    const lastName = this.normalizeText(this.death.last_name);
+
+    if (!firstName || !lastName) {
+      return false;
+    }
+
+    return this.baptisms.some(baptism =>
+      this.normalizeText(baptism.first_name) === firstName &&
+      this.normalizeText(baptism.middle_name) === middleName &&
+      this.normalizeText(baptism.last_name) === lastName
+    );
+  }
+
+  /**
    * Check duplicate manually entered death records.
    */
   private isDuplicateNewDeath(): boolean {
@@ -542,20 +758,46 @@ export class DeathaddrecComponent implements OnInit {
 
   /**
    * Load baptism records.
-   * A failure here does not prevent manual death entry.
+   * These records must be verified before either death-entry mode can save,
+   * because manual death entries must be checked against the Baptism table.
    */
   loadBaptisms(): void {
     this.loadingBaptisms = true;
+    this.baptismLoadError = false;
 
     this.http
       .get<any>('/api/baptisms')
       .subscribe({
 
         next: (response) => {
-          const data = response?.data ?? response;
+          const data = Array.isArray(response)
+            ? response
+            : Array.isArray(response?.data)
+              ? response.data
+              : Array.isArray(response?.data?.data)
+                ? response.data.data
+                : null;
 
-          this.baptisms = Array.isArray(data) ? data : [];
           this.loadingBaptisms = false;
+
+          if (!data) {
+            this.baptisms = [];
+            this.baptismLoadError = true;
+
+            showAppAlert({
+              icon: 'error',
+              title: 'Unable to Verify Baptism Records',
+              text: 'The existing baptism records could not be read. No new death record can be saved until the records are verified.',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#176b52',
+              customClass: this.swalCustomClass
+            });
+
+            return;
+          }
+
+          this.baptisms = data;
+          this.baptismLoadError = false;
 
           console.log('Baptism records loaded:', this.baptisms);
         },
@@ -565,11 +807,12 @@ export class DeathaddrecComponent implements OnInit {
 
           this.baptisms = [];
           this.loadingBaptisms = false;
+          this.baptismLoadError = true;
 
           showAppAlert({
-            icon: 'warning',
-            title: 'Unable to Load Baptism Members',
-            text: 'Existing baptism members could not be loaded. You can still use New Death Record to enter a deceased person manually.',
+            icon: 'error',
+            title: 'Unable to Verify Baptism Records',
+            text: 'Existing baptism records could not be loaded. A new death record cannot be added until the Baptism table has been checked. Please refresh the page and try again.',
             confirmButtonText: 'OK',
             confirmButtonColor: '#176b52',
             customClass: this.swalCustomClass
@@ -817,8 +1060,22 @@ export class DeathaddrecComponent implements OnInit {
       errors.push('Date of Death is required.');
     } else if (!this.isValidDate(this.death.date_of_death)) {
       errors.push('Please enter a valid date of death.');
-    } else if (this.death.date_of_death > this.today) {
-      errors.push('Date of Death cannot be later than today.');
+    } else {
+      if (!this.isDateWithinSelectedQuarter(this.death.date_of_death)) {
+        errors.push(
+          `Date of Death must fall within ${this.death.quarter} of ${this.deathDateYear}.`
+        );
+      }
+
+      if (this.death.date_of_death > this.today) {
+        errors.push('Date of Death cannot be later than today.');
+      }
+
+      if (!this.hasValidDeathDateRange) {
+        errors.push(
+          'There is no valid date available within the selected quarter based on the birthdate and today.'
+        );
+      }
     }
 
     const birthdate = this.getDeathBirthdate();
@@ -860,6 +1117,18 @@ export class DeathaddrecComponent implements OnInit {
         errors.push('Last Name is required.');
       } else if (!namePattern.test(this.death.last_name.trim())) {
         errors.push('Please enter a valid Last Name.');
+      }
+
+      // Do not allow manual death entry when the same person is already
+      // registered in the Baptism table. Use Existing Baptism Record instead.
+      if (
+        this.death.first_name.trim() &&
+        this.death.last_name.trim() &&
+        this.isExistingBaptismName()
+      ) {
+        errors.push(
+          'A member with the same first name, middle name, and last name already exists in the Baptism records. Select Existing Baptism Record instead.'
+        );
       }
 
       if (
@@ -949,15 +1218,13 @@ export class DeathaddrecComponent implements OnInit {
       return;
     }
 
-    // Only existing-member mode requires baptism records.
-    if (
-      this.entryMode === 'baptized' &&
-      this.loadingBaptisms
-    ) {
+    // Baptism records must be loaded successfully for both modes.
+    // Manual entries are checked against the Baptism table by member name.
+    if (this.loadingBaptisms || this.baptismLoadError) {
       showAppAlert({
         icon: 'warning',
-        title: 'Records Not Ready',
-        text: 'Please wait until baptism records have finished loading.',
+        title: 'Baptism Records Not Verified',
+        text: 'Please wait until the existing baptism records have been loaded and verified. A new death record cannot be saved without checking for an existing member.',
         confirmButtonText: 'OK',
         confirmButtonColor: '#176b52',
         customClass: this.swalCustomClass
@@ -1042,6 +1309,19 @@ export class DeathaddrecComponent implements OnInit {
     } else {
 
       // NEW DEATH RECORD WITHOUT BAPTISM
+      if (this.isExistingBaptismName()) {
+        showAppAlert({
+          icon: 'warning',
+          title: 'Member Already Exists in Baptism Records',
+          text: 'A member with the same first name, middle name, and last name already exists in the Baptism table. Select Existing Baptism Record instead of adding a new death record.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#176b52',
+          customClass: this.swalCustomClass
+        });
+
+        return;
+      }
+
       if (this.isDuplicateNewDeath()) {
         showAppAlert({
           icon: 'error',
@@ -1104,7 +1384,7 @@ export class DeathaddrecComponent implements OnInit {
             customClass: this.swalCustomClass
           }).then((result) => {
             if (result.isConfirmed) {
-              this.router.navigate(['/pastor/deathbap']);
+              this.navigateBackToDeathRecords();
             }
           });
         },
@@ -1145,10 +1425,38 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
+   * Return to the Death Record table while preserving the reporting period.
+   */
+  private navigateBackToDeathRecords(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const requestedQuarter = queryParams.get('quarter');
+    const selectedQuarter = this.death.quarter || requestedQuarter;
+
+    const validQuarter =
+      selectedQuarter === 'Q1' ||
+      selectedQuarter === 'Q2' ||
+      selectedQuarter === 'Q3' ||
+      selectedQuarter === 'Q4'
+        ? selectedQuarter
+        : null;
+
+    this.router.navigate(['/pastor/deathbap'], {
+      queryParams: {
+        record: 'death',
+        ...(Number.isInteger(this.deathDateYear) && this.deathDateYear > 0
+          ? { year: this.deathDateYear }
+          : {}),
+        ...(validQuarter ? { quarter: validQuarter } : {}),
+        ...(queryParams.get('annual') === 'true' ? { annual: true } : {})
+      }
+    });
+  }
+
+  /**
    * Cancel adding a death record.
    */
   cancelForm(): void {
-    this.router.navigate(['/pastor/deathbap']);
+    this.navigateBackToDeathRecords();
   }
 
 }
