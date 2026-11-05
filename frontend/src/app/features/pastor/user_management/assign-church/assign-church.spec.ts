@@ -153,6 +153,23 @@ describe('AssignChurch', () => {
     expect(component.sourceFor(representativeList[1])).toBeNull();
   });
 
+  it('returns to representative selection when the modal cancel button is clicked after selection', () => {
+    const target = component.assignments()[1];
+    component.openAssignment(target);
+    component.selectRepresentative(representativeList[0]);
+    fixture.detectChanges();
+
+    const cancelButton = Array.from(
+      fixture.nativeElement.querySelectorAll('#assignment-dialog button') as NodeListOf<HTMLButtonElement>
+    ).find((button) => button.textContent?.trim() === 'Back to selection');
+    cancelButton?.click();
+    fixture.detectChanges();
+
+    expect(component.transferTarget()).toBe(target);
+    expect(component.selectedRepresentativeId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('#representative-search')).not.toBeNull();
+  });
+
   it('returns to representative selection when the transfer confirmation is cancelled', async () => {
     vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: false,

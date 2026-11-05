@@ -362,6 +362,14 @@ export class AssignChurch implements OnInit {
     this.modalOpener = null;
   }
 
+  cancelAssignment(): void {
+    if (this.selectedRepresentativeId() !== null) {
+      this.clearRepresentative();
+      return;
+    }
+    this.closeAssignment();
+  }
+
   onRepresentativeSearch(value: string): void {
     this.representativeQuery.set(value);
   }
