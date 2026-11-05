@@ -1,3 +1,4 @@
+
 <div class="min-h-screen bg-[#f6faf8] p-3 max-[768px]:p-2 max-[400px]:p-2">
 
   <div class="mx-auto w-full max-w-[820px] overflow-visible rounded-[18px] border border-[#d7e4df] bg-white shadow-[0_8px_25px_rgba(0,0,0,0.05)] max-[768px]:max-w-full max-[768px]:rounded-[14px]">
@@ -55,255 +56,267 @@
 
           <ng-container *ngIf="entryMode === 'baptized'">
 
-            <!-- Baptized Member: Searchable Dropdown -->
-            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+            <!-- PERSONAL INFORMATION -->
+            <section class="w-full min-w-0 rounded-xl border border-[#d7e4df] bg-white p-4 max-[768px]:p-3">
+              <div class="mb-3 border-b border-[#e8eeeb] pb-2">
+                <h3 class="m-0 text-sm font-bold tracking-[0.04em] text-[#193c32]">PERSONAL INFORMATION</h3>
+                <p class="mb-0 mt-1 text-[11px] text-slate-500">Select the baptized member and review their personal details.</p>
+              </div>
 
-              <label for="baptism_search">Baptized Member</label>
+              <div class="grid w-full grid-cols-1 gap-3 max-[768px]:gap-2.5">
 
-              <div
-                class="relative w-full"
-                #memberDropdown
-                [class.open]="memberDropdownOpen">
+                <!-- Baptized Member: Searchable Dropdown -->
+                <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
 
-                <div class="relative w-full">
-
-                  <!-- Search Icon -->
-                  <svg
-                    class="pointer-events-none absolute left-3 top-1/2 z-10 !h-4 !w-4 -translate-y-1/2"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#64748b"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true">
-                    <circle cx="11" cy="11" r="7"></circle>
-                    <path d="m20 20-4-4"></path>
-                  </svg>
-
-                  <!-- Search Input -->
-                  <input
-                    id="baptism_search"
-                    type="text"
-                    class="box-border block h-[40px] w-full cursor-text rounded-lg border border-[rgba(22,75,60,0.12)] bg-white px-3 !py-2 !pl-10 !pr-11 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-100 disabled:text-[#817a75]"
-                    [value]="memberDropdownOpen ? baptismSearch : getSelectedBaptismName()"
-                    (focus)="openBaptismDropdown()"
-                    (input)="onBaptismSearch($event)"
-                    [placeholder]="
-                      loadingBaptisms || loadingDeaths
-                        ? 'Loading records...'
-                        : deathLoadError
-                          ? 'Unable to verify death records'
-                          : availableBaptisms.length === 0
-                            ? 'No eligible members available'
-                            : 'Search or select baptized member'
-                    "
-                    autocomplete="off"
-                    [disabled]="
-                      loadingBaptisms ||
-                      loadingDeaths ||
-                      deathLoadError ||
-                      availableBaptisms.length === 0
-                    "
-                    aria-label="Search baptized members"
-                    aria-autocomplete="list"
-                    [attr.aria-expanded]="memberDropdownOpen"
-                    (keydown.escape)="closeBaptismDropdown()">
-
-                  <!-- Dropdown Arrow -->
-                  <button
-                    type="button"
-                    class="absolute right-[5px] top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50"
-                    (click)="toggleBaptismDropdown()"
-                    [disabled]="
-                      loadingBaptisms ||
-                      loadingDeaths ||
-                      deathLoadError ||
-                      availableBaptisms.length === 0
-                    "
-                    aria-label="Toggle baptized member dropdown">
-
-                    <svg
-                      class="h-[18px] w-[18px] transition-transform duration-200"
-                      [class.rotate-180]="memberDropdownOpen"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true">
-                      <path d="m6 9 6 6 6-6"></path>
-                    </svg>
-
-                  </button>
-                </div>
-
-                <!-- Member Options -->
-                <div
-                  id="memberDropdownOptions"
-                  class="absolute left-0 right-0 top-[calc(100%+4px)] z-[1050] max-h-[200px] overscroll-contain overflow-y-auto rounded-lg border border-slate-300 bg-white p-1 shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
-                  *ngIf="memberDropdownOpen"
-                  role="listbox">
-
-                  <button
-                    type="button"
-                    class="member-option block w-full cursor-pointer break-words rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] font-normal text-slate-700 transition-all duration-150 hover:!bg-[#dbeafe] hover:!text-[#242833] hover:shadow-sm focus-visible:!bg-[#dbeafe] focus-visible:!text-[#1d4ed8] focus-visible:outline-none active:!bg-[#bfdbfe]"
-                    role="option"
-                    *ngFor="let baptism of filteredAvailableBaptisms"
-                    [class.!bg-[#ecfdf5]]="sameBaptism(baptism.baptism_id, death.baptism_id)"
-                    [class.!text-[#065f46]]="sameBaptism(baptism.baptism_id, death.baptism_id)"
-                    [attr.aria-selected]="sameBaptism(baptism.baptism_id, death.baptism_id)"
-                    (click)="chooseBaptism(baptism)">
-
-                    {{ getFullName(baptism) }}
-
-                  </button>
+                  <label for="baptism_search">Baptized Member</label>
 
                   <div
-                    class="p-2.5 text-center text-[13px] text-slate-500"
-                    *ngIf="filteredAvailableBaptisms.length === 0">
-                    No matching baptized members found.
+                    class="relative w-full"
+                    #memberDropdown
+                    [class.open]="memberDropdownOpen">
+
+                    <div class="relative w-full">
+
+                      <!-- Search Icon -->
+                      <svg
+                        class="pointer-events-none absolute left-3 top-1/2 z-10 !h-4 !w-4 -translate-y-1/2"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#64748b"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m20 20-4-4"></path>
+                      </svg>
+
+                      <!-- Search Input -->
+                      <input
+                        id="baptism_search"
+                        type="text"
+                        class="box-border block h-[40px] w-full cursor-text rounded-lg border border-[rgba(22,75,60,0.12)] bg-white px-3 !py-2 !pl-10 !pr-11 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-100 disabled:text-[#817a75]"
+                        [value]="memberDropdownOpen ? baptismSearch : getSelectedBaptismName()"
+                        (focus)="openBaptismDropdown()"
+                        (input)="onBaptismSearch($event)"
+                        [placeholder]="
+                          loadingBaptisms || loadingDeaths
+                            ? 'Loading records...'
+                            : deathLoadError
+                              ? 'Unable to verify death records'
+                              : availableBaptisms.length === 0
+                                ? 'No eligible members available'
+                                : 'Search or select baptized member'
+                        "
+                        autocomplete="off"
+                        [disabled]="
+                          loadingBaptisms ||
+                          loadingDeaths ||
+                          deathLoadError ||
+                          availableBaptisms.length === 0
+                        "
+                        aria-label="Search baptized members"
+                        aria-autocomplete="list"
+                        [attr.aria-expanded]="memberDropdownOpen"
+                        (keydown.escape)="closeBaptismDropdown()">
+
+                      <!-- Dropdown Arrow -->
+                      <button
+                        type="button"
+                        class="absolute right-[5px] top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50"
+                        (click)="toggleBaptismDropdown()"
+                        [disabled]="
+                          loadingBaptisms ||
+                          loadingDeaths ||
+                          deathLoadError ||
+                          availableBaptisms.length === 0
+                        "
+                        aria-label="Toggle baptized member dropdown">
+
+                        <svg
+                          class="h-[18px] w-[18px] transition-transform duration-200"
+                          [class.rotate-180]="memberDropdownOpen"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          aria-hidden="true">
+                          <path d="m6 9 6 6 6-6"></path>
+                        </svg>
+
+                      </button>
+                    </div>
+
+                    <!-- Member Options -->
+                    <div
+                      id="memberDropdownOptions"
+                      class="absolute left-0 right-0 top-[calc(100%+4px)] z-[1050] max-h-[200px] overscroll-contain overflow-y-auto rounded-lg border border-slate-300 bg-white p-1 shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
+                      *ngIf="memberDropdownOpen"
+                      role="listbox">
+
+                      <button
+                        type="button"
+                        class="member-option block w-full cursor-pointer break-words rounded-[5px] border-0 bg-white px-3 py-2 text-left text-[13px] font-normal text-slate-700 transition-all duration-150 hover:!bg-[#dbeafe] hover:!text-[#242833] hover:shadow-sm focus-visible:!bg-[#dbeafe] focus-visible:!text-[#1d4ed8] focus-visible:outline-none active:!bg-[#bfdbfe]"
+                        role="option"
+                        *ngFor="let baptism of filteredAvailableBaptisms"
+                        [class.!bg-[#ecfdf5]]="sameBaptism(baptism.baptism_id, death.baptism_id)"
+                        [class.!text-[#065f46]]="sameBaptism(baptism.baptism_id, death.baptism_id)"
+                        [attr.aria-selected]="sameBaptism(baptism.baptism_id, death.baptism_id)"
+                        (click)="chooseBaptism(baptism)">
+
+                        {{ getFullName(baptism) }}
+
+                      </button>
+
+                      <div
+                        class="p-2.5 text-center text-[13px] text-slate-500"
+                        *ngIf="filteredAvailableBaptisms.length === 0">
+                        No matching baptized members found.
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  <!-- Keep baptism_id connected to Angular validation -->
+                  <input
+                    type="hidden"
+                    name="baptism_id"
+                    [(ngModel)]="death.baptism_id"
+                    required>
+
+                  <small
+                    *ngIf="loadingBaptisms || loadingDeaths"
+                    class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
+                    Checking existing records...
+                  </small>
+
+                  <small
+                    *ngIf="deathLoadError"
+                    class="mt-1.5 block text-xs leading-[1.5] text-red-600">
+                    Death records could not be verified. Refresh the page to try again.
+                  </small>
+
+                  <small
+                    *ngIf="!loadingBaptisms && !loadingDeaths && !deathLoadError && baptisms.length === 0"
+                    class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
+                    No baptism records found. You can use New Death Record instead.
+                  </small>
+
+                  <small
+                    *ngIf="!loadingBaptisms && !loadingDeaths && !deathLoadError && baptisms.length > 0 && availableBaptisms.length === 0"
+                    class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
+                    All available baptized members already have death records. You can still add a new death record.
+                  </small>
+
+                </div>
+
+                <!-- EXISTING MEMBER DETAILS -->
+                <div class="col-span-full grid w-full grid-cols-4 gap-2 max-[768px]:grid-cols-2 max-[400px]:grid-cols-2">
+
+                  <!-- First Name -->
+                  <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                    <label for="first_name_existing">First Name</label>
+                    <input
+                      id="first_name_existing"
+                      type="text"
+                      class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
+                      [value]="selectedBaptism?.first_name || ''"
+                      placeholder="First name"
+                      readonly>
+                  </div>
+
+                  <!-- Middle Name -->
+                  <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                    <label for="middle_name_existing">Middle Name</label>
+                    <input
+                      id="middle_name_existing"
+                      type="text"
+                      class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
+                      [value]="selectedBaptism?.middle_name || ''"
+                      placeholder="Middle name"
+                      readonly>
+                  </div>
+
+                  <!-- Last Name -->
+                  <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a75]">
+                    <label for="last_name_existing">Last Name</label>
+                    <input
+                      id="last_name_existing"
+                      type="text"
+                      class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
+                      [value]="selectedBaptism?.last_name || ''"
+                      placeholder="Last name"
+                      readonly>
+                  </div>
+
+                  <!-- Extension Name -->
+                  <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                    <label for="extension_name_existing">Extension Name</label>
+                    <input
+                      id="extension_name_existing"
+                      type="text"
+                      class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
+                      [value]="selectedBaptism?.extension_name || ''"
+                      placeholder="Jr., Sr., III, IV, etc."
+                      readonly>
                   </div>
 
                 </div>
 
+                <!-- Existing Church -->
+                <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                  <label for="church_existing">Church</label>
+                  <input
+                    id="church_existing"
+                    type="text"
+                    class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
+                    [value]="getChurchName(selectedBaptism?.church_id)"
+                    placeholder="Church"
+                    readonly>
+                </div>
+
+                <!-- Existing Birthdate -->
+                <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                  <label for="birthdate_existing">Birthdate</label>
+                  <input
+                    id="birthdate_existing"
+                    type="date"
+                    class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
+                    [value]="selectedBaptism?.birthdate || ''"
+                    readonly>
+                </div>
+
+                <!-- Existing Gender -->
+                <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                  <label for="gender_existing">Gender</label>
+                  <input
+                    id="gender_existing"
+                    type="text"
+                    class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
+                    [value]="selectedBaptism?.gender || ''"
+                    placeholder="Gender"
+                    readonly>
+                </div>
+
+                <!-- Existing Civil Status -->
+                <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                  <label for="civil_status_existing">Civil Status</label>
+                  <input
+                    id="civil_status_existing"
+                    type="text"
+                    class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
+                    [value]="selectedBaptism?.marital_status || ''"
+                    placeholder="Civil status"
+                    readonly>
+                </div>
+
               </div>
-
-              <!-- Keep baptism_id connected to Angular validation -->
-              <input
-                type="hidden"
-                name="baptism_id"
-                [(ngModel)]="death.baptism_id"
-                required>
-
-              <small
-                *ngIf="loadingBaptisms || loadingDeaths"
-                class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
-                Checking existing records...
-              </small>
-
-              <small
-                *ngIf="deathLoadError"
-                class="mt-1.5 block text-xs leading-[1.5] text-red-600">
-                Death records could not be verified. Refresh the page to try again.
-              </small>
-
-              <small
-                *ngIf="!loadingBaptisms && !loadingDeaths && !deathLoadError && baptisms.length === 0"
-                class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
-                No baptism records found. You can use New Death Record instead.
-              </small>
-
-              <small
-                *ngIf="!loadingBaptisms && !loadingDeaths && !deathLoadError && baptisms.length > 0 && availableBaptisms.length === 0"
-                class="mt-1.5 block text-xs leading-[1.5] text-[#817a75]">
-                All available baptized members already have death records. You can still add a new death record.
-              </small>
-
-            </div>
-
-            <!-- EXISTING MEMBER DETAILS -->
-            <div class="col-span-full grid w-full grid-cols-4 gap-2 max-[768px]:grid-cols-2 max-[400px]:grid-cols-2">
-
-              <!-- First Name -->
-              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-                <label for="first_name_existing">First Name</label>
-                <input
-                  id="first_name_existing"
-                  type="text"
-                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
-                  [value]="selectedBaptism?.first_name || ''"
-                  placeholder="First name"
-                  readonly>
-              </div>
-
-              <!-- Middle Name -->
-              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-                <label for="middle_name_existing">Middle Name</label>
-                <input
-                  id="middle_name_existing"
-                  type="text"
-                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
-                  [value]="selectedBaptism?.middle_name || ''"
-                  placeholder="Middle name"
-                  readonly>
-              </div>
-
-              <!-- Last Name -->
-              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-                <label for="last_name_existing">Last Name</label>
-                <input
-                  id="last_name_existing"
-                  type="text"
-                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
-                  [value]="selectedBaptism?.last_name || ''"
-                  placeholder="Last name"
-                  readonly>
-              </div>
-
-              <!-- Extension Name -->
-              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-                <label for="extension_name_existing">Extension Name</label>
-                <input
-                  id="extension_name_existing"
-                  type="text"
-                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
-                  [value]="selectedBaptism?.extension_name || ''"
-                  placeholder="Jr., Sr., III, IV, etc."
-                  readonly>
-              </div>
-
-            </div>
-
-            <!-- Existing Church -->
-            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="church_existing">Church</label>
-              <input
-                id="church_existing"
-                type="text"
-                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
-                [value]="getChurchName(selectedBaptism?.church_id)"
-                placeholder="Church"
-                readonly>
-            </div>
-
-            <!-- Existing Birthdate -->
-            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="birthdate_existing">Birthdate</label>
-              <input
-                id="birthdate_existing"
-                type="date"
-                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
-                [value]="selectedBaptism?.birthdate || ''"
-                readonly>
-            </div>
-
-            <!-- Existing Gender -->
-            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="gender_existing">Gender</label>
-              <input
-                id="gender_existing"
-                type="text"
-                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
-                [value]="selectedBaptism?.gender || ''"
-                placeholder="Gender"
-                readonly>
-            </div>
-
-            <!-- Existing Civil Status -->
-            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="civil_status_existing">Civil Status</label>
-              <input
-                id="civil_status_existing"
-                type="text"
-                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
-                [value]="selectedBaptism?.marital_status || ''"
-                placeholder="Civil status"
-                readonly>
-            </div>
+            </section>
 
           </ng-container>
 
@@ -313,198 +326,251 @@
 
           <ng-container *ngIf="entryMode === 'new'">
 
-            <div class="rounded-lg border border-[#d7e4df] bg-[#f6faf8] px-3 py-2.5">
-              <p class="m-0 text-[12px] leading-[1.6] text-[#456359]">
-                Enter the deceased person's information below. A baptism record is not required.
-              </p>
-            </div>
-
-            <!-- NAME FIELDS -->
-            <div class="col-span-full grid w-full grid-cols-4 gap-2 max-[768px]:grid-cols-2 max-[400px]:grid-cols-2">
-
-              <!-- First Name -->
-              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-                <label for="new_first_name">First Name</label>
-                <input
-                  id="new_first_name"
-                  type="text"
-                  name="new_first_name"
-                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                  [(ngModel)]="death.first_name"
-                  placeholder="First name"
-                  autocomplete="given-name"
-                  required>
+            <!-- PERSONAL INFORMATION -->
+            <section class="w-full min-w-0 rounded-xl border border-[#d7e4df] bg-white p-4 max-[768px]:p-3">
+              <div class="mb-3 border-b border-[#e8eeeb] pb-2">
+                <h3 class="m-0 text-sm font-bold tracking-[0.04em] text-[#193c32]">PERSONAL INFORMATION</h3>
+                <p class="mb-0 mt-1 text-[11px] text-slate-500">Enter the deceased person's personal details.</p>
               </div>
 
-              <!-- Middle Name -->
-              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-                <label for="new_middle_name">Middle Name</label>
-                <input
-                  id="new_middle_name"
-                  type="text"
-                  name="new_middle_name"
-                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                  [(ngModel)]="death.middle_name"
-                  placeholder="Middle name"
-                  autocomplete="additional-name">
+              <div class="grid w-full grid-cols-1 gap-3 max-[768px]:gap-2.5">
+
+                <div
+                  *ngIf="baptismLoadError"
+                  class="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-[1.5] text-red-700">
+                  Baptism records could not be verified. A new death record cannot be added until existing baptism records are checked.
+                </div>
+
+                <div class="rounded-lg border border-[#d7e4df] bg-[#f6faf8] px-3 py-2.5">
+                  <p class="m-0 text-[12px] leading-[1.6] text-[#456359]">
+                    Use this option only when the deceased person does not already have a baptism record.
+                  </p>
+                </div>
+
+                <!-- NAME FIELDS -->
+                <div class="col-span-full grid w-full grid-cols-4 gap-2 max-[768px]:grid-cols-2 max-[400px]:grid-cols-2">
+
+                  <!-- First Name -->
+                  <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                    <label for="new_first_name">First Name</label>
+                    <input
+                      id="new_first_name"
+                      type="text"
+                      name="new_first_name"
+                      class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                      [(ngModel)]="death.first_name"
+                      placeholder="First name"
+                      autocomplete="given-name"
+                      required>
+                  </div>
+
+                  <!-- Middle Name -->
+                  <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                    <label for="new_middle_name">Middle Name</label>
+                    <input
+                      id="new_middle_name"
+                      type="text"
+                      name="new_middle_name"
+                      class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                      [(ngModel)]="death.middle_name"
+                      placeholder="Middle name"
+                      autocomplete="additional-name">
+                  </div>
+
+                  <!-- Last Name -->
+                  <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                    <label for="new_last_name">Last Name</label>
+                    <input
+                      id="new_last_name"
+                      type="text"
+                      name="new_last_name"
+                      class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                      [(ngModel)]="death.last_name"
+                      placeholder="Last name"
+                      autocomplete="family-name"
+                      required>
+                  </div>
+
+                  <!-- Extension Name -->
+                  <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                    <label for="new_extension_name">Extension Name</label>
+                    <input
+                      id="new_extension_name"
+                      type="text"
+                      name="new_extension_name"
+                      class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                      [(ngModel)]="death.extension_name"
+                      placeholder="Jr., Sr., III, IV, etc.">
+                  </div>
+
+                </div>
+
+                <!-- Church -->
+                <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                  <label for="new_church_id">Church</label>
+
+                  <select
+                    id="new_church_id"
+                    name="new_church_id"
+                    class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    [(ngModel)]="death.church_id"
+                    required>
+
+                    <option [ngValue]="null" disabled>Select church</option>
+
+                    <option
+                      *ngFor="let church of churches"
+                      [ngValue]="church.church_id">
+                      {{ church.name }}
+                    </option>
+
+                  </select>
+                </div>
+
+                <!-- Birthdate -->
+                <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                  <label for="new_birthdate">Birthdate</label>
+
+                  <input
+                    id="new_birthdate"
+                    type="date"
+                    name="new_birthdate"
+                    class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    [(ngModel)]="death.birthdate"
+                    [max]="today"
+                    (change)="validateDeathDate()"
+                    required>
+                </div>
+
+                <!-- Gender -->
+                <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                  <label for="new_gender">Gender</label>
+
+                  <select
+                    id="new_gender"
+                    name="new_gender"
+                    class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    [(ngModel)]="death.gender"
+                    required>
+
+                    <option [ngValue]="null" disabled>Select gender</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+
+                  </select>
+                </div>
+
+                <!-- Civil Status -->
+                <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                  <label for="new_marital_status">Civil Status</label>
+
+                  <select
+                    id="new_marital_status"
+                    name="new_marital_status"
+                    class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    [(ngModel)]="death.marital_status"
+                    required>
+
+                    <option [ngValue]="null" disabled>Select civil status</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Widowed">Widowed</option>
+
+                  </select>
+                </div>
+
               </div>
-
-              <!-- Last Name -->
-              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-                <label for="new_last_name">Last Name</label>
-                <input
-                  id="new_last_name"
-                  type="text"
-                  name="new_last_name"
-                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                  [(ngModel)]="death.last_name"
-                  placeholder="Last name"
-                  autocomplete="family-name"
-                  required>
-              </div>
-
-              <!-- Extension Name -->
-              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-                <label for="new_extension_name">Extension Name</label>
-                <input
-                  id="new_extension_name"
-                  type="text"
-                  name="new_extension_name"
-                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                  [(ngModel)]="death.extension_name"
-                  placeholder="Jr., Sr., III, IV, etc.">
-              </div>
-
-            </div>
-
-            <!-- Church -->
-            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="new_church_id">Church</label>
-
-              <select
-                id="new_church_id"
-                name="new_church_id"
-                class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                [(ngModel)]="death.church_id"
-                required>
-
-                <option [ngValue]="null" disabled>Select church</option>
-
-                <option
-                  *ngFor="let church of churches"
-                  [ngValue]="church.church_id">
-                  {{ church.name }}
-                </option>
-
-              </select>
-            </div>
-
-            <!-- Birthdate -->
-            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="new_birthdate">Birthdate</label>
-
-              <input
-                id="new_birthdate"
-                type="date"
-                name="new_birthdate"
-                class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                [(ngModel)]="death.birthdate"
-                [max]="today"
-                required>
-            </div>
-
-            <!-- Gender -->
-            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="new_gender">Gender</label>
-
-              <select
-                id="new_gender"
-                name="new_gender"
-                class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                [(ngModel)]="death.gender"
-                required>
-
-                <option [ngValue]="null" disabled>Select gender</option>
-                <option value="Female">Female</option>
-                <option value="Male">Male</option>
-
-              </select>
-            </div>
-
-            <!-- Civil Status -->
-            <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-              <label for="new_marital_status">Civil Status</label>
-
-              <select
-                id="new_marital_status"
-                name="new_marital_status"
-                class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                [(ngModel)]="death.marital_status"
-                required>
-
-                <option [ngValue]="null" disabled>Select civil status</option>
-                <option value="Single">Single</option>
-                <option value="Married">Married</option>
-                <option value="Widowed">Widowed</option>
-
-              </select>
-            </div>
+            </section>
 
           </ng-container>
 
           <!-- ===================================== -->
-          <!-- COMMON DEATH INFORMATION -->
+          <!-- DEATH INFORMATION -->
           <!-- ===================================== -->
 
-          <!-- Quarter -->
-          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="quarter">Quarter</label>
+          <section class="w-full min-w-0 rounded-xl border border-[#d7e4df] bg-white p-4 max-[768px]:p-3">
+            <div class="mb-3 border-b border-[#e8eeeb] pb-2">
+              <h3 class="m-0 text-sm font-bold tracking-[0.04em] text-[#193c32]">DEATH INFORMATION</h3>
+              <p class="mb-0 mt-1 text-[11px] text-slate-500">Enter the reporting quarter and date of death.</p>
+            </div>
 
-            <select
-              id="quarter"
-              class="box-border block h-[40px] w-full appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
-              name="quarter"
-              [(ngModel)]="death.quarter"
-              required>
+            <div class="grid w-full grid-cols-1 gap-3 max-[768px]:gap-2.5">
 
-              <option value="" disabled>Select quarter</option>
-              <option value="Q1">Q1</option>
-              <option value="Q2">Q2</option>
-              <option value="Q3">Q3</option>
-              <option value="Q4">Q4</option>
+              <!-- Quarter -->
+              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                <label for="quarter">Quarter</label>
 
-            </select>
-          </div>
+                <select
+                  id="quarter"
+                  class="box-border block h-[40px] w-full appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
+                  name="quarter"
+                  [ngModel]="death.quarter"
+                  (ngModelChange)="onQuarterChange($event)"
+                  required>
 
-          <!-- Date of Death -->
-          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="date_of_death">Date of Death</label>
+                  <option value="" disabled>Select quarter</option>
+                  <option value="Q1">Q1</option>
+                  <option value="Q2">Q2</option>
+                  <option value="Q3">Q3</option>
+                  <option value="Q4">Q4</option>
 
-            <input
-              id="date_of_death"
-              type="date"
-              name="date_of_death"
-              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-              [(ngModel)]="death.date_of_death"
-              [min]="getMinimumDeathDate()"
-              [max]="today"
-              required>
-          </div>
+                </select>
+              </div>
 
-          <!-- Age at Death -->
-          <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
-            <label for="age">Age at Death</label>
+              <!-- Date of Death -->
+              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                <label for="date_of_death">Date of Death</label>
 
-            <input
-              id="age"
-              type="number"
-              name="age"
-              class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
-              [value]="getAgeAtDeath()"
-              placeholder="Age at death"
-              min="0"
-              readonly>
-          </div>
+                <input
+                  id="date_of_death"
+                  type="date"
+                  name="date_of_death"
+                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] placeholder:text-[#817a75] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                  [(ngModel)]="death.date_of_death"
+                  [min]="getMinimumDeathDateForQuarter()"
+                  [max]="getMaximumDeathDate()"
+                  [disabled]="!death.quarter || !hasValidDeathDateRange"
+                  (change)="validateDeathDate()"
+                  [attr.aria-describedby]="deathDateError ? 'dateOfDeathError' : null"
+                  required>
+
+                <small
+                  *ngIf="death.quarter && hasValidDeathDateRange && !deathDateError"
+                  class="mt-1 block text-[11px] font-normal text-slate-500">
+                  Select a date within {{ death.quarter }} of {{ deathDateYear }}.
+                </small>
+
+                <small
+                  *ngIf="death.quarter && !hasValidDeathDateRange"
+                  class="mt-1 block text-[11px] font-normal text-red-600">
+                  No valid date is available in this quarter based on the birthdate and today's date.
+                </small>
+
+                <small
+                  *ngIf="deathDateError"
+                  id="dateOfDeathError"
+                  class="mt-1 block text-[11px] font-normal text-red-600">
+                  {{ deathDateError }}
+                </small>
+              </div>
+
+              <!-- Age at Death -->
+              <div class="w-full min-w-0 [&_label]:mb-1 [&_label]:block [&_label]:text-[11px] [&_label]:font-medium [&_label]:uppercase [&_label]:tracking-[0.5px] [&_label]:text-[#716a65]">
+                <label for="age">Age at Death</label>
+
+                <input
+                  id="age"
+                  type="number"
+                  name="age"
+                  class="box-border block h-[40px] w-full rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 text-[13px] text-[#123f33] read-only:bg-[#f9fbfa] read-only:text-gray-700"
+                  [value]="getAgeAtDeath()"
+                  placeholder="Age at death"
+                  min="0"
+                  readonly>
+              </div>
+
+            </div>
+          </section>
 
         </div>
       </div>
@@ -531,7 +597,8 @@
             saving ||
             loadingDeaths ||
             deathLoadError ||
-            (entryMode === 'baptized' && loadingBaptisms)
+            loadingBaptisms ||
+            baptismLoadError
           ">
           {{ saving ? 'Saving...' : 'Save' }}
         </button>

@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -205,7 +206,17 @@ export class DeathbapComponent implements OnInit {
       this.router.url.startsWith('/assistant') ||
       this.router.url.startsWith('/director');
 
-    if (this.departmentId === 16) {
+    // Read the requested record tab from the URL.
+    const requestedRecord = this.route.snapshot.queryParamMap.get('record');
+
+    if (
+      requestedRecord === 'baptism' ||
+      requestedRecord === 'death' ||
+      requestedRecord === 'ministerial' ||
+      requestedRecord === 'mission'
+    ) {
+      this.selectedRecord = requestedRecord;
+    } else if (this.departmentId === 16) {
       this.selectedRecord = this.isReadOnly ? 'baptism' : 'ministerial';
     } else if (this.departmentId === 20) {
       this.selectedRecord = 'mission';
