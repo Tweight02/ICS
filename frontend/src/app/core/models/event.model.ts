@@ -10,6 +10,12 @@ export type UserRole =
   | 'administrative assistant'
   | 'administrative_assistant'
   | 'administrative-assistant'
+  | 'head assistant'
+  | 'head_assistant'
+  | 'head-assistant'
+  | 'head director'
+  | 'head_director'
+  | 'head-director'
   | 'director'
   | 'events';
 
@@ -32,6 +38,8 @@ export interface User {
   role: UserRole;
   department_id?: number;
   church_id?: number;
+  host_church_id?: number | null;
+  host_church_name?: string | null;
   created_at?: string;
   updated_at?: string;
 
@@ -59,6 +67,7 @@ export interface EventModel {
   department?: Org & { department_id?: number; department_name?: string };
   department_name?: string;
   church_name?: string;
+  host?: string | null;
   particular_ids?: number[];
   status?: 'upcoming' | 'ongoing' | 'completed' | string; // <--- Atualizado com segurança
   isSample?: boolean;

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Church;
 use App\Models\User;
+use App\Support\UserIdentity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,6 +57,8 @@ class UserController extends Controller
 
     public function create_user(Request $request)
     {
+        $this->authorizeAssistant($request);
+
         $data = $request->validate([
             'department_id' => 'required|exists:departments,department_id',
 
@@ -78,6 +81,18 @@ class UserController extends Controller
             'password' => 'required|string|min:8',
 
         ]);
+
+        if (UserIdentity::existsFor(
+            $data['first_name'],
+            $data['middle_name'] ?? null,
+            $data['last_name'],
+            $data['extension_name'] ?? null,
+            $data['birthdate']
+        )) {
+            throw ValidationException::withMessages([
+                'first_name' => ['This person already has an account.'],
+            ]);
+        }
 
         $data['role'] = 'pastor';
         $data['status'] = 'active';
@@ -240,6 +255,7 @@ class UserController extends Controller
         Request $request,
         $id
     ) {
+        $this->authorizeAssistant($request);
 
         $pastor =
             User::where(
@@ -320,7 +336,6 @@ class UserController extends Controller
 
         $pastors = User::query()
             ->where('role', 'pastor')
-            ->where('status', 'active')
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get([
@@ -330,9 +345,12 @@ class UserController extends Controller
                 'middle_name',
                 'last_name',
                 'extension_name',
+                'status',
             ]);
 
-        $pastorsByDistrict = $pastors->keyBy('church_id');
+        $pastorsByDistrict = $pastors
+            ->where('status', 'active')
+            ->keyBy('church_id');
 
         return response()->json([
             'assignments' => $districts->map(function (Church $district) use ($pastorsByDistrict): array {
@@ -360,8 +378,15 @@ class UserController extends Controller
                     $pastor->last_name,
                     $pastor->extension_name,
                 ])),
+                'status' => $pastor->status,
             ])->values(),
         ]);
+    }
+
+    private function retire(User $user): void
+    {
+        $user->update(['status' => 'inactive']);
+        $user->tokens()->delete();
     }
 
     public function assignPastorToDistrict(Request $request, int $districtId): JsonResponse
@@ -383,13 +408,13 @@ class UserController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($pastor->role !== 'pastor' || $pastor->status !== 'active') {
+            if ($pastor->role !== 'pastor') {
                 throw ValidationException::withMessages([
-                    'user_id' => 'Select an active pastor to assign.',
+                    'user_id' => 'Select a pastor to assign.',
                 ]);
             }
 
-            if ((int) $pastor->church_id === $districtId) {
+            if ($pastor->status === 'active' && (int) $pastor->church_id === $districtId) {
                 throw ValidationException::withMessages([
                     'user_id' => 'This pastor is already assigned to the selected district.',
                 ]);
@@ -404,10 +429,13 @@ class UserController extends Controller
                 ->first();
 
             if ($assignedPastor) {
-                $assignedPastor->update(['church_id' => $pastor->church_id]);
+                $this->retire($assignedPastor);
             }
 
-            $pastor->update(['church_id' => $district->church_id]);
+            $pastor->update([
+                'church_id' => $district->church_id,
+                'status' => 'active',
+            ]);
         });
 
         return response()->json([
@@ -417,8 +445,11 @@ class UserController extends Controller
 
     private function authorizeAssistant(Request $request): void
     {
-        if (strtolower(trim((string) $request->user()?->role)) !== 'assistant') {
-            abort(403, 'Only assistant accounts can manage district pastor assignments.');
+        $role = strtolower(trim((string) $request->user()?->role));
+        $role = str_replace(['_', '-'], ' ', $role);
+
+        if (! in_array($role, ['assistant', 'administrative assistant', 'head assistant'], true)) {
+            abort(403, 'Only assistants can manage pastors.');
         }
     }
 
@@ -445,8 +476,10 @@ class UserController extends Controller
         ]);
     }
 
-    public function activate_pastor($id)
+    public function activate_pastor(Request $request, $id)
     {
+        $this->authorizeAssistant($request);
+
         $pastor = User::where('role', 'pastor')
             ->findOrFail($id);
 
@@ -477,8 +510,10 @@ class UserController extends Controller
         ]);
     }
 
-    public function deactivate_pastor($id)
+    public function deactivate_pastor(Request $request, $id)
     {
+        $this->authorizeAssistant($request);
+
         $pastor = User::where('role', 'pastor')
             ->findOrFail($id);
 
@@ -489,14 +524,14 @@ class UserController extends Controller
 
         return response()->json([
             'data' => [
-                'has_pastor'  => (bool) $pastor,
+                'has_pastor' => (bool) $pastor,
                 'pastor_name' => $pastor
                     ? trim("{$pastor->first_name} {$pastor->last_name}")
                     : null,
             ],
         ]);
     }
-    
+
     // GET /api/users/{id}
     public function show($id)
     {
@@ -520,7 +555,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => array_merge($user->toArray(), [
+            'data' => array_merge($user->toArray(), [
                 'district' => $district
                     ? ['id' => (int) $district->church_id, 'name' => $district->name]
                     : null,

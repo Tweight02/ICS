@@ -40,7 +40,7 @@ export interface StewardshipReportSnapshot {
   providedIn: 'root',
 })
 export class StewardshipService {
-  private readonly apiUrl = 'http://127.0.0.1:8000/api/stewardship/report';
+  private readonly apiUrl = '/api/stewardship/report';
 
   constructor(private readonly http: HttpClient) {}
 

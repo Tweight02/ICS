@@ -1,5 +1,5 @@
 <div class="flex flex-wrap items-start gap-6">
-  <div class="flex flex-col items-start gap-1.5">
+  <div *ngIf="showYear()" class="flex flex-col items-start gap-1.5">
     <label for="reporting-year" class="pl-0.5 text-[10px] font-bold tracking-[0.14em] text-black">YEAR</label>
     <select
       id="reporting-year"
@@ -15,16 +15,31 @@
     <span class="pl-0.5 text-[10px] font-bold tracking-[0.14em] text-black">QUARTER</span>
     <div class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-emerald-900/10 bg-emerald-50 p-1">
       <div class="flex flex-wrap gap-0.5">
-        <button *ngFor="let quarter of quarters()"
-          type="button"
-          (click)="quarterSelected.emit(quarter)"
-          [attr.aria-pressed]="!annualView() && selectedQuarterId() === quarter.quarter_id"
-          [ngClass]="!annualView() && selectedQuarterId() === quarter.quarter_id
-            ? 'bg-emerald-700 text-white shadow-sm'
-            : 'text-emerald-900/80 hover:bg-white/70 hover:text-emerald-950'"
-          class="min-h-8 min-w-11 rounded-md px-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
-          {{ quarter.quarter }}
-        </button>
+        <div *ngFor="let quarter of quarters()" class="flex min-w-11 flex-col items-center">
+          <button
+            type="button"
+            (click)="quarterSelected.emit(quarter)"
+            [attr.aria-pressed]="!annualView() && selectedQuarterId() === quarter.quarter_id"
+            [attr.aria-label]="quarter.quarter + (quarterStatuses()[quarter.quarter_id] ? ', ' + quarterStatuses()[quarter.quarter_id] : '')"
+            [ngClass]="!annualView() && selectedQuarterId() === quarter.quarter_id
+              ? 'bg-emerald-700 text-white shadow-sm'
+              : 'text-emerald-900/80 hover:bg-white/70 hover:text-emerald-950'"
+            class="inline-flex min-h-8 min-w-11 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
+            {{ quarter.quarter }}
+          </button>
+          <span *ngIf="quarterStatuses()[quarter.quarter_id] === 'approved'"
+            role="status"
+            [attr.aria-label]="quarter.quarter + ' approved'"
+            class="inline-flex h-4 items-center justify-center text-[11px] leading-none text-emerald-800">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          </span>
+          <span *ngIf="quarterStatuses()[quarter.quarter_id] === 'endorsed'"
+            role="status"
+            [attr.aria-label]="quarter.quarter + ' endorsed'"
+            class="inline-flex h-4 items-center gap-0.5 whitespace-nowrap text-[9px] font-bold leading-none text-sky-800">
+            Endorsed
+          </span>
+        </div>
         <button type="button"
           (click)="annualSelected.emit()"
           [attr.aria-pressed]="annualView()"
@@ -35,14 +50,6 @@
           Annual
         </button>
       </div>
-      <span *ngIf="!annualView() && status()"
-        role="status"
-        data-testid="period-status"
-        [ngClass]="status() === 'approved' ? 'border-emerald-700 text-emerald-900' : 'border-sky-700 text-sky-900'"
-        class="inline-flex items-center gap-1.5 border-l pl-2 text-xs font-bold">
-        <span aria-hidden="true">✓</span>
-        {{ status() === 'approved' ? 'Approved' : 'Endorsed' }}
-      </span>
     </div>
   </div>
 </div>

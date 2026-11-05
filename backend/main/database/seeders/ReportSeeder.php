@@ -35,7 +35,7 @@ class ReportSeeder extends Seeder
         'Sabbath School & Personal Ministries' => 0.50,
         'Ministerial & Evangelism' => 0.60,
         'Youth Ministries' => 0.53,
-        'Womens Ministries' => 0.63,
+        "Women's Ministries" => 0.63,
         'Communication' => 0.60,
         'Adventist Mission' => 0.53,
         'Secretariat' => 0.67,
@@ -581,8 +581,8 @@ class ReportSeeder extends Seeder
                 ],
             ],
 
-            'Womens Ministries' => [
-                'Womens Ministries Quarterly Report' => [
+            "Women's Ministries" => [
+                "Women's Ministries Quarterly Report" => [
                     "WOMEN'S MINISTRIES PROGRAMS" => [
                         'Evangelistic Meetings', 'Other Meetings', 'Scholarships Awarded', 'Retreats/Congresses',
                         'SDA Women Attending WM Program', 'Non-SDA Women Attending WM Program', 'Reclaimed Members',

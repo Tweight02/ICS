@@ -44,10 +44,6 @@ export class EventOverviewComponent implements OnInit {
   get groups(): ProgramGroup[] { return this.groupsState(); }
   set groups(value: ProgramGroup[]) { this.groupsState.set(value); }
 
-  private readonly participantsState = signal<any[]>([]);
-  get participants(): any[] { return this.participantsState(); }
-  set participants(value: any[]) { this.participantsState.set(value); }
-
   private readonly confirmDeleteState = signal(false);
   get confirmDelete(): boolean { return this.confirmDeleteState(); }
   set confirmDelete(value: boolean) { this.confirmDeleteState.set(value); }
@@ -72,6 +68,9 @@ export class EventOverviewComponent implements OnInit {
   get registrationLinkLoading(): boolean { return this.registrationLinkLoadingState(); }
   set registrationLinkLoading(value: boolean) { this.registrationLinkLoadingState.set(value); }
 
+  private readonly registrationLinkCopiedState = signal(false);
+  get registrationLinkCopied(): boolean { return this.registrationLinkCopiedState(); }
+
   readonly statusClass = statusClass;
   readonly statusLabel = statusLabel;
 
@@ -89,13 +88,17 @@ export class EventOverviewComponent implements OnInit {
     if (this.registrationLinkLoading) return;
     this.registrationLinkLoading = true;
     this.registrationLinkMessage = '';
+    this.registrationLinkCopiedState.set(false);
 
     this.eventService.getEventRegistrationLink(this.eventId).subscribe({
       next: (attribution) => {
         const url = new URL('/participants/registration', this.document.baseURI);
         url.searchParams.set('event', String(this.eventId));
-        url.searchParams.set('church_id', String(attribution.church_id));
-        url.searchParams.set('registration_token', attribution.registration_token);
+        const attributionParams = new URLSearchParams({
+          church_id: String(attribution.church_id),
+          registration_token: attribution.registration_token,
+        });
+        url.hash = attributionParams.toString();
         this.registrationLink = url.toString();
         this.registrationLinkLoading = false;
       },
@@ -119,9 +122,11 @@ export class EventOverviewComponent implements OnInit {
     try {
       await clipboard.writeText(this.registrationLink);
       this.registrationLinkMessage = 'Registration link copied.';
+      this.registrationLinkCopiedState.set(true);
     } catch (error) {
       console.error('Failed to copy event registration link', error);
       this.registrationLinkMessage = 'Could not copy the link. Select and copy it manually.';
+      this.registrationLinkCopiedState.set(false);
     }
   }
 
@@ -151,7 +156,6 @@ export class EventOverviewComponent implements OnInit {
         this.event = res?.data ?? res;
         this.loading = false;
         this.buildGroups();
-        this.loadParticipants();
       },
       error: (err) => {
         console.error('Failed to load the event:', err);
@@ -179,15 +183,6 @@ export class EventOverviewComponent implements OnInit {
     }
 
     return 'We could not load this event. Please try again.';
-  }
-
-  private loadParticipants(): void {
-    this.eventService.getParticipantsByEvent(this.eventId).subscribe({
-      next: (res: any) => (this.participants = Array.isArray(res) ? res : (res?.data ?? [])),
-      error: () => {
-        /* fall back to event.participants */
-      },
-    });
   }
 
   private buildGroups(): void {
@@ -256,7 +251,12 @@ export class EventOverviewComponent implements OnInit {
         text: e?.scope?.all_districts ? 'All District of NELM' : districts.join(', '),
       };
     }
-    if (churches.length) return { title: 'Church', text: churches[0] };
+    if (churches.length) {
+      return {
+        title: churches.length === 1 ? 'Church' : 'Churches',
+        text: churches.join(', '),
+      };
+    }
     if (e?.church_name || e?.church?.name) {
       return { title: 'Church', text: e.church_name ?? e.church.name };
     }
@@ -268,24 +268,22 @@ export class EventOverviewComponent implements OnInit {
   }
 
   get stats(): { total: number; confirmed: number; pending: number } {
-    const list = this.participants.length
-      ? this.participants
-      : Array.isArray(this.event?.participants)
-        ? this.event.participants
-        : [];
+    const participants = this.event?.participants;
+    if (participants && typeof participants === 'object' && !Array.isArray(participants)) {
+      return {
+        total: participants.total ?? this.event?.participants_count ?? 0,
+        confirmed: participants.confirmed ?? 0,
+        pending: participants.pending ?? 0,
+      };
+    }
+
+    const list = Array.isArray(participants) ? participants : [];
     const is = (p: any, s: string) => String(p?.status ?? '').toLowerCase() === s;
-    const summary = this.event?.participants ?? {};
-    return list.length
-      ? {
-          total: list.length,
-          confirmed: list.filter((p: any) => is(p, 'confirmed')).length,
-          pending: list.filter((p: any) => is(p, 'pending')).length,
-        }
-      : {
-          total: summary.total ?? this.event?.participants_count ?? 0,
-          confirmed: summary.confirmed ?? 0,
-          pending: summary.pending ?? 0,
-        };
+    return {
+      total: list.length || this.event?.participants_count || 0,
+      confirmed: list.filter((p: any) => is(p, 'confirmed')).length,
+      pending: list.filter((p: any) => is(p, 'pending')).length,
+    };
   }
 
   // ---------- Delete (a friendly confirmation instead of a browser popup) ----------

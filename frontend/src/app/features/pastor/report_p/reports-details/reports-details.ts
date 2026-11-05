@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ReportService } from '../../../../core/services/report/report';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
@@ -14,7 +14,17 @@ import {
   Department,
   PERSONAL_REPORT_DEPARTMENT_IDS
 } from '../../../../core/models/report.model';
-import { QuarterStatus, QuarterStatusTone } from '../../../../shared/reports/quarter-status/quarter-status';
+import {
+  QuarterStatus,
+  QuarterStatusTone,
+  resolveQuarterStatus
+} from '../../../../shared/reports/quarter-status/quarter-status';
+import { clearReportReturnQueryParams } from '../../../../shared/utils/report-navigation';
+import {
+  CURRENT_REPORT_YEAR,
+  REPORT_YEAR_OPTIONS,
+  resolveReportYear
+} from '../../../../core/utils/report-year';
 
 @Component({
   selector: 'app-reports-details',
@@ -25,9 +35,12 @@ import { QuarterStatus, QuarterStatusTone } from '../../../../shared/reports/qua
 export class ReportsDetails implements OnInit {
 
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private churchService = inject(ChurchService);
   private reportService = inject(ReportService);
 
+  readonly reportYears = REPORT_YEAR_OPTIONS;
+  readonly selectedYear = signal(CURRENT_REPORT_YEAR);
   readonly districtId = signal(0);
   readonly districtName = signal('');
   readonly district = signal<Church | null>(null);
@@ -38,9 +51,9 @@ export class ReportsDetails implements OnInit {
   readonly churchDepartments = signal<Record<number, Department[]>>({});
   readonly loadingChurchDepartments = signal<Record<number, boolean>>({});
   readonly churchDepartmentErrors = signal<Record<number, string>>({});
-
   readonly quarterKeys = ['q1', 'q2', 'q3', 'q4'] as const;
   private readonly personalReportDepartmentIds = new Set<number>(PERSONAL_REPORT_DEPARTMENT_IDS);
+  private pendingScrollRestoration = false;
 
   getReportDepartments(departments: Department[]): Department[] {
     return departments.filter(department => {
@@ -55,26 +68,73 @@ export class ReportsDetails implements OnInit {
   }
 
   ngOnInit(): void {
+    this.selectedYear.set(
+      resolveReportYear(this.route.snapshot.queryParamMap.get('year'))
+    );
+    if (this.route.snapshot.queryParamMap.get('return_to') === 'district-reports') {
+      const churchId = Number(this.route.snapshot.queryParamMap.get('return_church'));
+      this.expandedChurchId.set(Number.isInteger(churchId) && churchId > 0 ? churchId : null);
+      this.pendingScrollRestoration = true;
+    } else {
+      clearReportReturnQueryParams(this.router, this.route);
+    }
+    this.loadChurches();
+  }
+
+  onYearChange(event: Event): void {
+    const year = Number((event.target as HTMLSelectElement).value);
+    if (!this.reportYears.includes(year) || year === this.selectedYear()) {
+      return;
+    }
+
+    this.selectedYear.set(year);
+    this.churchDepartments.set({});
+    this.loadingChurchDepartments.set({});
+    this.churchDepartmentErrors.set({});
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { year },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
     this.loadChurches();
   }
 
   loadChurches(): void {
     this.errorMessage.set('');
     this.loadingChurches.set(true);
+    const requestedYear = this.selectedYear();
 
-    this.churchService.getMyDistrictChurches().subscribe({
+    this.churchService.getMyDistrictChurches(requestedYear).subscribe({
       next: response => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
+
         this.district.set(response.district ?? null);
         this.districtId.set(response.district?.church_id ?? 0);
         this.districtName.set(response.district?.name ?? '');
         this.churches.set(Array.isArray(response.data) ? response.data : []);
         this.loadingChurches.set(false);
+
+        const expandedChurch = this.churches().find(
+          church => church.church_id === this.expandedChurchId()
+        );
+        if (expandedChurch) {
+          this.loadChurchDepartments(expandedChurch);
+        } else {
+          this.restoreDistrictScroll();
+        }
       },
       error: error => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
         console.error('[REPORT DETAILS] API error:', error);
         this.churches.set([]);
         this.district.set(null);
         this.loadingChurches.set(false);
+        this.restoreDistrictScroll();
         this.errorMessage.set(
           error.status === 401
             ? 'Your session has expired. Please log in again.'
@@ -91,7 +151,8 @@ export class ReportsDetails implements OnInit {
       {
         queryParams: {
           district_id: this.districtId(),
-          district_name: this.districtName()
+          district_name: this.districtName(),
+          year: this.selectedYear()
         }
       }
     );
@@ -122,13 +183,17 @@ export class ReportsDetails implements OnInit {
       ...current,
       [church.church_id]: true
     }));
+    const requestedYear = this.selectedYear();
     this.churchDepartmentErrors.update(current => ({
       ...current,
       [church.church_id]: ''
     }));
 
-    this.reportService.getDepartments(church.church_id).subscribe({
+    this.reportService.getDepartments(church.church_id, requestedYear).subscribe({
       next: response => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
         this.churchDepartments.update(current => ({
           ...current,
           [church.church_id]: Array.isArray(response) ? response : []
@@ -137,8 +202,12 @@ export class ReportsDetails implements OnInit {
           ...current,
           [church.church_id]: false
         }));
+        this.restoreDistrictScroll();
       },
       error: error => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
         this.loadingChurchDepartments.update(current => ({
           ...current,
           [church.church_id]: false
@@ -147,6 +216,7 @@ export class ReportsDetails implements OnInit {
           ...current,
           [church.church_id]: error?.error?.message || 'Unable to load church departments.'
         }));
+        this.restoreDistrictScroll();
       }
     });
   }
@@ -172,29 +242,50 @@ export class ReportsDetails implements OnInit {
       department.department_id,
       this.districtId(),
       church.church_id
-    ]);
+    ], {
+      queryParams: {
+        year: this.selectedYear(),
+        return_to: 'district-reports',
+        return_church: String(church.church_id),
+        return_scroll: String(window.scrollY)
+      }
+    });
   }
 
   getQuarterStatus(
     department: Department,
     quarter: typeof this.quarterKeys[number]
   ): { label: string; tone: QuarterStatusTone } {
-    if (department[`${quarter}_approved`]) {
-      return { label: 'Approved', tone: 'approved' };
+    const status = resolveQuarterStatus({
+      progress: department[`${quarter}_data_progress`] ?? null,
+      approved: !!department[`${quarter}_approved`],
+      endorsed: !!department[`${quarter}_endorsed`],
+      submitted: !!department[`${quarter}_submitted`]
+    });
+
+    return status.tone === 'empty'
+      ? { label: '—', tone: 'empty' }
+      : status;
+  }
+
+  private restoreDistrictScroll(): void {
+    if (!this.pendingScrollRestoration) {
+      return;
     }
 
-    if (department[`${quarter}_submitted`]) {
-      return { label: 'Submitted for review', tone: 'submitted' };
+    this.pendingScrollRestoration = false;
+    const scrollPosition = Number(
+      this.route.snapshot.queryParamMap.get('return_scroll')
+    );
+    if (!Number.isFinite(scrollPosition) || scrollPosition < 0) {
+      clearReportReturnQueryParams(this.router, this.route);
+      return;
     }
 
-    const progress = department[`${quarter}_data_progress`];
-    if (progress === null || progress === undefined) {
-      return { label: '—', tone: 'empty' };
-    }
-
-    return progress >= 100
-      ? { label: 'Ready to submit', tone: 'ready' }
-      : { label: 'Needs completion', tone: 'incomplete' };
+    setTimeout(() => {
+      window.scrollTo(0, scrollPosition);
+      clearReportReturnQueryParams(this.router, this.route);
+    });
   }
 
 }

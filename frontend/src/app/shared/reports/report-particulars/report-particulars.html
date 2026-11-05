@@ -12,30 +12,60 @@
     </button>
 
     <header *ngIf="!embedded"
-      class="relative isolate mb-4 flex min-h-20 flex-wrap items-center justify-between gap-3 overflow-hidden rounded-xl border border-white/80 bg-emerald-50 p-3 shadow-sm shadow-emerald-950/10 sm:min-h-24 sm:px-5 sm:py-3">
-      <img src="/assets/Misty.png" alt="" aria-hidden="true"
+      class="relative isolate mb-4 flex min-h-20 flex-col items-start gap-3 overflow-hidden rounded-xl border border-white/80 bg-emerald-50 p-3 shadow-sm shadow-emerald-950/10 sm:min-h-24 sm:px-5 sm:py-3">
+      <img src="/assets/headerMountain.png" alt="" aria-hidden="true"
         class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-50">
       <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/85 to-emerald-100/45"></div>
-      <div class="flex items-center gap-4">
+      <div class="relative flex w-full min-w-0 flex-col items-start gap-2">
         <div>
           <p class="mb-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-800/80">Quarterly report</p>
           <h1 class="max-w-3xl text-lg font-bold tracking-tight text-emerald-950 sm:text-xl">
             {{ isStewardshipReport ? (getSelectedProgram()?.program_name || 'Stewardship Quarterly Report') : (report?.department?.department_name || 'Report Particulars') }}
           </h1>
-          <p *ngIf="churchName" class="mt-0.5 text-xs font-medium text-emerald-900/70 sm:text-sm">
-            {{ churchName }}
-            <span *ngIf="districtName"> · {{ districtName }}</span>
-          </p>
         </div>
+        <div *ngIf="!loading && report" class="w-full">
+          <div class="grid w-full grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <app-report-period-selector
+              class="min-w-0"
+              [showYear]="false"
+              [years]="availableYears"
+              [quarters]="getQuartersForYear()"
+              [selectedYear]="selectedYear"
+              [selectedQuarterId]="selectedQuarterId"
+              [quarterStatuses]="getQuarterStatuses()"
+              [annualView]="isAnnualView"
+              (yearChanged)="selectYear($event)"
+              (quarterSelected)="selectQuarter($event)"
+              (annualSelected)="selectAnnual()">
+            </app-report-period-selector>
+            <button *ngIf="canExportQuarterReport && !isAnnualView" type="button"
+              (click)="openQuarterReportPreview()"
+              class="report-export-trigger shrink-0 justify-self-end">
+              <i class="bi bi-printer" aria-hidden="true"></i> Export / Print
+            </button>
+          </div>
+        </div>
+        <p *ngIf="churchName" class="text-xs font-medium text-emerald-900/70 sm:text-sm">
+          {{ churchName }}
+          <span *ngIf="districtName"> · {{ districtName }}</span>
+        </p>
       </div>
     </header>
 
-    <div
-      *ngIf="loading"
-      class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2
-             text-sm text-emerald-900 backdrop-blur-md">
-      <span class="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
-      Loading...
+    <div *ngIf="loading" class="space-y-4" role="status" aria-label="Loading quarterly report" aria-busy="true">
+      <section class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm sm:p-5">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <span class="report-skeleton-block report-skeleton-block-dark h-5 w-48"></span>
+          <div class="flex gap-2">
+            <span *ngFor="let quarter of ['q1', 'q2', 'q3', 'q4']" class="report-skeleton-block h-10 w-14 rounded-xl"></span>
+          </div>
+        </div>
+        <div *ngFor="let row of [1, 2, 3, 4, 5, 6]" class="flex min-h-14 items-center justify-between gap-4 border-t border-slate-100 py-3">
+          <span class="report-skeleton-block h-4" [style.width.%]="row % 2 === 0 ? 56 : 72"></span>
+          <span class="report-skeleton-block h-10 w-24 rounded-lg"></span>
+        </div>
+      </section>
+      <span class="sr-only">Loading report sections and quarterly values.</span>
     </div>
 
     <div
@@ -49,23 +79,27 @@
 
     <ng-container *ngIf="!loading && report">
 
-      <div
-        class="mb-4"
-        [ngClass]="embedded
-          ? 'ml-[22px] pt-[56px] max-[767px]:ml-0 max-[767px]:pt-6'
-          : ''">
-
-        <app-report-period-selector
-          [years]="availableYears"
-          [quarters]="getQuartersForYear()"
-          [selectedYear]="selectedYear"
-          [selectedQuarterId]="selectedQuarterId"
-          [annualView]="isAnnualView"
-          [status]="isQuarterApproved() ? 'approved' : isQuarterEndorsed() ? 'endorsed' : null"
-          (yearChanged)="selectYear($event)"
-          (quarterSelected)="selectQuarter($event)"
-          (annualSelected)="selectAnnual()">
-        </app-report-period-selector>
+      <div *ngIf="embedded" class="mb-4 ml-0 pt-[32px] max-[767px]:pt-6">
+        <div class="grid w-full grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <app-report-period-selector
+            class="min-w-0"
+            [showYear]="false"
+            [years]="availableYears"
+            [quarters]="getQuartersForYear()"
+            [selectedYear]="selectedYear"
+            [selectedQuarterId]="selectedQuarterId"
+            [quarterStatuses]="getQuarterStatuses()"
+            [annualView]="isAnnualView"
+            (yearChanged)="selectYear($event)"
+            (quarterSelected)="selectQuarter($event)"
+            (annualSelected)="selectAnnual()">
+          </app-report-period-selector>
+          <button *ngIf="canExportQuarterReport && !isAnnualView" type="button"
+            (click)="openQuarterReportPreview()"
+            class="report-export-trigger shrink-0 justify-self-end">
+            <i class="bi bi-printer" aria-hidden="true"></i> Export / Print
+          </button>
+        </div>
       </div>
 
       <div
@@ -89,34 +123,7 @@
       </div>
 
       <ng-container *ngIf="isStewardshipReport">
-        <div class="mb-4 flex flex-wrap gap-2 border-b border-emerald-900/10 pb-3" role="tablist" aria-label="Stewardship report sections">
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="activeStewardshipTab === 'activities'"
-            [attr.aria-pressed]="activeStewardshipTab === 'activities'"
-            [ngClass]="activeStewardshipTab === 'activities'
-              ? 'border-emerald-800 bg-emerald-800 text-white shadow-md shadow-emerald-900/20'
-              : 'border-white/80 bg-white/80 text-emerald-900 hover:bg-white'"
-            class="min-h-9 rounded-lg border px-4 py-2 text-xs font-bold shadow-sm transition sm:text-sm"
-            (click)="selectStewardshipTab('activities')">
-            Stewardship Activities
-          </button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="activeStewardshipTab === 'offering'"
-            [attr.aria-pressed]="activeStewardshipTab === 'offering'"
-            [ngClass]="activeStewardshipTab === 'offering'
-              ? 'border-emerald-800 bg-emerald-800 text-white shadow-md shadow-emerald-900/20'
-              : 'border-white/80 bg-white/80 text-emerald-900 hover:bg-white'"
-            class="min-h-9 rounded-lg border px-4 py-2 text-xs font-bold shadow-sm transition sm:text-sm"
-            (click)="selectStewardshipTab('offering')">
-            Offering and Tithes
-          </button>
-        </div>
-
-        <div *ngIf="activeStewardshipTab === 'offering'" class="mb-4 grid gap-3 sm:grid-cols-2" aria-label="Offering and tithe totals">
+        <div class="mb-4 grid gap-3 sm:grid-cols-2" aria-label="Offering and tithe totals">
           <article class="grid gap-1 rounded-xl border border-emerald-900/10 bg-white/80 p-4 shadow-sm">
             <span class="text-xs font-bold uppercase tracking-wider text-emerald-900/70">Total Offering</span>
             <strong class="text-xl font-bold tabular-nums text-emerald-950">₱{{ getStewardshipTotal('offering') | number: '1.2-2' }}</strong>
@@ -137,9 +144,20 @@
               *ngFor="let section of getVisibleSections(program); let first = first; trackBy: trackSection"
               class="mb-1.5 overflow-hidden rounded-lg border border-white/80 bg-white/90 shadow-sm shadow-emerald-950/5 backdrop-blur transition-shadow hover:border-emerald-900/15 hover:shadow-md">
 
-              <details [attr.open]="first && expandFirstSection ? '' : null">
-                <summary class="flex min-h-9 list-none cursor-pointer items-center justify-between gap-2 border-b border-emerald-900/5 bg-gradient-to-r from-white to-emerald-50/65 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] leading-4 text-emerald-950 transition hover:from-emerald-50 hover:to-emerald-100/70 marker:hidden [&::-webkit-details-marker]:hidden sm:px-4">
+              <details [attr.open]="isStewardshipReport || (first && expandFirstSection) ? '' : null">
+                <summary class="relative !flex !min-h-9 !flex-row list-none cursor-pointer items-center justify-between gap-2 border-b border-emerald-900/5 bg-gradient-to-r from-white to-emerald-50/65 px-3 py-1.5 pr-9 text-[11px] font-bold uppercase tracking-[0.08em] leading-4 text-emerald-950 transition hover:from-emerald-50 hover:to-emerald-100/70 marker:hidden [&::-webkit-details-marker]:hidden sm:px-4 sm:pr-10">
                   <span class="block min-w-0 flex-1">{{ section.program_name || section.section_name || program.program_name || 'Particular' }}</span>
+                  <svg
+                    class="report-accordion-indicator absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-800 sm:right-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path d="m9 18 6-6-6-6"></path>
+                  </svg>
                 </summary>
 
               <div class="overflow-x-auto">
@@ -197,9 +215,6 @@
                                    else noAnnualValue">
 
                             <span>{{ isRecordSubmitted(record) ? (record.combined_value ?? record.value ?? '—') : (record.combined_value ?? '—') }}</span>
-                            <small *ngIf="record.participant_count" class="block text-xs text-emerald-800">
-                              Includes {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
-                            </small>
                             <small *ngIf="record.completed_event_count" class="block text-xs text-sky-800">
                               {{ record.completed_event_count }} completed event{{ record.completed_event_count === 1 ? '' : 's' }}
                             </small>
@@ -222,6 +237,7 @@
                                   <input
                                     *ngIf="canEditDepartmentReport && (!isQuarterApproved(quarter) || showInputsWhenReadOnly); else monthlyQuarterValue"
                                     type="number"
+                                    (wheel)="blurNumberInputOnWheel($event)"
                                     min="0"
                                     step="1"
                                     [attr.aria-label]="particular.particular_name + ' ' + month"
@@ -229,7 +245,7 @@
                                     (ngModelChange)="updateReportStewardshipMonth(particular, quarter, record, month, $event)"
                                     [ngModelOptions]="{ standalone: true }"
                                     [disabled]="savingAction || isQuarterApproved(quarter)"
-                                    class="w-full min-w-[76px] rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
+                                    class="report-number-input w-full min-w-[76px] rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
                                   <ng-template #monthlyQuarterValue>
                                     <span>{{ getStewardshipMonthValue(record, month) ?? (isRecordSubmitted(record) ? '0' : '—') }}</span>
                                   </ng-template>
@@ -237,9 +253,6 @@
                               </ng-container>
                               <td class="px-3 py-2.5 text-center font-semibold tabular-nums text-emerald-950/80">
                                 ₱{{ record.combined_value ?? record.value ?? 0 | number: '1.2-2' }}
-                                <small *ngIf="record.participant_count" class="block text-xs font-normal text-emerald-800">
-                                  Includes {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
-                                </small>
                                 <small *ngIf="record.completed_event_count" class="block text-xs font-normal text-sky-800">
                                   {{ record.completed_event_count }} completed event{{ record.completed_event_count === 1 ? '' : 's' }}
                                 </small>
@@ -261,6 +274,7 @@
                                 <input
                                   *ngIf="canEditDepartmentReport || showInputsWhenReadOnly; else quarterValue"
                                   type="number"
+                                  (wheel)="blurNumberInputOnWheel($event)"
                                   min="0"
                                   step="any"
                                   [attr.aria-label]="particular.particular_name"
@@ -268,10 +282,7 @@
                                   (ngModelChange)="updateReportValue(particular, quarter, $event)"
                                   [ngModelOptions]="{ standalone: true }"
                                   [disabled]="savingAction || isQuarterApproved(quarter)"
-                                  class="w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
-                                <small *ngIf="canEditDepartmentReport && record.participant_count" class="text-xs text-emerald-800">
-                                  Includes {{ record.participant_count }} confirmed participant{{ record.participant_count === 1 ? '' : 's' }}
-                                </small>
+                                  class="report-number-input w-28 rounded-lg border border-emerald-900/10 bg-white/80 px-3 py-1.5 text-center tabular-nums text-emerald-950 outline-none transition placeholder:text-emerald-900/30 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-emerald-900/5 disabled:text-emerald-900/90" />
                                 <small *ngIf="canEditDepartmentReport && record.completed_event_count" class="text-xs text-sky-800">
                                   Includes {{ record.completed_event_count }} completed event{{ record.completed_event_count === 1 ? '' : 's' }}
                                 </small>
@@ -352,9 +363,12 @@
 
             <div
               *ngIf="commentsLoading"
-              class="flex items-center gap-3 px-6 py-8 text-sm font-medium text-emerald-900/70">
-              <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700"></span>
-              Loading comments...
+              class="space-y-4 px-6 py-6" role="status" aria-label="Loading report comments" aria-busy="true">
+              <div *ngFor="let row of [1, 2, 3]" class="flex items-end gap-3" [ngClass]="row % 2 === 0 ? 'justify-end' : 'justify-start'">
+                <span class="report-skeleton-block h-9 w-9 shrink-0 rounded-full"></span>
+                <span class="report-skeleton-block h-14 w-3/5 rounded-2xl"></span>
+              </div>
+              <span class="sr-only">Loading report comments.</span>
             </div>
 
             <ul
@@ -446,16 +460,20 @@
         </aside>
       </div>
 
-      <div *ngIf="autoSaveStatus !== 'idle'" class="flex justify-end pb-2">
+      <div *ngIf="autoSaveStatus === 'saved'"
+        role="status" aria-live="polite"
+        class="autosave-saved-notification fixed right-5 top-5 z-[100] flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-800 shadow-lg">
+        All changes saved
+      </div>
+
+      <div *ngIf="autoSaveStatus !== 'idle' && autoSaveStatus !== 'saved'" class="flex justify-end pb-2">
         <span class="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold backdrop-blur-md" [ngClass]="{
           'text-emerald-900/70': autoSaveStatus === 'pending' || autoSaveStatus === 'saving',
-          'text-emerald-700': autoSaveStatus === 'saved',
           'text-red-600': autoSaveStatus === 'error'
         }">
           <ng-container [ngSwitch]="autoSaveStatus">
             <ng-container *ngSwitchCase="'pending'">Unsaved changes…</ng-container>
             <ng-container *ngSwitchCase="'saving'">Saving…</ng-container>
-            <ng-container *ngSwitchCase="'saved'">✓ All changes saved</ng-container>
             <ng-container *ngSwitchCase="'error'">Auto-save failed</ng-container>
           </ng-container>
         </span>
@@ -484,5 +502,108 @@
       </div>
 
     </ng-container>
+
+<div #quarterlyReportPreviewOverlay
+  [style.display]="quarterlyReportPreviewOpen ? 'flex' : 'none'"
+  [attr.aria-hidden]="!quarterlyReportPreviewOpen"
+  class="summary-report-preview-dialog report-export-overlay"
+  (click)="closeQuarterReportPreview()">
+  <section class="quarterly-report-preview-dialog report-export-dialog"
+    role="dialog" aria-modal="true" aria-labelledby="quarterly-report-preview-title"
+    (click)="$event.stopPropagation()">
+    <header class="report-export-header">
+      <div>
+        <h2 id="quarterly-report-preview-title" class="text-lg font-bold text-emerald-950">Report preview</h2>
+        <p class="text-sm text-slate-600">
+          {{ selectedYear }} · {{ report?.department?.department_name || 'Quarterly report' }}
+          <span *ngIf="isRepresentative() && churchName"> · {{ churchName }}</span>
+        </p>
+      </div>
+      <button type="button" (click)="closeQuarterReportPreview()"
+        class="report-export-close"
+        aria-label="Close report preview">
+        ×
+      </button>
+    </header>
+
+    <div class="report-export-content">
+      <div data-quarterly-report-print-preview
+        [ngClass]="isAyQuarterlyStatisticsReport ? 'w-full min-w-0' : 'min-w-max'"
+        class="quarterly-report-print-sheet mx-auto bg-white p-3 text-slate-950 sm:p-5">
+        <div *ngIf="isAyQuarterlyStatisticsReport"
+          class="quarterly-report-print-heading mb-3 w-full text-center uppercase">
+          <p *ngFor="let row of quarterlyReportPreviewRows.slice(0, 3); let rowIndex = index"
+            [ngClass]="rowIndex === 0
+              ? 'text-xs font-bold'
+              : rowIndex === 1
+                ? 'text-[11px] font-bold'
+                : 'text-[10px] font-semibold'"
+            class="m-0 py-1">
+            {{ row[0] }}
+          </p>
+        </div>
+        <table class="quarterly-report-print-table w-full border-collapse text-[10px] leading-tight">
+          <tbody>
+            <ng-container *ngFor="let row of quarterlyReportPreviewRows; let rowIndex = index">
+              <tr *ngIf="row.length === 0 && (!isAyQuarterlyStatisticsReport || rowIndex >= 3)" class="h-3">
+                <td [attr.colspan]="quarterlyReportPreviewColumnCount"></td>
+              </tr>
+              <tr *ngIf="row.length === 1 && rowIndex < 3 && !isAyQuarterlyStatisticsReport"
+                [ngClass]="rowIndex === 0
+                  ? 'text-center text-xs font-bold uppercase'
+                  : rowIndex === 1
+                    ? 'text-center text-[11px] font-bold uppercase'
+                    : 'text-center text-[10px] font-semibold uppercase'">
+                <td [attr.colspan]="quarterlyReportPreviewColumnCount"
+                  class="border-0 px-2 py-1">
+                  {{ row[0] }}
+                </td>
+              </tr>
+              <tr *ngIf="row.length === 1 && rowIndex >= 3">
+                <td [attr.colspan]="quarterlyReportPreviewColumnCount"
+                  class="border border-slate-700 bg-slate-100 px-2 py-1 font-bold uppercase">
+                  {{ row[0] }}
+                </td>
+              </tr>
+              <tr *ngIf="row.length > 1"
+                [ngClass]="isQuarterlyReportHeaderRow(row) ? 'bg-slate-200 font-bold uppercase' : ''">
+                <td *ngFor="let cell of row; let cellIndex = index"
+                  class="border border-slate-500 px-2 py-1 align-top"
+                  [ngClass]="{
+                    'whitespace-nowrap': isQuarterlyReportHeaderRow(row),
+                    'font-medium': cellIndex === 0 && !isQuarterlyReportHeaderRow(row)
+                  }">
+                  {{ cell }}
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="report-export-actions">
+      <button type="button" (click)="closeQuarterReportPreview()"
+        class="report-export-button report-export-button-close">
+        Close
+      </button>
+      <button type="button" (click)="exportQuarterReportCsv()"
+        class="report-export-button report-export-button-csv">
+        <i class="bi bi-download" aria-hidden="true"></i> Export CSV
+      </button>
+      <button type="button" (click)="exportQuarterReportExcel()"
+        [disabled]="exportingQuarterReportExcel"
+        class="report-export-button report-export-button-excel">
+        <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+        {{ exportingQuarterReportExcel ? 'Preparing Excel...' : 'Export Excel (.xlsx)' }}
+      </button>
+      <button type="button" (click)="printQuarterReport()"
+        class="report-export-button report-export-button-print">
+        <i class="bi bi-printer" aria-hidden="true"></i>
+        Print
+      </button>
+    </footer>
+  </section>
+</div>
   </div>
 </div>

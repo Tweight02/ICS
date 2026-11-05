@@ -12,6 +12,12 @@ export const DIRECTOR_ROUTES: Routes = [
       import('../assistant/report_a/reports/reports')
         .then(m => m.Reports)
   },
+  {
+    path: 'reports/summary',
+    loadComponent: () =>
+      import('./report-summary/report-summary')
+        .then(m => m.DirectorReportSummary)
+  },
 
   {
     path: 'reports/details/:id',

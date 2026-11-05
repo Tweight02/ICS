@@ -1,27 +1,71 @@
-<header class="px-[clamp(18px,4vw,40px)] pt-3">
+<header
+  *ngIf="isReadOnly"
+  class="relative isolate mx-auto mb-4 mt-1 flex min-h-24 max-w-7xl flex-col justify-center gap-4 overflow-hidden rounded-2xl border border-white/80 bg-emerald-50 p-4 shadow-sm shadow-emerald-950/10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+  <img
+    src="/assets/headerMountain.png"
+    alt=""
+    aria-hidden="true"
+    class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-50">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/90 to-emerald-100/45"></div>
+  <div class="relative min-w-0">
+    <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800/80">
+      {{ departmentId === 16 ? 'District pastor report' : 'Personal reports' }}
+    </p>
+    <h1 class="!text-xl font-bold tracking-tight text-emerald-950 sm:!text-2xl">
+      {{ departmentId === 16
+        ? 'District Pastor Report'
+        : selectedRecord === 'baptism'
+          ? 'Baptism Record'
+          : selectedRecord === 'death'
+            ? 'Death Record'
+            : selectedRecord === 'ministerial'
+              ? 'Ministerial & Evangelism'
+              : 'Adventist Mission' }}
+    </h1>
+    <p class="mt-1 text-xs font-medium text-emerald-900/70">
+      {{ departmentId === 16
+        ? 'Pastor personal reports for the selected district'
+        : 'View personal records for the selected reporting period' }}
+    </p>
+  </div>
+  <button
+    type="button"
+    (click)="backToReports()"
+    class="relative inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-full border border-emerald-800/20 bg-white/90 px-4 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 sm:self-auto"
+    style="border-radius: 9999px">
+    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12.5 4 6.5 10l6 6M7 10h10" />
+    </svg>
+    Back to reports
+  </button>
+</header>
+
+<header *ngIf="!isReadOnly" class="px-[clamp(18px,4vw,40px)] pt-1">
   <div class="d-flex align-items-center justify-content-between">
-    <div class="flex items-center gap-3">
-      <button app-button variant="back" size="md"
-        *ngIf="isReadOnly"
-        type="button"
-        class="border-[#dce5e1] text-[13px] text-[#275a46] transition-[background-color,border-color] duration-150 hover:border-[#cbdcd3] hover:bg-[#f3f7f5] focus-visible:outline-3 focus-visible:outline-[#2a8463]/30 focus-visible:outline-offset-2"
-        (click)="backToReports()">
-        ← Back to Reports
-      </button>
-    </div>
+    <div class="flex items-center gap-3"></div>
   </div>
 </header>
 
 <!-- Main Content -->
-<main class="px-[clamp(18px,4vw,40px)] pt-[18px] pb-10 max-[767px]:px-[14px] max-[767px]:pt-[14px] max-[767px]:pb-7">
-  <div class="row g-4">
+<main
+  class="px-[clamp(18px,4vw,40px)] pt-2 pb-6 max-[767px]:px-[14px] max-[767px]:pt-2 max-[767px]:pb-5"
+  [ngClass]="{ 'mx-auto max-w-7xl': isReadOnly }">
+  <div class="row g-3">
 
     <!-- Records -->
     <div class="min-w-0 p-0 col-12">
-      <section class="overflow-hidden rounded-[18px] border border-[#e2e9e6] bg-white shadow-[0_8px_28px_rgba(17,54,43,0.06)]">
-        <header class="flex items-center justify-between gap-6 border-b border-[#edf1ef] px-[30px] pt-7 pb-6 max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4 max-[767px]:px-5 max-[767px]:py-[22px] [&_h2]:m-0 [&_h2]:text-[clamp(21px,2.3vw,27px)] [&_h2]:font-bold [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em] [&_h2]:text-[#193c32]">
+      <section
+        [ngClass]="isDistrictPersonalSummaryTab
+          ? 'overflow-visible border-0 bg-transparent shadow-none'
+          : 'overflow-hidden rounded-[18px] border border-[#e2e9e6] bg-white shadow-[0_8px_28px_rgba(17,54,43,0.06)]'">
+
+        <!-- Report Header -->
+        <header *ngIf="!isReadOnly" class="flex items-center justify-between gap-4 border-b border-[#edf1ef] px-6 py-4 max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-3 max-[767px]:px-4 max-[767px]:py-4 [&_h2]:m-0 [&_h2]:text-[clamp(21px,2.3vw,27px)] [&_h2]:font-bold [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.025em] [&_h2]:text-[#193c32]">
           <div>
-            <p class="mb-[7px] mt-0 text-[11px] font-extrabold tracking-[0.12em] text-[#32806b]">PERSONAL REPORTS</p>
+            <p class="mb-[5px] mt-0 text-[11px] font-extrabold tracking-[0.12em] text-[#32806b]">
+              PERSONAL REPORTS
+            </p>
+
             <h2>
               {{ selectedRecord === 'baptism'
                 ? 'Baptism Record'
@@ -42,62 +86,227 @@
               ? '/pastor/bapaddrec'
               : '/pastor/deathaddrec'"
             class="!h-10 !gap-2 !rounded-full !px-5 !text-sm !font-semibold shadow-md shadow-emerald-950/10 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
-            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" aria-hidden="true">
+
+            <svg
+              class="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true">
               <path d="M10 4v12M4 10h12" />
             </svg>
+
             Add {{ selectedRecord === 'baptism' ? 'Baptism' : 'Death' }} Record
           </a>
         </header>
 
-        <div class="flex items-center gap-[18px] border-b border-[#edf1ef] px-[30px] py-5 max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-2.5 max-[767px]:px-5 max-[767px]:py-[18px]">
-          <span class="whitespace-nowrap text-[10px] font-extrabold tracking-[0.1em] text-[#687a72]">REPORT TYPE</span>
+        <!-- REPORT TYPE -->
+        <div
+          class="flex items-center gap-3 border-b border-[#edf1ef] px-6 py-3 max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-2 max-[767px]:px-4 max-[767px]:py-3"
+          [ngClass]="isDistrictPersonalSummaryTab
+            ? 'rounded-t-[18px] border border-b-0 border-[#e2e9e6] bg-white'
+            : ''">
+          <span class="whitespace-nowrap text-[10px] font-extrabold tracking-[0.1em] text-[#687a72]">
+            REPORT TYPE
+          </span>
 
-          <div class="flex flex-wrap gap-1.5 rounded-xl bg-[#f3f7f5] p-1 max-[767px]:w-full max-[420px]:grid max-[420px]:grid-cols-2" role="group" aria-label="Select report type">
+          <div
+            class="flex flex-wrap gap-1.5 rounded-xl bg-[#f3f7f5] p-1 max-[767px]:w-full max-[420px]:grid max-[420px]:grid-cols-2"
+            role="group"
+            aria-label="Select report type">
+
+            <!-- Baptism Record -->
             <button
               type="button"
               class="min-h-[38px] flex-auto rounded-lg border border-transparent bg-transparent px-[13px] text-xs font-semibold leading-[1.25] text-[#53665e] transition-[background-color,color,border-color,box-shadow] duration-[160ms] hover:bg-white/70 hover:text-[#194c3b] focus-visible:outline-3 focus-visible:outline-[#2a8463]/30 focus-visible:outline-offset-2 max-[767px]:flex-1 max-[420px]:px-[9px] max-[420px]:py-2 max-[420px]:text-[11px]"
-              [class.active]="selectedRecord === 'baptism'" [ngClass]="{ 'border-white': selectedRecord === 'baptism', 'bg-white': selectedRecord === 'baptism', 'text-[#14583f]': selectedRecord === 'baptism', 'shadow-sm': selectedRecord === 'baptism' }"
+              [class.active]="selectedRecord === 'baptism'"
+              [ngClass]="{
+                '!border-[#32806b]': selectedRecord === 'baptism',
+                '!bg-[#32806b]': selectedRecord === 'baptism',
+                '!text-white': selectedRecord === 'baptism',
+                'shadow-sm': selectedRecord === 'baptism'
+              }"
               [attr.aria-pressed]="selectedRecord === 'baptism'"
               (click)="selectRecord('baptism')">
               Baptism Record
             </button>
 
+            <!-- Death Record -->
             <button
               type="button"
               class="min-h-[38px] flex-auto rounded-lg border border-transparent bg-transparent px-[13px] text-xs font-semibold leading-[1.25] text-[#53665e] transition-[background-color,color,border-color,box-shadow] duration-[160ms] hover:bg-white/70 hover:text-[#194c3b] focus-visible:outline-3 focus-visible:outline-[#2a8463]/30 focus-visible:outline-offset-2 max-[767px]:flex-1 max-[420px]:px-[9px] max-[420px]:py-2 max-[420px]:text-[11px]"
-              [class.active]="selectedRecord === 'death'" [ngClass]="{ 'border-white': selectedRecord === 'death', 'bg-white': selectedRecord === 'death', 'text-[#14583f]': selectedRecord === 'death', 'shadow-sm': selectedRecord === 'death' }"
+              [class.active]="selectedRecord === 'death'"
+              [ngClass]="{
+                '!border-[#32806b]': selectedRecord === 'death',
+                '!bg-[#32806b]': selectedRecord === 'death',
+                '!text-white': selectedRecord === 'death',
+                'shadow-sm': selectedRecord === 'death'
+              }"
               [attr.aria-pressed]="selectedRecord === 'death'"
               (click)="selectRecord('death')">
               Death Record
             </button>
 
+            <!-- Ministerial & Evangelism -->
             <button
               type="button"
               class="min-h-[38px] flex-auto rounded-lg border border-transparent bg-transparent px-[13px] text-xs font-semibold leading-[1.25] text-[#53665e] transition-[background-color,color,border-color,box-shadow] duration-[160ms] hover:bg-white/70 hover:text-[#194c3b] focus-visible:outline-3 focus-visible:outline-[#2a8463]/30 focus-visible:outline-offset-2 max-[767px]:flex-1 max-[420px]:px-[9px] max-[420px]:py-2 max-[420px]:text-[11px]"
+              [class.active]="selectedRecord === 'ministerial'"
+              [ngClass]="{
+                '!border-[#32806b]': selectedRecord === 'ministerial',
+                '!bg-[#32806b]': selectedRecord === 'ministerial',
+                '!text-white': selectedRecord === 'ministerial',
+                'shadow-sm': selectedRecord === 'ministerial'
+              }"
               [attr.aria-pressed]="selectedRecord === 'ministerial'"
-              [class.active]="selectedRecord === 'ministerial'" [ngClass]="{ 'border-white': selectedRecord === 'ministerial', 'bg-white': selectedRecord === 'ministerial', 'text-[#14583f]': selectedRecord === 'ministerial', 'shadow-sm': selectedRecord === 'ministerial' }"
               (click)="selectRecord('ministerial')">
               Ministerial &amp; Evangelism
             </button>
 
+            <!-- Adventist Mission -->
             <button
               type="button"
               class="min-h-[38px] flex-auto rounded-lg border border-transparent bg-transparent px-[13px] text-xs font-semibold leading-[1.25] text-[#53665e] transition-[background-color,color,border-color,box-shadow] duration-[160ms] hover:bg-white/70 hover:text-[#194c3b] focus-visible:outline-3 focus-visible:outline-[#2a8463]/30 focus-visible:outline-offset-2 max-[767px]:flex-1 max-[420px]:px-[9px] max-[420px]:py-2 max-[420px]:text-[11px]"
+              [class.active]="selectedRecord === 'mission'"
+              [ngClass]="{
+                '!border-[#32806b]': selectedRecord === 'mission',
+                '!bg-[#32806b]': selectedRecord === 'mission',
+                '!text-white': selectedRecord === 'mission',
+                'shadow-sm': selectedRecord === 'mission'
+              }"
               [attr.aria-pressed]="selectedRecord === 'mission'"
-              [class.active]="selectedRecord === 'mission'" [ngClass]="{ 'border-white': selectedRecord === 'mission', 'bg-white': selectedRecord === 'mission', 'text-[#14583f]': selectedRecord === 'mission', 'shadow-sm': selectedRecord === 'mission' }"
               (click)="selectRecord('mission')">
               Adventist Mission
             </button>
+
           </div>
         </div>
 
+        <section
+          *ngIf="isDistrictPersonalSummaryTab"
+          id="district-personal-report-summary"
+          class="overflow-hidden rounded-b-[18px] border border-t-0 border-[#e2e9e6] bg-white shadow-[0_8px_28px_rgba(17,54,43,0.06)]">
+          <div class="flex flex-wrap items-end justify-between gap-3 px-6 py-4 max-[767px]:px-4">
+            <label for="district-personal-report-year" class="grid w-fit grid-cols-1 gap-1.5">
+              <span class="text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">REPORTING YEAR</span>
+              <select
+                id="district-personal-report-year"
+                class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+                [ngModel]="selectedYear"
+                (ngModelChange)="onYearChange($event)">
+                <option *ngFor="let year of availableYears" [ngValue]="year">{{ year }}</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              (click)="openPersonalRecordPreview()"
+              [disabled]="selectedRecord === 'baptism' ? loadingBaptisms || !!baptismError : loadingDeaths || !!deathError"
+              class="report-export-trigger">
+              <i class="bi bi-printer" aria-hidden="true"></i> Export / Print
+            </button>
+          </div>
+
+          <p *ngIf="selectedRecord === 'baptism' && loadingBaptisms"
+            class="space-y-3 px-6 py-5 max-[767px]:px-4" role="status" aria-label="Loading baptism records" aria-busy="true">
+            <span *ngFor="let row of [1, 2, 3, 4]" class="report-skeleton-block h-5 rounded-lg"
+              [style.width.%]="row % 2 === 0 ? 84 : 96"></span>
+            <span class="sr-only">Loading baptism records.</span>
+          </p>
+          <p *ngIf="selectedRecord === 'death' && loadingDeaths"
+            class="space-y-3 px-6 py-5 max-[767px]:px-4" role="status" aria-label="Loading death records" aria-busy="true">
+            <span *ngFor="let row of [1, 2, 3, 4]" class="report-skeleton-block h-5 rounded-lg"
+              [style.width.%]="row % 2 === 0 ? 82 : 95"></span>
+            <span class="sr-only">Loading death records.</span>
+          </p>
+          <p *ngIf="selectedRecord === 'baptism' && !loadingBaptisms && baptismError"
+            class="px-6 py-4 text-sm text-red-700" role="alert">
+            {{ baptismError }}
+          </p>
+          <p *ngIf="selectedRecord === 'death' && !loadingDeaths && deathError"
+            class="px-6 py-4 text-sm text-red-700" role="alert">
+            {{ deathError }}
+          </p>
+
+          <div
+            *ngIf="selectedRecord === 'baptism' && !loadingBaptisms && !baptismError"
+            class="overflow-x-auto">
+            <table class="w-full min-w-[48rem] border-collapse text-left text-sm">
+              <thead>
+                <tr class="border-y border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" class="px-4 py-3">Report / particular</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q1</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q2</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q3</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q4</th>
+                  <th scope="col" class="px-4 py-3 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-slate-100 text-slate-700">
+                  <th scope="row" class="px-4 py-3 font-medium">Baptisms Reported</th>
+                  <td *ngFor="let quarter of quarterOptions" class="px-3 py-3 text-center tabular-nums">
+                    <button
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedSummaryQuarter === quarter"
+                      aria-controls="district-personal-records"
+                      (click)="selectSummaryQuarter(quarter)">
+                      {{ districtBaptismQuarterTotals[quarter] | number }}
+                    </button>
+                  </td>
+                  <td class="px-4 py-3 text-right font-semibold tabular-nums">
+                    {{ districtBaptismTotal | number }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            *ngIf="selectedRecord === 'death' && !loadingDeaths && !deathError"
+            class="overflow-x-auto">
+            <table class="w-full min-w-[48rem] border-collapse text-left text-sm">
+              <thead>
+                <tr class="border-y border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" class="px-4 py-3">Report / particular</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q1</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q2</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q3</th>
+                  <th scope="col" class="px-3 py-3 text-center">Q4</th>
+                  <th scope="col" class="px-4 py-3 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-slate-100 text-slate-700">
+                  <th scope="row" class="px-4 py-3 font-medium">Deaths Reported</th>
+                  <td *ngFor="let quarter of quarterOptions" class="px-3 py-3 text-center tabular-nums">
+                    <button
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedSummaryQuarter === quarter"
+                      aria-controls="district-personal-records"
+                      (click)="selectSummaryQuarter(quarter)">
+                      {{ districtDeathQuarterTotals[quarter] | number }}
+                    </button>
+                  </td>
+                  <td class="px-4 py-3 text-right font-semibold tabular-nums">
+                    {{ districtDeathTotal | number }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <!-- YEAR, QUARTER AND SEARCH -->
         <div
-          *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
-          class="grid grid-cols-1 items-end gap-4 border-b border-[#edf1ef] px-[30px] py-5 sm:grid-cols-[max-content_auto_minmax(240px,1fr)] sm:gap-x-[18px] max-[767px]:px-5 max-[767px]:py-[18px]">
+          *ngIf="(selectedRecord === 'baptism' || selectedRecord === 'death') && !isDistrictPersonalSummaryTab"
+          class="grid grid-cols-1 items-end gap-3 border-b border-[#edf1ef] px-6 py-3 sm:grid-cols-[max-content_auto_minmax(240px,1fr)_auto] sm:gap-x-3 max-[767px]:px-4 max-[767px]:py-3">
 
           <span class="hidden sm:block" aria-hidden="true"></span>
+
           <app-report-period-selector
             [years]="availableYears"
             [quarters]="reportPeriodQuarters"
@@ -109,17 +318,26 @@
             (annualSelected)="selectAnnual()">
           </app-report-period-selector>
 
-          <!-- SEARCH FIELD: same row as Year and Quarter -->
-          <label class="report-search-field flex min-w-0 flex-col gap-1.5 p-0">
-            <span class="whitespace-nowrap text-[10px] font-extrabold tracking-[0.1em] text-[#687a72]">SEARCH RECORDS</span>
+          <!-- SEARCH FIELD -->
+          <label class="report-search-field ml-auto flex w-[245px] max-w-full min-w-0 flex-none flex-col gap-1.5 p-0 max-[650px]:w-full">
+            <span class="whitespace-nowrap text-[10px] font-extrabold tracking-[0.1em] text-[#687a72]">
+              SEARCH RECORDS
+            </span>
 
             <div class="relative m-0 w-full p-0">
-              <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7b8b83]"
-                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg
+                class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7b8b83]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true">
                 <circle cx="11" cy="11" r="7" />
                 <path d="m20 20-4-4" />
               </svg>
+
               <input
                 type="search"
                 class="box-border block h-10 w-full rounded-lg border border-[#dce5e1] bg-white py-2 pl-10 pr-3 text-sm text-[#243f35] shadow-sm outline-none placeholder:text-[#84928b] focus:border-[#4c9a7b] focus:ring-4 focus:ring-emerald-700/10"
@@ -127,24 +345,28 @@
                 [(ngModel)]="searchTerm"
                 (ngModelChange)="onSearchChange()"
                 (keydown.enter)="onSearchChange(true)"
-                [placeholder]="selectedRecord === 'baptism'
-                  ? 'Search baptism records...'
-                  : 'Search death records...'"
+                [placeholder]="selectedRecord === 'baptism' ? '' : ''"
                 aria-label="Search records by member, church, date, or other details"
                 autocomplete="off">
             </div>
           </label>
+          <button
+            type="button"
+            (click)="openPersonalRecordPreview()"
+            [disabled]="selectedRecord === 'baptism' ? loadingBaptisms || !!baptismError : loadingDeaths || !!deathError"
+            class="report-export-trigger">
+            <i class="bi bi-printer" aria-hidden="true"></i> Export / Print
+          </button>
         </div>
 
+        <!-- RECORD TABLES -->
         <div
-          *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
-          class="overflow-x-auto px-[30px] pb-7 max-[767px]:px-5 max-[767px]:pb-5">
+          *ngIf="(selectedRecord === 'baptism' || selectedRecord === 'death') && !isDistrictPersonalSummaryTab"
+          class="overflow-x-auto px-6 pb-4 max-[767px]:px-4 max-[767px]:pb-3">
 
-          <!-- ================================================= -->
           <!-- BAPTISM RECORD TABLE -->
-          <!-- ================================================= -->
           <table
-            class="w-full min-w-[760px] table-fixed border-separate border-spacing-0 [&_thead_th]:whitespace-normal [&_thead_th]:break-words [&_thead_th]:border-b [&_thead_th]:border-[#e5ece8] [&_thead_th]:bg-white [&_thead_th]:px-[14px] [&_thead_th]:py-[15px] [&_thead_th]:text-[10px] [&_thead_th]:font-extrabold [&_thead_th]:uppercase [&_thead_th]:tracking-[0.07em] [&_thead_th]:text-[#74837c] [&_tbody_td]:border-b [&_tbody_td]:border-[#edf1ef] [&_tbody_td]:px-[14px] [&_tbody_td]:py-4 [&_tbody_td]:text-[13px] [&_tbody_td]:text-[#4c5d55] [&_tbody_td]:[overflow-wrap:anywhere] [&_tbody_tr:nth-child(even)]:bg-[#fafcfb] [&_tbody_tr:hover]:bg-[#f1f7f4] [&_tbody_td[colspan]]:px-4 [&_tbody_td[colspan]]:py-[42px] [&_tbody_td[colspan]]:text-sm [&_tbody_td[colspan]]:text-[#718079] [&_th:nth-child(1)]:w-[8%] [&_th:nth-child(2)]:w-[15%] [&_th:nth-child(3)]:w-[12%] [&_th:nth-child(4)]:w-[16%] [&_th:nth-child(5)]:w-[19%] [&_th:nth-child(6)]:w-[18%] [&_th:nth-child(7)]:w-[12%]"
+            class="w-full min-w-[760px] table-fixed border-separate border-spacing-0 [&_thead_th]:whitespace-normal [&_thead_th]:break-words [&_thead_th]:border-b [&_thead_th]:border-[#e5ece8] [&_thead_th]:bg-white [&_thead_th]:px-2.5 [&_thead_th]:py-2.5 [&_thead_th]:text-[10px] [&_thead_th]:font-extrabold [&_thead_th]:uppercase [&_thead_th]:tracking-[0.07em] [&_thead_th]:text-[#74837c] [&_tbody_td]:border-b [&_tbody_td]:border-[#edf1ef] [&_tbody_td]:px-2.5 [&_tbody_td]:py-2.5 [&_tbody_td]:text-[13px] [&_tbody_td]:text-[#4c5d55] [&_tbody_td]:[overflow-wrap:anywhere] [&_tbody_tr:nth-child(even)]:bg-[#fafcfb] [&_tbody_tr:hover]:bg-[#f1f7f4] [&_tbody_td[colspan]]:px-4 [&_tbody_td[colspan]]:py-[42px] [&_tbody_td[colspan]]:text-sm [&_tbody_td[colspan]]:text-[#718079] [&_th:nth-child(1)]:w-[8%] [&_th:nth-child(2)]:w-[15%] [&_th:nth-child(3)]:w-[12%] [&_th:nth-child(4)]:w-[16%] [&_th:nth-child(5)]:w-[19%] [&_th:nth-child(6)]:w-[18%] [&_th:nth-child(7)]:w-[12%]"
             *ngIf="selectedRecord === 'baptism'">
 
             <thead>
@@ -160,18 +382,12 @@
             </thead>
 
             <tbody>
-              <!-- Error -->
-              <tr
-                *ngIf="
-                  !loadingBaptisms &&
-                  baptismError
-                ">
+              <tr *ngIf="!loadingBaptisms && baptismError">
                 <td colspan="7" class="text-center">
                   {{ baptismError }}
                 </td>
               </tr>
 
-              <!-- No Records -->
               <tr
                 *ngIf="
                   !loadingBaptisms &&
@@ -185,12 +401,8 @@
                 </td>
               </tr>
 
-              <!-- Baptism Records -->
               <tr
-                *ngFor="
-                  let baptism of paginatedBaptisms;
-                  let i = index
-                "
+                *ngFor="let baptism of paginatedBaptisms; let i = index"
                 class="cursor-pointer transition-[background-color,box-shadow] duration-200 hover:bg-[#eef5ff] hover:[&>td]:bg-[#eef5ff] hover:[&>td]:shadow-[inset_0_1px_0_#d7e7ff,inset_0_-1px_0_#d7e7ff] focus-visible:outline-2 focus-visible:outline-[#0d6efd] focus-visible:outline-offset-[-2px] motion-reduce:transition-none"
                 role="button"
                 tabindex="0"
@@ -231,10 +443,10 @@
             </tbody>
           </table>
 
-          <!-- Baptism Pagination: only when 10 or more results -->
+          <!-- Baptism Pagination -->
           <nav
             *ngIf="selectedRecord === 'baptism' && displayedBaptisms.length >= pageSize"
-            class="flex flex-wrap items-center justify-between gap-2 px-2 pb-2 pt-3 [&_.page-link]:border-[#006400] [&_.page-link]:bg-white [&_.page-link]:text-[#006400] [&_.page-link:hover]:border-[#004d00] [&_.page-link:hover]:bg-[#004d00] [&_.page-link:hover]:text-white [&_.page-item.active_.page-link]:border-[#006400] [&_.page-item.active_.page-link]:bg-[#006400] [&_.page-item.active_.page-link]:text-white [&_.page-item.disabled_.page-link]:cursor-not-allowed [&_.page-item.disabled_.page-link]:border-[#ccc] [&_.page-item.disabled_.page-link]:bg-[#f2f2f2] [&_.page-item.disabled_.page-link]:text-[#888] d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 px-2 pb-2"
+            class="flex flex-wrap items-center justify-between gap-2 px-2 pb-2 pt-3 [&_.page-link]:!border-[#0c502f] [&_.page-link]:!bg-white [&_.page-link]:!text-[#0c502f] [&_.page-link:hover]:!border-[#083c23] [&_.page-link:hover]:!bg-[#083c23] [&_.page-link:hover]:!text-white [&_.page-item.active_.page-link]:!border-[#0c502f] [&_.page-item.active_.page-link]:!bg-[#0c502f] [&_.page-item.active_.page-link]:!text-white [&_.page-item.disabled_.page-link]:!cursor-not-allowed [&_.page-item.disabled_.page-link]:!border-[#ccc] [&_.page-item.disabled_.page-link]:!bg-[#f2f2f2] [&_.page-item.disabled_.page-link]:!text-[#888] d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 px-2 pb-2"
             aria-label="Baptism record pagination">
 
             <span class="small text-muted">
@@ -242,9 +454,7 @@
             </span>
 
             <ul class="pagination pagination-sm mb-0">
-              <li
-                class="page-item"
-                [class.disabled]="baptismPage === 1">
+              <li class="page-item" [class.disabled]="baptismPage === 1">
                 <button
                   type="button"
                   class="page-link"
@@ -283,11 +493,9 @@
             </ul>
           </nav>
 
-          <!-- ================================================= -->
           <!-- DEATH RECORD TABLE -->
-          <!-- ================================================= -->
           <table
-            class="w-full min-w-[900px] table-fixed border-separate border-spacing-0 [&_thead_th]:whitespace-normal [&_thead_th]:break-words [&_thead_th]:border-b [&_thead_th]:border-[#e5ece8] [&_thead_th]:bg-white [&_thead_th]:px-[14px] [&_thead_th]:py-[15px] [&_thead_th]:text-[10px] [&_thead_th]:font-extrabold [&_thead_th]:uppercase [&_thead_th]:tracking-[0.07em] [&_thead_th]:text-[#74837c] [&_tbody_td]:border-b [&_tbody_td]:border-[#edf1ef] [&_tbody_td]:px-[14px] [&_tbody_td]:py-4 [&_tbody_td]:text-[13px] [&_tbody_td]:text-[#4c5d55] [&_tbody_td]:[overflow-wrap:anywhere] [&_tbody_tr:nth-child(even)]:bg-[#fafcfb] [&_tbody_tr:hover]:bg-[#f1f7f4] [&_tbody_td[colspan]]:px-4 [&_tbody_td[colspan]]:py-[42px] [&_tbody_td[colspan]]:text-sm [&_tbody_td[colspan]]:text-[#718079] [&_th:nth-child(1)]:w-[8%] [&_th:nth-child(2)]:w-[16%] [&_th:nth-child(3)]:w-[12%] [&_th:nth-child(4)]:w-[12%] [&_th:nth-child(5)]:w-[13%] [&_th:nth-child(6)]:w-[7%] [&_th:nth-child(7)]:w-[10%] [&_th:nth-child(8)]:w-[22%]"
+            class="w-full min-w-[900px] table-fixed border-separate border-spacing-0 [&_thead_th]:whitespace-normal [&_thead_th]:break-words [&_thead_th]:border-b [&_thead_th]:border-[#e5ece8] [&_thead_th]:bg-white [&_thead_th]:px-2.5 [&_thead_th]:py-2.5 [&_thead_th]:text-[10px] [&_thead_th]:font-extrabold [&_thead_th]:uppercase [&_thead_th]:tracking-[0.07em] [&_thead_th]:text-[#74837c] [&_tbody_td]:border-b [&_tbody_td]:border-[#edf1ef] [&_tbody_td]:px-2.5 [&_tbody_td]:py-2.5 [&_tbody_td]:text-[13px] [&_tbody_td]:text-[#4c5d55] [&_tbody_td]:[overflow-wrap:anywhere] [&_tbody_tr:nth-child(even)]:bg-[#fafcfb] [&_tbody_tr:hover]:bg-[#f1f7f4] [&_tbody_td[colspan]]:px-4 [&_tbody_td[colspan]]:py-[42px] [&_tbody_td[colspan]]:text-sm [&_tbody_td[colspan]]:text-[#718079] [&_th:nth-child(1)]:w-[8%] [&_th:nth-child(2)]:w-[16%] [&_th:nth-child(3)]:w-[12%] [&_th:nth-child(4)]:w-[12%] [&_th:nth-child(5)]:w-[13%] [&_th:nth-child(6)]:w-[7%] [&_th:nth-child(7)]:w-[10%] [&_th:nth-child(8)]:w-[22%]"
             *ngIf="selectedRecord === 'death'">
 
             <thead>
@@ -304,18 +512,12 @@
             </thead>
 
             <tbody>
-              <!-- Error -->
-              <tr
-                *ngIf="
-                  !loadingDeaths &&
-                  deathError
-                ">
+              <tr *ngIf="!loadingDeaths && deathError">
                 <td colspan="8" class="text-center">
                   {{ deathError }}
                 </td>
               </tr>
 
-              <!-- No Records -->
               <tr
                 *ngIf="
                   !loadingDeaths &&
@@ -329,12 +531,8 @@
                 </td>
               </tr>
 
-              <!-- Death Records -->
               <tr
-                *ngFor="
-                  let death of paginatedDeaths;
-                  let i = index
-                "
+                *ngFor="let death of paginatedDeaths; let i = index"
                 class="cursor-pointer transition-[background-color,box-shadow] duration-200 hover:bg-[#eef5ff] hover:[&>td]:bg-[#eef5ff] hover:[&>td]:shadow-[inset_0_1px_0_#d7e7ff,inset_0_-1px_0_#d7e7ff] focus-visible:outline-2 focus-visible:outline-[#0d6efd] focus-visible:outline-offset-[-2px] motion-reduce:transition-none"
                 role="button"
                 tabindex="0"
@@ -384,10 +582,10 @@
             </tbody>
           </table>
 
-          <!-- Death Pagination: only when 10 or more results -->
+          <!-- Death Pagination -->
           <nav
             *ngIf="selectedRecord === 'death' && displayedDeaths.length >= pageSize"
-            class="flex flex-wrap items-center justify-between gap-2 px-2 pb-2 pt-3 [&_.page-link]:border-[#006400] [&_.page-link]:bg-white [&_.page-link]:text-[#006400] [&_.page-link:hover]:border-[#004d00] [&_.page-link:hover]:bg-[#004d00] [&_.page-link:hover]:text-white [&_.page-item.active_.page-link]:border-[#006400] [&_.page-item.active_.page-link]:bg-[#006400] [&_.page-item.active_.page-link]:text-white [&_.page-item.disabled_.page-link]:cursor-not-allowed [&_.page-item.disabled_.page-link]:border-[#ccc] [&_.page-item.disabled_.page-link]:bg-[#f2f2f2] [&_.page-item.disabled_.page-link]:text-[#888] d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 px-2 pb-2"
+            class="flex flex-wrap items-center justify-between gap-2 px-2 pb-2 pt-3 [&_.page-link]:!border-[#0c502f] [&_.page-link]:!bg-white [&_.page-link]:!text-[#0c502f] [&_.page-link:hover]:!border-[#083c23] [&_.page-link:hover]:!bg-[#083c23] [&_.page-link:hover]:!text-white [&_.page-item.active_.page-link]:!border-[#0c502f] [&_.page-item.active_.page-link]:!bg-[#0c502f] [&_.page-item.active_.page-link]:!text-white [&_.page-item.disabled_.page-link]:!cursor-not-allowed [&_.page-item.disabled_.page-link]:!border-[#ccc] [&_.page-item.disabled_.page-link]:!bg-[#f2f2f2] [&_.page-item.disabled_.page-link]:!text-[#888] d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 px-2 pb-2"
             aria-label="Death record pagination">
 
             <span class="small text-muted">
@@ -395,9 +593,7 @@
             </span>
 
             <ul class="pagination pagination-sm mb-0">
-              <li
-                class="page-item"
-                [class.disabled]="deathPage === 1">
+              <li class="page-item" [class.disabled]="deathPage === 1">
                 <button
                   type="button"
                   class="page-link"
@@ -438,53 +634,178 @@
 
         </div>
 
+        <section
+          *ngIf="isDistrictPersonalSummaryTab && selectedSummaryQuarter"
+          id="district-personal-records"
+          class="mt-1 overflow-hidden rounded-[18px] border border-[#e2e9e6] bg-white shadow-[0_8px_28px_rgba(17,54,43,0.06)]">
+          <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-6 py-4 max-[767px]:px-4">
+            <div>
+              <h2 class="m-0 text-[clamp(21px,2.3vw,27px)] font-bold leading-tight tracking-[-0.025em] text-[#193c32]">
+                {{ selectedSummaryQuarter }} {{ selectedRecord === 'baptism' ? 'baptism' : 'death' }} records
+              </h2>
+              <p class="mb-0 mt-1 text-xs text-slate-500">
+                Records for {{ selectedYear }} from the database.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              (click)="closeSummaryQuarter()">
+              Close
+            </button>
+          </header>
+
+          <p *ngIf="selectedRecord === 'baptism' && loadingBaptisms"
+            class="space-y-3 px-6 py-6" role="status" aria-label="Loading baptism records" aria-busy="true">
+            <span *ngFor="let row of [1, 2, 3, 4, 5]" class="report-skeleton-block h-5 rounded-lg"
+              [style.width.%]="row % 2 === 0 ? 82 : 96"></span>
+            <span class="sr-only">Loading baptism records.</span>
+          </p>
+          <p *ngIf="selectedRecord === 'death' && loadingDeaths"
+            class="space-y-3 px-6 py-6" role="status" aria-label="Loading death records" aria-busy="true">
+            <span *ngFor="let row of [1, 2, 3, 4, 5]" class="report-skeleton-block h-5 rounded-lg"
+              [style.width.%]="row % 2 === 0 ? 84 : 95"></span>
+            <span class="sr-only">Loading death records.</span>
+          </p>
+          <p *ngIf="selectedRecord === 'baptism' && !loadingBaptisms && baptismError"
+            class="px-6 py-4 text-sm text-red-700" role="alert">
+            {{ baptismError }}
+          </p>
+          <p *ngIf="selectedRecord === 'death' && !loadingDeaths && deathError"
+            class="px-6 py-4 text-sm text-red-700" role="alert">
+            {{ deathError }}
+          </p>
+
+          <div
+            *ngIf="selectedRecord === 'baptism' && !loadingBaptisms && !baptismError"
+            class="overflow-x-auto">
+            <table class="w-full min-w-[64rem] border-collapse text-left text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" class="px-4 py-3">Name</th>
+                  <th scope="col" class="px-4 py-3">Church</th>
+                  <th scope="col" class="px-3 py-3">Date of baptism</th>
+                  <th scope="col" class="px-4 py-3">Officiating minister</th>
+                  <th scope="col" class="px-4 py-3">Place of baptism</th>
+                  <th scope="col" class="px-3 py-3">Gender</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let baptism of districtSummaryBaptisms"
+                  class="cursor-pointer border-b border-slate-100 text-slate-700 transition hover:bg-emerald-50/70 focus-visible:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-emerald-600"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-label]="'View details for ' + getFullName(baptism)"
+                  (click)="openBaptismModal(baptism)"
+                  (keydown.enter)="openBaptismModal(baptism)"
+                  (keydown.space)="openBaptismModal(baptism); $event.preventDefault()">
+                  <th scope="row" class="px-4 py-3 font-medium">{{ getFullName(baptism) }}</th>
+                  <td class="px-4 py-3">{{ getChurchName(baptism.church_id) }}</td>
+                  <td class="px-3 py-3 tabular-nums">{{ formatDate(baptism.date_of_baptism) }}</td>
+                  <td class="px-4 py-3">{{ baptism.officiating_minister || '—' }}</td>
+                  <td class="px-4 py-3">{{ baptism.place_of_baptism || '—' }}</td>
+                  <td class="px-3 py-3">{{ baptism.gender || '—' }}</td>
+                </tr>
+                <tr *ngIf="districtSummaryBaptisms.length === 0">
+                  <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                    No baptism records are available for this quarter and year.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            *ngIf="selectedRecord === 'death' && !loadingDeaths && !deathError"
+            class="overflow-x-auto">
+            <table class="w-full min-w-[52rem] border-collapse text-left text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" class="px-4 py-3">Name</th>
+                  <th scope="col" class="px-4 py-3">Church</th>
+                  <th scope="col" class="px-3 py-3">Date of death</th>
+                  <th scope="col" class="px-3 py-3">Gender</th>
+                  <th scope="col" class="px-3 py-3">Quarter</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let death of districtSummaryDeaths"
+                  class="cursor-pointer border-b border-slate-100 text-slate-700 transition hover:bg-emerald-50/70 focus-visible:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-emerald-600"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-label]="'View details for ' + getFullName(getDeathBaptism(death))"
+                  (click)="openDeathModal(death)"
+                  (keydown.enter)="openDeathModal(death)"
+                  (keydown.space)="openDeathModal(death); $event.preventDefault()">
+                  <th scope="row" class="px-4 py-3 font-medium">{{ getFullName(getDeathBaptism(death)) }}</th>
+                  <td class="px-4 py-3">{{ getChurchName(getDeathBaptism(death)?.church_id) }}</td>
+                  <td class="px-3 py-3 tabular-nums">{{ formatDate(death.date_of_death) }}</td>
+                  <td class="px-3 py-3">{{ getDeathBaptism(death)?.gender || '—' }}</td>
+                  <td class="px-3 py-3">{{ death.quarter }}</td>
+                </tr>
+                <tr *ngIf="districtSummaryDeaths.length === 0">
+                  <td colspan="5" class="px-4 py-8 text-center text-slate-500">
+                    No death records are available for this quarter and year.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- CHURCH REPORTS -->
         <ng-container *ngIf="selectedDepartmentId as departmentId">
+
           <p
             *ngIf="churchesError"
-            class="mx-[30px] mb-6 flex items-center justify-center gap-2.5 rounded-xl border border-[#f2c9c9] bg-[#fff6f6] px-5 py-[34px] text-center text-sm text-[#9e3939] max-[767px]:mx-5"
+            class="mx-6 mb-4 flex items-center justify-center gap-2.5 rounded-xl border border-[#f2c9c9] bg-[#fff6f6] px-5 py-6 text-center text-sm text-[#9e3939] max-[767px]:mx-4"
             role="alert">
             {{ churchesError }}
           </p>
 
           <div
             *ngIf="churchesLoading"
-            class="mx-[30px] mb-6 flex items-center justify-center gap-2.5 rounded-xl border border-dashed border-[#d9e4de] px-5 py-[34px] text-center text-sm text-[#64766d] max-[767px]:mx-5"
-            role="status">
-            <span class="h-[18px] w-[18px] animate-spin rounded-full border-2 border-[#d7e6de] border-t-[#17694f]" aria-hidden="true"></span>
-            Loading church reports...
+            class="mx-6 mb-4 space-y-3 rounded-xl border border-dashed border-[#d9e4de] p-5 max-[767px]:mx-4"
+            role="status" aria-label="Loading church reports" aria-busy="true">
+            <span *ngFor="let row of [1, 2, 3]" class="report-skeleton-block h-14 rounded-lg"
+              [style.width.%]="row === 2 ? 88 : 100"></span>
+            <span class="sr-only">Loading church report rows.</span>
           </div>
 
           <section
             *ngFor="let church of reportChurches"
-            class="mx-[30px] mb-[26px] max-[767px]:mx-5">
+            class="mx-6 mb-5 max-[767px]:mx-4">
+
             <app-report-particulars
               [embedded]="true"
               [churchId]="church.church_id"
               [churchName]="church.name"
               [districtId]="districtId"
-              [districtName]="getChurchName(districtId)"
+              [districtName]="districtName"
               [departmentId]="departmentId">
             </app-report-particulars>
           </section>
 
           <p
             *ngIf="!churchesLoading && !churchesError && reportChurches.length === 0"
-            class="mx-[30px] mb-6 flex items-center justify-center gap-2.5 rounded-xl border border-dashed border-[#d9e4de] px-5 py-[34px] text-center text-sm text-[#64766d] max-[767px]:mx-5">
+            class="mx-6 mb-4 flex items-center justify-center gap-2.5 rounded-xl border border-dashed border-[#d9e4de] px-5 py-6 text-center text-sm text-[#64766d] max-[767px]:mx-4">
             No churches are available for this report.
           </p>
+
         </ng-container>
       </section>
     </div>
 
-    <!-- ================================================= -->
     <!-- COMMENTS -->
-    <!-- ================================================= -->
-    <ng-container *ngIf="!isReadOnly">
+    <ng-container *ngIf="!isReadOnly || isHeadAssistant">
 
       <aside
         *ngIf="selectedRecord === 'baptism' || selectedRecord === 'death'"
         class="comments-chathead">
 
+        <!-- Comments Panel -->
         <section
           *ngIf="commentsOpen"
           class="fixed inset-x-3 bottom-3 z-50 flex max-h-[min(78vh,640px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-emerald-950/20 sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]"
@@ -494,17 +815,33 @@
           <header class="flex shrink-0 items-center justify-between gap-3 bg-emerald-900 px-5 py-3 text-white">
             <div class="flex min-w-0 items-center gap-3">
               <span class="flex h-12 w-12 shrink-0 items-center justify-center">
-                <img src="/assets/comment_icon.png" alt="" aria-hidden="true" class="h-12 w-12 object-contain">
+                <img
+                  src="/assets/comment_icon.png"
+                  alt=""
+                  aria-hidden="true"
+                  class="h-12 w-12 object-contain">
               </span>
-              <h2 class="text-lg font-bold tracking-tight text-white">Report conversation</h2>
+
+              <h2 class="text-lg font-bold tracking-tight text-white">
+                Report conversation
+              </h2>
             </div>
+
             <button
               type="button"
               (click)="closeComments()"
-              aria-label="Close comments" title="Close comments"
+              aria-label="Close comments"
+              title="Close comments"
               class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" aria-hidden="true">
+
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                aria-hidden="true">
                 <path d="m5 5 10 10M15 5 5 15" />
               </svg>
             </button>
@@ -517,41 +854,69 @@
             {{ commentsError }}
           </div>
 
-          <div *ngIf="commentsLoading" class="flex items-center gap-3 px-6 py-8 text-sm font-medium text-emerald-900/70">
-            <span class="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700" aria-hidden="true"></span>
-            Loading comments...
+          <div
+            *ngIf="commentsLoading"
+            class="space-y-4 px-6 py-6" role="status" aria-label="Loading report comments" aria-busy="true">
+            <div *ngFor="let row of [1, 2, 3]" class="flex items-end gap-3" [ngClass]="row % 2 === 0 ? 'justify-end' : 'justify-start'">
+              <span class="report-skeleton-block h-9 w-9 shrink-0 rounded-full"></span>
+              <span class="report-skeleton-block h-14 w-3/5 rounded-2xl"></span>
+            </div>
+            <span class="sr-only">Loading report comments.</span>
           </div>
 
           <ul
             *ngIf="!commentsLoading && visibleComments.length > 0"
             class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto bg-gradient-to-b from-emerald-50/80 to-slate-50 px-5 py-6 sm:px-6">
+
             <li
               *ngFor="let comment of visibleComments"
               class="flex items-end gap-2.5"
               [ngClass]="isOwnComment(comment) ? 'justify-end' : 'justify-start'">
-              <span *ngIf="!isOwnComment(comment)"
+
+              <span
+                *ngIf="!isOwnComment(comment)"
                 class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-xs font-bold text-white shadow-sm">
                 {{ (comment.commenter_name || 'Reviewer').trim().charAt(0).toUpperCase() }}
               </span>
-              <div class="flex max-w-[84%] flex-col gap-1.5"
+
+              <div
+                class="flex max-w-[84%] flex-col gap-1.5"
                 [ngClass]="isOwnComment(comment) ? 'items-end' : 'items-start'">
-                <div class="flex flex-wrap items-center gap-x-2 px-1 text-xs text-slate-500"
+
+                <div
+                  class="flex flex-wrap items-center gap-x-2 px-1 text-xs text-slate-500"
                   [ngClass]="isOwnComment(comment) ? 'justify-end text-right' : 'justify-start'">
+
                   <span class="font-semibold text-slate-700">
                     {{ comment.commenter_name || (isOwnComment(comment) ? 'You' : 'Reviewer') }}
                   </span>
-                  <span *ngIf="comment.commenter_role" class="capitalize">{{ comment.commenter_role }}</span>
+
+                  <span *ngIf="comment.commenter_role" class="capitalize">
+                    {{ comment.commenter_role }}
+                  </span>
                 </div>
-                <article [ngClass]="isOwnComment(comment)
+
+                <article
+                  [ngClass]="isOwnComment(comment)
                     ? 'rounded-br-md bg-gradient-to-br from-emerald-700 to-emerald-800 text-white'
                     : 'rounded-bl-md border border-slate-200 bg-white text-slate-800'"
                   class="rounded-2xl px-4 py-3.5 shadow-sm sm:px-5">
-                  <p class="whitespace-pre-line break-words text-[15px] leading-6">{{ comment.details }}</p>
+
+                  <p class="whitespace-pre-line break-words text-[15px] leading-6">
+                    {{ comment.details }}
+                  </p>
                 </article>
+
                 <div class="flex flex-wrap items-center gap-x-2 px-1 text-[11px] text-slate-500">
-                  <span *ngIf="isAnnualView && comment.quarter"
-                    class="font-semibold text-emerald-800">{{ comment.quarter }} {{ comment.year }}</span>
-                  <time>{{ comment.date_commented | date: 'mediumDate' }}</time>
+                  <span
+                    *ngIf="isAnnualView && comment.quarter"
+                    class="font-semibold text-emerald-800">
+                    {{ comment.quarter }} {{ comment.year }}
+                  </span>
+
+                  <time>
+                    {{ comment.date_commented | date: 'mediumDate' }}
+                  </time>
                 </div>
               </div>
             </li>
@@ -560,18 +925,35 @@
           <div
             *ngIf="!commentsLoading && !commentsError && visibleComments.length === 0"
             class="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
-            <img src="/assets/comment_icon.png" alt="" aria-hidden="true" class="mb-4 h-20 w-20 object-contain opacity-75">
-            <p class="m-0 text-base font-semibold text-emerald-950">No comments yet</p>
-            <p class="mb-0 mt-1 text-sm text-slate-500">Messages about this report will appear here.</p>
+
+            <img
+              src="/assets/comment_icon.png"
+              alt=""
+              aria-hidden="true"
+              class="mb-4 h-20 w-20 object-contain opacity-75">
+
+            <p class="m-0 text-base font-semibold text-emerald-950">
+              No comments yet
+            </p>
+
+            <p class="mb-0 mt-1 text-sm text-slate-500">
+              Messages about this report will appear here.
+            </p>
           </div>
 
           <div *ngIf="canComment" class="shrink-0 border-t border-slate-200 bg-white p-4 sm:p-5">
+
             <ng-container *ngIf="commentQuarterApproved && !isAnnualView; else commentForm">
-              <p class="m-0 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">This report has been approved. Comments are closed.</p>
+              <p class="m-0 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">
+                This report has been approved. Comments are closed.
+              </p>
             </ng-container>
 
             <ng-template #commentForm>
-              <form (ngSubmit)="publishComment()" class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15">
+              <form
+                (ngSubmit)="publishComment()"
+                class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15">
+
                 <input
                   type="text"
                   name="reportComment"
@@ -588,12 +970,26 @@
                   title="Send comment"
                   [disabled]="savingComment || !newComment.trim() || !commentChurchId || isAnnualView"
                   class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300">
-                  <svg *ngIf="!savingComment" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+
+                  <svg
+                    *ngIf="!savingComment"
+                    class="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
                     <path d="m4 4 17 8-17 8 3-8-3-8Z" />
                     <path d="M7 12h14" />
                   </svg>
-                  <span *ngIf="savingComment" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true"></span>
+
+                  <span
+                    *ngIf="savingComment"
+                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                    aria-hidden="true">
+                  </span>
                 </button>
               </form>
 
@@ -603,15 +999,27 @@
             </ng-template>
           </div>
 
-          <div *ngIf="!canComment && visibleComments.length > 0" class="border-t border-emerald-900/10 px-5 py-4 text-sm text-emerald-900/70">
+          <div
+            *ngIf="!canComment && visibleComments.length > 0"
+            class="border-t border-emerald-900/10 px-5 py-4 text-sm text-emerald-900/70">
             View only. Comments cannot be added from this account.
           </div>
         </section>
 
-        <button *ngIf="!commentsOpen" type="button" (click)="openComments()"
-          aria-label="Open comments" title="Open comments" [attr.aria-expanded]="commentsOpen"
+        <!-- Open Comments Button -->
+        <button
+          *ngIf="!commentsOpen"
+          type="button"
+          (click)="openComments()"
+          aria-label="Open comments"
+          title="Open comments"
+          [attr.aria-expanded]="commentsOpen"
           class="fixed bottom-5 right-5 z-40 flex h-24 w-24 items-center justify-center rounded-full bg-transparent transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
-          <img src="/assets/comment_icon.png" alt="" aria-hidden="true"
+
+          <img
+            src="/assets/comment_icon.png"
+            alt=""
+            aria-hidden="true"
             class="h-full w-full object-contain drop-shadow-xl">
         </button>
       </aside>
@@ -620,6 +1028,7 @@
     <!-- ================================================= -->
     <!-- BAPTISM DETAILS MODAL -->
     <!-- ================================================= -->
+
     <div
       *ngIf="selectedBaptism"
       class="fixed inset-0 z-[1040] bg-slate-900/[0.58] backdrop-blur"
@@ -628,122 +1037,164 @@
 
     <div
       *ngIf="selectedBaptism"
-      class="fixed inset-0 z-[1050] flex items-center justify-center overflow-x-hidden overflow-y-auto p-6 max-[640px]:p-3"
+      class="fixed inset-0 z-[1050] flex items-center justify-center overflow-y-auto p-3 max-[640px]:p-2"
       role="dialog"
       aria-modal="true"
       aria-labelledby="baptismModalTitle"
       (click)="$event.stopPropagation()">
 
-      <div class="relative flex max-h-[calc(100vh-3rem)] w-full max-w-[900px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.25)] transition-[opacity,transform] duration-200 ease-out [@starting-style]:translate-y-3 [@starting-style]:scale-[0.99] [@starting-style]:opacity-0 max-[640px]:max-h-[calc(100vh-1.5rem)] max-[640px]:rounded-[14px] motion-reduce:transition-none">
+      <div class="relative flex max-h-[calc(100vh-1.5rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_20px_55px_rgba(15,23,42,0.22)] max-[640px]:max-h-[calc(100vh-1rem)]">
 
         <!-- Modal Header -->
-        <div class="flex items-center justify-between gap-5 border-b border-[#e8edf4] bg-white px-7 py-[23px] max-[640px]:p-[18px]">
-          <div class="flex min-w-0 items-center gap-[15px] max-[640px]:gap-2.5 [&_h2]:mb-[5px] [&_h2]:mt-0 [&_h2]:text-[21px] [&_h2]:font-bold [&_h2]:tracking-[-0.35px] [&_h2]:text-[#17243a] max-[640px]:[&_h2]:text-[17px] [&_p]:m-0 [&_p]:text-[13px] [&_p]:leading-[1.5] [&_p]:text-[#718096] max-[640px]:[&_p]:text-[11px]">
-            <div>
-              <h2 id="baptismModalTitle">
-                Baptism Record
-              </h2>
-            </div>
-          </div>
+        <div class="flex items-center justify-between border-b border-[#e8edf4] bg-white px-4 py-3">
+          <h2
+            id="baptismModalTitle"
+            class="m-0 text-base font-bold tracking-tight text-[#17243a]">
+            Baptism Record
+          </h2>
         </div>
 
         <!-- Modal Body -->
-        <div class="overflow-y-auto bg-slate-50 px-7 py-[26px] max-[640px]:p-4" *ngIf="selectedBaptism">
-          <div class="rounded-[14px] border border-[#e6ebf2] bg-white p-[23px] max-[640px]:p-4">
+        <div
+          class="overflow-y-auto bg-slate-50 p-3"
+          *ngIf="selectedBaptism">
 
-            <div class="mb-5 border-b border-[#e8edf4] pb-[17px] [&_h3]:mb-[5px] [&_h3]:mt-0 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-[#17243a] [&_p]:m-0 [&_p]:text-xs [&_p]:leading-[1.6] [&_p]:text-[#718096]">
-              
-            </div>
+          <div class="rounded-lg border border-[#e6ebf2] bg-white px-3">
 
-            <!-- UPDATED: one-column details layout -->
-            <div
-              class="grid grid-cols-2 gap-x-7 gap-y-0 max-[640px]:grid-cols-1"
-              style="display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px;">
+            <div class="grid grid-cols-1">
 
-              <!-- First four name fields appear together in one row -->
-              <div
-                class="details-name-row"
-                style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; width: 100%;">
+              <!-- Full Name -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Full Name
+                </span>
 
-                <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]" style="min-width: 0;">
-                  <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">First Name</span>
-                  <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.first_name || '—' }}</span>
-                </div>
-
-                <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]" style="min-width: 0;">
-                  <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Middle Name</span>
-                  <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.middle_name || '—' }}</span>
-                </div>
-
-                <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]" style="min-width: 0;">
-                  <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Last Name</span>
-                  <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.last_name || '—' }}</span>
-                </div>
-
-                <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]" style="min-width: 0;">
-                  <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Extension Name</span>
-                  <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.extension_name || '—' }}</span>
-                </div>
-
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Gender</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.gender || '—' }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Marital Status</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.marital_status || '—' }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Birthdate</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ formatDate(selectedBaptism.birthdate) }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Age</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">
-                  {{ calculateAge(selectedBaptism.birthdate) }}
-                  <span class="ml-1 text-xs font-normal text-[#8794a7]">years old</span>
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getFullName(selectedBaptism) || '—' }}
                 </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Address</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.address || '—' }}</span>
+              <!-- Gender -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Gender
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.gender || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Church</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getChurchName(selectedBaptism.church_id) }}</span>
+              <!-- Marital Status -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Marital Status
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.marital_status || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Quarter</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.quarter || '—' }}</span>
+              <!-- Birthdate -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Birthdate
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(selectedBaptism.birthdate) }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Date of Baptism</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ formatDate(selectedBaptism.date_of_baptism) }}</span>
+              <!-- Age -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Age
+                </span>
+
+                <span class="text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ calculateAge(selectedBaptism.birthdate) }}
+                  <span class="ml-1 text-xs font-normal text-[#8794a7]">
+                    years old
+                  </span>
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Officiating Minister</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.officiating_minister || '—' }}</span>
+              <!-- Address -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Address
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.address || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Place of Baptism</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ selectedBaptism.place_of_baptism || '—' }}</span>
+              <!-- Church -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Church
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getChurchName(selectedBaptism.church_id) }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Baptism Status</span>
+              <!-- Quarter -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Quarter
+                </span>
+
+                <span class="text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.quarter || '—' }}
+                </span>
+              </div>
+
+              <!-- Date of Baptism -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Date of Baptism
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(selectedBaptism.date_of_baptism) }}
+                </span>
+              </div>
+
+              <!-- Officiating Minister -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Officiating Minister
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.officiating_minister || '—' }}
+                </span>
+              </div>
+
+              <!-- Place of Baptism -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Place of Baptism
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ selectedBaptism.place_of_baptism || '—' }}
+                </span>
+              </div>
+
+              <!-- Baptism Status -->
+              <div class="flex min-w-0 flex-col items-start gap-1 py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Baptism Status
+                </span>
+
                 <span
-                  class="inline-flex w-fit items-center rounded-[20px] px-[11px] py-[5px] text-xs font-bold"
+                  class="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11px] font-bold"
                   [ngClass]="{
                     'bg-green-100 text-green-800': getBaptismStatus(selectedBaptism.is_reclaimed) === 'Reclaimed Member',
                     'bg-slate-100 text-slate-600': getBaptismStatus(selectedBaptism.is_reclaimed) === 'Newly Baptized'
@@ -756,33 +1207,44 @@
           </div>
         </div>
 
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-between gap-4 border-t border-[#e8edf4] bg-white px-7 py-[17px] max-[640px]:px-4 max-[640px]:py-[14px]">
-          <div class="ml-auto flex items-center justify-end gap-2.5">
+        <!-- Modal Footer: Close Button on the Right -->
+    <!-- Modal Footer: Edit and Close Buttons on the Right -->
+<div class="flex items-center justify-end gap-2 border-t border-[#e8edf4] bg-white px-4 py-3">
 
-            <button app-button variant="edit" size="md"
-              *ngIf="!isReadOnly"
-              type="button"
-              class="min-w-[120px] cursor-pointer rounded-[9px] border border-[#0c502f] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#0c502f] transition-colors hover:bg-[#0c502f] hover:text-white motion-reduce:transition-none"
-              (click)="editSelectedBaptism()">
-              Edit Record
-            </button>
+ 
 
-            <button app-button variant="done" size="md"
-              type="button"
-              class="min-w-[100px] cursor-pointer rounded-[9px] border border-[#084d23] bg-[#0c502f] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:border-[#044f06] hover:bg-[#5d835e] motion-reduce:transition-none"
-              (click)="closeBaptismModal()">
-              Close
-            </button>
+  <!-- Close Button -->
+  <button
+    app-button
+    variant="done"
+    size="md"
+    type="button"
+    class="inline-flex h-[32px] w-[110px] cursor-pointer items-center justify-center !rounded-[8px] !border !border-[#0c502f] !bg-white px-3 text-[12px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] motion-reduce:transition-none"
+    (click)="closeBaptismModal()">
+    Close
+  </button>
 
-          </div>
-        </div>
+<!-- Edit Record Button -->
+<button
+  app-button
+  variant="edit"
+  size="md"
+  *ngIf="!isReadOnly"
+  type="button"
+  class="inline-flex h-[32px] w-[110px] cursor-pointer items-center justify-center !rounded-[8px] !border !border-[#0c502f] !bg-[#0c502f] px-3 text-[12px] font-semibold !text-white transition-colors duration-200 hover:!border-[#0c502f] hover:!bg-[#0c502f] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
+  (click)="editSelectedBaptism()">
+  Edit Record
+</button>
+
+</div>
+
       </div>
     </div>
 
     <!-- ================================================= -->
     <!-- DEATH DETAILS MODAL -->
     <!-- ================================================= -->
+
     <div
       *ngIf="selectedDeath"
       class="fixed inset-0 z-[1040] bg-slate-900/[0.58] backdrop-blur"
@@ -791,131 +1253,188 @@
 
     <div
       *ngIf="selectedDeath"
-      class="fixed inset-0 z-[1050] flex items-center justify-center overflow-x-hidden overflow-y-auto p-6 max-[640px]:p-3"
+      class="fixed inset-0 z-[1050] flex items-center justify-center overflow-y-auto p-3 max-[640px]:p-2"
       role="dialog"
       aria-modal="true"
       aria-labelledby="deathModalTitle"
       (click)="$event.stopPropagation()">
 
-      <div class="relative flex max-h-[calc(100vh-3rem)] w-full max-w-[900px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.25)] transition-[opacity,transform] duration-200 ease-out [@starting-style]:translate-y-3 [@starting-style]:scale-[0.99] [@starting-style]:opacity-0 max-[640px]:max-h-[calc(100vh-1.5rem)] max-[640px]:rounded-[14px] motion-reduce:transition-none">
+      <div class="relative flex max-h-[calc(100vh-1.5rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_20px_55px_rgba(15,23,42,0.22)] max-[640px]:max-h-[calc(100vh-1rem)]">
 
         <!-- Modal Header -->
-        <div class="flex items-center justify-between gap-5 border-b border-[#e8edf4] bg-white px-7 py-[23px] max-[640px]:p-[18px]">
-          <div class="flex min-w-0 items-center gap-[15px] max-[640px]:gap-2.5 [&_h2]:mb-[5px] [&_h2]:mt-0 [&_h2]:text-[21px] [&_h2]:font-bold [&_h2]:tracking-[-0.35px] [&_h2]:text-[#17243a] max-[640px]:[&_h2]:text-[17px] [&_p]:m-0 [&_p]:text-[13px] [&_p]:leading-[1.5] [&_p]:text-[#718096] max-[640px]:[&_p]:text-[11px]">
-            <div>
-              <h2 id="deathModalTitle">Death Record</h2>
-            </div>
-          </div>
+        <div class="flex items-center justify-between border-b border-[#e8edf4] bg-white px-4 py-3">
+          <h2
+            id="deathModalTitle"
+            class="m-0 text-base font-bold tracking-tight text-[#17243a]">
+            Death Record
+          </h2>
         </div>
 
         <!-- Modal Body -->
-        <div class="overflow-y-auto bg-slate-50 px-7 py-[26px] max-[640px]:p-4" *ngIf="selectedDeath as deathRecord">
-          <div class="rounded-[14px] border border-[#e6ebf2] bg-white p-[23px] max-[640px]:p-4">
+        <div
+          class="overflow-y-auto bg-slate-50 p-3"
+          *ngIf="selectedDeath as deathRecord">
 
-            <div class="mb-5 border-b border-[#e8edf4] pb-[17px] [&_h3]:mb-[5px] [&_h3]:mt-0 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-[#17243a] [&_p]:m-0 [&_p]:text-xs [&_p]:leading-[1.6] [&_p]:text-[#718096]">
-              <div>
-                <h3>{{ getFullName(getDeathBaptism(deathRecord)) }}</h3>
-              </div>
-            </div>
+          <div class="rounded-lg border border-[#e6ebf2] bg-white px-3">
 
-            <div class="grid grid-cols-2 gap-x-7 gap-y-0 max-[640px]:grid-cols-1">
+            <div class="grid grid-cols-1">
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">First Name</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.first_name || '—' }}</span>
-              </div>
+              <!-- Full Name -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Full Name
+                </span>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Middle Name</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.middle_name || '—' }}</span>
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getFullName(getDeathBaptism(deathRecord)) || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Last Name</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.last_name || '—' }}</span>
+                 <!-- Date of Death -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Date of Death
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(deathRecord.date_of_death) }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Extension Name</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.extension_name || '—' }}</span>
-              </div>
+                <!-- Age at Death -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Age at Death
+                </span>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Gender</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.gender || '—' }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Marital Status</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.marital_status || '—' }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Birthdate</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ formatDate(getDeathBaptism(deathRecord)?.birthdate || '') }}</span>
-              </div>
-
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Age at Death</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
                   {{
                     calculateAgeAtDeath(
                       getDeathBaptism(deathRecord)?.birthdate || '',
                       deathRecord.date_of_death
                     )
                   }}
-                  <span class="ml-1 text-xs font-normal text-[#8794a7]">years old</span>
+                  <span class="ml-1 text-xs font-normal text-[#8794a7]">
+                    years old
+                  </span>
                 </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Address</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.address || '—' }}</span>
+
+              
+              <!-- Birthdate -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Birthdate
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(getDeathBaptism(deathRecord)?.birthdate || '') }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Church</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getChurchName(getDeathBaptism(deathRecord)?.church_id) }}</span>
+
+              <!-- Gender -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Gender
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.gender || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Date of Death</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ formatDate(deathRecord.date_of_death) }}</span>
+                <!-- Church -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Church
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getChurchName(getDeathBaptism(deathRecord)?.church_id) }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Quarter</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ deathRecord.quarter || '—' }}</span>
+               <!-- Address -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Address
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.address || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Date of Baptism</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ formatDate(getDeathBaptism(deathRecord)?.date_of_baptism || '') }}</span>
+             <!-- Quarter -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Quarter
+                </span>
+
+                <span class="text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ deathRecord.quarter || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Officiating Minister</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.officiating_minister || '—' }}</span>
+              <!-- Marital Status -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Marital Status
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.marital_status || '—' }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Place of Baptism</span>
-                <span class="whitespace-normal break-words text-sm font-semibold leading-[1.65] text-[#263449]">{{ getDeathBaptism(deathRecord)?.place_of_baptism || '—' }}</span>
+              <!-- Date of Baptism -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Date of Baptism
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ formatDate(getDeathBaptism(deathRecord)?.date_of_baptism || '') }}
+                </span>
               </div>
 
-              <div class="flex min-w-0 flex-col gap-[7px] border-b border-[#edf1f6] py-[15px]">
-                <span class="text-[11px] font-bold uppercase tracking-[0.55px] text-[#8190a5]">Reclaimed Member</span>
+              <!-- Officiating Minister -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Officiating Minister
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.officiating_minister || '—' }}
+                </span>
+              </div>
+
+              <!-- Place of Baptism -->
+              <div class="flex min-w-0 flex-col gap-1 border-b border-[#edf1f6] py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Place of Baptism
+                </span>
+
+                <span class="break-words text-[13px] font-semibold leading-5 text-[#263449]">
+                  {{ getDeathBaptism(deathRecord)?.place_of_baptism || '—' }}
+                </span>
+              </div>
+
+              <!-- Reclaimed Member -->
+              <div class="flex min-w-0 flex-col items-start gap-1 py-2.5">
+                <span class="text-[10px] font-bold uppercase tracking-[0.45px] text-[#8190a5]">
+                  Reclaimed Member
+                </span>
+
                 <span
-                  class="inline-flex w-fit items-center rounded-[20px] px-[11px] py-[5px] text-xs font-bold"
+                  class="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11px] font-bold"
                   [ngClass]="{
                     'bg-green-100 text-green-800': getDeathBaptism(deathRecord)?.is_reclaimed,
                     'bg-slate-100 text-slate-600': !getDeathBaptism(deathRecord)?.is_reclaimed
                   }">
-                  {{
-                    getDeathBaptism(deathRecord)?.is_reclaimed
-                      ? 'Yes'
-                      : 'No'
-                  }}
+                  {{ getDeathBaptism(deathRecord)?.is_reclaimed ? 'Yes' : 'No' }}
                 </span>
               </div>
 
@@ -923,11 +1442,14 @@
           </div>
         </div>
 
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-between gap-4 border-t border-[#e8edf4] bg-white px-7 py-[17px] max-[640px]:px-4 max-[640px]:py-[14px]">
-          <button app-button variant="done" size="md"
+        <!-- Modal Footer: Close Button on the Right -->
+        <div class="flex items-center justify-end border-t border-[#e8edf4] bg-white px-4 py-3">
+          <button
+            app-button
+            variant="done"
+            size="md"
             type="button"
-            class="min-w-[100px] cursor-pointer rounded-[9px] border border-[#084d23] bg-[#0c502f] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:border-[#044f06] hover:bg-[#5d835e] motion-reduce:transition-none"
+            class="inline-flex h-[32px] w-[110px] cursor-pointer items-center justify-center !rounded-[8px] !border !border-[#0c502f] !bg-white px-4 text-[12px] font-semibold !text-[#0c502f] transition-colors duration-200 hover:!border-[#083c23] hover:!bg-[#083c23] hover:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c502f] motion-reduce:transition-none"
             (click)="closeDeathModal()">
             Close
           </button>
@@ -936,6 +1458,82 @@
       </div>
     </div>
 
+  </div>
+</main>
+<div
+  *ngIf="personalRecordPreviewOpen"
+  class="summary-report-preview-dialog report-export-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="personal-record-preview-title">
+  <section class="report-export-dialog">
+    <header class="report-export-header">
+      <div>
+        <h2 id="personal-record-preview-title" class="text-lg font-bold text-emerald-950">
+          {{ personalRecordTitle }} preview
+        </h2>
+        <p class="text-sm text-slate-600">
+          {{ selectedYear }} · {{ selectedSummaryQuarter ?? (isAnnualView ? 'Annual' : selectedQuarter) }}
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="closePersonalRecordPreview()"
+        aria-label="Close preview"
+        class="report-export-close">×</button>
+    </header>
+    <div class="report-export-content">
+      <div data-summary-report-print-preview>
+        <h1 class="mb-1 text-center text-xl font-bold text-emerald-950">{{ personalRecordTitle }}</h1>
+        <p class="mb-4 text-center text-sm text-slate-700">
+          {{ selectedYear }} · {{ selectedSummaryQuarter ?? (isAnnualView ? 'Annual' : selectedQuarter) }}
+          <span *ngIf="reportLocation"> · {{ reportLocation }}</span>
+        </p>
+        <table class="w-full border-collapse text-left text-xs sm:text-sm">
+          <tbody>
+            <tr *ngFor="let row of personalRecordPreviewRows; let rowIndex = index" class="border-b border-slate-200">
+              <ng-container *ngFor="let cell of row">
+                <th
+                  *ngIf="rowIndex === 4; else personalRecordPreviewCell"
+                  scope="col"
+                  class="border border-slate-300 bg-emerald-50 px-2 py-2 font-bold text-emerald-950">{{ cell }}</th>
+                <ng-template #personalRecordPreviewCell>
+                  <td class="border border-slate-300 px-2 py-2 text-slate-800">{{ cell }}</td>
+                </ng-template>
+              </ng-container>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <footer class="report-export-actions">
+      <button
+        type="button"
+        (click)="closePersonalRecordPreview()"
+        class="report-export-button report-export-button-close">Close</button>
+      <button
+        type="button"
+        (click)="exportPersonalRecordCsv()"
+        class="report-export-button report-export-button-csv">
+        <i class="bi bi-download" aria-hidden="true"></i> Export CSV
+      </button>
+      <button
+        type="button"
+        (click)="exportPersonalRecordExcel()"
+        [disabled]="exportingPersonalRecordExcel"
+        class="report-export-button report-export-button-excel">
+        <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+        {{ exportingPersonalRecordExcel ? 'Preparing Excel...' : 'Export Excel (.xlsx)' }}
+      </button>
+      <button
+        type="button"
+        (click)="printPersonalRecord()"
+        class="report-export-button report-export-button-print">
+        <i class="bi bi-printer" aria-hidden="true"></i> Print
+      </button>
+    </footer>
+  </section>
+</div>
 <link
   href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
   rel="stylesheet">

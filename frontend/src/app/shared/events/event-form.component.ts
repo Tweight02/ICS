@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, computed, signal } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth/auth-service';
 import { Department } from '../../core/models/event.model';
 import { API_URL, EventFormConfig } from './events.config';
 import { Button } from '../components/button/button';
+import { showAppAlert } from '../utils/app-alert';
 
 interface ProgramNode {
   program_id: number;
@@ -28,6 +29,7 @@ interface Option {
   id: number;
   name: string;
   sub?: string;
+  parentId?: number | null;
   selected: boolean;
 }
 
@@ -46,8 +48,11 @@ interface EventFormValues {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, Button],
   templateUrl: './event-form.component.html',
+  host: {
+    class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-3'
+  }
 })
-export class EventFormComponent implements OnInit {
+export class EventFormComponent implements OnInit, OnDestroy {
   @Input({ required: true }) config!: EventFormConfig;
 
   private readonly stepState = signal<1 | 2>(1);
@@ -81,6 +86,9 @@ export class EventFormComponent implements OnInit {
   private readonly tried1State = signal(false);
   get tried1(): boolean { return this.tried1State(); }
   set tried1(value: boolean) { this.tried1State.set(value); }
+
+  private readonly step1HintState = signal('');
+  private step1HintTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly tried2State = signal(false);
   get tried2(): boolean { return this.tried2State(); }
@@ -184,9 +192,69 @@ export class EventFormComponent implements OnInit {
   get churchesError(): string { return this.churchesErrorState(); }
   set churchesError(value: string) { this.churchesErrorState.set(value); }
 
+  private readonly allHostChurchesState = signal<Option[]>([]);
+  private readonly loadingHostChurchesState = signal(false);
+  private readonly hostChurchesErrorState = signal('');
+  private readonly selectedHostChurchIdState = signal<number | null>(null);
+  get selectedHostChurchId(): number | null { return this.selectedHostChurchIdState(); }
+  set selectedHostChurchId(value: number | null) { this.selectedHostChurchIdState.set(value); }
+  private readonly hostChurchDropdownOpenState = signal(false);
+  get hostChurchDropdownOpen(): boolean { return this.hostChurchDropdownOpenState(); }
+  private readonly hostChurchSearchState = signal('');
+  get hostChurchSearch(): string { return this.hostChurchSearchState(); }
+  set hostChurchSearch(value: string) { this.hostChurchSearchState.set(value); }
+
+  readonly hostChurchOptions = computed(() => {
+    if (this.config.coverage === 'church') {
+      return this.userChurchId && this.userChurchName
+        ? [{ id: this.userChurchId, name: this.userChurchName }]
+        : [];
+    }
+
+    if (this.config.coverage === 'churches') {
+      return this.churches.filter((church) => church.selected);
+    }
+
+    const selectedDistrictIds = new Set(
+      this.districts.filter((district) => district.selected).map((district) => district.id),
+    );
+    return this.allHostChurchesState().filter(
+      (church) => church.parentId != null && selectedDistrictIds.has(church.parentId),
+    );
+  });
+
+  readonly filteredHostChurchOptions = computed(() => {
+    const query = this.hostChurchSearch.trim().toLowerCase();
+    const options = this.hostChurchOptions();
+    return query
+      ? options.filter((church) => church.name.toLowerCase().includes(query))
+      : options;
+  });
+
+  readonly hostChurchError = computed(() =>
+    this.hostChurchOptions().some((church) => church.id === this.selectedHostChurchId)
+      ? ''
+      : 'Choose a host church included in the event coverage.',
+  );
+
+  get hostChurchLoading(): boolean {
+    return this.config.coverage === 'districts'
+      ? this.loadingHostChurchesState()
+      : this.config.coverage === 'churches' && this.loadingChurches;
+  }
+
+  get hostChurchesError(): string {
+    return this.hostChurchesErrorState();
+  }
+
+  get selectedHostChurchName(): string {
+    return this.hostChurchOptions().find((church) => church.id === this.selectedHostChurchId)?.name ?? '';
+  }
+
   // Existing event (edit mode) waiting for the lists it depends on
   private existing: any = null;
   private basicApplied = false;
+  private districtsLoaded = false;
   private pendingChurchIds: number[] | null = null;
   private pendingDistrictIds: number[] | null = null;
 
@@ -205,12 +273,19 @@ export class EventFormComponent implements OnInit {
     this.summaryOpen = this.config.coverage === 'church';
 
     this.loadUser();
-    if (this.config.coverage === 'districts') this.loadDistricts();
+    if (this.config.coverage === 'districts') {
+      this.loadDistricts();
+      this.loadHostChurches();
+    }
 
     if (this.isEdit) {
       this.step = 2; // Editing starts on the details; the particulars action returns to step 1.
       this.loadExisting();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.clearStep1HintTimer();
   }
 
   // =====================================================================
@@ -236,14 +311,20 @@ export class EventFormComponent implements OnInit {
           const role = String(u.role ?? '').toLowerCase().replace(/[-_]/g, ' ').trim();
           const isRepresentative = role === 'representative' || role === 'church representative';
           const isPastor = role === 'pastor' || role === 'district pastor';
+          const isGlobalAssistant =
+            ['assistant', 'administrative assistant'].includes(role) &&
+            (u.department_id ?? u.department?.department_id) == null;
           this.userDistrictId = Number(
             u.district?.id ?? u.district?.church_id ?? u.district_id ?? u.church?.parent_id,
           ) || (isPastor ? this.userChurchId : null);
           this.userChurchName = isPastor
             ? u.district?.name || u.district_name || u.church?.parent?.name || u.church?.name || ''
             : u.church_name || u.church?.name || '';
-          this.canChooseDepartmentState.set(isRepresentative || isPastor);
-          if (isRepresentative || isPastor) {
+          if (this.config.coverage === 'church' && this.userChurchId) {
+            this.selectedHostChurchId = Number(this.userChurchId);
+          }
+          this.canChooseDepartmentState.set(isRepresentative || isPastor || isGlobalAssistant);
+          if (isRepresentative || isPastor || isGlobalAssistant) {
             if (!this.isEdit) {
               this.deptId = null;
               this.departmentName = '';
@@ -294,6 +375,7 @@ export class EventFormComponent implements OnInit {
   }
 
   selectDepartment(value: string | number): void {
+    this.clearStep1Hint();
     const departmentId = Number(value);
     if (!Number.isInteger(departmentId) || departmentId <= 0) {
       this.deptId = null;
@@ -338,19 +420,24 @@ export class EventFormComponent implements OnInit {
   }
 
   loadDistricts(): void {
+    this.districtsLoaded = false;
     this.districtsError = '';
     this.http.get<any>(`${API_URL}/districts`).subscribe({
       next: (res) => {
         const raw = res?.data ?? res;
         const list: any[] = Array.isArray(raw) ? raw : [];
         this.districts = list.map((d) => ({ id: d.church_id ?? d.id, name: d.name, selected: false }));
+        this.districtsLoaded = true;
         this.applyPendingCoverage();
+        this.ensureHostChurchSelection();
       },
       error: (err) => {
         console.error('Failed to load districts', err);
         this.districts = [];
         this.districtsError = 'We could not load districts. Try again before saving.';
+        this.districtsLoaded = true;
         this.applyPendingCoverage();
+        this.ensureHostChurchSelection();
       },
     });
   }
@@ -383,16 +470,70 @@ export class EventFormComponent implements OnInit {
         id,
         name: c.name,
         sub: c.address ?? c.location ?? '',
+        parentId: Number(c.parent_id) || null,
         selected: !!this.pendingChurchIds && this.pendingChurchIds.includes(id),
       };
     });
     this.loadingChurches = false;
+    this.ensureHostChurchSelection();
   }
 
   private failChurches(): void {
     this.churches = [];
     this.churchesError = 'We could not load the churches of your district.';
     this.loadingChurches = false;
+  }
+
+  loadHostChurches(): void {
+    this.loadingHostChurchesState.set(true);
+    this.hostChurchesErrorState.set('');
+    this.http.get<any>(`${API_URL}/churches`).subscribe({
+      next: (res) => {
+        const raw = res?.data ?? res;
+        const list: any[] = Array.isArray(raw) ? raw : [];
+        this.allHostChurchesState.set(list
+          .filter((church) => church.parent_id != null)
+          .map((church) => ({
+            id: Number(church.church_id ?? church.id),
+            name: church.name,
+            parentId: Number(church.parent_id),
+            selected: false,
+          })));
+        this.loadingHostChurchesState.set(false);
+        if (this.districtsLoaded) this.ensureHostChurchSelection();
+      },
+      error: (error) => {
+        console.error('Failed to load host church options.', error);
+        this.allHostChurchesState.set([]);
+        this.loadingHostChurchesState.set(false);
+        this.hostChurchesErrorState.set('We could not load host churches. Try again before saving.');
+      },
+    });
+  }
+
+  private ensureHostChurchSelection(): void {
+    const options = this.hostChurchOptions();
+    if (options.some((church) => church.id === this.selectedHostChurchId)) {
+      return;
+    }
+    if (options.length) {
+      this.selectedHostChurchId = options[0].id;
+      return;
+    }
+    if (!this.hostChurchLoading) {
+      this.selectedHostChurchId = null;
+    }
+  }
+
+  openHostChurchDropdown(): void {
+    this.hostChurchSearch = '';
+    this.hostChurchDropdownOpenState.set(true);
+  }
+
+  selectHostChurch(churchId: number): void {
+    this.selectedHostChurchId = churchId;
+    this.hostChurchSearch = '';
+    this.hostChurchDropdownOpenState.set(false);
   }
 
   // ---------- Edit mode ----------
@@ -431,15 +572,26 @@ export class EventFormComponent implements OnInit {
         end_time: String(e.end_time ?? '').slice(0, 5),
         notes: e.notes ?? '',
       };
+      this.selectedHostChurchId = Number(e.host_church_id) || null;
 
       this.selectedParticularIds = Array.isArray(e.particular_ids)
         ? e.particular_ids.map(Number)
         : [];
+      const departmentId = Number(e.department?.id ?? e.department?.department_id ?? e.department_id);
+      if (Number.isInteger(departmentId) && departmentId > 0) {
+        this.deptId = departmentId;
+        this.departmentName = e.department?.name
+          ?? e.department?.department_name
+          ?? e.department_name
+          ?? `Department ${departmentId}`;
+      } else {
+        this.departmentName = e.department?.name
+          ?? e.department?.department_name
+          ?? e.department_name
+          ?? '';
+      }
       if (this.config.coverage === 'church') {
-        const departmentId = Number(e.department?.id ?? e.department?.department_id);
         if (Number.isInteger(departmentId) && departmentId > 0) {
-          this.deptId = departmentId;
-          this.departmentName = e.department?.name ?? e.department?.department_name ?? `Department ${departmentId}`;
           this.loadPrograms(departmentId);
         }
       }
@@ -546,6 +698,7 @@ export class EventFormComponent implements OnInit {
     } else if (this.canSelectParticular(particular)) {
       this.selectedParticularIds = [...this.selectedParticularIds, particular.particular_id];
     }
+    this.clearStep1Hint();
   }
 
   readonly summaryGroups = computed(() =>
@@ -563,19 +716,52 @@ export class EventFormComponent implements OnInit {
         ? 'Choose a department before continuing.'
         : 'Your account must be assigned to a department before continuing.';
     }
-    if (!this.selectedParticularIds.length) return 'Choose at least one particular to continue.';
+    if (!this.selectedParticularIds.length) {
+      if (!this.loadingPrograms && !this.programsError && this.getVisiblePrograms().length === 0) {
+        return `${this.deptName()} has no available report particulars. Choose a different department to continue.`;
+      }
+
+      return 'Select at least one report particular to continue.';
+    }
     return '';
   });
 
   next(): void {
     this.tried1 = true;
-    if (this.step1Error()) return;
+    const error = this.step1Error();
+    if (error) {
+      this.showStep1Hint(error);
+      return;
+    }
+    this.clearStep1Hint();
     this.step = 2;
   }
 
   changeParticulars(): void {
+    this.clearStep1Hint();
     this.tried1 = false;
     this.step = 1;
+  }
+
+  private showStep1Hint(message: string): void {
+    this.clearStep1HintTimer();
+    this.step1HintState.set(message);
+    this.step1HintTimer = setTimeout(() => {
+      this.step1HintState.set('');
+      this.step1HintTimer = null;
+    }, 5000);
+  }
+
+  private clearStep1Hint(): void {
+    this.clearStep1HintTimer();
+    this.step1HintState.set('');
+  }
+
+  private clearStep1HintTimer(): void {
+    if (this.step1HintTimer !== null) {
+      clearTimeout(this.step1HintTimer);
+      this.step1HintTimer = null;
+    }
   }
 
   // =====================================================================
@@ -589,6 +775,12 @@ export class EventFormComponent implements OnInit {
     this.form = { ...this.form, [field]: value };
   }
 
+  updateAnnouncement(value: string, textarea: HTMLTextAreaElement): void {
+    this.updateFormField('notes', value);
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }
+
   private rawError(field: string): string {
     const f = this.form;
     switch (field) {
@@ -596,6 +788,8 @@ export class EventFormComponent implements OnInit {
         return f.title.trim() ? '' : 'Enter an event title.';
       case 'location':
         return f.location.trim() ? '' : 'Enter where the event will take place.';
+      case 'host_church_id':
+        return this.hostChurchError();
       case 'start_date':
         return f.start_date ? '' : 'Pick a start date.';
       case 'end_date':
@@ -636,7 +830,9 @@ export class EventFormComponent implements OnInit {
 
   readonly missingCount = computed(() => {
     const fields = ['title', 'location', 'start_date', 'end_date', 'start_time', 'end_time'];
-    return fields.filter((f) => this.rawError(f)).length + (this.coverageError() ? 1 : 0);
+    return fields.filter((f) => this.rawError(f)).length
+      + (this.coverageError() ? 1 : 0)
+      + (this.hostChurchError() ? 1 : 0);
   });
 
   // ----- Districts (assistant) -----
@@ -659,6 +855,7 @@ export class EventFormComponent implements OnInit {
   toggleAllDistricts(): void {
     const selected = !this.allDistrictsSelected();
     this.districts = this.districts.map((district) => ({ ...district, selected }));
+    this.ensureHostChurchSelection();
   }
 
   toggleDistrict(d: Option): void {
@@ -666,6 +863,7 @@ export class EventFormComponent implements OnInit {
       ...district,
       selected: district.id === d.id ? !district.selected : district.selected,
     }));
+    this.ensureHostChurchSelection();
   }
 
   // ----- Churches (district pastor) -----
@@ -679,6 +877,7 @@ export class EventFormComponent implements OnInit {
     if (this.isEdit) return;
     const selected = !this.allChurchesSelected();
     this.churches = this.churches.map((church) => ({ ...church, selected }));
+    this.ensureHostChurchSelection();
   }
 
   toggleChurch(c: Option): void {
@@ -686,6 +885,7 @@ export class EventFormComponent implements OnInit {
       if (church.id !== c.id) return church;
       return { ...church, selected: this.isEdit ? true : !church.selected };
     });
+    this.ensureHostChurchSelection();
   }
 
   // =====================================================================
@@ -722,7 +922,7 @@ export class EventFormComponent implements OnInit {
 
   readonly hint = computed(() => {
     if (this.saveError) return this.saveError;
-    if (this.step === 1) return this.tried1 && this.step1Error() ? this.step1Error() : '';
+    if (this.step === 1) return this.step1HintState();
     if (this.tried2 && this.missingCount() > 0) {
       const n = this.missingCount();
       return `${n} required field${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} your attention.`;
@@ -732,7 +932,7 @@ export class EventFormComponent implements OnInit {
 
   readonly hintIsError = computed(() => {
     if (this.saveError) return true;
-    return this.step === 1 ? this.tried1 && !!this.step1Error() : this.tried2 && this.missingCount() > 0;
+    return this.step === 1 ? !!this.step1HintState() : this.tried2 && this.missingCount() > 0;
   });
 
   // =====================================================================
@@ -742,6 +942,7 @@ export class EventFormComponent implements OnInit {
     const payload: any = {
       ...this.form,
       particular_ids: this.selectedParticularIds,
+      host_church_id: this.selectedHostChurchId,
     };
 
     if (this.canChooseDepartment) {
@@ -763,12 +964,26 @@ export class EventFormComponent implements OnInit {
   }
 
   submit(): void {
+    if (this.saving) return;
+
+    const role = String(this.auth.getCurrentUser()?.role ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]/g, ' ');
+    if (role === 'head assistant') {
+      this.saveError = 'Head Assistants cannot create or edit events.';
+      return;
+    }
+
     this.tried2 = true;
     this.saveError = '';
     if (this.missingCount() > 0) return;
 
     this.saving = true;
-    const payload = this.buildPayload();
+    this.saveEvent(this.buildPayload());
+  }
+
+  private saveEvent(payload: Record<string, unknown>, confirmedOverlap = false): void {
     const request = this.isEdit
       ? this.http.put<any>(`${API_URL}/events/${this.eventId}`, payload)
       : this.http.post<any>(`${API_URL}/events`, payload);
@@ -779,16 +994,62 @@ export class EventFormComponent implements OnInit {
         const createdEvent = Array.isArray(res?.data) ? res.data[0] : res?.data;
         const newId = createdEvent?.event_id ?? createdEvent?.id ?? res?.event_id ?? res?.id;
         const target = this.isEdit ? this.eventId : newId;
-        this.router.navigate(target ? [this.config.basePath, target] : [this.config.basePath]);
+        const navigateToEvent = () => {
+          void this.router.navigate(target ? [this.config.basePath, target] : [this.config.basePath]);
+        };
+
+        if (res?.warning) {
+          void showAppAlert({
+            icon: 'warning',
+            title: 'Schedule overlap',
+            text: res.warning,
+            confirmButtonText: 'Continue',
+          }).then(navigateToEvent);
+          return;
+        }
+
+        navigateToEvent();
       },
       error: (err) => {
+        if (
+          err?.status === 409 &&
+          err?.error?.code === 'EVENT_SCHEDULE_OVERLAP' &&
+          !confirmedOverlap
+        ) {
+          void showAppAlert({
+            icon: 'warning',
+            title: 'Schedule overlap',
+            text: err.error.message,
+            showCancelButton: true,
+            confirmButtonText: 'Create anyway',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+          }).then(result => {
+            if (result.isConfirmed) {
+              this.saving = true;
+              this.saveEvent({ ...payload, confirm_overlap: true }, true);
+            } else {
+              this.saving = false;
+            }
+          });
+          return;
+        }
+
         console.error('Failed to save the event', err);
         this.saving = false;
         const errors = err?.error?.errors;
         const firstValidationError = errors ? Object.values(errors).flat()[0] : null;
-        this.saveError = typeof firstValidationError === 'string'
+        const reason = typeof firstValidationError === 'string'
           ? firstValidationError
           : err?.error?.message ?? 'We could not save the event. Your answers are still here, so you can try again.';
+        this.saveError = reason;
+
+        void showAppAlert({
+          icon: 'error',
+          title: 'Unable to save event',
+          text: reason,
+          confirmButtonText: 'OK'
+        });
       },
     });
   }

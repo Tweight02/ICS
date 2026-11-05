@@ -38,7 +38,7 @@ interface CalendarCell {
   imports: [CommonModule, FormsModule, RouterLink, Button],
   templateUrl: './events-home.component.html',
   host: {
-    class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-4 min-[1025px]:h-full max-[1024px]:min-h-full max-[640px]:gap-3 [@media(min-width:1025px)_and_(max-height:820px)]:gap-3',
+    class: 'flex min-w-0 flex-col gap-4 max-[640px]:gap-3 [@media(min-width:1025px)_and_(max-height:820px)]:gap-3 [@media(min-width:1025px)_and_(min-height:680px)]:h-[calc(100dvh-3.5rem)] [@media(min-width:1025px)_and_(min-height:680px)]:min-h-0',
   },
 })
 export class EventsHomeComponent implements OnInit {
@@ -91,6 +91,15 @@ export class EventsHomeComponent implements OnInit {
     private eventService: EventService,
     private auth: AuthService,
   ) {}
+
+  get canCreateEvents(): boolean {
+    const role = String(this.auth.getCurrentUser()?.role ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]/g, ' ');
+
+    return this.config.canCreate && role !== 'head assistant';
+  }
 
   ngOnInit(): void {
     this.workspaceName = this.config.workspaceTitle;

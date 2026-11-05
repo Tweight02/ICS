@@ -42,16 +42,26 @@ describe('ReportPeriodSelector', () => {
     expect(selectedAnnual).toHaveBeenCalledOnce();
   });
 
-  it('shows selected quarter status inline with the quarter controls as plain text', () => {
-    fixture.componentRef.setInput('status', 'approved');
+  it('shows approved and endorsed states on their corresponding quarter controls', () => {
+    fixture.componentRef.setInput('quarterStatuses', { 1: 'approved', 2: 'endorsed' });
     fixture.detectChanges();
 
-    const status = fixture.nativeElement.querySelector('[data-testid="period-status"]') as HTMLSpanElement | null;
-    expect(fixture.nativeElement.textContent).toContain('Approved');
-    expect(status?.getAttribute('role')).toBe('status');
-    expect(status?.className).toContain('border-l');
-    expect(status?.className).not.toContain('rounded');
-    expect(status?.className).not.toContain('bg-');
-    expect(status?.parentElement?.className).toContain('rounded-lg border');
+    const buttons = fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
+    expect(buttons[0].getAttribute('aria-label')).toBe('Q1, approved');
+    expect(buttons[0].querySelector('.bi-check-circle-fill')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Q1 approved"] .bi-check-circle-fill')).not.toBeNull();
+
+    const endorsedStatus = fixture.nativeElement.querySelector('[aria-label="Q2 endorsed"]') as HTMLSpanElement | null;
+    expect(endorsedStatus?.textContent).toContain('Endorsed');
+    expect(endorsedStatus?.querySelector('i')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="period-status"]')).toBeNull();
+  });
+
+  it('can hide the year selector while keeping quarter controls visible', () => {
+    fixture.componentRef.setInput('showYear', false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[aria-label="Reporting year"]')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('button')).toHaveLength(3);
   });
 });

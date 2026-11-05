@@ -1,11 +1,12 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { EventService } from '../../../core/services/events/events-api';
 import { Button } from '../../../shared/components/button/button';
 import { formatDateRange, formatTime } from '../../../shared/events/event.utils';
+import { showAppAlert } from '../../../shared/utils/app-alert';
 
 type RegistrationEvent = {
   id: number;
@@ -13,6 +14,7 @@ type RegistrationEvent = {
   church: string;
   registrationChurch: string;
   createdBy: string;
+  host: string;
   date: string;
   time: string;
   end: string;
@@ -29,6 +31,21 @@ type RegistrationFormData = {
   gender: string;
 };
 
+type RegistrationAttribution = {
+  church_id: number;
+  registration_token: string;
+};
+
+function isRegistrationAttribution(value: unknown): value is RegistrationAttribution {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const attribution = value as Record<string, unknown>;
+  return Number.isInteger(attribution['church_id'])
+    && typeof attribution['registration_token'] === 'string';
+}
+
 @Component({
   selector: 'app-registration',
   standalone: true,
@@ -37,7 +54,7 @@ type RegistrationFormData = {
 })
 export class Registration implements OnInit, OnDestroy {
   eventId: number | null = null;
-  private registrationAttribution: { church_id: number; registration_token: string } | undefined;
+  private registrationAttribution: RegistrationAttribution | undefined;
   private successNotificationTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly selectedEventState = signal<RegistrationEvent | null>(null);
   get selectedEvent(): RegistrationEvent | null { return this.selectedEventState(); }
@@ -50,10 +67,6 @@ export class Registration implements OnInit, OnDestroy {
   private readonly eventErrorState = signal('');
   get eventError(): string { return this.eventErrorState(); }
   set eventError(value: string) { this.eventErrorState.set(value); }
-
-  private readonly confirmModalVisibleState = signal(false);
-  get confirmModalVisible(): boolean { return this.confirmModalVisibleState(); }
-  set confirmModalVisible(value: boolean) { this.confirmModalVisibleState.set(value); }
 
   private readonly successModalVisibleState = signal(false);
   get successModalVisible(): boolean { return this.successModalVisibleState(); }
@@ -95,6 +108,8 @@ export class Registration implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private eventService: EventService,
+    private router: Router,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -105,17 +120,31 @@ export class Registration implements OnInit, OnDestroy {
     if (!Number.isInteger(id) || id < 1) {
       this.loadingEvent = false;
       this.eventError = 'Choose an upcoming event before registering.';
+      this.showErrorAlert(this.eventError);
       return;
     }
 
     this.eventId = id;
     const churchId = Number(this.route.snapshot.queryParamMap.get('church_id'));
-    const registrationToken = this.route.snapshot.queryParamMap.get('registration_token');
-    if (Number.isInteger(churchId) && churchId > 0 && registrationToken) {
+    const attributionParams = new URLSearchParams(this.route.snapshot.fragment ?? '');
+    const fragmentChurchId = Number(attributionParams.get('church_id'));
+    const fragmentRegistrationToken = attributionParams.get('registration_token');
+    const queryRegistrationToken = this.route.snapshot.queryParamMap.get('registration_token');
+    const registrationToken = queryRegistrationToken
+      ?? fragmentRegistrationToken;
+    const attributedChurchId = queryRegistrationToken ? churchId : fragmentChurchId;
+
+    if (Number.isInteger(attributedChurchId) && attributedChurchId > 0 && registrationToken) {
       this.registrationAttribution = {
-        church_id: churchId,
+        church_id: attributedChurchId,
         registration_token: registrationToken,
       };
+    } else {
+      this.registrationAttribution = this.savedRegistrationAttribution();
+    }
+
+    if (registrationToken) {
+      this.clearRegistrationTokenFromUrl();
     }
 
     this.eventService.getPublicEventById(id, this.registrationAttribution).subscribe({
@@ -130,6 +159,7 @@ export class Registration implements OnInit, OnDestroy {
             || 'Not specified',
           registrationChurch: event.registration_church_name ?? '',
           createdBy: event.created_by ?? '',
+          host: event.host_church_name ?? event.host_church?.name ?? '',
           date: formatDateRange(event.start_date, event.end_date),
           time: event.start_time,
           end: event.end_time,
@@ -143,9 +173,30 @@ export class Registration implements OnInit, OnDestroy {
         this.eventError = error?.status === 404
           ? 'This event is no longer open for registration.'
           : 'Could not load this event. Please return to the events page and try again.';
+        this.showErrorAlert(this.eventError);
         this.loadingEvent = false;
       },
     });
+  }
+
+  private clearRegistrationTokenFromUrl(): void {
+    void this.router.navigateByUrl(
+      `/participants/registration?event=${this.eventId}`,
+      {
+        replaceUrl: true,
+        state: { registrationAttribution: this.registrationAttribution },
+      }
+    );
+  }
+
+  private savedRegistrationAttribution(): RegistrationAttribution | undefined {
+    const state = this.location.getState();
+    if (!state || typeof state !== 'object') {
+      return undefined;
+    }
+
+    const attribution = (state as Record<string, unknown>)['registrationAttribution'];
+    return isRegistrationAttribution(attribution) ? attribution : undefined;
   }
 
   ngOnDestroy(): void {
@@ -165,20 +216,38 @@ export class Registration implements OnInit, OnDestroy {
     return start && end ? `${start}–${end}` : start || end;
   }
 
-  onSubmit(form: NgForm): void {
+  async onSubmit(form: NgForm): Promise<void> {
     if (form.invalid || !this.selectedEvent) {
       form.form.markAllAsTouched();
+      const message = !this.selectedEvent
+        ? 'Please choose an event before submitting the form.'
+        : 'Please complete all required fields before submitting.';
+      this.showErrorAlert(message);
       return;
     }
 
-    this.confirmModalVisible = true;
+    await this.submitRegistration();
   }
 
-  cancelSubmit(): void {
-    this.confirmModalVisible = false;
+  private showErrorAlert(message: string): void {
+    void showAppAlert({
+      icon: 'error',
+      title: 'Registration failed',
+      text: message,
+      confirmButtonColor: '#166534',
+    });
   }
 
-  async confirmSubmit(): Promise<void> {
+  private showSuccessAlert(fullName: string, eventTitle: string): void {
+    void showAppAlert({
+      icon: 'success',
+      title: 'Registration successful',
+      text: `${fullName} has been registered for ${eventTitle}.`,
+      confirmButtonColor: '#166534',
+    });
+  }
+
+  private async submitRegistration(): Promise<void> {
     if (!this.eventId) return;
     this.saving = true;
     this.errorVisible = false;
@@ -209,22 +278,19 @@ export class Registration implements OnInit, OnDestroy {
         age: '',
         gender: '',
       };
-      this.confirmModalVisible = false;
-      this.successModalVisible = true;
+      this.successModalVisible = false;
       if (this.successNotificationTimeout) {
         clearTimeout(this.successNotificationTimeout);
-      }
-      this.successNotificationTimeout = setTimeout(() => {
-        this.successModalVisible = false;
         this.successNotificationTimeout = null;
-      }, 5000);
+      }
+      this.showSuccessAlert(this.fullName, this.eventTitle);
     } catch (error: any) {
       console.error('Failed to save participant registration', error);
       this.errorMessage = error?.status === 422 && error?.error?.errors
         ? Object.values(error.error.errors).flat().join(' ')
         : 'Could not save your registration. Please try again.';
       this.errorVisible = true;
-      this.confirmModalVisible = false;
+      this.showErrorAlert(this.errorMessage);
     } finally {
       this.saving = false;
     }

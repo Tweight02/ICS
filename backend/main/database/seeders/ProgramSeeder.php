@@ -233,7 +233,7 @@ class ProgramSeeder extends Seeder
             [
                 'program_id' => 80,
                 'department_id' => 18,
-                'program_name' => 'Womens Ministries Quarterly Report',
+                'program_name' => "Women's Ministries Quarterly Report",
                 'parent_id' => null,
             ],
             [

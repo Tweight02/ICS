@@ -1,5 +1,5 @@
 <ng-template #quarterCell let-quarter>
-  <div class="flex min-h-12 items-center justify-center">
+  <span class="flex min-h-12 items-center justify-center">
     <span *ngIf="getQuarterStatus(quarter).tone === 'approved'; else statusLabel"
       class="text-sm font-bold text-emerald-700"
       role="img"
@@ -11,13 +11,27 @@
         [tone]="getQuarterStatus(quarter).tone">
       </app-quarter-status>
     </ng-template>
-  </div>
+  </span>
+</ng-template>
+
+<ng-template #interactiveQuarterCell let-quarter let-department="department" let-quarterKey="quarterKey">
+  <button
+    type="button"
+    (click)="$event.stopPropagation(); openDepartmentQuarter(department, quarterKey)"
+    [id]="isRepresentativePortal ? 'report-quarter-' + department.department_id + '-' + quarterKey : null"
+    [attr.aria-current]="isReturnedQuarter(department, quarterKey) ? 'location' : null"
+    [attr.aria-label]="'Open ' + quarterKey.toUpperCase() + ' report for ' + getDepartmentLabel(department.department_name)"
+    [attr.title]="'Open ' + quarterKey.toUpperCase() + ' report'"
+    [ngClass]="isReturnedQuarter(department, quarterKey) ? 'bg-emerald-100 ring-2 ring-inset ring-emerald-600' : ''"
+    class="inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-lg px-2 transition hover:bg-emerald-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600">
+    <ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: quarter }"></ng-container>
+  </button>
 </ng-template>
 
 <div class="min-h-screen px-4 py-6 text-emerald-950 sm:px-8 lg:px-10">
   <div class="mx-auto max-w-7xl">
     <header class="relative isolate mb-4 overflow-hidden rounded-xl border border-white/80 bg-emerald-50 shadow-sm shadow-emerald-950/10">
-      <img src="/assets/Misty.png" alt="" aria-hidden="true"
+      <img src="/assets/headerMountain.png" alt="" aria-hidden="true"
         class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-60">
       <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/90 to-emerald-100/45"></div>
       <div class="relative flex min-h-20 flex-col justify-center gap-2 p-4 sm:min-h-24 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3">
@@ -40,6 +54,16 @@
             {{ districtName || 'District overview' }}
           </p>
         </div>
+        <label for="department-monitoring-year" class="relative flex shrink-0 items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-900/75">
+          <span>Year</span>
+          <select
+            id="department-monitoring-year"
+            class="h-10 rounded-xl border border-emerald-900/15 bg-white/90 px-3 text-sm font-semibold normal-case tracking-normal text-emerald-950 shadow-sm outline-none transition hover:border-emerald-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+            [value]="selectedYear()"
+            (change)="onYearChange($event)">
+            <option *ngFor="let year of reportYears" [value]="year">{{ year }}</option>
+          </select>
+        </label>
       </div>
     </header>
 
@@ -49,10 +73,19 @@
       <span>{{ errorMessage }}</span>
     </div>
 
-    <div *ngIf="loading"
-      class="mx-auto flex w-fit flex-col items-center gap-3 rounded-2xl border border-emerald-900/10 bg-white px-10 py-8 text-emerald-900 shadow-sm">
-      <div class="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-700"></div>
-      <p class="text-sm font-medium">Loading departments...</p>
+    <div *ngIf="loading" class="overflow-hidden rounded-2xl border border-white/80 bg-white/95 shadow-[0_14px_40px_rgba(15,48,38,0.10)]" role="status" aria-label="Loading department reports" aria-busy="true">
+      <div class="overflow-x-auto">
+      <div class="min-w-[640px]">
+      <div *ngFor="let row of [1, 2, 3, 4, 5]" class="grid min-h-16 grid-cols-[minmax(200px,36%)_repeat(4,minmax(100px,1fr))] items-center gap-3 border-b border-emerald-950/[0.06] px-4 py-3 sm:px-7">
+        <div class="flex items-center gap-3">
+          <span class="report-skeleton-block h-10 w-10 rounded-xl"></span>
+          <span class="report-skeleton-block report-skeleton-block-dark h-4 w-3/5"></span>
+        </div>
+        <span *ngFor="let quarter of ['q1', 'q2', 'q3', 'q4']" class="report-skeleton-block mx-auto h-8 w-14 rounded-lg"></span>
+      </div>
+      </div>
+      </div>
+      <span class="sr-only">Loading department report rows.</span>
     </div>
 
     <section
@@ -71,6 +104,9 @@
           </thead>
           <tbody class="divide-y divide-emerald-950/[0.06]">
             <tr *ngFor="let department of reportDepartments; let i = index; trackBy: trackDepartment"
+              [id]="isRepresentativePortal ? 'report-department-' + department.department_id : null"
+              [attr.aria-current]="isReturnedDepartment(department) && !returnedQuarter() ? 'location' : null"
+              [ngClass]="isReturnedDepartment(department) && !returnedQuarter() ? 'bg-emerald-100 ring-2 ring-inset ring-emerald-600' : ''"
               class="group cursor-pointer transition-colors odd:bg-white even:bg-emerald-950/[0.012] hover:bg-emerald-50/75 focus-within:bg-emerald-50"
               (click)="openDepartment(department)">
               <th scope="row" class="px-5 py-3 text-left sm:px-7">
@@ -78,17 +114,37 @@
                   <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-100/70 text-emerald-800 shadow-sm transition group-hover:border-emerald-200 group-hover:from-white group-hover:to-emerald-50">
                     <i class="bi text-[17px]" [ngClass]="getDepartmentIcon(department.department_name)" aria-hidden="true"></i>
                   </span>
-                  <span class="font-semibold leading-5 text-emerald-950 transition group-hover:text-emerald-800">{{ department.department_name }}</span>
+                  <span class="font-semibold leading-5 text-emerald-950 transition group-hover:text-emerald-800">{{ getDepartmentLabel(department.department_name) }}</span>
                   <svg class="ml-auto h-4 w-4 shrink-0 text-emerald-900/20 transition group-hover:translate-x-0.5 group-hover:text-emerald-700"
                     viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   </svg>
                 </span>
               </th>
-              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q1 }"></ng-container></td>
-              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q2 }"></ng-container></td>
-              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q3 }"></ng-container></td>
-              <td class="px-3 py-2.5 text-center"><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q4 }"></ng-container></td>
+              <td class="px-3 py-2.5 text-center">
+                <ng-container *ngIf="isRepresentativePortal; else q1Status">
+                  <ng-container *ngTemplateOutlet="interactiveQuarterCell; context: { $implicit: getMonitoring(i).q1, department: department, quarterKey: 'q1' }"></ng-container>
+                </ng-container>
+                <ng-template #q1Status><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q1 }"></ng-container></ng-template>
+              </td>
+              <td class="px-3 py-2.5 text-center">
+                <ng-container *ngIf="isRepresentativePortal; else q2Status">
+                  <ng-container *ngTemplateOutlet="interactiveQuarterCell; context: { $implicit: getMonitoring(i).q2, department: department, quarterKey: 'q2' }"></ng-container>
+                </ng-container>
+                <ng-template #q2Status><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q2 }"></ng-container></ng-template>
+              </td>
+              <td class="px-3 py-2.5 text-center">
+                <ng-container *ngIf="isRepresentativePortal; else q3Status">
+                  <ng-container *ngTemplateOutlet="interactiveQuarterCell; context: { $implicit: getMonitoring(i).q3, department: department, quarterKey: 'q3' }"></ng-container>
+                </ng-container>
+                <ng-template #q3Status><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q3 }"></ng-container></ng-template>
+              </td>
+              <td class="px-3 py-2.5 text-center">
+                <ng-container *ngIf="isRepresentativePortal; else q4Status">
+                  <ng-container *ngTemplateOutlet="interactiveQuarterCell; context: { $implicit: getMonitoring(i).q4, department: department, quarterKey: 'q4' }"></ng-container>
+                </ng-container>
+                <ng-template #q4Status><ng-container *ngTemplateOutlet="quarterCell; context: { $implicit: getMonitoring(i).q4 }"></ng-container></ng-template>
+              </td>
             </tr>
 
             <tr *ngIf="personalReportDepartments.length > 0" class="border-t border-emerald-950/10 bg-emerald-50/60">
@@ -105,7 +161,7 @@
                   <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-100/70 text-emerald-800 shadow-sm transition group-hover:border-emerald-200 group-hover:from-white group-hover:to-emerald-50">
                     <i class="bi text-[17px]" [ngClass]="getDepartmentIcon(department.department_name)" aria-hidden="true"></i>
                   </span>
-                  <span class="font-semibold leading-5 text-emerald-950 transition group-hover:text-emerald-800">{{ department.department_name }}</span>
+                  <span class="font-semibold leading-5 text-emerald-950 transition group-hover:text-emerald-800">{{ getDepartmentLabel(department.department_name) }}</span>
                   <svg class="ml-auto h-4 w-4 shrink-0 text-emerald-900/20 transition group-hover:translate-x-0.5 group-hover:text-emerald-700"
                     viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

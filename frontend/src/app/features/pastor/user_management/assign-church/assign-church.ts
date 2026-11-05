@@ -2,7 +2,7 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { EMPTY, expand, finalize, forkJoin, reduce } from 'rxjs';
-import Swal from 'sweetalert2';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
 
 import { Representative } from '../../../../core/models/representative.model';
 import { ChurchService } from '../../../../core/services/church/church-service';
@@ -24,6 +24,7 @@ interface RepresentativeMove {
   representative: string;
   from: string | null;
   to: string | null;
+  action: 'Assign' | 'Transfer' | 'Made inactive';
 }
 
 interface AssignmentPreview {
@@ -79,11 +80,18 @@ export class AssignChurch implements OnInit {
     () => this.churchOptions().find((option) => option.value === this.selectedChurchId())?.label ?? 'All churches'
   );
 
-  readonly visibleAssignments = computed(() => {
+  readonly visibleAssignmentColumns = computed(() => {
     const id = this.selectedChurchId();
-    return id
+    const assignments = (id
       ? this.assignments().filter((assignment) => String(assignment.church_id) === id)
-      : this.assignments();
+      : this.assignments())
+      .slice()
+      .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }));
+    const rowsPerColumn = Math.ceil(assignments.length / 3);
+
+    return Array.from({ length: Math.min(3, assignments.length) }, (_, columnIndex) =>
+      assignments.slice(columnIndex * rowsPerColumn, (columnIndex + 1) * rowsPerColumn)
+    );
   });
 
   readonly transferTarget = signal<ChurchAssignment | null>(null);
@@ -105,15 +113,10 @@ export class AssignChurch implements OnInit {
 
   readonly selectedRepresentativeFrom = computed(() => {
     const representative = this.selectedRepresentative();
-    if (!representative) {
+    if (!representative || representative.status === 'inactive') {
       return null;
     }
     return this.assignments().find((assignment) => assignment.church_id === representative.church_id) ?? null;
-  });
-
-  readonly canSubmitAssignment = computed(() => {
-    const target = this.transferTarget();
-    return !!this.selectedRepresentative() && (!target?.representative || !!this.selectedRepresentativeFrom());
   });
 
   readonly preview = computed<AssignmentPreview | null>(() => {
@@ -124,27 +127,33 @@ export class AssignChurch implements OnInit {
     }
 
     const from = this.selectedRepresentativeFrom();
-    if (target.representative && !from) {
-      return null;
-    }
-
     const moves: RepresentativeMove[] = [
-      { representative: this.fullName(representative), from: from?.name ?? null, to: target.name },
+      {
+        representative: this.fullName(representative),
+        from: from?.name ?? null,
+        to: target.name,
+        action: from ? 'Transfer' : 'Assign',
+      },
     ];
 
     if (target.representative) {
       moves.push({
         representative: this.fullName(target.representative),
         from: target.name,
-        to: from?.name ?? null,
+        to: null,
+        action: 'Made inactive',
       });
-      return { title: 'Swap representatives', moves, note: null };
     }
+    const note = from ? `${from.name} will have no representative after this transfer.` : null;
 
     return {
-      title: from ? 'Transfer representative' : 'Assign representative',
+      title: target.representative
+        ? 'Replace representative'
+        : from
+          ? 'Transfer representative'
+          : 'Assign representative',
       moves,
-      note: from ? `${from.name} will have no representative after this transfer.` : null,
+      note,
     };
   });
 
@@ -156,13 +165,18 @@ export class AssignChurch implements OnInit {
     this.loadAssignments();
   }
 
-  loadAssignments(): void {
-    this.loading.set(true);
+  /**
+   * @param silent when true, refresh in the background without showing the loading skeleton.
+   */
+  loadAssignments(silent = false): void {
+    if (!silent) {
+      this.loading.set(true);
+    }
     this.loadError.set('');
 
     forkJoin({
       churches: this.churchService.getMyDistrictChurches(),
-      representatives: this.loadActiveRepresentatives(),
+      representatives: this.loadRepresentatives(),
     })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -175,7 +189,7 @@ export class AssignChurch implements OnInit {
             church_id: church.church_id,
             name: church.name,
             representative: representatives.find((representative) =>
-              representative.church_id === church.church_id
+              representative.church_id === church.church_id && representative.status === 'active'
             ) ?? null,
           })));
         },
@@ -186,8 +200,8 @@ export class AssignChurch implements OnInit {
       });
   }
 
-  private loadActiveRepresentatives() {
-    const filters = { status: 'active' as const, per_page: this.perPage };
+  private loadRepresentatives() {
+    const filters = { per_page: this.perPage };
     return this.representativeService.getRepresentatives({ ...filters, page: 1 }).pipe(
       expand((response) =>
         response.current_page < response.last_page
@@ -201,6 +215,30 @@ export class AssignChurch implements OnInit {
     );
   }
 
+  /** Applies a successful transfer to local state immediately, without waiting for a refetch. */
+  private applyTransfers(
+    transfers: { user_id: number; church_id: number }[],
+    deactivatedUserId: number | null
+  ): void {
+    const moved = new Map(transfers.map((transfer) => [transfer.user_id, transfer.church_id]));
+    const representatives = this.representatives()
+      .filter((representative) => representative.user_id !== deactivatedUserId)
+      .map((representative) =>
+        moved.has(representative.user_id)
+            ? { ...representative, church_id: moved.get(representative.user_id)!, status: 'active' as const }
+          : representative
+      );
+
+    this.representatives.set(representatives);
+    this.assignments.update((list) =>
+      list.map((assignment) => ({
+        ...assignment,
+        representative:
+          representatives.find((representative) => representative.church_id === assignment.church_id) ?? null,
+      }))
+    );
+  }
+
   fullName(representative: Representative): string {
     return [
       representative.first_name,
@@ -211,6 +249,9 @@ export class AssignChurch implements OnInit {
   }
 
   sourceFor(representative: Representative) {
+    if (representative.status === 'inactive') {
+      return null;
+    }
     return this.assignments().find((assignment) => assignment.church_id === representative.church_id) ?? null;
   }
 
@@ -321,6 +362,14 @@ export class AssignChurch implements OnInit {
     this.modalOpener = null;
   }
 
+  cancelAssignment(): void {
+    if (this.selectedRepresentativeId() !== null) {
+      this.clearRepresentative();
+      return;
+    }
+    this.closeAssignment();
+  }
+
   onRepresentativeSearch(value: string): void {
     this.representativeQuery.set(value);
   }
@@ -381,33 +430,17 @@ export class AssignChurch implements OnInit {
       church_id: church.church_id,
     }];
 
-    if (church.representative) {
-      const sourceChurch = this.assignments().find(
-        (assignment) => assignment.church_id === representative.church_id
-      );
-      if (!sourceChurch) {
-        this.notifyError(
-          'Change unavailable',
-          'Choose a representative currently assigned to another church in your district to swap assignments.'
-        );
-        return;
-      }
-
-      transfers.push({
-        user_id: church.representative.user_id,
-        church_id: sourceChurch.church_id,
-      });
-    }
-
     this.saving.set(true);
     const sourceChurch = this.selectedRepresentativeFrom();
     const confirmationText = church.representative && sourceChurch
-      ? `${this.fullName(representative)} will move from ${sourceChurch.name} to ${church.name}, and ${this.fullName(church.representative)} will move to ${sourceChurch.name}.`
+      ? `${this.fullName(representative)} will move from ${sourceChurch.name} to ${church.name}, and ${this.fullName(church.representative)} will be made inactive, leaving ${sourceChurch.name} without a representative.`
+      : church.representative
+        ? `${this.fullName(representative)} will replace ${this.fullName(church.representative)} at ${church.name}; ${this.fullName(church.representative)} will be made inactive.`
       : sourceChurch
         ? `${this.fullName(representative)} will move from ${sourceChurch.name} to ${church.name}, leaving ${sourceChurch.name} without a representative.`
         : `${this.fullName(representative)} will be assigned to ${church.name}.`;
 
-    const confirmation = await Swal.fire({
+    const confirmation = await showAppAlert({
       icon: 'warning',
       title: 'Confirm representative transfer',
       text: confirmationText,
@@ -419,6 +452,7 @@ export class AssignChurch implements OnInit {
     });
     if (!confirmation.isConfirmed) {
       this.saving.set(false);
+      this.clearRepresentative();
       return;
     }
 
@@ -428,26 +462,37 @@ export class AssignChurch implements OnInit {
         finalize(() => this.saving.set(false))
       )
       .subscribe({
-        next: async (response) => {
+        next: () => {
+          // Apply the change right away; the toast must not block the UI update.
           this.saving.set(false);
+          this.applyTransfers(transfers, church.representative?.user_id ?? null);
           this.closeAssignment();
-          await Swal.fire({
+
+          const assignmentNotice = showAppAlert({
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: church.representative ? 'Representative changed' : sourceChurch ? 'Representative transferred' : 'Representative assigned',
-            text: this.successText(
-              this.fullName(representative),
-              church.name,
-              sourceChurch?.name ?? null,
-              church.representative ? this.fullName(church.representative) : null,
-              response.message
-            ),
+            title: 'Representative assigned',
+            text: `${this.fullName(representative)} is now assigned to ${church.name}.`,
             showConfirmButton: false,
-            timer: 3500,
+            timer: 3000,
             timerProgressBar: true,
           });
-          this.loadAssignments();
+          if (church.representative) {
+            void assignmentNotice.then(() => showAppAlert({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: 'Previous representative made inactive',
+              text: `${this.fullName(church.representative!)} is now inactive and unassigned from ${church.name}.`,
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true,
+            }));
+          }
+
+          // Background refresh to sync with the server, without the loading skeleton.
+          this.loadAssignments(true);
         },
         error: async (error) => {
           console.error('Failed to assign representative:', error);
@@ -461,25 +506,7 @@ export class AssignChurch implements OnInit {
       });
   }
 
-  private successText(
-    representative: string,
-    to: string,
-    from: string | null,
-    replaced: string | null,
-    responseMessage: string
-  ): string {
-    if (replaced && from) {
-      return `${representative} moved to ${to}, and ${replaced} moved to ${from}.`;
-    }
-    if (replaced) {
-      return responseMessage;
-    }
-    return from
-      ? `${representative} moved from ${from} to ${to}.`
-      : `${representative} is now assigned to ${to}.`;
-  }
-
   private notifyError(title: string, text: string): void {
-    Swal.fire({ icon: 'error', title, text, confirmButtonColor: this.brandColor });
+    showAppAlert({ icon: 'error', title, text, confirmButtonColor: this.brandColor });
   }
 }

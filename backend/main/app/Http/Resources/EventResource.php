@@ -15,9 +15,13 @@ class EventResource extends JsonResource
         $user = EventUser::fromRequest($request);
         $quarter = $this->quarterDetails();
         $church = EventsOrg::church((int) $this->church_id);
+        $hostChurch = EventsOrg::church((int) $this->host_church_id);
         $creator = $this->createdBy()->first(['users.first_name', 'users.last_name']);
         $particulars = $this->particulars()->with('program')->get();
+        $departmentId = (int) ($quarter->department_id ?? $particulars->first()?->program?->department_id ?? 0);
+        $department = EventsOrg::department($departmentId);
         $districts = $this->districts()->get(['churches.church_id as id', 'churches.name']);
+        $churches = $this->churches()->get(['churches.church_id as id', 'churches.name']);
         $allDistrictsSelected = $districts->isNotEmpty()
             && $districts->count() === EventsOrg::districts()->count();
         $participantQuery = $this->participants();
@@ -52,9 +56,9 @@ class EventResource extends JsonResource
             'end_time' => substr($this->end_time, 0, 5),
             'status' => $this->status,
             'notes' => $this->notes,
-            'department' => $quarter ? [
-                'id' => (int) $quarter->department_id,
-                'name' => $quarter->department_name,
+            'department' => $department ? [
+                'id' => $department['id'],
+                'name' => $department['name'],
             ] : null,
             'particular_ids' => $particulars->pluck('particular_id')->map(fn ($id) => (int) $id)->values(),
             'programs' => $particulars->groupBy('program_id')->map(function ($items) {
@@ -71,8 +75,15 @@ class EventResource extends JsonResource
                 ];
             })->values(),
             'scope' => [
-                'label' => $church->name ?? null,
-                'churches' => $church && ! $isDistrict ? [['id' => (int) $church->id, 'name' => $church->name]] : [],
+                'label' => $churches->count() > 1
+                    ? 'Multiple churches'
+                    : ($churches->first()->name ?? $church->name ?? null),
+                'churches' => $churches->isNotEmpty()
+                    ? $churches->map(fn ($target) => [
+                        'id' => (int) $target->id,
+                        'name' => $target->name,
+                    ])->values()
+                    : ($church && ! $isDistrict ? [['id' => (int) $church->id, 'name' => $church->name]] : []),
                 'districts' => $districts->map(fn ($district) => [
                     'id' => (int) $district->id,
                     'name' => $district->name,
@@ -80,7 +91,12 @@ class EventResource extends JsonResource
                 'all_districts' => $allDistrictsSelected,
             ],
             'church_id' => (int) $this->church_id,
-            'church_name' => $church->name ?? null,
+            'church_name' => $churches->count() > 1
+                ? 'Multiple churches'
+                : ($churches->first()->name ?? $church->name ?? null),
+            'host_church_id' => $this->host_church_id ? (int) $this->host_church_id : null,
+            'host_church_name' => $hostChurch?->name,
+            'host' => $hostChurch?->name,
             'created_by' => $creator
                 ? trim($creator->first_name . ' ' . $creator->last_name)
                 : null,

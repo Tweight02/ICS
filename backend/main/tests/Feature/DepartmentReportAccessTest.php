@@ -10,7 +10,7 @@ uses(TestCase::class, RefreshDatabase::class);
 
 function departmentReportAccessUser(
     int $churchId,
-    int $departmentId,
+    ?int $departmentId,
     string $role,
     string $suffix
 ): User {
@@ -51,18 +51,32 @@ function departmentReportAccessFixture(): array
         'churchId' => $churchId,
         'departmentId' => $departmentId,
         'director' => departmentReportAccessUser($churchId, 16, 'director', 'director'),
+        'headDirector' => departmentReportAccessUser($churchId, 16, 'head director', 'head-director'),
         'assistant' => departmentReportAccessUser($churchId, 16, 'administrative assistant', 'assistant'),
-        'otherDepartmentDirector' => departmentReportAccessUser($churchId, $departmentId, 'director', 'other-director'),
+        'globalAssistant' => departmentReportAccessUser($churchId, null, 'assistant', 'global-assistant'),
         'otherDepartmentAssistant' => departmentReportAccessUser($churchId, $departmentId, 'assistant', 'other-assistant'),
         'pastor' => departmentReportAccessUser($churchId, $departmentId, 'pastor', 'pastor'),
         'representative' => departmentReportAccessUser($churchId, $departmentId, 'representative', 'representative'),
     ];
 }
 
-test('only Ministerial and Evangelism directors and assistants can access personal report departments', function () {
+test('head directors can access every department report', function () {
     $fixture = departmentReportAccessFixture();
 
-    foreach (['director', 'assistant'] as $role) {
+    $this->actingAs($fixture['headDirector'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments")
+        ->assertOk()
+        ->assertJsonCount(6);
+
+    $this->actingAs($fixture['headDirector'], 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/30/report")
+        ->assertOk();
+});
+
+test('department-assigned assistants remain scoped to their assigned departments', function () {
+    $fixture = departmentReportAccessFixture();
+
+    foreach (['assistant'] as $role) {
         $user = $fixture[$role];
         $departments = $this->actingAs($user, 'sanctum')
             ->getJson("/api/churches/{$fixture['churchId']}/departments")
@@ -83,7 +97,7 @@ test('only Ministerial and Evangelism directors and assistants can access person
             ->assertForbidden();
     }
 
-    foreach (['otherDepartmentDirector', 'otherDepartmentAssistant'] as $role) {
+    foreach (['otherDepartmentAssistant'] as $role) {
         $user = $fixture[$role];
         $departments = $this->actingAs($user, 'sanctum')
             ->getJson("/api/churches/{$fixture['churchId']}/departments")
@@ -97,6 +111,31 @@ test('only Ministerial and Evangelism directors and assistants can access person
                 ->assertForbidden();
         }
     }
+});
+
+test('global assistants and directors can read every department report', function () {
+    $fixture = departmentReportAccessFixture();
+
+    foreach (['globalAssistant', 'director'] as $role) {
+        $user = $fixture[$role];
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/churches/{$fixture['churchId']}/departments")
+            ->assertOk()
+            ->assertJsonFragment(['department_id' => 30]);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/churches/{$fixture['churchId']}/departments/30/report")
+            ->assertOk();
+    }
+
+    $this->actingAs($fixture['globalAssistant'], 'sanctum')
+        ->postJson("/api/churches/{$fixture['churchId']}/departments/30/report/save", [])
+        ->assertUnprocessable();
+
+    $this->actingAs($fixture['director'], 'sanctum')
+        ->postJson("/api/churches/{$fixture['churchId']}/departments/30/report/save", [])
+        ->assertForbidden();
 });
 
 test('representatives can access all departments except pastor personal reports', function () {
@@ -152,6 +191,132 @@ test('pastors can access all department reports and see personal report departme
     $this->actingAs($fixture['pastor'], 'sanctum')
         ->getJson("/api/churches/{$fixture['churchId']}/departments/20/report")
         ->assertOk();
+});
+
+test('pastors can load and save district-owned personal reports', function () {
+    $fixture = departmentReportAccessFixture();
+    $districtId = $fixture['churchId'];
+    $childChurchId = DB::table('churches')->insertGetId([
+        'name' => 'Personal Report Child Church',
+        'address' => 'District Address',
+        'parent_id' => $districtId,
+    ]);
+    $reportDetails = [];
+
+    foreach ([16, 20] as $departmentId) {
+        $programId = DB::table('programs')->insertGetId([
+            'department_id' => $departmentId,
+            'program_name' => "Personal Report Program {$departmentId}",
+            'parent_id' => null,
+        ]);
+        $sectionId = DB::table('programs')->insertGetId([
+            'department_id' => $departmentId,
+            'program_name' => 'Activities',
+            'parent_id' => $programId,
+        ]);
+        $particularId = DB::table('particulars')->insertGetId([
+            'program_id' => $sectionId,
+            'particular_name' => 'Attendance',
+        ]);
+        DB::table('quarters')->insert([
+            'church_id' => $childChurchId,
+            'program_id' => $programId,
+            'year' => '2025',
+            'quarter' => 'Q1',
+            'date_submitted' => null,
+            'district_endorse' => null,
+            'mission_approve' => null,
+        ]);
+        $reportDetails[$departmentId] = compact('programId', 'particularId');
+    }
+
+    foreach ([16, 20] as $departmentId) {
+        $url = "/api/churches/{$districtId}/departments/{$departmentId}/report";
+        $this->actingAs($fixture['pastor'], 'sanctum')
+            ->getJson($url)
+            ->assertOk();
+
+        $expectedYearCount = collect(['2025', (string) now()->year])
+            ->unique()
+            ->count();
+        expect(DB::table('quarters')
+            ->where('church_id', $districtId)
+            ->where('program_id', $reportDetails[$departmentId]['programId'])
+            ->count())->toBe($expectedYearCount * 4);
+    }
+
+    $quarterId = DB::table('quarters')
+        ->where('church_id', $districtId)
+        ->where('program_id', $reportDetails[16]['programId'])
+        ->where('year', (string) now()->year)
+        ->where('quarter', 'Q1')
+        ->value('quarter_id');
+    $this->postJson('/api/churches/'.$districtId.'/departments/16/report/save', [
+        'items' => [[
+            'particular_id' => $reportDetails[16]['particularId'],
+            'quarter_id' => $quarterId,
+            'value' => 7,
+        ]],
+    ])->assertOk();
+
+    $this->assertDatabaseHas('particular_items', [
+        'particular_id' => $reportDetails[16]['particularId'],
+        'quarter_id' => $quarterId,
+        'manual_value' => 7,
+        'value' => 7,
+    ]);
+});
+
+test('M&E assistants can view but not edit district-owned personal reports', function () {
+    $fixture = departmentReportAccessFixture();
+    $otherDistrictId = DB::table('churches')->insertGetId([
+        'name' => 'Other Report District',
+        'address' => 'Other Address',
+        'parent_id' => null,
+    ]);
+    $otherPastor = departmentReportAccessUser(
+        $otherDistrictId,
+        16,
+        'pastor',
+        'other-district-pastor'
+    );
+    $assistant = departmentReportAccessUser(
+        $fixture['churchId'],
+        16,
+        'assistant',
+        'district-report-assistant'
+    );
+    $headAssistant = departmentReportAccessUser(
+        $fixture['churchId'],
+        16,
+        'head assistant',
+        'district-report-head-assistant'
+    );
+
+    $url = "/api/churches/{$fixture['churchId']}/departments/16/report";
+    $saveUrl = $url.'/save';
+
+    $this->actingAs($otherPastor, 'sanctum')
+        ->getJson($url)
+        ->assertForbidden();
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson($url)
+        ->assertOk()
+        ->assertJsonPath('department.department_id', 16);
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/20/report")
+        ->assertOk()
+        ->assertJsonPath('department.department_id', 20);
+    $this->actingAs($headAssistant, 'sanctum')
+        ->getJson("/api/churches/{$fixture['churchId']}/departments/20/report")
+        ->assertOk()
+        ->assertJsonPath('department.department_id', 20);
+    $this->actingAs($assistant, 'sanctum')
+        ->postJson($saveUrl, ['items' => []])
+        ->assertForbidden();
+    $this->actingAs($headAssistant, 'sanctum')
+        ->postJson("/api/churches/{$fixture['churchId']}/departments/30/report/approve", [])
+        ->assertForbidden();
 });
 
 test('baptism and death department rows use the personal records page', function () {

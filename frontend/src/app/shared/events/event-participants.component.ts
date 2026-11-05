@@ -61,6 +61,14 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
   get statusFilter(): string { return this.statusFilterState(); }
   set statusFilter(value: string) { this.statusFilterState.set(value); }
 
+  private readonly churchFilterState = signal('all');
+  get churchFilter(): string { return this.churchFilterState(); }
+  set churchFilter(value: string) { this.churchFilterState.set(value); }
+
+  private readonly churchOptionsState = signal<Array<{ church_id: number; name: string }>>([]);
+  get churchOptions(): Array<{ church_id: number; name: string }> { return this.churchOptionsState(); }
+  set churchOptions(value: Array<{ church_id: number; name: string }>) { this.churchOptionsState.set(value); }
+
   private readonly pageState = signal(1);
   get page(): number { return this.pageState(); }
   set page(value: number) { this.pageState.set(value); }
@@ -130,9 +138,11 @@ export class EventParticipantsComponent implements OnInit, OnDestroy {
       this.page,
       this.searchQuery,
       this.statusFilter,
+      this.churchFilter === 'all' ? null : Number(this.churchFilter),
     ).subscribe({
       next: (res) => {
         this.participants = res.data ?? [];
+        this.churchOptions = res.churches ?? [];
         this.totalCount = res.meta?.total ?? 0;
         this.confirmedTotal = res.summary?.confirmed ?? 0;
         this.pendingTotal = res.summary?.pending ?? 0;

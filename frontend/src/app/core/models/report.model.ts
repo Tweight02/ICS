@@ -118,6 +118,86 @@ export interface DistrictReportMonitoring {
   monitoring: ReportMonitoring;
 }
 
+export interface MissionReportSummary {
+  year: string;
+  total_submitted_reports: number;
+  total_report_value: number;
+  quarter_totals: MissionReportQuarterTotals;
+  departments: MissionReportDepartmentSummary[];
+}
+
+export interface MissionReportQuarterTotals {
+  q1: number;
+  q2: number;
+  q3: number;
+  q4: number;
+}
+
+export interface MissionReportDepartmentSummary {
+  department_id: number;
+  department_name: string;
+  submitted_reports: number;
+  total_report_value: number;
+  quarter_totals: MissionReportQuarterTotals;
+  reports: MissionReportProgramSummary[];
+}
+
+export interface MissionReportProgramSummary {
+  program_id: number;
+  report_name: string;
+  submitted_reports: number;
+  total_report_value: number;
+  quarter_totals: MissionReportQuarterTotals;
+  particulars?: MissionReportParticularSummary[];
+}
+
+export interface MissionReportParticularSummary {
+  particular_id: number;
+  particular_name: string;
+  submitted_reports: number;
+  total_report_value: number;
+  quarter_totals: MissionReportQuarterTotals;
+}
+
+export interface BaptismSummaryRecord {
+  baptism_id: number;
+  church_id: number;
+  church_name: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  extension_name: string | null;
+  gender: string;
+  date_of_baptism: string;
+  place_of_baptism: string;
+  officiating_minister: string;
+  is_reclaimed: boolean;
+  birthdate?: string | null;
+  address?: string | null;
+  marital_status?: string | null;
+}
+
+export interface DeathSummaryRecord {
+  death_id: number;
+  baptism_id: number;
+  church_id: number;
+  church_name: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  extension_name: string | null;
+  gender: string;
+  quarter: string;
+  date_of_death: string;
+  birthdate: string | null;
+  address: string | null;
+  marital_status: string | null;
+  date_of_baptism: string | null;
+  place_of_baptism: string | null;
+  officiating_minister: string | null;
+  is_reclaimed: boolean;
+}
+
 /* =========================================================
    COMMENT
 ========================================================= */

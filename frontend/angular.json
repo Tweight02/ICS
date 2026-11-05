@@ -56,6 +56,10 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json",
+            "allowedHosts": ["sections-void-permitted-candy.trycloudflare.com"]
+          },
           "configurations": {
             "production": {
               "buildTarget": "frontend:build:production"

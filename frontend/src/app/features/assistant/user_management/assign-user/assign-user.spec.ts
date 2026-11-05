@@ -17,8 +17,9 @@ describe('AssignUser', () => {
       { church_id: 2, district_name: 'South District', pastor_user_id: 6, pastor_name: 'Jonah Pastor' },
     ],
     pastors: [
-      { user_id: 5, full_name: 'Amina Pastor' },
-      { user_id: 6, full_name: 'Jonah Pastor' },
+      { user_id: 5, full_name: 'Amina Pastor', status: 'active' as const },
+      { user_id: 6, full_name: 'Jonah Pastor', status: 'active' as const },
+      { user_id: 7, full_name: 'Inactive Pastor', status: 'inactive' as const },
     ],
   };
 
@@ -46,9 +47,26 @@ describe('AssignUser', () => {
     expect(component).toBeTruthy();
   });
 
+  it('sorts district cards alphabetically down each of three columns', () => {
+    const names = ['Zulu', 'Alpha', 'Echo', 'Charlie', 'Bravo', 'Golf', 'Delta'];
+    component.assignments.set(names.map((district_name, index) => ({
+      church_id: index + 10,
+      district_name,
+      pastor_user_id: null,
+      pastor_name: null,
+    })));
+
+    expect(component.visibleAssignmentColumns().map((column) => column.map(({ district_name }) => district_name)))
+      .toEqual([
+        ['Alpha', 'Bravo', 'Charlie'],
+        ['Delta', 'Echo', 'Golf'],
+        ['Zulu'],
+      ]);
+  });
+
   it('opens a change-pastor dialog for an occupied district', () => {
     const changeButton = fixture.nativeElement.querySelector(
-      'button[aria-label="Open pastor assignment for North District"]'
+      'button[aria-label="Manage pastor assignment for North District"]'
     ) as HTMLButtonElement;
 
     changeButton.click();
@@ -56,8 +74,11 @@ describe('AssignUser', () => {
 
     const pageText = fixture.nativeElement.textContent as string;
     expect(pageText).toContain('Change the pastor of North District');
-    expect(pageText).toContain('Current pastor: Amina Pastor');
+    expect(pageText).toContain('Amina Pastor');
+    expect(pageText).toContain('Already assigned to this district');
     expect(pageText).toContain('Jonah Pastor');
+    expect(pageText).toContain('Inactive Pastor');
+    expect(pageText).toContain('Inactive');
     expect(pageText).toContain('When both districts have a pastor, they will swap districts.');
   });
 
@@ -73,7 +94,31 @@ describe('AssignUser', () => {
     expect(fixture.nativeElement.textContent).toContain('Jonah Pastor');
   });
 
-  it('asks for approval before swapping pastors and reloads assignments after success', async () => {
+  it('allows selecting an inactive pastor', () => {
+    component.openTransfer(response.assignments[0]);
+
+    component.selectPastor(response.pastors[2]);
+
+    expect(component.selectedPastorId()).toBe(7);
+  });
+
+  it('returns to pastor selection when the modal cancel button is clicked after selection', () => {
+    component.openTransfer(response.assignments[0]);
+    component.selectPastor(response.pastors[1]);
+    fixture.detectChanges();
+
+    const cancelButton = Array.from(
+      fixture.nativeElement.querySelectorAll('#transfer-dialog button') as NodeListOf<HTMLButtonElement>
+    ).find((button) => button.textContent?.trim() === 'Back to selection');
+    cancelButton?.click();
+    fixture.detectChanges();
+
+    expect(component.transferTarget()).toBe(response.assignments[0]);
+    expect(component.selectedPastorId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('#pastor-search')).not.toBeNull();
+  });
+
+  it('asks for approval before replacing an assigned pastor and reloads assignments after success', async () => {
     const swalFire = vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: true,
       isDenied: false,
@@ -85,12 +130,21 @@ describe('AssignUser', () => {
 
     expect(swalFire).toHaveBeenCalledWith(expect.objectContaining({
       title: 'Confirm pastor transfer',
-      text: 'Jonah Pastor will move from South District to North District, and Amina Pastor will move to South District.',
+      text: 'Jonah Pastor will move from South District to North District, and Amina Pastor will be made inactive, leaving South District without a pastor.',
       showCancelButton: true,
       confirmButtonText: 'Approve transfer',
     }));
     expect(assignPastorToDistrict).toHaveBeenCalledWith(1, 6);
     expect(getDistrictPastorAssignments).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() => expect(swalFire).toHaveBeenCalledTimes(3));
+    expect(swalFire.mock.calls[1][0]).toMatchObject({
+      title: 'Pastor assigned',
+      text: 'Jonah Pastor is now assigned to North District.',
+    });
+    expect(swalFire.mock.calls[2][0]).toMatchObject({
+      title: 'Previous pastor made inactive',
+      text: 'Amina Pastor is now inactive and unassigned from North District.',
+    });
   });
 
   it('does not submit the transfer when confirmation is cancelled', async () => {
@@ -102,10 +156,21 @@ describe('AssignUser', () => {
     });
     component.openTransfer(response.assignments[0]);
     component.selectPastor(response.pastors[1]);
+    fixture.detectChanges();
+
+    expect(component.preview()?.moves).toEqual([
+      { pastor: 'Jonah Pastor', from: 'South District', to: 'North District', action: 'Transfer' },
+      { pastor: 'Amina Pastor', from: 'North District', to: null, action: 'Made inactive' },
+    ]);
+    expect(fixture.nativeElement.textContent).toContain('Unassigned');
 
     await component.submitTransfer();
+    fixture.detectChanges();
 
     expect(assignPastorToDistrict).not.toHaveBeenCalled();
     expect(component.saving()).toBe(false);
+    expect(component.transferTarget()).toBe(response.assignments[0]);
+    expect(component.selectedPastorId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('#pastor-search')).not.toBeNull();
   });
 });

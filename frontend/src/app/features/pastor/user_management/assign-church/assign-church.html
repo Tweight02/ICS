@@ -1,5 +1,5 @@
 <main class="mx-auto max-w-6xl px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
-	<header class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+	<header class="mb-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 		<div>
 			<a app-button variant="back" size="sm" routerLink="/pastor/view-representatives" class="mb-4">
 				<svg class="h-4 w-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none"
@@ -10,14 +10,6 @@
 				Back
 			</a>
 			<div class="flex items-center gap-3">
-				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#0F4A30]"
-					aria-hidden="true">
-					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-						<path fill-rule="evenodd"
-							d="M10 18s6-4.8 6-9.5a6 6 0 10-12 0C4 13.2 10 18 10 18zm0-7a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
-							clip-rule="evenodd" />
-					</svg>
-				</div>
 				<h1 class="text-xl font-bold tracking-tight text-slate-950">Church Representative Assignments</h1>
 			</div>
 		</div>
@@ -33,7 +25,7 @@
 	}
 
 	<!-- Filter -->
-	<section class="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label="Filter churches">
+	<section class="mb-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label="Filter churches">
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 
 			<!-- Church filter (opens downward) -->
@@ -44,7 +36,7 @@
 					aria-controls="church-filter-list" [attr.aria-expanded]="filterOpen()"
 					[disabled]="loading() || assignments().length === 0" (click)="toggleFilter()"
 					(keydown)="onFilterTriggerKeydown($event)"
-					class="flex min-h-[2.25rem] w-full items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-left text-sm leading-snug text-slate-900 transition enabled:hover:border-emerald-400 focus:border-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/25 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
+					class="flex min-h-[2.25rem] w-full items-center justify-between gap-2 !rounded-md border border-slate-300 bg-white px-3 py-1.5 text-left text-sm leading-snug text-slate-900 transition enabled:hover:border-emerald-400 focus:border-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/25 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
 					<span class="break-words" [class.text-slate-500]="!selectedChurchId()">{{ selectedChurchLabel()
 						}}</span>
 					<svg class="h-4 w-4 shrink-0 text-slate-500 transition-transform" [class.rotate-180]="filterOpen()"
@@ -108,62 +100,86 @@
 		</div>
 	</section>
 
+
 	<!-- Current assignments -->
 	<section aria-labelledby="church-assignment-heading">
-		<h2 id="church-assignment-heading" class="sr-only">Current church assignments</h2>
+		<h2 id="church-assignment-heading" class="sr-only">
+			Current church assignments
+		</h2>
+
 		@if (loading()) {
-		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" role="status"
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3" role="status"
 			aria-label="Loading church assignments">
 			@for (n of [1, 2, 3, 4, 5, 6]; track n) {
-			<div class="h-12 animate-pulse rounded-lg border border-slate-200 bg-slate-100"></div>
+			<div class="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-100"></div>
 			}
 		</div>
 		} @else if (!loadError() && assignments().length === 0) {
-		<p class="py-6 text-center text-sm text-slate-600">No churches are available in your district.</p>
+		<div class="rounded-lg border border-slate-200 bg-white px-4 py-10 text-center">
+			<p class="text-sm font-medium text-slate-700">
+				No churches available
+			</p>
+			<p class="mt-1 text-sm text-slate-500">
+				Church assignments will appear here when available.
+			</p>
+		</div>
 		} @else if (!loadError()) {
-		<div class="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-			@for (assignment of visibleAssignments(); track assignment.church_id) {
-			@if (!assignment.representative) {
-			<!-- Vacant church -->
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+			@for (column of visibleAssignmentColumns(); track $index) {
+			<div class="flex flex-col gap-3">
+			@for (assignment of column; track assignment.church_id) {
 			<button type="button" (click)="openAssignment(assignment)" [disabled]="saving()"
-				[attr.aria-label]="'Open representative assignment for ' + assignment.name"
-				class="group flex w-full items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/50 min-h-[3rem] px-2.5 py-2 text-left shadow-sm transition hover:border-amber-300 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] disabled:cursor-not-allowed disabled:opacity-60">
-				<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-700"
-					aria-hidden="true">
-					<svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+				[attr.aria-label]="'Manage representative assignment for ' + assignment.name"
+				class="flex min-h-[76px] w-full items-center gap-3 rounded-lg border bg-white p-4 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+				[class.border-amber-200]="!assignment.representative"
+				[class.hover:border-amber-300]="!assignment.representative"
+				[class.border-slate-200]="!!assignment.representative"
+				[class.hover:border-emerald-300]="!!assignment.representative">
+				<!-- Status indicator -->
+				<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+					[class.bg-amber-50]="!assignment.representative" [class.text-amber-700]="!assignment.representative"
+					[class.bg-emerald-50]="!!assignment.representative"
+					[class.text-emerald-800]="!!assignment.representative" aria-hidden="true">
+					@if (!assignment.representative) {
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
 						<path fill-rule="evenodd"
-							d="M10 18s6-4.8 6-9.5a6 6 0 10-12 0C4 13.2 10 18 10 18zm0-7a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+							d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 4a1 1 0 10-2 0v3a1 1 0 002 0V6zm-1 7a1.1 1.1 0 100-2.2A1.1 1.1 0 0010 13z"
 							clip-rule="evenodd" />
 					</svg>
-				</div>
-				<div class="flex min-w-0 flex-1 flex-col justify-center">
-					<h3 class="m-0 break-words text-xs font-semibold leading-4 text-slate-950">{{ assignment.name }}</h3>
-					<p class="m-0 mt-0.5 text-[10px] font-medium leading-[14px] text-amber-700">No active representative</p>
-				</div>
-			</button>
-			} @else {
-			<!-- Assigned church: selectable to change its representative -->
-			<button type="button" (click)="openAssignment(assignment)" [disabled]="saving()"
-				[attr.aria-label]="'Open representative assignment for ' + assignment.name"
-				class="group flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white min-h-[3rem] px-2.5 py-2 text-left shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4A30] disabled:cursor-not-allowed disabled:opacity-60">
-				<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700"
-					aria-hidden="true">
-					<svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+					} @else {
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
 						<path fill-rule="evenodd"
-							d="M10 18s6-4.8 6-9.5a6 6 0 10-12 0C4 13.2 10 18 10 18zm0-7a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+							d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.7 5.3a1 1 0 00-1.4-1.4L9 9.2 7.7 7.9a1 1 0 00-1.4 1.4l2 2a1 1 0 001.4 0l4-4z"
 							clip-rule="evenodd" />
 					</svg>
-				</div>
-				<div class="flex min-w-0 flex-1 flex-col justify-center">
-					<h3 class="m-0 break-words text-xs font-semibold leading-4 text-slate-950">{{ assignment.name }}</h3>
-					<p class="m-0 mt-0.5 break-words text-[10px] leading-[14px] text-slate-600">{{ fullName(assignment.representative) }}</p>
-				</div>
+					}
+				</span>
+
+				<!-- Church information -->
+				<span class="min-w-0 flex-1">
+					<span class="block break-words text-sm font-semibold leading-5 text-slate-900">
+						{{ assignment.name }}
+					</span>
+
+					@if (!assignment.representative) {
+					<span class="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
+						<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+						Vacant · No representative
+					</span>
+					} @else {
+					<span class="mt-1 block break-words text-sm text-slate-600">
+						{{ fullName(assignment.representative) }}
+					</span>
+					}
+				</span>
 			</button>
 			}
+			</div>
 			}
 		</div>
 		}
 	</section>
+
 
 	<!-- Assign / change / transfer modal -->
 	@if (transferTarget(); as target) {
@@ -189,8 +205,8 @@
 						{{ !target.representative ? 'Assign a representative to' : 'Change the representative of' }} {{
 						target.name }}
 					</h2>
-					<p id="assignment-description" class="mt-0.5 text-xs text-slate-500">When both churches have a
-						representative, they will swap churches.</p>
+					<p id="assignment-description" class="mt-0.5 text-xs text-slate-500">If the church already has a
+						representative, that representative will be made inactive.</p>
 				</div>
 				<button type="button" (click)="closeAssignment()" [disabled]="saving()" aria-label="Close"
 					class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:opacity-50">
@@ -205,7 +221,8 @@
 			<!-- Body -->
 			<div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
 
-				@if (selectedRepresentative(); as sr) {
+				<section class="min-w-0 space-y-3" aria-label="Select a representative">
+					@if (selectedRepresentative(); as sr) {
 
 				<div>
 					<span class="mb-1 block text-sm font-medium text-slate-700">Selected representative</span>
@@ -229,7 +246,7 @@
 				} @else {
 				<div>
 					<label for="representative-search" class="mb-1 block text-sm font-medium text-slate-700">{{
-						!target.representative ? 'Active representative' : 'New representative' }} <span
+						!target.representative ? 'Representative' : 'New representative' }} <span
 							class="text-red-700">*</span></label>
 					<input id="representative-search" type="text" autocomplete="off" spellcheck="false"
 						placeholder="Search representative..." [value]="representativeQuery()"
@@ -238,10 +255,10 @@
 				</div>
 
 				<div class="max-h-56 overflow-auto rounded-lg border border-slate-200">
-					<table class="w-full min-w-[28rem] divide-y divide-slate-200 text-left text-sm">
-						<thead class="sticky top-0 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+					<table class="w-full min-w-[20rem] divide-y divide-slate-200 text-left text-sm">
+						<thead
+							class="sticky top-0 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
 							<tr>
-								<th scope="col" class="w-12 px-3 py-2 text-center">Select</th>
 								<th scope="col" class="px-3 py-2">Representative</th>
 								<th scope="col" class="px-3 py-2">Current church</th>
 							</tr>
@@ -250,18 +267,18 @@
 							@for (r of filteredRepresentatives(); track r.user_id) {
 							@let current = sourceFor(r);
 							@let isHere = target.representative?.user_id === r.user_id;
-							<tr class="transition-colors" [class.cursor-pointer]="!isHere"
-								[class.hover:bg-emerald-50]="!isHere" [class.opacity-60]="isHere"
-								(click)="selectRepresentative(r)">
-								<td class="px-3 py-2 text-center">
-									<input type="radio" name="assign-representative"
-										[attr.aria-label]="'Select ' + fullName(r)" [disabled]="saving() || isHere"
-										[checked]="selectedRepresentativeId() === r.user_id"
-										(change)="selectRepresentative(r)" (click)="$event.stopPropagation()"
-										class="h-4 w-4 accent-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed" />
-								</td>
+							<tr class="transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600"
+								[class.cursor-pointer]="!isHere && !saving()"
+								[class.hover:bg-emerald-50]="!isHere && !saving()" [class.opacity-60]="isHere"
+								[attr.tabindex]="isHere || saving() ? null : 0"
+								[attr.aria-disabled]="isHere || saving()"
+								(click)="!isHere && !saving() && selectRepresentative(r)"
+								(keydown.enter)="!isHere && !saving() && selectRepresentative(r)">
 								<td class="px-3 py-2 font-medium text-slate-900">
 									<span class="break-words">{{ fullName(r) }}</span>
+									@if (r.status === 'inactive') {
+									<span class="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">Inactive</span>
+									}
 								</td>
 								<td class="px-3 py-2">
 									@if (isHere) {
@@ -275,8 +292,9 @@
 							</tr>
 							} @empty {
 							<tr>
-								<td colspan="3" class="px-3 py-6 text-center text-sm text-slate-500">
-									{{ representatives().length === 0 ? 'There are no active representatives available.' : 'No representatives match your search.' }}
+								<td colspan="2" class="px-3 py-6 text-center text-sm text-slate-500">
+									{{ representatives().length === 0 ? 'There are no representatives available.'
+									: 'No representatives match your search.' }}
 								</td>
 							</tr>
 							}
@@ -284,11 +302,13 @@
 					</table>
 				</div>
 				}
+				</section>
 
 				<div aria-live="polite">
 					@if (preview(); as pv) {
 					<div class="rounded-lg border border-amber-200 bg-amber-50 p-3">
-						<p class="mb-2 break-words text-xs font-semibold uppercase tracking-wide text-amber-800">{{ pv.title }}</p>
+						<p class="mb-2 break-words text-xs font-semibold uppercase tracking-wide text-amber-800">{{
+							pv.title }}</p>
 
 						<div class="grid grid-cols-1 items-stretch gap-2"
 							[class]="pv.moves.length === 2 ? 'sm:grid-cols-[1fr_auto_1fr]' : ''">
@@ -317,10 +337,9 @@
 									</div>
 									<div class="flex items-baseline gap-2">
 										<span
-											class="w-9 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">To</span>
+											class="w-9 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">{{ m.action === 'Made inactive' ? 'Status' : 'To' }}</span>
 										<span class="min-w-0 break-words font-semibold"
-											[class]="m.to ? 'text-emerald-800' : 'italic text-amber-800'">{{ m.to ??
-											'Unassigned' }}</span>
+											[class]="m.action === 'Made inactive' ? 'text-amber-800' : m.to ? 'text-emerald-800' : 'italic text-amber-800'">{{ m.action === 'Made inactive' ? 'Inactive' : m.to ?? 'Unassigned' }}</span>
 									</div>
 								</div>
 							</div>
@@ -337,18 +356,13 @@
 
 			<!-- Footer -->
 			<div class="flex flex-col-reverse gap-3 border-t border-slate-200 p-4 sm:flex-row sm:justify-end">
-				<button type="button" (click)="closeAssignment()" [disabled]="saving()"
+				<button type="button" (click)="cancelAssignment()" [disabled]="saving()"
 					class="inline-flex h-9 items-center justify-center !rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60">
-					Cancel
+					{{ selectedRepresentative() ? 'Back to selection' : 'Cancel' }}
 				</button>
-				<button app-button variant="submit" size="md" type="button" (click)="submitAssignment()" [disabled]="!selectedRepresentative() || saving()" [loading]="saving()"
+				<button app-button variant="submit" size="md" type="button" (click)="submitAssignment()"
+					[disabled]="!selectedRepresentative() || saving()" [loading]="saving()"
 					class="inline-flex h-9 items-center justify-center !rounded-md bg-[#0F4A30] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0B3925] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-					@if (saving()) {
-					<svg class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-					</svg>
-					}
 					{{ saving() ? 'Saving...' : (target.representative ? 'Change representative' :
 					(selectedRepresentativeFrom() ? 'Transfer representative' : 'Assign representative')) }}
 				</button>
