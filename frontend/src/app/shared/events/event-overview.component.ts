@@ -68,6 +68,9 @@ export class EventOverviewComponent implements OnInit {
   get registrationLinkLoading(): boolean { return this.registrationLinkLoadingState(); }
   set registrationLinkLoading(value: boolean) { this.registrationLinkLoadingState.set(value); }
 
+  private readonly registrationLinkCopiedState = signal(false);
+  get registrationLinkCopied(): boolean { return this.registrationLinkCopiedState(); }
+
   readonly statusClass = statusClass;
   readonly statusLabel = statusLabel;
 
@@ -87,13 +90,17 @@ export class EventOverviewComponent implements OnInit {
     if (this.registrationLinkLoading) return;
     this.registrationLinkLoading = true;
     this.registrationLinkMessage = '';
+    this.registrationLinkCopiedState.set(false);
 
     this.eventService.getEventRegistrationLink(this.eventId).subscribe({
       next: (attribution) => {
         const url = new URL('/participants/registration', this.document.baseURI);
         url.searchParams.set('event', String(this.eventId));
-        url.searchParams.set('church_id', String(attribution.church_id));
-        url.searchParams.set('registration_token', attribution.registration_token);
+        const attributionParams = new URLSearchParams({
+          church_id: String(attribution.church_id),
+          registration_token: attribution.registration_token,
+        });
+        url.hash = attributionParams.toString();
         this.registrationLink = url.toString();
         this.registrationLinkLoading = false;
       },
@@ -117,9 +124,11 @@ export class EventOverviewComponent implements OnInit {
     try {
       await clipboard.writeText(this.registrationLink);
       this.registrationLinkMessage = 'Registration link copied.';
+      this.registrationLinkCopiedState.set(true);
     } catch (error) {
       console.error('Failed to copy event registration link', error);
       this.registrationLinkMessage = 'Could not copy the link. Select and copy it manually.';
+      this.registrationLinkCopiedState.set(false);
     }
   }
 

@@ -13,11 +13,35 @@ class UserSeeder extends Seeder
 
     private const GLOBAL_ASSISTANT_EMAIL = 'seed.assistant@example.com';
 
+    private const DEPARTMENTS_WITHOUT_SEEDED_USERS = [
+        'Adventist Mission',
+        'Baptism Record',
+        'Death Record',
+    ];
+
     public function run(): void
     {
         $departments = DB::table('departments')
             ->orderBy('department_id')
             ->get(['department_id', 'department_name']);
+        $userDepartments = $departments
+            ->reject(fn ($department) => in_array(
+                $department->department_name,
+                self::DEPARTMENTS_WITHOUT_SEEDED_USERS,
+                true
+            ))
+            ->values();
+        $obsoleteSeedEmails = $departments
+            ->filter(fn ($department) => in_array(
+                $department->department_name,
+                self::DEPARTMENTS_WITHOUT_SEEDED_USERS,
+                true
+            ))
+            ->flatMap(fn ($department) => [
+                'seed.director.department-'.$department->department_id.'@example.com',
+                'seed.church-user.department-'.$department->department_id.'@example.com',
+            ])
+            ->all();
         $districts = DB::table('churches')
             ->whereNull('parent_id')
             ->orderBy('church_id')
@@ -31,8 +55,8 @@ class UserSeeder extends Seeder
             throw new RuntimeException('No departments are available. Run DepartmentSeeder first.');
         }
 
-        if ($departments->count() < 10) {
-            throw new RuntimeException('At least 10 departments are required to seed church users across departments.');
+        if ($userDepartments->isEmpty()) {
+            throw new RuntimeException('No departments are eligible for seeded directors and representatives.');
         }
 
         if ($districts->isEmpty()) {
@@ -43,14 +67,10 @@ class UserSeeder extends Seeder
             throw new RuntimeException('No churches are available. Run ChurchSeeder first.');
         }
 
-        $primaryDepartmentId = (int) (
-            $departments->firstWhere('department_id', 16)?->department_id
-            ?? $departments->first()->department_id
-        );
         $adminChurchId = (int) $districts->first()->church_id;
         $passwordHash = Hash::make(self::SEEDED_PASSWORD);
 
-        DB::transaction(function () use ($adminChurchId, $passwordHash): void {
+        DB::transaction(function () use ($adminChurchId, $passwordHash, $obsoleteSeedEmails): void {
             DB::table('users')
                 ->whereRaw(
                     "LOWER(REPLACE(REPLACE(role, '_', ' '), '-', ' ')) IN (?, ?, ?, ?)",
@@ -58,6 +78,10 @@ class UserSeeder extends Seeder
                 )
                 ->where('email', '!=', self::GLOBAL_ASSISTANT_EMAIL)
                 ->delete();
+
+            if ($obsoleteSeedEmails !== []) {
+                DB::table('users')->whereIn('email', $obsoleteSeedEmails)->delete();
+            }
 
             $this->seedUser(
                 $this->user(
@@ -72,7 +96,7 @@ class UserSeeder extends Seeder
             );
         });
 
-        foreach ($departments as $department) {
+        foreach ($userDepartments as $department) {
             $departmentId = (int) $department->department_id;
             $departmentTag = "department-{$departmentId}";
 
@@ -92,7 +116,7 @@ class UserSeeder extends Seeder
                 % $churches->count()];
             $this->seedUser(
                 $this->user(
-                    $departmentId,
+                    null,
                     (int) $church->church_id,
                     'Church',
                     'Representative',
@@ -106,7 +130,7 @@ class UserSeeder extends Seeder
         foreach ($districts as $district) {
             $this->seedUser(
                 $this->user(
-                    $primaryDepartmentId,
+                    null,
                     (int) $district->church_id,
                     (string) $district->name,
                     'Pastor',
@@ -119,8 +143,8 @@ class UserSeeder extends Seeder
 
         $this->command?->info(sprintf(
             'Seeded one mission-wide assistant, %d department directors, %d church users, and %d district pastors.',
-            $departments->count(),
-            $departments->count(),
+            $userDepartments->count(),
+            $userDepartments->count(),
             $districts->count()
         ));
     }

@@ -108,7 +108,7 @@
             <p class="mb-0 mt-1 text-sm text-[#718078]">These assignments are managed by your administrator.</p>
           </div>
           <dl class="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
-            <div class="rounded-xl border border-[#e4eee7] bg-[#f8fbf9] p-4">
+            <div *ngIf="showDepartmentAssignment" class="rounded-xl border border-[#e4eee7] bg-[#f8fbf9] p-4">
               <dt class="text-xs font-bold uppercase tracking-[0.08em] text-[#718078]">Department</dt>
               <dd class="mb-0 mt-1 font-semibold text-[#18362b]">{{ departmentName() }}</dd>
             </div>

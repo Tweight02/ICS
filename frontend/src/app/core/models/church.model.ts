@@ -26,6 +26,7 @@ export interface Church {
   name: string;
   address: string | null;
   parent_id: number | null;
+  pastor_name?: string | null;
   church_count?: number;
   monitoring?: ChurchMonitoring;
   monitoring_by_department?: Record<number, ChurchMonitoring>;

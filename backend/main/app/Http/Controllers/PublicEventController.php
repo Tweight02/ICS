@@ -119,6 +119,7 @@ class PublicEventController extends Controller
     private function eventData(Event $event): array
     {
         $church = EventsOrg::church((int) $event->church_id);
+        $hostChurch = EventsOrg::church((int) $event->host_church_id);
         $districts = $event->districts()->get(['churches.name']);
         $churches = $event->churches()->get(['churches.name']);
         $scopeNames = $districts->pluck('name')->all();
@@ -130,7 +131,11 @@ class PublicEventController extends Controller
         if ($scopeNames === [] && $church) {
             $scopeNames[] = $church->name;
         }
-        $creatorRole = $event->createdBy()->first(['users.role'])?->role;
+        $creator = $event->createdBy()->first([
+            'users.first_name',
+            'users.last_name',
+            'users.role',
+        ]);
 
         return [
             'id' => (int) $event->event_id,
@@ -144,9 +149,12 @@ class PublicEventController extends Controller
             'church_name' => $churches->count() > 1
                 ? 'Multiple churches'
                 : ($churches->first()->name ?? $church->name ?? null),
+            'host_church_id' => $event->host_church_id ? (int) $event->host_church_id : null,
+            'host_church_name' => $hostChurch?->name,
+            'host' => $hostChurch?->name,
             'scope' => $scopeNames,
             'all_districts' => $allDistrictsSelected,
-            'created_by' => match ($creatorRole) {
+            'created_by' => match ($creator?->role) {
                 'assistant' => 'Department Assistant',
                 'administrative_assistant' => 'Administrative Assistant',
                 'district_pastor' => 'District Pastor',

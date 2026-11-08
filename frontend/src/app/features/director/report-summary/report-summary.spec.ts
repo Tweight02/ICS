@@ -195,6 +195,49 @@ describe('DirectorReportSummary', () => {
     expect(fixture.nativeElement.querySelector('#summary-report-program')).not.toBeNull();
   });
 
+  it('exports summary rows for departments, reports, and particulars', () => {
+    const exportButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).find(button => button.textContent?.includes('Export / Print'));
+
+    expect(exportButton).toBeDefined();
+    expect(component.buildSummaryCsvRows()).toContainEqual([
+      'Department',
+      'Youth Ministries',
+      '',
+      '',
+      2,
+      10,
+      25,
+      0,
+      0,
+      35
+    ]);
+    expect(component.buildSummaryCsvRows()).toContainEqual([
+      'Particular',
+      'Youth Ministries',
+      'Attendance Report',
+      'Number of attendees',
+      2,
+      10,
+      25,
+      0,
+      0,
+      35
+    ]);
+  });
+
+  it('previews the same summary rows used for CSV export', () => {
+    component.openSummaryPreview();
+    fixture.detectChanges();
+
+    expect(component.summaryPreviewOpen()).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Report summary preview');
+    expect(fixture.nativeElement.textContent).toContain('Export Excel (.xlsx)');
+    expect(fixture.nativeElement.querySelector('[data-summary-report-print-preview]')).not.toBeNull();
+    expect(component.summaryPreviewRows()).toEqual(component.buildSummaryCsvRows());
+  });
+
   it('reloads totals and updates the year query parameter', () => {
     const yearSelect = fixture.nativeElement.querySelector(
       '#summary-report-year'

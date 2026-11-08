@@ -9,10 +9,15 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 test('user seeder creates all role scopes idempotently', function () {
+    $excludedDepartments = [
+        20 => 'Adventist Mission',
+        22 => 'Baptism Record',
+        23 => 'Death Record',
+    ];
     foreach (range(13, 23) as $departmentId) {
         DB::table('departments')->insert([
             'department_id' => $departmentId,
-            'department_name' => "Department {$departmentId}",
+            'department_name' => $excludedDepartments[$departmentId] ?? "Department {$departmentId}",
         ]);
     }
 
@@ -50,9 +55,11 @@ test('user seeder creates all role scopes idempotently', function () {
         ['role' => 'assistant', 'email' => 'legacy-assistant@example.com'],
         ['role' => 'head_assistant', 'email' => 'legacy-head-assistant@example.com'],
         ['role' => 'head-director', 'email' => 'legacy-head-director@example.com'],
+        ['role' => 'director', 'email' => 'seed.director.department-20@example.com'],
+        ['role' => 'representative', 'email' => 'seed.church-user.department-20@example.com'],
     ] as $legacyUser) {
         DB::table('users')->insert([
-            'department_id' => 16,
+            'department_id' => in_array($legacyUser['role'], ['director', 'representative'], true) ? 20 : 16,
             'church_id' => $batanesDistrictId,
             'first_name' => 'Legacy',
             'last_name' => 'User',
@@ -80,23 +87,31 @@ test('user seeder creates all role scopes idempotently', function () {
         ->orderBy('department_id')
         ->pluck('department_id')
         ->all();
-    $churchUserDepartmentIds = DB::table('users')
+    $churchUserCount = DB::table('users')
         ->where('role', 'representative')
-        ->distinct()
-        ->orderBy('department_id')
-        ->pluck('department_id')
-        ->all();
+        ->count();
+    $pastorCount = DB::table('users')->where('role', 'pastor')->count();
+    $expectedUserDepartmentIds = array_values(array_diff($departmentIds, array_keys($excludedDepartments)));
     $districtCount = DB::table('churches')->whereNull('parent_id')->count();
 
     expect($assistant)->not->toBeNull()
         ->and($assistant->department_id)->toBeNull()
         ->and($assistant->email)->toBe('seed.assistant@example.com')
-        ->and($directorDepartmentIds)->toBe($departmentIds)
-        ->and($churchUserDepartmentIds)->toBe($departmentIds)
+        ->and($directorDepartmentIds)->toBe($expectedUserDepartmentIds)
+        ->and($churchUserCount)->toBe(count($expectedUserDepartmentIds))
         ->and(DB::table('users')->where('role', 'assistant')->count())->toBe(1)
         ->and(DB::table('users')->whereRaw("LOWER(REPLACE(REPLACE(role, '_', ' '), '-', ' ')) IN (?, ?, ?, ?)", ['assistant', 'administrative assistant', 'head assistant', 'head director'])->count())->toBe(1)
-        ->and(DB::table('users')->where('role', 'pastor')->count())->toBe($districtCount)
-        ->and(DB::table('users')->count())->toBe(1 + (2 * count($departmentIds)) + $districtCount);
+        ->and($pastorCount)->toBe($districtCount)
+        ->and(DB::table('users')->count())->toBe(1 + (2 * count($expectedUserDepartmentIds)) + $districtCount);
+
+    $this->assertSame(0, DB::table('users')->where('role', 'representative')->whereNotNull('department_id')->count());
+    $this->assertSame(0, DB::table('users')->where('role', 'pastor')->whereNotNull('department_id')->count());
+
+    foreach (array_keys($excludedDepartments) as $departmentId) {
+        $this->assertDatabaseMissing('users', ['department_id' => $departmentId, 'role' => 'director']);
+        $this->assertDatabaseMissing('users', ['email' => "seed.church-user.department-{$departmentId}@example.com"]);
+        $this->assertDatabaseMissing('users', ['email' => "seed.director.department-{$departmentId}@example.com"]);
+    }
 
     expect(Hash::check('12345678', $assistant->password))->toBeTrue();
     foreach ([

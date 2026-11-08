@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import * as appAlertModule from '../../../shared/utils/app-alert';
@@ -11,13 +11,13 @@ describe('Registration', () => {
   let fixture: ComponentFixture<Registration>;
   let getPublicEventById: ReturnType<typeof vi.fn>;
   let registerPublicParticipant: ReturnType<typeof vi.fn>;
+  let navigateByUrl: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     const queryParams = new Map([
       ['event', '42'],
-      ['church_id', '9'],
-      ['registration_token', 'signed-token'],
     ]);
+    navigateByUrl = vi.fn().mockResolvedValue(true);
     getPublicEventById = vi.fn().mockReturnValue(of({
       id: 42,
       title: 'Community Event',
@@ -26,6 +26,7 @@ describe('Registration', () => {
       start_time: '09:00',
       end_time: '11:00',
       location: 'Church',
+      host_church_name: 'North Local Church',
       registration_church_name: 'North Local Church',
     }));
     registerPublicParticipant = vi.fn();
@@ -40,9 +41,12 @@ describe('Registration', () => {
               queryParamMap: {
                 get: (key: string) => queryParams.get(key) ?? null,
               },
+              fragment: 'church_id=9&registration_token=signed-token',
             },
           },
         },
+        { provide: Router, useValue: { navigateByUrl } },
+        { provide: Location, useValue: { getState: () => null } },
         {
           provide: EventService,
           useValue: { getPublicEventById, registerPublicParticipant },
@@ -58,10 +62,23 @@ describe('Registration', () => {
   it('loads the selected event using church attribution from the registration link', () => {
     expect(component.selectedEvent?.id).toBe(42);
     expect(component.selectedEvent?.registrationChurch).toBe('North Local Church');
+    expect(component.selectedEvent?.host).toBe('North Local Church');
     expect(getPublicEventById).toHaveBeenCalledWith(42, {
       church_id: 9,
       registration_token: 'signed-token',
     });
+    expect(navigateByUrl).toHaveBeenCalledWith(
+      '/participants/registration?event=42',
+      {
+        replaceUrl: true,
+        state: {
+          registrationAttribution: {
+            church_id: 9,
+            registration_token: 'signed-token',
+          },
+        },
+      }
+    );
   });
 
   it('shows a sweet alert when registration submission fails', async () => {
@@ -72,7 +89,7 @@ describe('Registration', () => {
       church: 'North Local Church',
       registrationChurch: 'North Local Church',
       createdBy: 'Pastor',
-      host: 'Pastor',
+      host: 'North Local Church',
       date: 'Nov 10, 2026',
       time: '09:00',
       end: '11:00',
@@ -111,7 +128,7 @@ describe('Registration', () => {
       church: 'North Local Church',
       registrationChurch: 'North Local Church',
       createdBy: 'Pastor',
-      host: 'Pastor',
+      host: 'North Local Church',
       date: 'Nov 10, 2026',
       time: '09:00',
       end: '11:00',

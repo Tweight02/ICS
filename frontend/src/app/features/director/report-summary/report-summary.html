@@ -21,16 +21,22 @@
               : 'Quarterly totals for your assigned department' }}
           </p>
         </div>
-        <button
-          type="button"
-          (click)="backToReports()"
-          class="relative inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-full border border-emerald-800/20 bg-white/90 px-4 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 sm:self-auto"
-          style="border-radius: 9999px">
-          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12.5 4 6.5 10l6 6M7 10h10" />
-          </svg>
-          Back to reports
-        </button>
+        <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <button *ngIf="summary()" type="button" (click)="openSummaryPreview()"
+            class="report-export-trigger">
+            <i class="bi bi-printer" aria-hidden="true"></i> Export / Print
+          </button>
+          <button
+            type="button"
+            (click)="backToReports()"
+            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-emerald-800/20 bg-white/90 px-4 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
+            style="border-radius: 9999px">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12.5 4 6.5 10l6 6M7 10h10" />
+            </svg>
+            Back to reports
+          </button>
+        </div>
       </div>
 
       <div class="relative mt-2 flex flex-col gap-4 border-t border-emerald-900/10 pt-5 sm:flex-row sm:items-end">
@@ -44,7 +50,7 @@
             <option *ngFor="let year of reportYears" [value]="year">{{ year }}</option>
           </select>
         </label>
-        <label *ngIf="isAssistantPortal" for="summary-report-department" class="grid w-full max-w-sm grid-cols-1 gap-1.5">
+        <label *ngIf="isAssistantPortal && !loadingDepartments()" for="summary-report-department" class="grid w-full max-w-sm grid-cols-1 gap-1.5">
           <span class="block text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">DEPARTMENT</span>
           <select
             id="summary-report-department"
@@ -58,15 +64,35 @@
             </option>
           </select>
         </label>
+        <div *ngIf="isAssistantPortal && loadingDepartments()" class="w-full max-w-sm space-y-2" role="status" aria-label="Loading departments" aria-busy="true">
+          <span class="report-skeleton-block h-3 w-24"></span>
+          <span class="report-skeleton-block h-10 w-full rounded-xl"></span>
+          <span class="sr-only">Loading department options.</span>
+        </div>
       </div>
       <p *ngIf="departmentsErrorMessage()" class="mt-2 text-sm text-red-700" role="alert">
         {{ departmentsErrorMessage() }}
       </p>
     </header>
 
-    <p *ngIf="loading()" class="flex items-center justify-center py-8 text-sm font-medium" role="status">
-      <app-running-loader></app-running-loader>
-    </p>
+    <div *ngIf="loading()" class="space-y-4" role="status" aria-label="Loading report summary" aria-busy="true">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <article *ngFor="let card of [1, 2]" class="rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3">
+          <span class="report-skeleton-block h-3 w-32"></span>
+          <span class="report-skeleton-block report-skeleton-block-dark mt-3 h-7 w-24"></span>
+        </article>
+      </div>
+      <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95">
+        <div class="space-y-4 p-4">
+          <span class="report-skeleton-block report-skeleton-block-dark h-5 w-56"></span>
+          <div *ngFor="let row of [1, 2, 3, 4, 5, 6]" class="grid grid-cols-6 items-center gap-3 border-t border-slate-100 py-3">
+            <span class="report-skeleton-block h-4 w-4/5"></span>
+            <span *ngFor="let cell of [1, 2, 3, 4, 5]" class="report-skeleton-block mx-auto h-4 w-10"></span>
+          </div>
+        </div>
+      </section>
+      <span class="sr-only">Loading report totals and quarterly details.</span>
+    </div>
 
     <div
       *ngIf="errorMessage()"
@@ -81,7 +107,7 @@
       </button>
     </div>
 
-    <ng-container *ngIf="summary() as reportSummary">
+    <ng-container *ngIf="!loading() && summary() as reportSummary">
       <dl *ngIf="!isAssistantPortal" class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div class="rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 shadow-sm">
           <dt class="text-xs font-semibold uppercase tracking-wide text-emerald-800">Submitted reports</dt>
@@ -252,9 +278,14 @@
             Select a quarter total to view the records for that quarter.
           </p>
         </div>
-        <p *ngIf="loadingDepartmentDetails()" class="flex items-center justify-center py-8 text-sm font-medium" role="status">
-          <app-running-loader></app-running-loader>
-        </p>
+        <div *ngIf="loadingDepartmentDetails()" class="space-y-4 px-4 py-5" role="status" aria-label="Loading department report details" aria-busy="true">
+          <span class="report-skeleton-block h-10 w-full max-w-sm rounded-xl"></span>
+          <div *ngFor="let row of [1, 2, 3, 4, 5]" class="grid grid-cols-6 items-center gap-3 border-t border-slate-100 py-3">
+            <span class="report-skeleton-block h-4 w-4/5"></span>
+            <span *ngFor="let cell of [1, 2, 3, 4, 5]" class="report-skeleton-block mx-auto h-4 w-10"></span>
+          </div>
+          <span class="sr-only">Loading report particulars and totals.</span>
+        </div>
         <div *ngIf="departmentDetailsErrorMessage()" class="px-4 py-4 text-sm text-red-700" role="alert">
           {{ departmentDetailsErrorMessage() }}
           <button
@@ -397,9 +428,15 @@
           Close
         </button>
       </div>
-      <p *ngIf="loadingBaptismRecords() || loadingDeathRecords()" class="flex items-center justify-center py-8 text-sm font-medium" role="status">
-        <app-running-loader></app-running-loader>
-      </p>
+      <div *ngIf="loadingBaptismRecords() || loadingDeathRecords()" class="space-y-3 px-4 py-5" role="status" aria-label="Loading personal report records" aria-busy="true">
+        <div class="grid grid-cols-3 gap-3 border-b border-slate-100 pb-3 sm:grid-cols-6">
+          <span *ngFor="let column of [1, 2, 3, 4, 5, 6]" class="report-skeleton-block h-3 w-4/5"></span>
+        </div>
+        <div *ngFor="let row of [1, 2, 3, 4, 5]" class="grid grid-cols-3 items-center gap-3 border-b border-slate-100 py-3 sm:grid-cols-6">
+          <span *ngFor="let column of [1, 2, 3, 4, 5, 6]" class="report-skeleton-block h-4 w-full"></span>
+        </div>
+        <span class="sr-only">Loading record rows.</span>
+      </div>
       <div *ngIf="baptismRecordsErrorMessage() || deathRecordsErrorMessage()" class="px-4 py-4 text-sm text-red-700" role="alert">
         {{ baptismRecordsErrorMessage() || deathRecordsErrorMessage() }}
         <button type="button" class="ml-2 font-semibold underline" (click)="retryReportRecords()">
@@ -619,3 +656,52 @@
     </div>
   </div>
 </main>
+
+<div *ngIf="summaryPreviewOpen()" class="summary-report-preview-dialog report-export-overlay"
+  role="dialog" aria-modal="true" aria-labelledby="summary-preview-title">
+  <section class="report-export-dialog">
+    <header class="report-export-header">
+      <div>
+        <h2 id="summary-preview-title" class="text-lg font-bold text-emerald-950">Report summary preview</h2>
+        <p class="text-sm text-slate-600">{{ selectedYear() }} · {{ isAssistantPortal ? 'Mission-wide' : selectedDepartmentName() }}</p>
+      </div>
+      <button type="button" (click)="closeSummaryPreview()" aria-label="Close preview"
+        class="report-export-close">×</button>
+    </header>
+    <div class="report-export-content">
+      <div data-summary-report-print-preview class="summary-report-print-preview">
+        <h1 class="mb-1 text-center text-xl font-bold text-emerald-950">Report Summary</h1>
+        <p class="mb-4 text-center text-sm text-slate-700">{{ selectedYear() }} · {{ isAssistantPortal ? 'Mission-wide' : selectedDepartmentName() }}</p>
+        <table class="w-full border-collapse text-left text-xs sm:text-sm">
+          <tbody>
+            <tr *ngFor="let row of summaryPreviewRows(); let rowIndex = index" class="border-b border-slate-200">
+              <ng-container *ngFor="let cell of row">
+                <th *ngIf="rowIndex === 3; else summaryCell" scope="col" class="border border-slate-300 bg-emerald-50 px-2 py-2 font-bold text-emerald-950">{{ cell }}</th>
+                <ng-template #summaryCell>
+                  <td class="border border-slate-300 px-2 py-2 text-slate-800">{{ cell }}</td>
+                </ng-template>
+              </ng-container>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <footer class="report-export-actions">
+      <button type="button" (click)="closeSummaryPreview()"
+        class="report-export-button report-export-button-close">Close</button>
+      <button type="button" (click)="exportSummaryCsv()"
+        class="report-export-button report-export-button-csv">
+        <i class="bi bi-download" aria-hidden="true"></i> Export CSV
+      </button>
+      <button type="button" (click)="exportSummaryExcel()" [disabled]="exportingSummaryExcel()"
+        class="report-export-button report-export-button-excel">
+        <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+        {{ exportingSummaryExcel() ? 'Preparing Excel...' : 'Export Excel (.xlsx)' }}
+      </button>
+      <button type="button" (click)="printSummaryReport()"
+        class="report-export-button report-export-button-print">
+        <i class="bi bi-printer" aria-hidden="true"></i> Print
+      </button>
+    </footer>
+  </section>
+</div>

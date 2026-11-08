@@ -11,14 +11,17 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
-import { RunningLoader } from '../../../../shared/components/running-loader/running-loader';
 import { Button } from '../../../../shared/components/button/button';
 import { QuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
+import {
+  captureReportReturnQueryParams,
+  clearReportReturnQueryParams
+} from '../../../../shared/utils/report-navigation';
 
 @Component({
   selector: 'app-reports-details',
   standalone: true,
-  imports: [CommonModule, RunningLoader, Button, QuarterStatus],
+  imports: [CommonModule, Button, QuarterStatus],
   templateUrl: '../../../../shared/reports/reports-details/reports-details.html'
 })
 export class ReportsDetails implements OnInit {
@@ -27,6 +30,7 @@ export class ReportsDetails implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private churchService = inject(ChurchService);
+  private reportReturnQueryParams: Record<string, string> = {};
 
   districtId = 0;
   districtName = '';
@@ -44,6 +48,8 @@ export class ReportsDetails implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    this.reportReturnQueryParams = captureReportReturnQueryParams(this.route);
+    clearReportReturnQueryParams(this.router, this.route);
 
     const id = this.route.snapshot.paramMap.get('id');
 
@@ -161,22 +167,7 @@ export class ReportsDetails implements OnInit {
   }
 
   private monitoringReturnParams(): Record<string, string> {
-    const queryParams = this.route.snapshot.queryParamMap;
-    const keys = [
-      'return_to',
-      'return_department',
-      'return_expanded',
-      'return_search',
-      'return_scroll'
-    ];
-
-    return keys.reduce<Record<string, string>>((params, key) => {
-      const value = queryParams.get(key);
-      if (value !== null) {
-        params[key] = value;
-      }
-      return params;
-    }, {});
+    return { ...this.reportReturnQueryParams };
   }
 
   private portalPrefix(): '/director' | '/assistant' {

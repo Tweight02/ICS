@@ -102,6 +102,22 @@ describe('AssignUser', () => {
     expect(component.selectedPastorId()).toBe(7);
   });
 
+  it('returns to pastor selection when the modal cancel button is clicked after selection', () => {
+    component.openTransfer(response.assignments[0]);
+    component.selectPastor(response.pastors[1]);
+    fixture.detectChanges();
+
+    const cancelButton = Array.from(
+      fixture.nativeElement.querySelectorAll('#transfer-dialog button') as NodeListOf<HTMLButtonElement>
+    ).find((button) => button.textContent?.trim() === 'Back to selection');
+    cancelButton?.click();
+    fixture.detectChanges();
+
+    expect(component.transferTarget()).toBe(response.assignments[0]);
+    expect(component.selectedPastorId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('#pastor-search')).not.toBeNull();
+  });
+
   it('asks for approval before replacing an assigned pastor and reloads assignments after success', async () => {
     const swalFire = vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: true,

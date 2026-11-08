@@ -100,8 +100,8 @@ describe('ReportsDetails', () => {
     expect(getDepartments).toHaveBeenCalledOnce();
     expect(getDepartments).toHaveBeenCalledWith(church.church_id, CURRENT_REPORT_YEAR);
     expect(fixture.nativeElement.textContent).toContain('Youth');
-    expect(fixture.nativeElement.textContent).toContain('Needs completion');
-    expect(fixture.nativeElement.textContent).toContain('Submitted for review');
+    expect(fixture.nativeElement.textContent).toContain('In progress');
+    expect(fixture.nativeElement.textContent).toContain('Submitted');
     expect(fixture.nativeElement.textContent).toContain('Approved');
     expect(fixture.nativeElement.textContent).not.toContain('Ministerial & Evangelism');
     expect(fixture.nativeElement.textContent).not.toContain('Adventist Mission');
@@ -112,5 +112,57 @@ describe('ReportsDetails', () => {
     component.toggleChurch(church);
     component.toggleChurch(church);
     expect(getDepartments).toHaveBeenCalledOnce();
+  });
+
+  it('opens a department report with return context for the expanded church', () => {
+    const church = component.churches()[0];
+    component.openDepartment(church, {
+      department_id: 4,
+      department_name: 'Youth'
+    });
+
+    expect(navigate).toHaveBeenCalledWith(
+      ['/pastor/reports/particulars', 4, 1, 2],
+      {
+        queryParams: {
+          year: CURRENT_REPORT_YEAR,
+          return_to: 'district-reports',
+          return_church: '2',
+          return_scroll: String(window.scrollY)
+        }
+      }
+    );
+  });
+
+  it('restores the expanded church after returning from a department report', async () => {
+    const route = TestBed.inject(ActivatedRoute);
+    Object.defineProperty(route.snapshot, 'queryParamMap', {
+      value: convertToParamMap({
+        year: String(CURRENT_REPORT_YEAR),
+        return_to: 'district-reports',
+        return_church: '2',
+        return_scroll: '240'
+      }),
+      configurable: true
+    });
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    fixture.destroy();
+    fixture = TestBed.createComponent(ReportsDetails);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.isChurchOpen(2)).toBe(true);
+    expect(getDepartments).toHaveBeenCalledWith(2, CURRENT_REPORT_YEAR);
+    await vi.waitFor(() => expect(scrollTo).toHaveBeenCalledWith(0, 240));
+    expect(navigate).toHaveBeenCalledWith([], expect.objectContaining({
+      queryParams: {
+        return_to: null,
+        return_church: null,
+        return_scroll: null
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    }));
+    scrollTo.mockRestore();
   });
 });

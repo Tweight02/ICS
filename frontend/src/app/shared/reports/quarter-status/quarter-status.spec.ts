@@ -22,12 +22,12 @@ describe('QuarterStatus', () => {
   });
 
   it('renders submitted status labels without progress percentages', () => {
-    fixture.componentRef.setInput('label', 'Submitted for review');
+    fixture.componentRef.setInput('label', 'Submitted');
     fixture.componentRef.setInput('tone', 'submitted');
     fixture.componentRef.setInput('progress', 75);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Submitted for review');
+    expect(fixture.nativeElement.textContent).toContain('Submitted');
     expect(fixture.nativeElement.textContent).not.toContain('%');
   });
 
@@ -45,12 +45,22 @@ describe('QuarterStatus', () => {
 
   it('resolves quarter monitoring data into consistent report labels', () => {
     expect(resolveQuarterStatus({ progress: null, approved: false, submitted: false }))
-      .toEqual({ label: '-', tone: 'empty' });
+      .toEqual({ label: '—', tone: 'empty' });
     expect(resolveQuarterStatus({ progress: 40, approved: false, submitted: true }))
-      .toEqual({ label: 'Submitted for review', tone: 'submitted' });
+      .toEqual({ label: 'Submitted', tone: 'submitted' });
+    expect(resolveQuarterStatus({ progress: 40, approved: false, endorsed: true, submitted: false }))
+      .toEqual({ label: 'Endorsed', tone: 'endorsed' });
+    expect(resolveQuarterStatus({ progress: null, approved: false, endorsed: true, submitted: false }))
+      .toEqual({ label: 'Endorsed', tone: 'endorsed' });
+    expect(resolveQuarterStatus({ progress: null, approved: false, submitted: true }))
+      .toEqual({ label: 'Submitted', tone: 'submitted' });
     expect(resolveQuarterStatus({ progress: 100, approved: true, submitted: false }))
       .toEqual({ label: 'Approved', tone: 'approved' });
     expect(resolveQuarterStatus({ progress: 100, approved: false, submitted: false }))
       .toEqual({ label: 'Ready to submit', tone: 'ready' });
+    expect(resolveQuarterStatus({ progress: 0, approved: false, submitted: false }))
+      .toEqual({ label: 'Not started', tone: 'not-started' });
+    expect(resolveQuarterStatus({ progress: 50, approved: false, submitted: false }))
+      .toEqual({ label: 'In progress', tone: 'in-progress' });
   });
 });

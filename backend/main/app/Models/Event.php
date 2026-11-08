@@ -20,7 +20,7 @@ class Event extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'quarter_id', 'church_id', 'title', 'start_date', 'end_date',
+        'quarter_id', 'church_id', 'host_church_id', 'title', 'start_date', 'end_date',
         'start_time', 'end_time', 'notes', 'status', 'location',
     ];
 
@@ -81,7 +81,7 @@ class Event extends Model
 
     public function setNotesAttribute(?string $value): void
     {
-        $this->attributes['details'] = mb_substr($value ?? '', 0, 255);
+        $this->attributes['details'] = $value ?? '';
     }
 
     public function participants(): HasMany
@@ -116,24 +116,12 @@ class Event extends Model
                 [$user->districtId],
                 EventsOrg::churchIdsOfDistrict($user->districtId)
             );
-            $departmentQuarterIds = DB::table('quarters')
-                ->join('programs', 'programs.program_id', '=', 'quarters.program_id')
-                ->where('programs.department_id', $user->departmentId)
-                ->select('quarters.quarter_id');
 
-            return $query
-                ->where(function (Builder $scope) use ($districtChurchIds, $user) {
-                    $scope->whereIn('church_id', array_filter($districtChurchIds))
-                        ->orWhereHas('districts', fn (Builder $districts) => $districts
-                            ->where('churches.church_id', $user->districtId));
-                })
-                ->where(function (Builder $scope) use ($departmentQuarterIds, $user) {
-                    if ($user->departmentId) {
-                        $scope->whereIn('quarter_id', $departmentQuarterIds);
-                    }
-                    $scope->orWhereHas('createdBy', fn (Builder $creators) => $creators
-                        ->where('users.user_id', $user->id));
-                });
+            return $query->where(function (Builder $scope) use ($districtChurchIds, $user) {
+                $scope->whereIn('church_id', array_filter($districtChurchIds))
+                    ->orWhereHas('districts', fn (Builder $districts) => $districts
+                        ->where('churches.church_id', $user->districtId));
+            });
         }
 
         if ($user->role !== 'church_representative') {

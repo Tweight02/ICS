@@ -106,6 +106,15 @@ function createReportAssistant(int $churchId, int $departmentId): User
     ]);
 }
 
+test('district list includes the active assigned pastor name', function () {
+    $fixture = reportSubmissionFixture();
+    createDistrictPastor($fixture['churchId'], $fixture['departmentId']);
+
+    $this->getJson('/api/districts')
+        ->assertOk()
+        ->assertJsonPath('data.0.pastor_name', 'District Pastor');
+});
+
 test('completed event purposes add one report count per event instead of per participant', function () {
     $fixture = reportSubmissionFixture();
     $assistant = createReportAssistant($fixture['churchId'], $fixture['departmentId']);

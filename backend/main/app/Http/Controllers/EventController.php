@@ -280,6 +280,7 @@ class EventController extends Controller
 
         return [
             'church_id' => $churchId,
+            'host_church_id' => $request->hostChurchId(),
             'quarter_id' => $quarterId,
             'title' => $request->validated('title'),
             'location' => $request->validated('location'),
