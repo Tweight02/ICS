@@ -194,13 +194,6 @@ class RepresentativeController extends Controller
             abort(403, 'You are not authorized to create representatives.');
         }
 
-        // Department is inherited from the creator, never from the request
-        if (! $authUser->department_id) {
-            throw ValidationException::withMessages([
-                'department_id' => 'Your account has no department assigned.',
-            ]);
-        }
-
         if (UserIdentity::existsFor(
             $data['first_name'],
             $data['middle_name'] ?? null,
