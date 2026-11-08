@@ -1,6 +1,7 @@
 import {
   AfterViewInit,
   Component,
+  HostBinding,
   HostListener,
   inject,
   OnDestroy,
@@ -27,6 +28,16 @@ import { AuthService } from './core/services/auth/auth-service';
 
 })
 export class App implements OnInit, AfterViewInit, OnDestroy {
+
+  @HostBinding('class.report-preview-sidebar-expanded')
+  get reportPreviewSidebarExpanded(): boolean {
+    return this.showSidebar && !this.collapsed;
+  }
+
+  @HostBinding('class.report-preview-sidebar-collapsed')
+  get reportPreviewSidebarCollapsed(): boolean {
+    return this.showSidebar && this.collapsed;
+  }
   
   private readonly router = inject(Router);
   
