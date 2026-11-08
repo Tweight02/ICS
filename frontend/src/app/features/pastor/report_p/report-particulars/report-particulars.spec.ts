@@ -180,6 +180,7 @@ describe('ReportParticulars', () => {
 
     expect(component.quarterlyReportPreviewOpen).toBe(true);
     expect(component.quarterlyReportPreviewRows.length).toBeGreaterThan(0);
+    expect(document.querySelector('.report-export-overlay')?.parentElement).toBe(document.body);
 
     component.printQuarterReport();
     expect(print).toHaveBeenCalledOnce();

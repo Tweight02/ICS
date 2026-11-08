@@ -1461,7 +1461,9 @@
   </div>
 </main>
 <div
-  *ngIf="personalRecordPreviewOpen"
+  #personalRecordPreviewOverlay
+  [style.display]="personalRecordPreviewOpen ? 'flex' : 'none'"
+  [attr.aria-hidden]="!personalRecordPreviewOpen"
   class="summary-report-preview-dialog report-export-overlay"
   role="dialog"
   aria-modal="true"

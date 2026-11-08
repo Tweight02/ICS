@@ -201,6 +201,10 @@ details[open] > summary .report-accordion-indicator {
     margin: 10mm;
   }
 
+  .report-export-overlay[aria-hidden='true'] {
+    display: none !important;
+  }
+
   body * {
     visibility: hidden !important;
   }

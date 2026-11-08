@@ -1,5 +1,15 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   BaptismSummaryRecord,
@@ -27,7 +37,7 @@ import {
   imports: [CommonModule],
   templateUrl: './report-summary.html'
 })
-export class DirectorReportSummary implements OnInit {
+export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
   private static readonly BAPTISM_RECORD_DEPARTMENT_ID = 22;
   private static readonly DEATH_RECORD_DEPARTMENT_ID = 23;
 
@@ -37,6 +47,9 @@ export class DirectorReportSummary implements OnInit {
   readonly summaryPreviewOpen = signal(false);
   readonly summaryPreviewRows = signal<unknown[][]>([]);
   readonly exportingSummaryExcel = signal(false);
+  @ViewChild('summaryReportPreviewOverlay')
+  private summaryReportPreviewOverlay?: ElementRef<HTMLElement>;
+  private summaryReportPreviewParent: Node | null = null;
   readonly departments = signal<Department[]>([]);
   readonly selectedDepartmentId = signal<number | null>(null);
   readonly departmentDetails = signal<MissionReportSummary | null>(null);
@@ -78,6 +91,25 @@ export class DirectorReportSummary implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
+
+  ngAfterViewInit(): void {
+    const overlay = this.summaryReportPreviewOverlay?.nativeElement;
+    if (!overlay || !this.document.body) {
+      return;
+    }
+
+    this.summaryReportPreviewParent = overlay.parentNode;
+    this.document.body.appendChild(overlay);
+  }
+
+  ngOnDestroy(): void {
+    const overlay = this.summaryReportPreviewOverlay?.nativeElement;
+    if (overlay && this.summaryReportPreviewParent) {
+      this.summaryReportPreviewParent.appendChild(overlay);
+      this.summaryReportPreviewParent = null;
+    }
+  }
 
   get isAssistantPortal(): boolean {
     return this.router.url.startsWith('/assistant');
@@ -197,10 +229,22 @@ export class DirectorReportSummary implements OnInit {
 
     this.summaryPreviewRows.set(this.buildSummaryCsvRows());
     this.summaryPreviewOpen.set(true);
+    this.setSummaryPreviewVisibility(true);
   }
 
   closeSummaryPreview(): void {
     this.summaryPreviewOpen.set(false);
+    this.setSummaryPreviewVisibility(false);
+  }
+
+  private setSummaryPreviewVisibility(visible: boolean): void {
+    const overlay = this.summaryReportPreviewOverlay?.nativeElement;
+    if (!overlay) {
+      return;
+    }
+
+    overlay.style.display = visible ? 'flex' : 'none';
+    overlay.setAttribute('aria-hidden', String(!visible));
   }
 
   printSummaryReport(): void {

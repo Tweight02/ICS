@@ -228,14 +228,29 @@ describe('DirectorReportSummary', () => {
   });
 
   it('previews the same summary rows used for CSV export', () => {
+    const preview = document.body.querySelector(
+      '[aria-labelledby="summary-preview-title"]'
+    ) as HTMLElement;
+    expect(preview).not.toBeNull();
+    expect(preview.parentElement).toBe(document.body);
+    expect(preview.style.display).toBe('none');
+    expect(preview.getAttribute('aria-hidden')).toBe('true');
+
     component.openSummaryPreview();
     fixture.detectChanges();
 
     expect(component.summaryPreviewOpen()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Report summary preview');
-    expect(fixture.nativeElement.textContent).toContain('Export Excel (.xlsx)');
-    expect(fixture.nativeElement.querySelector('[data-summary-report-print-preview]')).not.toBeNull();
+    expect(preview.style.display).toBe('flex');
+    expect(preview.getAttribute('aria-hidden')).toBe('false');
+    expect(preview.textContent).toContain('Report summary preview');
+    expect(preview.textContent).toContain('Export Excel (.xlsx)');
+    expect(preview.querySelector('[data-summary-report-print-preview]')).not.toBeNull();
     expect(component.summaryPreviewRows()).toEqual(component.buildSummaryCsvRows());
+
+    component.closeSummaryPreview();
+    fixture.detectChanges();
+    expect(preview.style.display).toBe('none');
+    expect(preview.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('reloads totals and updates the year query parameter', () => {

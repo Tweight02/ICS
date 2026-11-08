@@ -657,7 +657,10 @@
   </div>
 </main>
 
-<div *ngIf="summaryPreviewOpen()" class="summary-report-preview-dialog report-export-overlay"
+<div #summaryReportPreviewOverlay
+  [style.display]="summaryPreviewOpen() ? 'flex' : 'none'"
+  [attr.aria-hidden]="!summaryPreviewOpen()"
+  class="summary-report-preview-dialog report-export-overlay"
   role="dialog" aria-modal="true" aria-labelledby="summary-preview-title">
   <section class="report-export-dialog">
     <header class="report-export-header">
