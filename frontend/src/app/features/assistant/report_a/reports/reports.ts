@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
@@ -15,9 +15,15 @@ import { Church } from '../../../../core/models/church.model';
 import {
   PERSONAL_REPORT_GROUP_DEPARTMENT_ID
 } from '../../../../core/models/report.model';
-import { RunningLoader } from '../../../../shared/components/running-loader/running-loader';
+import { Department } from '../../../../core/models/department.model';
 import { Button } from '../../../../shared/components/button/button';
 import { QuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
+import { clearReportReturnQueryParams } from '../../../../shared/utils/report-navigation';
+import {
+  CURRENT_REPORT_YEAR,
+  REPORT_YEAR_OPTIONS,
+  resolveReportYear
+} from '../../../../core/utils/report-year';
 
 interface MonitoringAlert {
   quarter: string;
@@ -25,13 +31,25 @@ interface MonitoringAlert {
   tone: 'complete' | 'endorsed' | 'pending' | 'in-progress' | 'not-started';
 }
 
+const HIDDEN_HEAD_ASSISTANT_DEPARTMENTS = new Set([
+  'adventist mission',
+  'baptism record',
+  'death record',
+]);
+
+const PERSONAL_REPORT_DEPARTMENTS = new Set([
+  'adventist mission',
+  'baptism record',
+  'death record',
+  'ministerial & evangelism',
+]);
+
 @Component({
   selector: 'app-reports',
   standalone: true,
 
   imports: [
     CommonModule,
-    RunningLoader,
     Button,
     QuarterStatus
   ],
@@ -40,6 +58,8 @@ interface MonitoringAlert {
 })
 export class Reports implements OnInit {
   readonly quarterKeys: Array<'q1' | 'q2' | 'q3' | 'q4'> = ['q1', 'q2', 'q3', 'q4'];
+  readonly reportYears = REPORT_YEAR_OPTIONS;
+  readonly selectedYear = signal(CURRENT_REPORT_YEAR);
 
   private readonly churchService =
     inject(ChurchService);
@@ -47,12 +67,23 @@ export class Reports implements OnInit {
   private readonly router =
     inject(Router);
 
+  private readonly route =
+    inject(ActivatedRoute);
+
   private readonly authService = inject(AuthService);
+  private returnStateApplied = false;
+  private pendingScrollRestoration = false;
 
   readonly districts = signal<Church[]>([]);
+  readonly departments = signal<Department[]>([]);
   readonly districtChurches = signal<Record<number, Church[]>>({});
+  readonly districtDepartmentMonitoring = signal<
+    Record<number, Record<number, Record<number, Church['monitoring']>>>
+  >({});
+  readonly districtPastorMonitoring = signal<Record<number, Church['monitoring']>>({});
   readonly loadingDistrictChurches = signal<Record<number, boolean>>({});
   readonly expandedDistrictId = signal<number | null>(null);
+  readonly expandedChurchIds = signal<Record<number, number>>({});
   readonly loadingDistricts = signal(false);
   readonly errorMessage = signal('');
   readonly searchTerm = signal('');
@@ -62,9 +93,7 @@ export class Reports implements OnInit {
 
     return searchTerm
       ? this.districts().filter(district =>
-          district.name.toLocaleLowerCase().includes(searchTerm) ||
-          (this.districtChurches()[district.church_id] ?? [])
-            .some(church => church.name.toLocaleLowerCase().includes(searchTerm))
+          district.name.toLocaleLowerCase().includes(searchTerm)
         )
       : this.districts();
   });
@@ -72,31 +101,154 @@ export class Reports implements OnInit {
     (count, district) => count + (district.church_count ?? 0),
     0
   ));
+  readonly churchMonitoringDepartments = computed(() =>
+    this.departments().filter(department =>
+      !PERSONAL_REPORT_DEPARTMENTS.has(
+        department.department_name.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+      )
+    )
+  );
 
-  readonly personalReportGroupDepartmentId = PERSONAL_REPORT_GROUP_DEPARTMENT_ID;
+  get personalReportGroupDepartmentId(): number {
+    const ministerialDepartment = this.departments().find(department =>
+      department.department_name.trim().replace(/\s+/g, ' ').toLocaleLowerCase() ===
+        'ministerial & evangelism'
+    );
+
+    return Number(
+      ministerialDepartment?.department_id ?? PERSONAL_REPORT_GROUP_DEPARTMENT_ID
+    );
+  }
 
   ngOnInit(): void {
+    this.selectedYear.set(
+      resolveReportYear(this.route.snapshot.queryParamMap.get('year'))
+    );
+
+    if (this.hasAllDepartmentAccess) {
+      this.loadDepartmentOptions();
+      return;
+    }
+
+    this.loadAssignedDepartmentOption();
     this.loadDistricts();
+  }
+
+  get hasAllDepartmentAccess(): boolean {
+    const role = this.normalizedRole;
+    const user = this.authService.getCurrentUser();
+
+    return role === 'head assistant' ||
+      (
+        ['assistant', 'administrative assistant'].includes(role) &&
+        user?.department_id == null
+      );
+  }
+
+  private get normalizedRole(): string {
+    return String(this.authService.getCurrentUser()?.role || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]/g, ' ');
+  }
+
+  loadDepartmentOptions(): void {
+    this.loadingDistricts.set(true);
+    this.errorMessage.set('');
+    this.churchService.getDepartments().subscribe({
+      next: (response) => {
+        const allDepartments = response?.success && Array.isArray(response.data)
+          ? response.data
+          : [];
+        const departments = this.normalizedRole === 'head assistant'
+          ? allDepartments.filter(department =>
+              !HIDDEN_HEAD_ASSISTANT_DEPARTMENTS.has(
+                department.department_name.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+              )
+            )
+          : allDepartments;
+        this.departments.set(departments);
+
+        if (!departments.length) {
+          this.loadingDistricts.set(false);
+          this.errorMessage.set('No departments are available.');
+          return;
+        }
+
+        this.loadDistricts();
+      },
+      error: (error) => {
+        console.error('Failed to load departments:', error);
+        this.loadingDistricts.set(false);
+        this.errorMessage.set('Unable to load departments. Check your connection and try again.');
+      }
+    });
+  }
+
+  private loadAssignedDepartmentOption(): void {
+    const departmentId = Number(this.authService.getCurrentUser()?.department_id);
+    if (!Number.isInteger(departmentId) || departmentId < 1) {
+      return;
+    }
+
+    this.departments.set([{
+      department_id: departmentId,
+      department_name: `Department ${departmentId}`
+    }]);
+    this.churchService.getDepartments().subscribe({
+      next: (response) => {
+        const department = response?.data?.find(
+          item => Number(item.department_id) === departmentId
+        );
+        if (department) {
+          this.departments.set([department]);
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load department name:', error);
+        this.errorMessage.set('Unable to load department details.');
+      }
+    });
   }
 
   loadDistricts(): void {
     this.loadingDistricts.set(true);
     this.errorMessage.set('');
     const departmentId = Number(this.authService.getCurrentUser()?.department_id);
+    const hasAssignedDepartment = this.isDepartmentScopedPortal &&
+      !this.hasAllDepartmentAccess;
 
-    if (this.isAssistantPortal && (!Number.isInteger(departmentId) || departmentId < 1)) {
+    if (hasAssignedDepartment &&
+      (!Number.isInteger(departmentId) || departmentId < 1)) {
       this.districts.set([]);
       this.loadingDistricts.set(false);
       this.errorMessage.set('Your department is unavailable. Please sign in again or contact an administrator.');
       return;
     }
 
+    const requestedDepartmentId =
+      hasAssignedDepartment ? departmentId : null;
+    const requestedYear = this.selectedYear();
+
     this.churchService
-      .getDistricts(this.isAssistantPortal ? departmentId : undefined)
+      .getDistricts(hasAssignedDepartment
+        ? departmentId
+        : undefined, requestedYear)
       .subscribe({
         next: (response) => {
+          if (
+            requestedDepartmentId !== null &&
+            requestedDepartmentId !== Number(this.authService.getCurrentUser()?.department_id)
+          ) {
+            return;
+          }
+          if (requestedYear !== this.selectedYear()) {
+            return;
+          }
+
           if (response?.success && Array.isArray(response.data)) {
             this.districts.set(response.data);
+            this.restoreMonitoringState();
           } else {
             this.districts.set([]);
             this.errorMessage.set('Unable to load districts.');
@@ -106,11 +258,114 @@ export class Reports implements OnInit {
         },
 
         error: () => {
+          if (
+            requestedDepartmentId !== null &&
+            requestedDepartmentId !== this.activeDepartmentId
+          ) {
+            return;
+          }
+          if (requestedYear !== this.selectedYear()) {
+            return;
+          }
+
           this.districts.set([]);
           this.loadingDistricts.set(false);
           this.errorMessage.set('Unable to connect to the district server.');
         }
       });
+  }
+
+  selectYear(year: number): void {
+    if (!this.reportYears.includes(year) || year === this.selectedYear()) {
+      return;
+    }
+
+    this.selectedYear.set(year);
+    this.districts.set([]);
+    this.districtChurches.set({});
+    this.districtDepartmentMonitoring.set({});
+    this.districtPastorMonitoring.set({});
+    this.loadingDistrictChurches.set({});
+    this.expandedDistrictId.set(null);
+    this.expandedChurchIds.set({});
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { year },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
+    this.loadDistricts();
+  }
+
+  onYearChange(event: Event): void {
+    this.selectYear(Number((event.target as HTMLSelectElement).value));
+  }
+
+  openDistrictPastorReport(
+    districtId: number,
+    quarter?: 'q1' | 'q2' | 'q3' | 'q4'
+  ): void {
+    if (!Number.isInteger(districtId) || districtId < 1) {
+      return;
+    }
+
+    const portalPrefix = this.isAssistantPortal ? '/assistant' : '/director';
+    const queryParams = this.monitoringReturnParams(this.personalReportGroupDepartmentId);
+    if (quarter) {
+      queryParams['quarter'] = quarter.toUpperCase();
+    }
+
+    void this.router.navigate([
+      `${portalPrefix}/reports/records`,
+      this.personalReportGroupDepartmentId,
+      districtId,
+      districtId
+    ], {
+      queryParams
+    });
+  }
+
+  openDepartmentQuarterReport(
+    districtId: number,
+    churchId: number,
+    departmentId: number,
+    quarter: 'q1' | 'q2' | 'q3' | 'q4'
+  ): void {
+    if (!Number.isInteger(departmentId) || departmentId < 1) {
+      this.errorMessage.set('Department is unavailable. Please sign in again or contact an administrator.');
+      return;
+    }
+
+    const portalPrefix = this.isAssistantPortal ? '/assistant' : '/director';
+    const reportType = departmentId === 22 || departmentId === 23
+      ? 'records'
+      : 'particulars';
+    void this.router.navigate([
+      `${portalPrefix}/reports/${reportType}`,
+      departmentId,
+      districtId,
+      churchId
+    ], {
+      queryParams: {
+        ...this.monitoringReturnParams(departmentId),
+        year: String(this.selectedYear()),
+        quarter: quarter.toUpperCase()
+      }
+    });
+  }
+
+  getDepartmentQuarterStatus(
+    districtId: number,
+    church: Church,
+    departmentId: number,
+    quarter: 'q1' | 'q2' | 'q3' | 'q4'
+  ): MonitoringAlert | null {
+    const monitoring = this.districtDepartmentMonitoring()[districtId]?.[church.church_id]?.[departmentId];
+    return this.getQuarterStatus({ ...church, monitoring }, quarter);
+  }
+
+  onDistrictSelected(districtId: number): void {
+    this.toggleDistrict(districtId);
   }
 
   getMonitoring(district: Church): { q1: number | null; q2: number | null; q3: number | null; q4: number | null } {
@@ -133,6 +388,22 @@ export class Reports implements OnInit {
     this.loadDistrictChurches(districtId);
   }
 
+  toggleChurch(districtId: number, churchId: number): void {
+    this.expandedChurchIds.update(current => {
+      const next = { ...current };
+      if (next[districtId] === churchId) {
+        delete next[districtId];
+      } else {
+        next[districtId] = churchId;
+      }
+      return next;
+    });
+  }
+
+  isChurchOpen(districtId: number, churchId: number): boolean {
+    return this.expandedChurchIds()[districtId] === churchId;
+  }
+
   private loadDistrictChurches(districtId: number): void {
     if (
       Object.hasOwn(this.districtChurches(), districtId) ||
@@ -142,27 +413,161 @@ export class Reports implements OnInit {
     }
 
     this.loadingDistrictChurches.update(current => ({ ...current, [districtId]: true }));
+    const requestedYear = this.selectedYear();
 
-    this.churchService
-      .getChurches(
-        districtId,
-        this.isAssistantPortal
-          ? Number(this.authService.getCurrentUser()?.department_id)
-          : undefined
-      )
-      .subscribe({
-        next: (response) => {
-          const churches = response?.success && Array.isArray(response.data)
-            ? response.data
-            : [];
-          this.districtChurches.update(current => ({ ...current, [districtId]: churches }));
-          this.loadingDistrictChurches.update(current => ({ ...current, [districtId]: false }));
-        },
-        error: () => {
+    const assignedDepartmentId = Number(this.authService.getCurrentUser()?.department_id);
+    const assignedDepartment = this.departments().find(
+      department => Number(department.department_id) === assignedDepartmentId
+    ) ?? {
+      department_id: assignedDepartmentId,
+      department_name: `Department ${assignedDepartmentId}`
+    };
+    if (!this.hasAllDepartmentAccess) {
+      this.departments.set([assignedDepartment]);
+    }
+
+    const churchesRequest = this.hasAllDepartmentAccess
+      ? this.churchService.getChurches(districtId, undefined, requestedYear, true)
+      : this.churchService.getChurches(
+          districtId,
+          assignedDepartment.department_id,
+          requestedYear
+        );
+
+    churchesRequest.subscribe({
+      next: (response) => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
+
+        const churches = response?.success && Array.isArray(response.data)
+          ? response.data
+          : [];
+        if (!response?.success) {
           this.districtChurches.update(current => ({ ...current, [districtId]: [] }));
           this.loadingDistrictChurches.update(current => ({ ...current, [districtId]: false }));
+          this.errorMessage.set('Unable to load department monitoring for this district.');
+          this.restoreMonitoringScroll();
+          return;
         }
-      });
+        const monitoringByChurch: Record<number, Record<number, Church['monitoring']>> = {};
+        churches.forEach(church => {
+          monitoringByChurch[church.church_id] = this.hasAllDepartmentAccess
+            ? church.monitoring_by_department ?? {}
+            : { [assignedDepartment.department_id]: church.monitoring };
+        });
+
+        this.districtPastorMonitoring.update(current => ({
+          ...current,
+          [districtId]: response.district?.monitoring
+        }));
+        this.districtChurches.update(current => ({ ...current, [districtId]: churches }));
+        this.districtDepartmentMonitoring.update(current => ({
+          ...current,
+          [districtId]: monitoringByChurch
+        }));
+        this.loadingDistrictChurches.update(current => ({ ...current, [districtId]: false }));
+        this.restoreMonitoringScroll();
+      },
+      error: (error) => {
+        if (requestedYear !== this.selectedYear()) {
+          return;
+        }
+        console.error('Failed to load church department monitoring:', error);
+        this.districtChurches.update(current => ({ ...current, [districtId]: [] }));
+        this.loadingDistrictChurches.update(current => ({ ...current, [districtId]: false }));
+        this.errorMessage.set('Unable to load department monitoring for this district.');
+        this.restoreMonitoringScroll();
+      }
+    });
+  }
+
+  private restoreMonitoringState(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+
+    if (queryParams.get('return_to') !== 'monitoring') {
+      clearReportReturnQueryParams(this.router, this.route);
+      return;
+    }
+
+    if (this.returnStateApplied) {
+      return;
+    }
+
+    this.returnStateApplied = true;
+    this.searchTerm.set(queryParams.get('return_search') ?? '');
+    this.pendingScrollRestoration = true;
+    const expandedDistrictId = Number(queryParams.get('return_expanded'));
+    const expandedChurchId = Number(queryParams.get('return_church'));
+    const districtExists = this.districts().some(
+      district => Number(district.church_id) === expandedDistrictId
+    );
+
+    if (districtExists) {
+      this.expandedDistrictId.set(expandedDistrictId);
+      if (expandedChurchId > 0) {
+        this.expandedChurchIds.update(current => ({
+          ...current,
+          [expandedDistrictId]: expandedChurchId
+        }));
+      }
+      this.loadDistrictChurches(expandedDistrictId);
+    }
+
+    if (!districtExists) {
+      this.restoreMonitoringScroll();
+    }
+  }
+
+  private restoreMonitoringScroll(): void {
+    if (!this.pendingScrollRestoration) {
+      return;
+    }
+
+    const scrollPosition = Number(
+      this.route.snapshot.queryParamMap.get('return_scroll')
+    );
+    this.pendingScrollRestoration = false;
+
+    setTimeout(() => {
+      if (Number.isFinite(scrollPosition) && scrollPosition > 0) {
+        window.scrollTo(0, scrollPosition);
+      }
+      clearReportReturnQueryParams(this.router, this.route);
+    });
+  }
+
+  private monitoringReturnParams(departmentId?: number): Record<string, string> {
+    const params: Record<string, string> = {
+      return_to: 'monitoring',
+      year: String(this.selectedYear())
+    };
+
+    if (departmentId !== undefined) {
+      params['return_department'] = String(departmentId);
+    } else if (this.isDepartmentScopedPortal && !this.hasAllDepartmentAccess) {
+      params['return_department'] = String(this.activeDepartmentId);
+    }
+
+    const expandedDistrictId = this.expandedDistrictId();
+    if (expandedDistrictId !== null) {
+      params['return_expanded'] = String(expandedDistrictId);
+      const expandedChurchId = this.expandedChurchIds()[expandedDistrictId];
+      if (expandedChurchId !== undefined) {
+        params['return_church'] = String(expandedChurchId);
+      }
+    }
+
+    const searchTerm = this.searchTerm().trim();
+    if (searchTerm) {
+      params['return_search'] = searchTerm;
+    }
+
+    if (window.scrollY > 0) {
+      params['return_scroll'] = String(window.scrollY);
+    }
+
+    return params;
   }
 
   isDistrictOpen(districtId: number): boolean {
@@ -172,10 +577,6 @@ export class Reports implements OnInit {
   updateSearch(event: Event): void {
     const searchTerm = (event.target as HTMLInputElement).value;
     this.searchTerm.set(searchTerm);
-
-    if (searchTerm.trim()) {
-      this.districts().forEach(district => this.loadDistrictChurches(district.church_id));
-    }
   }
 
   clearSearch(): void {
@@ -183,18 +584,54 @@ export class Reports implements OnInit {
   }
 
   canViewPersonalReports(): boolean {
-    const user = this.authService.getCurrentUser();
-    const role = String(user?.role || '').trim().toLowerCase().replace(/[_-]/g, ' ');
+    return this.hasAllDepartmentAccess ||
+      (Number(this.authService.getCurrentUser()?.department_id) === this.personalReportGroupDepartmentId
+        && ['assistant', 'administrative assistant', 'director'].includes(this.normalizedRole));
+  }
 
-    return Number(user?.department_id) === this.personalReportGroupDepartmentId
-      && ['assistant', 'administrative assistant', 'director'].includes(role);
+  get showDistrictPastorReport(): boolean {
+    const hasPersonalReportDepartment = this.hasAllDepartmentAccess
+      ? this.departments().some(
+          department => Number(department.department_id) === this.personalReportGroupDepartmentId
+        )
+      : this.activeDepartmentId === this.personalReportGroupDepartmentId;
+
+    return hasPersonalReportDepartment &&
+      ['assistant', 'administrative assistant', 'head assistant', 'director', 'head director']
+        .includes(this.normalizedRole);
+  }
+
+  get showDistrictPersonalReportLinks(): boolean {
+    if (
+      this.hasAllDepartmentAccess ||
+      this.activeDepartmentId !== this.personalReportGroupDepartmentId
+    ) {
+      return false;
+    }
+
+    return (
+      this.isAssistantPortal &&
+      ['assistant', 'administrative assistant', 'head assistant']
+        .includes(this.normalizedRole)
+    ) || (
+      this.isDirectorPortal &&
+      this.normalizedRole === 'director'
+    );
+  }
+
+  get isDirectorPersonalReportOnly(): boolean {
+    return this.isDirectorPortal && this.showDistrictPersonalReportLinks;
+  }
+
+  private get activeDepartmentId(): number {
+    return Number(this.authService.getCurrentUser()?.department_id);
   }
 
   openChurch(districtId: number, churchId: number): void {
     const portalPrefix = this.router.url.startsWith('/assistant')
       ? '/assistant'
       : '/director';
-    const departmentId = Number(this.authService.getCurrentUser()?.department_id);
+    const departmentId = this.activeDepartmentId;
 
     if (!Number.isInteger(departmentId) || departmentId < 1) {
       this.errorMessage.set('Your department is unavailable. Please sign in again or contact an administrator.');
@@ -211,7 +648,7 @@ export class Reports implements OnInit {
       districtId,
       churchId
     ], {
-      queryParams: { return_to: 'monitoring' }
+      queryParams: this.monitoringReturnParams(departmentId)
     });
   }
 
@@ -244,6 +681,29 @@ export class Reports implements OnInit {
     return { quarter: quarter.toUpperCase(), status: 'Not started', tone: 'not-started' };
   }
 
+  getDistrictPastorQuarterStatus(
+    districtId: number,
+    quarter: 'q1' | 'q2' | 'q3' | 'q4'
+  ): MonitoringAlert {
+    const status = this.getQuarterStatus({
+      church_id: districtId,
+      name: 'District Pastor Report',
+      address: null,
+      parent_id: null,
+      monitoring: this.districtPastorMonitoring()[districtId]
+    }, quarter);
+
+    if (status && ['Approved', 'Endorsed', 'Submitted'].includes(status.status)) {
+      return status;
+    }
+
+    return {
+      quarter: quarter.toUpperCase(),
+      status: 'Not submitted',
+      tone: 'not-started'
+    };
+  }
+
   openDistrict(
     districtid: number
   ): void {
@@ -253,7 +713,9 @@ export class Reports implements OnInit {
       ? '/assistant'
       : '/director';
 
-    this.router.navigate([`${prefix}/reports/details`, districtid]);
+    this.router.navigate([`${prefix}/reports/details`, districtid], {
+      queryParams: this.monitoringReturnParams()
+    });
   }
 
   createReportTemplate(): void {
@@ -264,4 +726,31 @@ export class Reports implements OnInit {
     return this.router.url.startsWith('/assistant');
   }
 
+  get canCreateReportTemplate(): boolean {
+    return this.isAssistantPortal;
+  }
+
+  get isDirectorPortal(): boolean {
+    return this.router.url.startsWith('/director');
+  }
+
+  private get isDepartmentScopedPortal(): boolean {
+    return this.isAssistantPortal || this.isDirectorPortal;
+  }
+
+  get isDirectorRole(): boolean {
+    return ['director', 'head director'].includes(this.normalizedRole);
+  }
+
+  get canViewReportSummary(): boolean {
+    return this.isDirectorRole ||
+      ['assistant', 'administrative assistant', 'head assistant'].includes(this.normalizedRole);
+  }
+
+  openMissionSummary(): void {
+    const portalPrefix = this.isAssistantPortal ? '/assistant' : '/director';
+    void this.router.navigate([`${portalPrefix}/reports/summary`], {
+      queryParams: this.monitoringReturnParams()
+    });
+  }
 }

@@ -22,7 +22,7 @@ import {
 export class UserService {
     private http = inject(HttpClient);
 
-    private apiUrl = 'http://localhost:8000/api';
+    private apiUrl = '/api';
 
     bulkTransfer(transfers: { user_id: number; church_id: number; }[]) {
         return this.http.post<{ message: string }>(

@@ -2,14 +2,15 @@
 
 namespace App\Http\Requests;
 
-use App\Support\EventUser;
-use App\Support\EventParticulars;
 use App\Support\EventDepartments;
+use App\Support\EventParticulars;
+use App\Support\EventsOrg;
+use App\Support\EventUser;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
-use Carbon\Carbon;
 
 class EventRequest extends FormRequest
 {
@@ -24,7 +25,7 @@ class EventRequest extends FormRequest
 
         $scope = match ($user->role) {
             'district_pastor' => [
-                'church_ids' => ['required', 'array', $this->isMethod('post') ? 'min:1' : 'size:1'],
+                'church_ids' => ['required', 'array', 'min:1'],
                 'church_ids.*' => ['integer', 'distinct', Rule::exists('churches', 'church_id')],
             ],
             'assistant' => [
@@ -33,7 +34,8 @@ class EventRequest extends FormRequest
             ],
             default => [],
         };
-        $canSelectDepartment = in_array($user->role, ['church_representative', 'district_pastor'], true);
+        $canSelectDepartment = in_array($user->role, ['church_representative', 'district_pastor'], true)
+            || ($user->role === 'assistant' && $user->departmentId === null);
         $department = $canSelectDepartment
             ? ['department_id' => ['required', 'integer', Rule::exists('departments', 'department_id')]]
             : [];
@@ -47,7 +49,8 @@ class EventRequest extends FormRequest
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
-            'notes' => ['nullable', 'string', 'max:255'],
+            'host_church_id' => ['sometimes', 'required', 'integer', Rule::exists('churches', 'church_id')],
+            'notes' => ['nullable', 'string'],
         ] + $scope + $department;
     }
 
@@ -59,7 +62,8 @@ class EventRequest extends FormRequest
             }
 
             $user = EventUser::fromRequest($this);
-            $canSelectDepartment = in_array($user->role, ['church_representative', 'district_pastor'], true);
+            $canSelectDepartment = in_array($user->role, ['church_representative', 'district_pastor'], true)
+                || ($user->role === 'assistant' && $user->departmentId === null);
             $departmentId = $canSelectDepartment
                 ? (int) $this->input('department_id', 0)
                 : $user->departmentId;
@@ -87,6 +91,15 @@ class EventRequest extends FormRequest
             }
 
             $districtIds = array_map('intval', $this->input('district_ids', []));
+            $allowedHostChurchIds = $this->allowedHostChurchIds($user);
+            $requestedHostChurchId = $this->input('host_church_id');
+            if (
+                $requestedHostChurchId !== null
+                && ! in_array((int) $requestedHostChurchId, $allowedHostChurchIds, true)
+            ) {
+                $validator->errors()->add('host_church_id', 'Choose a host church included in this event’s coverage.');
+            }
+
             $churchId = match ($user->role) {
                 'church_representative' => $user->churchId,
                 'district_pastor' => (int) ($this->input('church_ids')[0] ?? 0),
@@ -96,7 +109,7 @@ class EventRequest extends FormRequest
 
             $reportChurchIds = $churchId ? [$churchId] : [];
             if ($user->role === 'district_pastor') {
-                $allowed = array_merge([$user->districtId], \App\Support\EventsOrg::churchIdsOfDistrict($user->districtId));
+                $allowed = array_merge([$user->districtId], EventsOrg::churchIdsOfDistrict($user->districtId));
                 $allowed = array_map('intval', array_filter($allowed));
                 $reportChurchIds = array_map('intval', $this->input('church_ids', []));
                 if (array_diff($reportChurchIds, $allowed)) {
@@ -139,10 +152,43 @@ class EventRequest extends FormRequest
     {
         $user = EventUser::fromRequest($this);
         $departmentId = in_array($user->role, ['church_representative', 'district_pastor'], true)
+            || ($user->role === 'assistant' && $user->departmentId === null)
             ? (int) $this->validated('department_id')
             : $user->departmentId;
         abort_unless($departmentId, 422, 'A department is required before creating events.');
 
         return $departmentId;
+    }
+
+    public function hostChurchId(): int
+    {
+        $hostChurchId = $this->validated('host_church_id');
+        if ($hostChurchId !== null) {
+            return (int) $hostChurchId;
+        }
+
+        $fallbackChurchIds = $this->allowedHostChurchIds(EventUser::fromRequest($this));
+        abort_unless($fallbackChurchIds, 422, 'Choose a host church included in this event’s coverage.');
+
+        return (int) $fallbackChurchIds[0];
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function allowedHostChurchIds(EventUser $user): array
+    {
+        return match ($user->role) {
+            'church_representative' => array_values(array_filter([(int) $user->churchId])),
+            'district_pastor' => array_values(array_intersect(
+                array_map('intval', $this->input('church_ids', [])),
+                EventsOrg::churchIdsOfDistrict($user->districtId)
+            )),
+            'assistant' => collect(array_map('intval', $this->input('district_ids', [])))
+                ->flatMap(fn (int $districtId) => EventsOrg::churchIdsOfDistrict($districtId))
+                ->map(fn ($churchId) => (int) $churchId)
+                ->all(),
+            default => [],
+        };
     }
 }

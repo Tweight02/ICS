@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Church;
 use App\Models\User;
+use App\Support\UserIdentity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -12,15 +13,6 @@ use Illuminate\Validation\ValidationException;
 
 class RepresentativeController extends Controller
 {
-    /**
-     * Get representatives accessible to the authenticated user.
-     *
-     * Pastor:
-     *   Can see representatives in churches belonging to his district.
-     *
-     * Church representative:
-     *   Can see representatives in his own church.
-     */
     /**
      * Churches in the pastor's district that have no representative yet.
      */
@@ -64,20 +56,18 @@ class RepresentativeController extends Controller
         return response()->json(['data' => $churches]);
     }
 
+    /**
+     * Get representatives accessible to the authenticated user.
+     *
+     * Pastor: representatives in churches of his district.
+     * Church representative: representatives in his own church.
+     */
     public function index(Request $request)
     {
         $authUser = $request->user();
 
-        if (
-            ! in_array(
-                $authUser->role,
-                ['pastor', 'representative']
-            )
-        ) {
-            abort(
-                403,
-                'You are not authorized to view representatives.'
-            );
+        if (! in_array($authUser->role, ['pastor', 'representative'])) {
+            abort(403, 'You are not authorized to view representatives.');
         }
         $districtId = $authUser->role === 'pastor' ? $this->assignedDistrictId($authUser) : null;
 
@@ -89,85 +79,43 @@ class RepresentativeController extends Controller
                 'church:church_id,name,parent_id',
             ]);
 
-        /*
-    |--------------------------------------------------------------------------
-    | PASTOR
-    |--------------------------------------------------------------------------
-    */
-
+        // PASTOR
         if ($authUser->role === 'pastor') {
             $query
                 ->join('churches as representative_churches', 'representative_churches.church_id', '=', 'users.church_id')
                 ->where('representative_churches.parent_id', $districtId);
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | CHURCH REPRESENTATIVE
-    |--------------------------------------------------------------------------
-    */
-
+        // CHURCH REPRESENTATIVE
         if ($authUser->role === 'representative') {
-
             $query->where('users.church_id', $authUser->church_id);
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | SEARCH
-    |--------------------------------------------------------------------------
-    */
-
+        // SEARCH
         if ($request->filled('search')) {
-
             $search = $request->search;
 
             $query->where(function ($q) use ($search) {
-
-                $q->where(
-                    'first_name',
-                    'like',
-                    "%{$search}%"
-                )
-                    ->orWhere(
-                        'last_name',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'email',
-                        'like',
-                        "%{$search}%"
-                    );
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | CHURCH FILTER
-    |--------------------------------------------------------------------------
-    */
-
+        // CHURCH FILTER
         if ($request->filled('church_id')) {
-
             $query->where('users.church_id', $request->church_id);
         }
 
         if ($request->filled('status')) {
-
-            $query->where(
-                'users.status',
-                $request->input('status')
-            );
+            $query->where('users.status', $request->input('status'));
         }
 
         return response()->json(
             $query
                 ->orderBy('users.last_name')
                 ->orderBy('users.first_name')
-                ->paginate(
-                    $request->integer('per_page', 15)
-                )
+                ->paginate($request->integer('per_page', 15))
         );
     }
 
@@ -186,39 +134,21 @@ class RepresentativeController extends Controller
             ])
             ->findOrFail($id);
 
-        /*
-        |--------------------------------------------------------------------------
-        | AUTHORIZATION
-        |--------------------------------------------------------------------------
-        */
-
         if ($authUser->role === 'pastor') {
             $districtId = $this->assignedDistrictId($authUser);
 
             $allowed = $representative->church
-                && (int) $representative->church->parent_id
-                === $districtId;
+                && (int) $representative->church->parent_id === $districtId;
 
             if (! $allowed) {
                 abort(403, 'This representative is outside your district.');
             }
         } elseif ($authUser->role === 'representative') {
-
-            if (
-                (int) $representative->church_id !==
-                (int) $authUser->church_id
-            ) {
-                abort(
-                    403,
-                    'This representative belongs to another church.'
-                );
+            if ((int) $representative->church_id !== (int) $authUser->church_id) {
+                abort(403, 'This representative belongs to another church.');
             }
         } else {
-
-            abort(
-                403,
-                'You are not authorized to view this representative.'
-            );
+            abort(403, 'You are not authorized to view this representative.');
         }
 
         return response()->json([
@@ -241,7 +171,11 @@ class RepresentativeController extends Controller
             'extension_name' => 'nullable|string|max:50',
             'birthdate' => 'required|date|before:today',
             'gender' => 'required|string|in:male,female,other',
-            'email' => 'required|email|unique:users,email',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email'),
+            ],
             'password' => 'required|string|min:8',
         ]);
 
@@ -260,10 +194,15 @@ class RepresentativeController extends Controller
             abort(403, 'You are not authorized to create representatives.');
         }
 
-        // Department is inherited from the creator, never from the request
-        if (! $authUser->department_id) {
+        if (UserIdentity::existsFor(
+            $data['first_name'],
+            $data['middle_name'] ?? null,
+            $data['last_name'],
+            $data['extension_name'] ?? null,
+            $data['birthdate']
+        )) {
             throw ValidationException::withMessages([
-                'department_id' => 'Your account has no department assigned.',
+                'first_name' => ['This person already has an account.'],
             ]);
         }
 
@@ -302,130 +241,71 @@ class RepresentativeController extends Controller
     }
 
     /**
-     * Update representative.
+     * Update representative (also handles transfer to another church).
      */
-    public function update(
-        Request $request,
-        $id
-    ) {
-
+    public function update(Request $request, $id)
+    {
         $authUser = $request->user();
 
-        $representative = User::where(
-            'role',
-            'representative'
-        )->findOrFail($id);
+        $representative = User::where('role', 'representative')->findOrFail($id);
 
-        /*
-        |--------------------------------------------------------------------------
-        | AUTHORIZATION
-        |--------------------------------------------------------------------------
-        */
-
+        // AUTHORIZATION
         $church = $representative->church;
 
         if ($authUser->role === 'pastor') {
             $districtId = $this->assignedDistrictId($authUser);
 
-            if (
-                ! $church ||
-                (int) $church->parent_id !==
-                $districtId
-            ) {
-                abort(
-                    403,
-                    'This representative is outside your district.'
-                );
+            if (! $church || (int) $church->parent_id !== $districtId) {
+                abort(403, 'This representative is outside your district.');
             }
         } elseif ($authUser->role === 'representative') {
-
-            if (
-                (int) $representative->church_id !==
-                (int) $authUser->church_id
-            ) {
-                abort(
-                    403,
-                    'This representative belongs to another church.'
-                );
+            if ((int) $representative->church_id !== (int) $authUser->church_id) {
+                abort(403, 'This representative belongs to another church.');
             }
         } else {
-
-            abort(
-                403,
-                'You are not authorized to update representatives.'
-            );
+            abort(403, 'You are not authorized to update representatives.');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDATION
-        |--------------------------------------------------------------------------
-        */
+        $destinationId = $request->integer('church_id');
+        $isTransfer = $destinationId !== (int) $representative->church_id;
 
+        // VALIDATION
         $data = $request->validate([
-
             'church_id' => 'required|exists:churches,church_id',
-
             'department_id' => 'required|exists:departments,department_id',
-
             'first_name' => 'required|string|max:255',
-
             'middle_name' => 'nullable|string|max:255',
-
             'last_name' => 'required|string|max:255',
-
             'extension_name' => 'nullable|string|max:50',
-
             'birthdate' => 'required|date|before:today',
-
             'gender' => 'required|string|in:male,female,other',
-
             'email' => [
                 'required',
                 'email',
                 Rule::unique('users', 'email')
-                    ->ignore(
-                        $representative->user_id,
-                        'user_id'
-                    ),
+                    ->where(fn ($q) => $isTransfer
+                        ? $q->where('church_id', $destinationId)->where('status', 'active')
+                        : $q->where('church_id', $representative->church_id))
+                    ->ignore($representative->user_id, 'user_id'),
+                $this->noActiveEmailInOtherRole('representative', $representative->user_id),
             ],
-
             'password' => 'nullable|string|min:8',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | PASSWORD
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            empty($data['password'])
-        ) {
-
+        // PASSWORD
+        if (empty($data['password'])) {
             unset($data['password']);
         } else {
-
-            $data['password'] = Hash::make(
-                $data['password']
-            );
+            $data['password'] = Hash::make($data['password']);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            $authUser->role === 'representative' &&
-            (int) $data['church_id'] !== (int) $representative->church_id
-        ) {
+        if ($authUser->role === 'representative' && $isTransfer) {
             abort(403, 'Representatives cannot transfer accounts between churches.');
         }
 
         $districtId = $authUser->role === 'pastor' ? $this->assignedDistrictId($authUser) : null;
-        DB::transaction(function () use ($data, $authUser, $representative, $districtId) {
+
+        $representative = DB::transaction(function () use ($data, $authUser, $representative, $districtId, $isTransfer) {
             $destinationChurch = Church::query()
                 ->where('church_id', $data['church_id'])
                 ->lockForUpdate()
@@ -438,40 +318,46 @@ class RepresentativeController extends Controller
                 abort(403, 'You can only transfer representatives to churches in your district.');
             }
 
-            $destinationOccupied = User::query()
+            // Plain edit: no transfer, update the same row
+            if (! $isTransfer) {
+                $representative->update($data);
+
+                return $representative;
+            }
+
+            if ($representative->status !== 'active') {
+                throw ValidationException::withMessages([
+                    'church_id' => 'Only active representatives can be transferred.',
+                ]);
+            }
+
+            $destinationRepresentative = User::query()
                 ->where('role', 'representative')
                 ->where('status', 'active')
                 ->where('church_id', $destinationChurch->church_id)
                 ->where('user_id', '!=', $representative->user_id)
-                ->exists();
+                ->lockForUpdate()
+                ->first();
 
-            $isTransfer = (int) $destinationChurch->church_id !== (int) $representative->church_id;
-
-            if ($isTransfer && $representative->status === 'active' && $destinationOccupied) {
-                throw ValidationException::withMessages([
-                    'church_id' => 'This church already has an active representative.',
-                ]);
+            if ($destinationRepresentative) {
+                $this->retire($destinationRepresentative);
             }
 
             $representative->update($data);
+
+            return $representative;
         });
 
-        $representative->load([
-            'department',
-            'church',
-        ]);
+        $representative->load(['department', 'church']);
 
         return response()->json([
-
             'message' => 'Representative updated successfully.',
-
             'user' => $representative,
-
         ]);
     }
 
     /**
-     * Transfer active representatives to churches in the pastor's district.
+     * Assign or transfer representatives to churches in the pastor's district.
      */
     public function bulk_transfer(Request $request)
     {
@@ -507,11 +393,10 @@ class RepresentativeController extends Controller
         }
 
         $districtId = $this->assignedDistrictId($authUser);
-        DB::transaction(function () use ($authUser, $transfers, $userIds, $destinationIds, $districtId) {
+        DB::transaction(function () use ($transfers, $userIds, $destinationIds, $districtId) {
             $representatives = User::query()
                 ->whereIn('user_id', $userIds)
                 ->where('role', 'representative')
-                ->where('status', 'active')
                 ->with('church:church_id,parent_id')
                 ->orderBy('user_id')
                 ->lockForUpdate()
@@ -520,13 +405,13 @@ class RepresentativeController extends Controller
 
             if ($representatives->count() !== count($userIds)) {
                 throw ValidationException::withMessages([
-                    'transfers' => 'One or more selected users are not active representatives.',
+                    'transfers' => 'One or more selected users are not representatives.',
                 ]);
             }
 
             foreach ($representatives as $representative) {
                 if (
-                    !$representative->church ||
+                    ! $representative->church ||
                     (int) $representative->church->parent_id !== $districtId
                 ) {
                     abort(403, 'One or more representatives are outside your district.');
@@ -550,7 +435,10 @@ class RepresentativeController extends Controller
                 $representative = $representatives->get((int) $transfer['user_id']);
                 $destination = $destinations->get((int) $transfer['church_id']);
 
-                if ((int) $representative->church_id === (int) $destination->church_id) {
+                if (
+                    $representative->status === 'active' &&
+                    (int) $representative->church_id === (int) $destination->church_id
+                ) {
                     throw ValidationException::withMessages([
                         'transfers' => "{$representative->first_name} {$representative->last_name} is already assigned to this church.",
                     ]);
@@ -559,29 +447,32 @@ class RepresentativeController extends Controller
                 if ((int) $destination->parent_id !== $districtId) {
                     abort(403, 'You can only transfer representatives to churches in your district.');
                 }
+            }
 
-                $occupied = User::query()
-                    ->where('role', 'representative')
-                    ->where('status', 'active')
-                    ->where('church_id', $destination->church_id)
-                    ->whereNotIn('user_id', $userIds)
-                    ->exists();
+            $displacedRepresentatives = User::query()
+                ->where('role', 'representative')
+                ->where('status', 'active')
+                ->whereIn('church_id', $destinationIds)
+                ->whereNotIn('user_id', $userIds)
+                ->orderBy('user_id')
+                ->lockForUpdate()
+                ->get();
 
-                if ($occupied) {
-                    throw ValidationException::withMessages([
-                        'transfers' => "{$destination->name} already has an active representative.",
-                    ]);
-                }
+            foreach ($displacedRepresentatives as $displacedRepresentative) {
+                $this->retire($displacedRepresentative);
             }
 
             foreach ($transfers as $transfer) {
                 $representatives->get((int) $transfer['user_id'])
-                    ->update(['church_id' => (int) $transfer['church_id']]);
+                    ->update([
+                        'church_id' => (int) $transfer['church_id'],
+                        'status' => 'active',
+                    ]);
             }
         });
 
         return response()->json([
-            'message' => count($transfers) . ' representative(s) transferred successfully.',
+            'message' => count($transfers).' representative(s) transferred successfully.',
             'transferred_count' => count($transfers),
         ]);
     }
@@ -595,7 +486,7 @@ class RepresentativeController extends Controller
         }
 
         $districtId = $this->assignedDistrictId($authUser);
-        DB::transaction(function () use ($authUser, $id, $districtId) {
+        DB::transaction(function () use ($id, $districtId) {
             $representative = User::query()
                 ->where('role', 'representative')
                 ->where('user_id', $id)
@@ -630,6 +521,19 @@ class RepresentativeController extends Controller
                 ]);
             }
 
+            // The same person must not be active in two churches at once
+            $duplicate = User::query()
+                ->where('email', $representative->email)
+                ->where('status', 'active')
+                ->where('user_id', '!=', $representative->user_id)
+                ->exists();
+
+            if ($duplicate) {
+                throw ValidationException::withMessages([
+                    'status' => 'This person already has an active account in another church.',
+                ]);
+            }
+
             $representative->update(['status' => 'active']);
         });
 
@@ -639,7 +543,7 @@ class RepresentativeController extends Controller
     }
 
     /**
-     * Delete representative.
+     * Deactivate representative.
      */
     public function destroy(Request $request, $id)
     {
@@ -669,6 +573,33 @@ class RepresentativeController extends Controller
         return response()->json([
             'message' => 'Representative deactivated successfully.',
         ]);
+    }
+
+    /** Deactivate the old record and revoke its tokens. The row and its history stay as they are. */
+    private function retire(User $user): void
+    {
+        $user->update(['status' => 'inactive']);
+        $user->tokens()->delete();
+    }
+
+    /**
+     * Rejects an email that is actively used by an account with a different role,
+     * so login can never match two active accounts of different types.
+     */
+    private function noActiveEmailInOtherRole(string $role, ?int $ignoreUserId = null): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($role, $ignoreUserId): void {
+            $clash = User::query()
+                ->where('email', $value)
+                ->where('status', 'active')
+                ->where('role', '!=', $role)
+                ->when($ignoreUserId, fn ($q) => $q->where('user_id', '!=', $ignoreUserId))
+                ->exists();
+
+            if ($clash) {
+                $fail('This email is already used by another account type.');
+            }
+        };
     }
 
     private function assignedDistrictId(User $pastor): int

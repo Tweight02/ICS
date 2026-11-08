@@ -1,0 +1,707 @@
+<main class="min-h-screen bg-transparent px-4 pb-6 pt-0 text-emerald-950 sm:px-8 lg:px-10">
+  <div class="mx-auto max-w-7xl">
+    <header class="relative isolate mb-5 flex flex-col gap-5 overflow-hidden rounded-2xl border border-white/80 bg-emerald-50 p-4 shadow-sm shadow-emerald-950/10 sm:px-6 sm:py-5">
+      <img
+        src="/assets/headerMountain.png"
+        alt=""
+        aria-hidden="true"
+        class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-50">
+      <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/90 to-emerald-100/45"></div>
+      <div class="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div class="min-w-0">
+          <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800/80">
+            {{ isMissionWideSummary ? 'Assistant reports' : 'Director reports' }}
+          </p>
+          <h1 class="!text-xl font-bold tracking-tight text-emerald-950 sm:!text-2xl">
+            {{ isMissionWideSummary ? 'Mission-wide report summary' : 'Department report summary' }}
+          </h1>
+          <p class="mt-1 text-xs font-medium text-emerald-900/70">
+            {{ isMissionWideSummary
+              ? 'Quarterly totals across all departments'
+              : 'Quarterly totals for your assigned department' }}
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <button *ngIf="summary()" type="button" (click)="openSummaryPreview()"
+            class="report-export-trigger">
+            <i class="bi bi-printer" aria-hidden="true"></i> Export / Print
+          </button>
+          <button
+            type="button"
+            (click)="backToReports()"
+            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-emerald-800/20 bg-white/90 px-4 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
+            style="border-radius: 9999px">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12.5 4 6.5 10l6 6M7 10h10" />
+            </svg>
+            Back to reports
+          </button>
+        </div>
+      </div>
+
+      <div class="relative mt-2 flex flex-col gap-4 border-t border-emerald-900/10 pt-5 sm:flex-row sm:items-end">
+        <label for="summary-report-year" class="grid w-fit grid-cols-1 gap-1.5">
+          <span class="block text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">REPORTING YEAR</span>
+          <select
+            id="summary-report-year"
+            class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+            [value]="selectedYear()"
+            (change)="onYearChange($event)">
+            <option *ngFor="let year of reportYears" [value]="year">{{ year }}</option>
+          </select>
+        </label>
+        <label *ngIf="isAssistantPortal && !loadingDepartments()" for="summary-report-department" class="grid w-full max-w-sm grid-cols-1 gap-1.5">
+          <span class="block text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">DEPARTMENT</span>
+          <select
+            id="summary-report-department"
+            class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+            [value]="selectedDepartmentId() ?? ''"
+            [disabled]="loadingDepartments()"
+            (change)="onDepartmentChange($event)">
+            <option value="">Select a department</option>
+            <option *ngFor="let department of departments()" [value]="department.department_id">
+              {{ department.department_name }}
+            </option>
+          </select>
+        </label>
+        <div *ngIf="isAssistantPortal && loadingDepartments()" class="w-full max-w-sm space-y-2" role="status" aria-label="Loading departments" aria-busy="true">
+          <span class="report-skeleton-block h-3 w-24"></span>
+          <span class="report-skeleton-block h-10 w-full rounded-xl"></span>
+          <span class="sr-only">Loading department options.</span>
+        </div>
+      </div>
+      <p *ngIf="departmentsErrorMessage()" class="mt-2 text-sm text-red-700" role="alert">
+        {{ departmentsErrorMessage() }}
+      </p>
+    </header>
+
+    <div *ngIf="loading()" class="space-y-4" role="status" aria-label="Loading report summary" aria-busy="true">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <article *ngFor="let card of [1, 2]" class="rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3">
+          <span class="report-skeleton-block h-3 w-32"></span>
+          <span class="report-skeleton-block report-skeleton-block-dark mt-3 h-7 w-24"></span>
+        </article>
+      </div>
+      <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95">
+        <div class="space-y-4 p-4">
+          <span class="report-skeleton-block report-skeleton-block-dark h-5 w-56"></span>
+          <div *ngFor="let row of [1, 2, 3, 4, 5, 6]" class="grid grid-cols-6 items-center gap-3 border-t border-slate-100 py-3">
+            <span class="report-skeleton-block h-4 w-4/5"></span>
+            <span *ngFor="let cell of [1, 2, 3, 4, 5]" class="report-skeleton-block mx-auto h-4 w-10"></span>
+          </div>
+        </div>
+      </section>
+      <span class="sr-only">Loading report totals and quarterly details.</span>
+    </div>
+
+    <div
+      *ngIf="errorMessage()"
+      role="alert"
+      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <span class="font-medium">{{ errorMessage() }}</span>
+      <button
+        type="button"
+        (click)="loadSummary()"
+        class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100">
+        Retry
+      </button>
+    </div>
+
+    <ng-container *ngIf="!loading() && summary() as reportSummary">
+      <dl *ngIf="!isAssistantPortal" class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 shadow-sm">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-emerald-800">Submitted reports</dt>
+          <dd class="mt-1 text-2xl font-bold tabular-nums text-emerald-950">
+            {{ reportSummary.total_submitted_reports | number }}
+          </dd>
+        </div>
+        <div class="rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 shadow-sm">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+            {{ isMissionWideSummary ? 'Mission total' : 'Department total' }} · {{ reportSummary.year }}
+          </dt>
+          <dd class="mt-1 text-2xl font-bold tabular-nums text-emerald-950">
+            {{ reportSummary.total_report_value | number }}
+          </dd>
+        </div>
+      </dl>
+
+      <section *ngIf="!isAssistantPortal" class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-sm">
+        <div class="border-b border-slate-200 px-4 py-3 sm:px-5">
+          <h2 class="text-base font-bold text-emerald-950">Report totals by quarter</h2>
+          <p class="mt-1 text-xs text-slate-500">
+            Totals include submitted reports only; numeric entries are summed without unit conversion.
+          </p>
+          <p *ngIf="isPersonalRecordsDepartmentSelected" class="mt-1 text-xs text-emerald-800">
+            Select a quarter total to view the records for that quarter.
+          </p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[48rem] border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <th scope="col" class="px-4 py-3">
+                  Department / report
+                </th>
+                <th scope="col" class="px-3 py-3 text-right">Q1</th>
+                <th scope="col" class="px-3 py-3 text-right">Q2</th>
+                <th scope="col" class="px-3 py-3 text-right">Q3</th>
+                <th scope="col" class="px-3 py-3 text-right">Q4</th>
+                <th scope="col" class="px-4 py-3 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let department of reportSummary.departments">
+                <tr class="border-b border-slate-100 bg-emerald-50/70 font-semibold text-emerald-950">
+                  <th scope="row" class="px-4 py-3">{{ department.department_name }}</th>
+                  <td class="px-3 py-3 text-right tabular-nums">
+                    <button
+                      *ngIf="isBaptismReport(department.department_id); else departmentQ1Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q1'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q1')">
+                      {{ department.quarter_totals.q1 | number }}
+                    </button>
+                    <ng-template #departmentQ1Total>{{ department.quarter_totals.q1 | number }}</ng-template>
+                  </td>
+                  <td class="px-3 py-3 text-right tabular-nums">
+                    <button
+                      *ngIf="isBaptismReport(department.department_id); else departmentQ2Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q2'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q2')">
+                      {{ department.quarter_totals.q2 | number }}
+                    </button>
+                    <ng-template #departmentQ2Total>{{ department.quarter_totals.q2 | number }}</ng-template>
+                  </td>
+                  <td class="px-3 py-3 text-right tabular-nums">
+                    <button
+                      *ngIf="isBaptismReport(department.department_id); else departmentQ3Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q3'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q3')">
+                      {{ department.quarter_totals.q3 | number }}
+                    </button>
+                    <ng-template #departmentQ3Total>{{ department.quarter_totals.q3 | number }}</ng-template>
+                  </td>
+                  <td class="px-3 py-3 text-right tabular-nums">
+                    <button
+                      *ngIf="isBaptismReport(department.department_id); else departmentQ4Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q4'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q4')">
+                      {{ department.quarter_totals.q4 | number }}
+                    </button>
+                    <ng-template #departmentQ4Total>{{ department.quarter_totals.q4 | number }}</ng-template>
+                  </td>
+                  <td class="px-4 py-3 text-right tabular-nums">{{ department.total_report_value | number }}</td>
+                </tr>
+                <tr *ngFor="let report of department.reports" class="border-b border-slate-100 text-slate-700">
+                  <th scope="row" class="px-4 py-3 pl-7 font-medium">{{ report.report_name }}</th>
+                  <td class="px-3 py-3 text-right tabular-nums">
+                    <button
+                      *ngIf="isBaptismReport(department.department_id); else q1Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q1'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q1')">
+                      {{ report.quarter_totals.q1 | number }}
+                    </button>
+                    <ng-template #q1Total>{{ report.quarter_totals.q1 | number }}</ng-template>
+                  </td>
+                  <td class="px-3 py-3 text-right tabular-nums">
+                    <button
+                      *ngIf="isBaptismReport(department.department_id); else q2Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q2'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q2')">
+                      {{ report.quarter_totals.q2 | number }}
+                    </button>
+                    <ng-template #q2Total>{{ report.quarter_totals.q2 | number }}</ng-template>
+                  </td>
+                  <td class="px-3 py-3 text-right tabular-nums">
+                    <button
+                      *ngIf="isBaptismReport(department.department_id); else q3Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q3'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q3')">
+                      {{ report.quarter_totals.q3 | number }}
+                    </button>
+                    <ng-template #q3Total>{{ report.quarter_totals.q3 | number }}</ng-template>
+                  </td>
+                  <td class="px-3 py-3 text-right tabular-nums">
+                    <button
+                      *ngIf="isBaptismReport(department.department_id); else q4Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q4'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q4')">
+                      {{ report.quarter_totals.q4 | number }}
+                    </button>
+                    <ng-template #q4Total>{{ report.quarter_totals.q4 | number }}</ng-template>
+                  </td>
+                  <td class="px-4 py-3 text-right font-semibold tabular-nums">{{ report.total_report_value | number }}</td>
+                </tr>
+              </ng-container>
+              <tr *ngIf="reportSummary.departments.length === 0">
+                <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                  No report templates are available for this year.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </ng-container>
+
+    <section *ngIf="!isBaptismDirector" class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-sm">
+      <ng-container *ngIf="selectedDepartmentId() !== null; else noDepartmentSelected">
+        <div class="border-b border-slate-200 px-4 py-3 sm:px-5">
+          <h2 class="text-base font-bold text-emerald-950">{{ selectedDepartmentName() }} report particulars</h2>
+          <p class="mt-1 text-xs text-slate-500">
+            Item totals include submitted reports only for {{ selectedYear() }}.
+          </p>
+          <p *ngIf="isPersonalRecordsDepartmentSelected" class="mt-1 text-xs text-emerald-800">
+            Select a quarter total to view the records for that quarter.
+          </p>
+        </div>
+        <div *ngIf="loadingDepartmentDetails()" class="space-y-4 px-4 py-5" role="status" aria-label="Loading department report details" aria-busy="true">
+          <span class="report-skeleton-block h-10 w-full max-w-sm rounded-xl"></span>
+          <div *ngFor="let row of [1, 2, 3, 4, 5]" class="grid grid-cols-6 items-center gap-3 border-t border-slate-100 py-3">
+            <span class="report-skeleton-block h-4 w-4/5"></span>
+            <span *ngFor="let cell of [1, 2, 3, 4, 5]" class="report-skeleton-block mx-auto h-4 w-10"></span>
+          </div>
+          <span class="sr-only">Loading report particulars and totals.</span>
+        </div>
+        <div *ngIf="departmentDetailsErrorMessage()" class="px-4 py-4 text-sm text-red-700" role="alert">
+          {{ departmentDetailsErrorMessage() }}
+          <button
+            type="button"
+            (click)="retryDepartmentDetails()"
+            class="ml-2 font-semibold underline">
+            Retry
+          </button>
+        </div>
+        <div *ngIf="!loadingDepartmentDetails() && !departmentDetailsErrorMessage() && selectedDepartmentSummary() as department"
+          class="space-y-3">
+          <label *ngIf="department.reports.length > 1"
+            for="summary-report-program"
+            class="grid w-full max-w-sm grid-cols-1 gap-1.5 px-4 pt-3 sm:px-5">
+            <span class="block text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">REPORT</span>
+            <select
+              id="summary-report-program"
+              class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+              [value]="selectedReportId() ?? ''"
+              (change)="onReportChange($event)">
+              <option *ngFor="let report of department.reports" [value]="report.program_id">
+                {{ report.report_name }}
+              </option>
+            </select>
+          </label>
+          <div *ngIf="selectedReport() as report; else noReportsForDepartment" class="overflow-x-auto">
+          <table class="w-full min-w-[48rem] table-fixed border-collapse text-left text-sm">
+            <colgroup>
+              <col class="w-[42%]">
+              <col class="w-[11%]">
+              <col class="w-[11%]">
+              <col class="w-[11%]">
+              <col class="w-[11%]">
+              <col class="w-[14%]">
+            </colgroup>
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <th scope="col" class="px-4 py-3">Report / particular</th>
+                <th scope="col" class="px-3 py-3 text-center">Q1</th>
+                <th scope="col" class="px-3 py-3 text-center">Q2</th>
+                <th scope="col" class="px-3 py-3 text-center">Q3</th>
+                <th scope="col" class="px-3 py-3 text-center">Q4</th>
+                <th scope="col" class="px-4 py-3 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let particular of report.particulars" class="border-b border-slate-100 text-slate-700">
+                  <th scope="row" class="px-4 py-3 pl-8 font-medium">{{ particular.particular_name }}</th>
+                  <td class="px-3 py-3 text-center tabular-nums">
+                    <button
+                      *ngIf="isPersonalRecordsDepartmentSelected; else detailQ1Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q1'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q1')">
+                      {{ particular.quarter_totals.q1 | number }}
+                    </button>
+                    <ng-template #detailQ1Total>{{ particular.quarter_totals.q1 | number }}</ng-template>
+                  </td>
+                  <td class="px-3 py-3 text-center tabular-nums">
+                    <button
+                      *ngIf="isPersonalRecordsDepartmentSelected; else detailQ2Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q2'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q2')">
+                      {{ particular.quarter_totals.q2 | number }}
+                    </button>
+                    <ng-template #detailQ2Total>{{ particular.quarter_totals.q2 | number }}</ng-template>
+                  </td>
+                  <td class="px-3 py-3 text-center tabular-nums">
+                    <button
+                      *ngIf="isPersonalRecordsDepartmentSelected; else detailQ3Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q3'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q3')">
+                      {{ particular.quarter_totals.q3 | number }}
+                    </button>
+                    <ng-template #detailQ3Total>{{ particular.quarter_totals.q3 | number }}</ng-template>
+                  </td>
+                  <td class="px-3 py-3 text-center tabular-nums">
+                    <button
+                      *ngIf="isPersonalRecordsDepartmentSelected; else detailQ4Total"
+                      type="button"
+                      class="rounded px-1 font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      [attr.aria-expanded]="selectedBaptismQuarter() === 'Q4'"
+                      aria-controls="baptism-records-results"
+                      (click)="selectBaptismQuarter('Q4')">
+                      {{ particular.quarter_totals.q4 | number }}
+                    </button>
+                    <ng-template #detailQ4Total>{{ particular.quarter_totals.q4 | number }}</ng-template>
+                  </td>
+                  <td class="px-4 py-3 text-right font-semibold tabular-nums">{{ particular.total_report_value | number }}</td>
+                </tr>
+              <tr *ngIf="report.particulars?.length === 0">
+                <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                  No particulars are available for this report and year.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+          <ng-template #noReportsForDepartment>
+            <p class="px-4 py-8 text-center text-sm text-slate-500">
+              No report templates are available for this department and year.
+            </p>
+          </ng-template>
+        </div>
+      </ng-container>
+      <ng-template #noDepartmentSelected>
+        <div class="px-4 py-8 text-center text-sm text-slate-500">
+          {{ isAssistantPortal
+            ? 'Select a department to view its report particulars.'
+            : 'A department must be assigned to your Director account.' }}
+        </div>
+      </ng-template>
+    </section>
+
+    <section
+      *ngIf="isPersonalRecordsDepartmentSelected && selectedBaptismQuarter()"
+      id="baptism-records-results"
+      class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
+        <div>
+          <h2 class="text-base font-bold text-emerald-950">
+            {{ selectedBaptismQuarter() }} {{ isBaptismDepartmentSelected ? 'baptism' : 'death' }} records
+          </h2>
+          <p class="mt-1 text-xs text-slate-500">
+            Records for {{ selectedYear() }} from the database.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          (click)="closeReportRecords()">
+          Close
+        </button>
+      </div>
+      <div *ngIf="loadingBaptismRecords() || loadingDeathRecords()" class="space-y-3 px-4 py-5" role="status" aria-label="Loading personal report records" aria-busy="true">
+        <div class="grid grid-cols-3 gap-3 border-b border-slate-100 pb-3 sm:grid-cols-6">
+          <span *ngFor="let column of [1, 2, 3, 4, 5, 6]" class="report-skeleton-block h-3 w-4/5"></span>
+        </div>
+        <div *ngFor="let row of [1, 2, 3, 4, 5]" class="grid grid-cols-3 items-center gap-3 border-b border-slate-100 py-3 sm:grid-cols-6">
+          <span *ngFor="let column of [1, 2, 3, 4, 5, 6]" class="report-skeleton-block h-4 w-full"></span>
+        </div>
+        <span class="sr-only">Loading record rows.</span>
+      </div>
+      <div *ngIf="baptismRecordsErrorMessage() || deathRecordsErrorMessage()" class="px-4 py-4 text-sm text-red-700" role="alert">
+        {{ baptismRecordsErrorMessage() || deathRecordsErrorMessage() }}
+        <button type="button" class="ml-2 font-semibold underline" (click)="retryReportRecords()">
+          Retry
+        </button>
+      </div>
+      <div *ngIf="isBaptismDepartmentSelected && !loadingBaptismRecords() && !baptismRecordsErrorMessage()" class="overflow-x-auto">
+        <table class="w-full min-w-[64rem] border-collapse text-left text-sm">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <th scope="col" class="px-4 py-3">Name</th>
+              <th scope="col" class="px-4 py-3">Church</th>
+              <th scope="col" class="px-3 py-3">Date of baptism</th>
+              <th scope="col" class="px-4 py-3">Officiating minister</th>
+              <th scope="col" class="px-4 py-3">Place of baptism</th>
+              <th scope="col" class="px-3 py-3">Gender</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let record of baptismRecords()"
+              class="cursor-pointer border-b border-slate-100 text-slate-700 hover:bg-emerald-50/70 focus-visible:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-emerald-600"
+              tabindex="0"
+              [attr.aria-label]="'View details for ' + baptismRecordName(record)"
+              (click)="openBaptismDetails(record)"
+              (keydown.enter)="openBaptismDetails(record)"
+              (keydown.space)="$event.preventDefault(); openBaptismDetails(record)">
+              <th scope="row" class="px-4 py-3 font-medium">{{ baptismRecordName(record) }}</th>
+              <td class="px-4 py-3">{{ record.church_name }}</td>
+              <td class="px-3 py-3 tabular-nums">{{ record.date_of_baptism | date:'mediumDate' }}</td>
+              <td class="px-4 py-3">{{ record.officiating_minister }}</td>
+              <td class="px-4 py-3">{{ record.place_of_baptism }}</td>
+              <td class="px-3 py-3">{{ record.gender }}</td>
+            </tr>
+            <tr *ngIf="baptismRecords().length === 0">
+              <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                No baptism records are available for this quarter and year.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="isDeathDepartmentSelected && !loadingDeathRecords() && !deathRecordsErrorMessage()" class="overflow-x-auto">
+        <table class="w-full min-w-[52rem] border-collapse text-left text-sm">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <th scope="col" class="px-4 py-3">Name</th>
+              <th scope="col" class="px-4 py-3">Church</th>
+              <th scope="col" class="px-3 py-3">Date of death</th>
+              <th scope="col" class="px-3 py-3">Gender</th>
+              <th scope="col" class="px-3 py-3">Quarter</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let record of deathRecords()"
+              class="cursor-pointer border-b border-slate-100 text-slate-700 hover:bg-emerald-50/70 focus-visible:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-emerald-600"
+              tabindex="0"
+              [attr.aria-label]="'View details for ' + deathRecordName(record)"
+              (click)="openDeathDetails(record)"
+              (keydown.enter)="openDeathDetails(record)"
+              (keydown.space)="$event.preventDefault(); openDeathDetails(record)">
+              <th scope="row" class="px-4 py-3 font-medium">{{ deathRecordName(record) }}</th>
+              <td class="px-4 py-3">{{ record.church_name }}</td>
+              <td class="px-3 py-3 tabular-nums">{{ record.date_of_death | date:'mediumDate' }}</td>
+              <td class="px-3 py-3">{{ record.gender }}</td>
+              <td class="px-3 py-3">{{ record.quarter }}</td>
+            </tr>
+            <tr *ngIf="deathRecords().length === 0">
+              <td colspan="5" class="px-4 py-8 text-center text-slate-500">
+                No death records are available for this quarter and year.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div
+      *ngIf="selectedBaptismRecord() as record"
+      class="fixed inset-0 z-[1050] flex items-center justify-center overflow-y-auto bg-slate-900/60 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="baptism-person-details-title"
+      (click)="closePersonDetails()"
+      (keydown.escape)="closePersonDetails()">
+      <section
+        class="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        (click)="$event.stopPropagation()">
+        <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 id="baptism-person-details-title" class="text-lg font-bold text-emerald-950">
+              Baptism record details
+            </h2>
+            <p class="mt-1 text-sm text-slate-500">{{ baptismRecordName(record) }}</p>
+          </div>
+          <button
+            type="button"
+            class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            (click)="closePersonDetails()">
+            Close
+          </button>
+        </header>
+        <dl class="grid grid-cols-1 gap-x-6 px-5 py-3 sm:grid-cols-2">
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Church</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.church_name || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Gender</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.gender || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Birthdate</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.birthdate ? (record.birthdate | date:'mediumDate') : '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Marital status</dt>
+            <dd class="mt-1 text-sm font-medium capitalize text-slate-800">{{ record.marital_status || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3 sm:col-span-2">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.address || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of baptism</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.date_of_baptism ? (record.date_of_baptism | date:'mediumDate') : '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Place of baptism</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.place_of_baptism || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Officiating minister</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.officiating_minister || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Reclaimed member</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.is_reclaimed ? 'Yes' : 'No' }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <div
+      *ngIf="selectedDeathRecord() as record"
+      class="fixed inset-0 z-[1050] flex items-center justify-center overflow-y-auto bg-slate-900/60 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="death-person-details-title"
+      (click)="closePersonDetails()"
+      (keydown.escape)="closePersonDetails()">
+      <section
+        class="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        (click)="$event.stopPropagation()">
+        <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 id="death-person-details-title" class="text-lg font-bold text-emerald-950">
+              Death record details
+            </h2>
+            <p class="mt-1 text-sm text-slate-500">{{ deathRecordName(record) }}</p>
+          </div>
+          <button
+            type="button"
+            class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            (click)="closePersonDetails()">
+            Close
+          </button>
+        </header>
+        <dl class="grid grid-cols-1 gap-x-6 px-5 py-3 sm:grid-cols-2">
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Church</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.church_name || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Gender</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.gender || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of death</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.date_of_death | date:'mediumDate' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Birthdate</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.birthdate ? (record.birthdate | date:'mediumDate') : '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Quarter</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.quarter || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Marital status</dt>
+            <dd class="mt-1 text-sm font-medium capitalize text-slate-800">{{ record.marital_status || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3 sm:col-span-2">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.address || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of baptism</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.date_of_baptism ? (record.date_of_baptism | date:'mediumDate') : '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Place of baptism</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.place_of_baptism || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Officiating minister</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.officiating_minister || '—' }}</dd>
+          </div>
+          <div class="border-b border-slate-100 py-3">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Reclaimed member</dt>
+            <dd class="mt-1 text-sm font-medium text-slate-800">{{ record.is_reclaimed ? 'Yes' : 'No' }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div *ngIf="summaryPreviewOpen()" class="summary-report-preview-dialog report-export-overlay"
+  role="dialog" aria-modal="true" aria-labelledby="summary-preview-title">
+  <section class="report-export-dialog">
+    <header class="report-export-header">
+      <div>
+        <h2 id="summary-preview-title" class="text-lg font-bold text-emerald-950">Report summary preview</h2>
+        <p class="text-sm text-slate-600">{{ selectedYear() }} · {{ isAssistantPortal ? 'Mission-wide' : selectedDepartmentName() }}</p>
+      </div>
+      <button type="button" (click)="closeSummaryPreview()" aria-label="Close preview"
+        class="report-export-close">×</button>
+    </header>
+    <div class="report-export-content">
+      <div data-summary-report-print-preview class="summary-report-print-preview">
+        <h1 class="mb-1 text-center text-xl font-bold text-emerald-950">Report Summary</h1>
+        <p class="mb-4 text-center text-sm text-slate-700">{{ selectedYear() }} · {{ isAssistantPortal ? 'Mission-wide' : selectedDepartmentName() }}</p>
+        <table class="w-full border-collapse text-left text-xs sm:text-sm">
+          <tbody>
+            <tr *ngFor="let row of summaryPreviewRows(); let rowIndex = index" class="border-b border-slate-200">
+              <ng-container *ngFor="let cell of row">
+                <th *ngIf="rowIndex === 3; else summaryCell" scope="col" class="border border-slate-300 bg-emerald-50 px-2 py-2 font-bold text-emerald-950">{{ cell }}</th>
+                <ng-template #summaryCell>
+                  <td class="border border-slate-300 px-2 py-2 text-slate-800">{{ cell }}</td>
+                </ng-template>
+              </ng-container>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <footer class="report-export-actions">
+      <button type="button" (click)="closeSummaryPreview()"
+        class="report-export-button report-export-button-close">Close</button>
+      <button type="button" (click)="exportSummaryCsv()"
+        class="report-export-button report-export-button-csv">
+        <i class="bi bi-download" aria-hidden="true"></i> Export CSV
+      </button>
+      <button type="button" (click)="exportSummaryExcel()" [disabled]="exportingSummaryExcel()"
+        class="report-export-button report-export-button-excel">
+        <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+        {{ exportingSummaryExcel() ? 'Preparing Excel...' : 'Export Excel (.xlsx)' }}
+      </button>
+      <button type="button" (click)="printSummaryReport()"
+        class="report-export-button report-export-button-print">
+        <i class="bi bi-printer" aria-hidden="true"></i> Print
+      </button>
+    </footer>
+  </section>
+</div>

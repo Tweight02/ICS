@@ -15,7 +15,7 @@ class DepartmentSeeder extends Seeder
             ['department_id' => 15, 'department_name' => 'Sabbath School & Personal Ministries'],
             ['department_id' => 16, 'department_name' => 'Ministerial & Evangelism'],
             ['department_id' => 17, 'department_name' => 'Youth Ministries'],
-            ['department_id' => 18, 'department_name' => 'Womens Ministries'],
+            ['department_id' => 18, 'department_name' => "Women's Ministries"],
             ['department_id' => 19, 'department_name' => 'Communication'],
             ['department_id' => 20, 'department_name' => 'Adventist Mission'],
             ['department_id' => 21, 'department_name' => 'Secretariat'],

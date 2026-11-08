@@ -8,7 +8,7 @@ import { EventModel, ProgramNode, Department, Participant, User } from '../../mo
   providedIn: 'root'
 })
 export class EventService {
-  private apiUrl = 'http://127.0.0.1:8000/api';
+  private apiUrl = '/api';
 
   constructor(private http: HttpClient) {}
 
@@ -25,7 +25,9 @@ export class EventService {
   // EVENTOS (`events` & `particular_items`)
   // ==========================================
   getEvents(): Observable<EventModel[]> {
-    const params = new HttpParams().set('status', 'all');
+    const params = new HttpParams()
+      .set('status', 'all')
+      .set('per_page', 50);
     return this.http.get<any>(`${this.apiUrl}/events`, { params }).pipe(
       map(response => response.data ?? response)
     );
@@ -156,19 +158,23 @@ export class EventService {
     page: number,
     search: string,
     status: string,
+    churchId: number | null = null,
   ): Observable<{
     data: Participant[];
     meta: { current_page: number; last_page: number; per_page: number; total: number };
     summary?: { total: number; confirmed: number; pending: number };
+    churches?: Array<{ church_id: number; name: string }>;
   }> {
     let params = new HttpParams().set('page', page);
     if (search.trim()) params = params.set('search', search.trim());
     if (status !== 'all') params = params.set('status', status);
+    if (churchId !== null) params = params.set('church_id', churchId);
 
     return this.http.get<{
       data: Participant[];
       meta: { current_page: number; last_page: number; per_page: number; total: number };
       summary?: { total: number; confirmed: number; pending: number };
+      churches?: Array<{ church_id: number; name: string }>;
     }>(`${this.apiUrl}/events/${eventId}/participants`, { params });
   }
 

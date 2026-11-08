@@ -109,4 +109,31 @@ describe('NewUser', () => {
       text: 'An account with this email address already exists.',
     }));
   });
+
+  it('shows a notification when the same person already has an account', () => {
+    const fireSpy = vi.spyOn(Swal, 'fire').mockResolvedValue({} as never);
+    userService.createUser.mockReturnValue(throwError(() => ({
+      error: { errors: { first_name: ['This person already has an account.'] } },
+    })));
+    component.form.setValue({
+      first_name: 'Test',
+      middle_name: '',
+      last_name: 'User',
+      extension_name: '',
+      birthdate: '1980-01-01',
+      gender: 'other',
+      department_id: 16,
+      church_id: '1',
+      email: 'different@example.com',
+      password: 'password123',
+    });
+
+    component.onSubmit();
+
+    expect(fireSpy).toHaveBeenCalledWith(expect.objectContaining({
+      icon: 'warning',
+      title: 'User already exists',
+      text: 'An account with this name already exists.',
+    }));
+  });
 });

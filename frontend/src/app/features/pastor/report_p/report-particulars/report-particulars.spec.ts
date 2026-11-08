@@ -11,9 +11,13 @@ describe('ReportParticulars', () => {
   let component: ReportParticulars;
   let fixture: ComponentFixture<ReportParticulars>;
   let saveDepartmentReport: ReturnType<typeof vi.fn>;
+  let addComment: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
+  let routerUrl: string;
+  let currentUser: { role: string } | null;
 
   beforeEach(async () => {
+    currentUser = null;
     vi.spyOn(Swal, 'fire').mockResolvedValue({
       isConfirmed: false,
       isDenied: false,
@@ -41,15 +45,35 @@ describe('ReportParticulars', () => {
             particulars: [{
               particular_id: 3,
               particular_name: 'Members visited',
-              quarters: [{
-                quarter_id: 9,
-                quarter: 'Q1',
-                year: 2026,
-                value: 10,
-                date_submitted: null,
-                district_endorse: null,
-                mission_approve: null
-              }]
+              quarters: [
+                {
+                  quarter_id: 9,
+                  quarter: 'Q1',
+                  year: 2026,
+                  value: 10,
+                  date_submitted: null,
+                  district_endorse: null,
+                  mission_approve: null
+                },
+                {
+                  quarter_id: 10,
+                  quarter: 'Q2',
+                  year: 2026,
+                  value: null,
+                  date_submitted: null,
+                  district_endorse: null,
+                  mission_approve: null
+                },
+                {
+                  quarter_id: 11,
+                  quarter: 'Q4',
+                  year: 2025,
+                  value: null,
+                  date_submitted: null,
+                  district_endorse: null,
+                  mission_approve: null
+                }
+              ]
             }]
           },
           { program_id: 4, program_name: 'Second Section', particulars: [] }
@@ -57,7 +81,19 @@ describe('ReportParticulars', () => {
       }]
     };
     saveDepartmentReport = vi.fn().mockReturnValue(of({ message: 'Report saved successfully.' }));
+    addComment = vi.fn().mockReturnValue(of({
+      data: {
+        comment_id: 1,
+        quarter_id: 9,
+        church_id: 2,
+        department_id: 16,
+        commented_by: 1,
+        details: 'Test comment',
+        date_commented: '2026-10-30'
+      }
+    }));
     navigate = vi.fn();
+    routerUrl = '/pastor/reports/particulars/16/1/2';
 
     await TestBed.configureTestingModule({
       imports: [ReportParticulars],
@@ -66,17 +102,43 @@ describe('ReportParticulars', () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: of(paramMap),
-            snapshot: { paramMap, queryParamMap }
+            snapshot: {
+              paramMap,
+              queryParamMap: convertToParamMap({
+                church_name: 'Test Church',
+                district_name: 'Test District',
+                return_to: 'monitoring',
+                return_department: '21',
+                return_expanded: '7',
+                return_search: 'North',
+                return_scroll: '240'
+              })
+            }
           }
         },
-        { provide: Router, useValue: { navigate, url: '/pastor/reports/particulars/16/1/2' } },
-        { provide: AuthService, useValue: { getCurrentUser: () => null } },
-        { provide: ChurchService, useValue: {} },
+        { provide: Router, useValue: { navigate, get url() { return routerUrl; } } },
+        { provide: AuthService, useValue: { getCurrentUser: () => currentUser } },
+        {
+          provide: ChurchService,
+          useValue: {
+            getDistricts: () => of({
+              success: true,
+              data: [{
+                church_id: 1,
+                name: 'Test District',
+                address: null,
+                parent_id: null,
+                pastor_name: 'Assigned Pastor'
+              }]
+            })
+          }
+        },
         {
           provide: ReportService,
           useValue: {
             getDepartmentComments: () => of({ data: [] }),
             getDepartmentReport: () => of(report),
+            addComment,
             saveDepartmentReport
           }
         }
@@ -90,6 +152,111 @@ describe('ReportParticulars', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('allows each report role to export quarterly reports', () => {
+    currentUser = { role: 'director' };
+    expect(component.canExportQuarterReport).toBe(true);
+
+    currentUser = { role: 'administrative assistant' };
+    expect(component.canExportQuarterReport).toBe(true);
+
+    currentUser = { role: 'pastor' };
+    expect(component.canExportQuarterReport).toBe(true);
+
+    currentUser = { role: 'district pastor' };
+    expect(component.canExportQuarterReport).toBe(true);
+
+    currentUser = { role: 'representative' };
+    expect(component.canExportQuarterReport).toBe(true);
+  });
+
+  it('shows the form preview before offering export and print actions', () => {
+    currentUser = { role: 'director' };
+    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+
+    component.openQuarterReportPreview();
+    fixture.detectChanges();
+
+    expect(component.quarterlyReportPreviewOpen).toBe(true);
+    expect(component.quarterlyReportPreviewRows.length).toBeGreaterThan(0);
+
+    component.printQuarterReport();
+    expect(print).toHaveBeenCalledOnce();
+    component.closeQuarterReportPreview();
+    expect(component.quarterlyReportPreviewOpen).toBe(false);
+    print.mockRestore();
+  });
+
+  it('opens the requested year and quarter from monitoring navigation', () => {
+    const route = TestBed.inject(ActivatedRoute);
+    Object.defineProperty(route.snapshot, 'queryParamMap', {
+      value: convertToParamMap({
+        year: '2025',
+        quarter: 'Q4',
+        church_name: 'Test Church',
+        district_name: 'Test District'
+      }),
+      configurable: true
+    });
+
+    component.loadReport();
+
+    expect(component.selectedYear).toBe(2025);
+    expect(component.getSelectedQuarter()).toEqual({
+      quarter_id: 11,
+      quarter: 'Q4',
+      year: 2025
+    });
+  });
+
+  it('lets Head Assistants comment but not approve reports', () => {
+    component.currentUserRole = 'head assistant';
+
+    expect(component.canComment).toBe(true);
+    expect(component.canApprove).toBe(false);
+  });
+
+  it('publishes a comment without showing a success alert', () => {
+    component.currentUserRole = 'head assistant';
+    component.newComment = 'Test comment';
+    vi.mocked(Swal.fire).mockClear();
+
+    component.publishComment();
+
+    expect(addComment).toHaveBeenCalledWith(9, 2, 16, 'Test comment');
+    expect(Swal.fire).not.toHaveBeenCalled();
+    expect(component.comments[0].details).toBe('Test comment');
+  });
+
+  it('returns to monitoring with the previous monitoring view state', () => {
+    routerUrl = '/assistant/reports/particulars/16/1/2';
+
+    component.backToPrograms();
+
+    expect(navigate).toHaveBeenCalledWith(
+      ['/assistant/reports'],
+      {
+        queryParams: {
+          return_to: 'monitoring',
+          return_department: '21',
+          return_expanded: '7',
+          return_search: 'North',
+          return_scroll: '240'
+        }
+      }
+    );
+  });
+
+  it('shows confirmed event participants in personal report particular inputs', () => {
+    const record = component.report!.programs[0].sections[0].particulars[0].quarters[0];
+    record.value = null;
+    record.participant_count = 2;
+    record.combined_value = 2;
+
+    component.loadReport();
+
+    expect(record.value).toBe(2);
   });
 
   it('shows stewardship sections and computes the offering and tithe totals', () => {
@@ -151,12 +318,11 @@ describe('ReportParticulars', () => {
     const program = component.getSelectedProgram()!;
     expect(component.isStewardshipReport).toBe(true);
     expect(component.getVisibleSections(program).map(section => section.program_name))
-      .toEqual(['STEWARDSHIP']);
+      .toEqual(['STEWARDSHIP', 'OFFERING AND TITHES']);
 
-    component.selectStewardshipTab('offering');
     fixture.detectChanges();
-    expect(component.getVisibleSections(program).map(section => section.program_name))
-      .toEqual(['OFFERING AND TITHES']);
+    expect(fixture.nativeElement.textContent).toContain('STEWARDSHIP');
+    expect(fixture.nativeElement.textContent).toContain('OFFERING AND TITHES');
     expect(component.getStewardshipTotal('offering')).toBe(1200);
     expect(component.getStewardshipTotal('tithe')).toBe(3400);
     expect(component.getQuarterMonthNames(component.getSelectedQuarter()!))
@@ -174,7 +340,16 @@ describe('ReportParticulars', () => {
   it('returns to Pastor monitoring when Back is clicked', () => {
     component.backToPrograms();
 
-    expect(navigate).toHaveBeenCalledWith(['/pastor/reports/details']);
+    expect(navigate).toHaveBeenCalledWith(['/pastor/reports/details'], {
+      queryParams: {
+        year: '2026',
+        return_to: 'monitoring',
+        return_department: '21',
+        return_expanded: '7',
+        return_search: 'North',
+        return_scroll: '240'
+      }
+    });
   });
 
   it('opens and closes the comments chathead panel', () => {

@@ -16,7 +16,7 @@ import {
 export class ReportService {
   private readonly http = inject(HttpClient);
 
-  private readonly apiUrl = 'http://127.0.0.1:8000/api';
+  private readonly apiUrl = '/api';
 
   createReportTemplate(payload: {
     department_id: number;
@@ -47,9 +47,10 @@ export class ReportService {
     }>(`${this.apiUrl}/assistant/report-templates`, payload);
   }
 
-  getDepartments(churchId: number): Observable<Department[]> {
+  getDepartments(churchId: number, year?: number): Observable<Department[]> {
     return this.http.get<Department[]>(
-      `${this.apiUrl}/churches/${churchId}/departments`
+      `${this.apiUrl}/churches/${churchId}/departments`,
+      { params: year ? { year } : {} }
     );
   }
 

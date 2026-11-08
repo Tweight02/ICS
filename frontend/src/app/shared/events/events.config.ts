@@ -1,5 +1,5 @@
 /** One place for the API address. Change it here and every events page follows. */
-export const API_URL = 'http://127.0.0.1:8000/api';
+export const API_URL = '/api';
 
 export interface Crumb {
   label: string;
@@ -39,6 +39,7 @@ export interface ParticipantsConfig {
   basePath: string;
   crumbRoot: string;
   eyebrow: string;
+  churchFilter?: boolean;
 }
 
 export interface EventFormConfig {

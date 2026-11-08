@@ -9,9 +9,9 @@ class Death extends Model
 {
     protected $table = 'deaths';
 
-    public $timestamps = false;
-
     protected $primaryKey = 'death_id';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'baptism_id',
@@ -20,7 +20,10 @@ class Death extends Model
     ];
 
     /**
-     * Get the baptism record linked to this death record.
+     * Get the person associated with this death record.
+     *
+     * Works for both actual baptism records and
+     * manually entered death records.
      */
     public function baptism(): BelongsTo
     {

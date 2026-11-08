@@ -5,140 +5,187 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class UserSeeder extends Seeder
 {
+    private const SEEDED_PASSWORD = '12345678';
+
+    private const GLOBAL_ASSISTANT_EMAIL = 'seed.assistant@example.com';
+
+    private const DEPARTMENTS_WITHOUT_SEEDED_USERS = [
+        'Adventist Mission',
+        'Baptism Record',
+        'Death Record',
+    ];
+
     public function run(): void
     {
-        $users = [
-            [
-                'department_id' => 16, // Ministerial & Evangelism
-                'church_id' => 1,
-                'first_name' => 'Juan',
-                'middle_name' => 'Santos',
-                'last_name' => 'Dela Cruz',
-                'extension_name' => null,
-                'birthdate' => '1980-05-15',
-                'gender' => 'Male',
-                'role' => 'representative',
-                'email' => 'district.representative@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16, // Ministerial & Evangelism
-                'church_id' => 1,
-                'first_name' => 'James',
-                'middle_name' => 'Harmes',
-                'last_name' => 'Dela Cruz',
-                'extension_name' => null,
-                'birthdate' => '1980-05-15',
-                'gender' => 'Male',
-                'role' => 'pastor',
-                'email' => 'James.pastor@gmail.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 19, // Communication
-                'church_id' => 1,
-                'first_name' => 'Maria',
-                'middle_name' => 'Reyes',
-                'last_name' => 'Santos',
-                'extension_name' => 'Jr.',
-                'birthdate' => '1985-08-22',
-                'gender' => 'Female',
-                'role' => 'director',
-                'email' => 'admin.director@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 19, // assistant
-                'church_id' => 1,
-                'first_name' => 'Maria',
-                'middle_name' => 'Reyes',
-                'last_name' => 'Santos',
-                'extension_name' => 'Jr.',
-                'birthdate' => '1985-08-22',
-                'gender' => 'Female',
-                'role' => 'assistant',
-                'email' => 'assistant.e@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16,
-                'church_id' => 2,
-                'first_name' => 'Andrie',
-                'middle_name' => null,
-                'last_name' => 'Aquino',
-                'extension_name' => null,
-                'birthdate' => '1998-12-10',
-                'gender' => 'male',
-                'role' => 'representative',
-                'email' => 'representative@example.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16,
-                'church_id' => 210,
-                'first_name' => 'Ross',
-                'middle_name' => null,
-                'last_name' => 'Butobara',
-                'extension_name' => null,
-                'birthdate' => '2006-08-12',
-                'gender' => 'male',
-                'role' => 'pastor',
-                'email' => 'pastorRoss@gmail.com',
-                'status' => 'active',
-            ],
-            [
-                'department_id' => 16,
-                'church_id' => 214,
-                'first_name' => 'Nico',
-                'middle_name' => null,
-                'last_name' => 'Pugoy',
-                'extension_name' => null,
-                'birthdate' => '1984-05-23',
-                'gender' => 'male',
-                'role' => 'representative',
-                'email' => 'church@gamil.com',
-                'status' => 'active',
-            ],
-        ];
+        $departments = DB::table('departments')
+            ->orderBy('department_id')
+            ->get(['department_id', 'department_name']);
+        $userDepartments = $departments
+            ->reject(fn ($department) => in_array(
+                $department->department_name,
+                self::DEPARTMENTS_WITHOUT_SEEDED_USERS,
+                true
+            ))
+            ->values();
+        $obsoleteSeedEmails = $departments
+            ->filter(fn ($department) => in_array(
+                $department->department_name,
+                self::DEPARTMENTS_WITHOUT_SEEDED_USERS,
+                true
+            ))
+            ->flatMap(fn ($department) => [
+                'seed.director.department-'.$department->department_id.'@example.com',
+                'seed.church-user.department-'.$department->department_id.'@example.com',
+            ])
+            ->all();
+        $districts = DB::table('churches')
+            ->whereNull('parent_id')
+            ->orderBy('church_id')
+            ->get(['church_id', 'name']);
+        $churches = DB::table('churches')
+            ->whereNotNull('parent_id')
+            ->orderBy('church_id')
+            ->get(['church_id', 'name']);
 
-        $assistantDepartments = [
-            13 => 'children-family-ministries',
-            14 => 'stewardship-ministries',
-            15 => 'sabbath-school-personal-ministries',
-            17 => 'youth-ministries',
-            18 => 'womens-ministries',
-            21 => 'secretariat',
-        ];
-
-        foreach ($assistantDepartments as $departmentId => $emailSlug) {
-            $users[] = [
-                'department_id' => $departmentId,
-                'church_id' => 1,
-                'first_name' => 'Department',
-                'middle_name' => null,
-                'last_name' => 'Assistant',
-                'extension_name' => null,
-                'birthdate' => '1990-01-01',
-                'gender' => 'other',
-                'role' => 'assistant',
-                'email' => "assistant.{$emailSlug}@example.com",
-                'status' => 'active',
-            ];
+        if ($departments->isEmpty()) {
+            throw new RuntimeException('No departments are available. Run DepartmentSeeder first.');
         }
 
-        foreach ($users as $user) {
-            DB::table('users')->updateOrInsert(
-                ['email' => $user['email']],
-                array_merge($user, [
-                    'password' => Hash::make('password123'),
-                    'remember_token' => null,
-                ])
+        if ($userDepartments->isEmpty()) {
+            throw new RuntimeException('No departments are eligible for seeded directors and representatives.');
+        }
+
+        if ($districts->isEmpty()) {
+            throw new RuntimeException('No districts are available. Run ChurchSeeder first.');
+        }
+
+        if ($churches->isEmpty()) {
+            throw new RuntimeException('No churches are available. Run ChurchSeeder first.');
+        }
+
+        $adminChurchId = (int) $districts->first()->church_id;
+        $passwordHash = Hash::make(self::SEEDED_PASSWORD);
+
+        DB::transaction(function () use ($adminChurchId, $passwordHash, $obsoleteSeedEmails): void {
+            DB::table('users')
+                ->whereRaw(
+                    "LOWER(REPLACE(REPLACE(role, '_', ' '), '-', ' ')) IN (?, ?, ?, ?)",
+                    ['assistant', 'administrative assistant', 'head assistant', 'head director']
+                )
+                ->where('email', '!=', self::GLOBAL_ASSISTANT_EMAIL)
+                ->delete();
+
+            if ($obsoleteSeedEmails !== []) {
+                DB::table('users')->whereIn('email', $obsoleteSeedEmails)->delete();
+            }
+
+            $this->seedUser(
+                $this->user(
+                    null,
+                    $adminChurchId,
+                    'Administrative',
+                    'Assistant',
+                    'assistant',
+                    self::GLOBAL_ASSISTANT_EMAIL,
+                    $passwordHash
+                )
+            );
+        });
+
+        foreach ($userDepartments as $department) {
+            $departmentId = (int) $department->department_id;
+            $departmentTag = "department-{$departmentId}";
+
+            $this->seedUser(
+                $this->user(
+                    $departmentId,
+                    $adminChurchId,
+                    'Department',
+                    'Director',
+                    'director',
+                    "seed.director.{$departmentTag}@example.com",
+                    $passwordHash
+                )
+            );
+
+            $church = $churches[($departmentId - (int) $departments->first()->department_id)
+                % $churches->count()];
+            $this->seedUser(
+                $this->user(
+                    null,
+                    (int) $church->church_id,
+                    'Church',
+                    'Representative',
+                    'representative',
+                    "seed.church-user.{$departmentTag}@example.com",
+                    $passwordHash
+                )
             );
         }
 
-        $this->command?->info(count($users).' test users processed.');
+        foreach ($districts as $district) {
+            $this->seedUser(
+                $this->user(
+                    null,
+                    (int) $district->church_id,
+                    (string) $district->name,
+                    'Pastor',
+                    'pastor',
+                    "seed.pastor.district-{$district->church_id}@example.com",
+                    $passwordHash
+                )
+            );
+        }
+
+        $this->command?->info(sprintf(
+            'Seeded one mission-wide assistant, %d department directors, %d church users, and %d district pastors.',
+            $userDepartments->count(),
+            $userDepartments->count(),
+            $districts->count()
+        ));
+    }
+
+    /**
+     * @return array<string, int|string|null>
+     */
+    private function user(
+        ?int $departmentId,
+        int $churchId,
+        string $firstName,
+        string $lastName,
+        string $role,
+        string $email,
+        string $passwordHash
+    ): array {
+        return [
+            'department_id' => $departmentId,
+            'church_id' => $churchId,
+            'first_name' => $firstName,
+            'middle_name' => null,
+            'last_name' => $lastName,
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'role' => $role,
+            'email' => $email,
+            'password' => $passwordHash,
+            'remember_token' => null,
+            'status' => 'active',
+        ];
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $user
+     */
+    private function seedUser(array $user): void
+    {
+        DB::table('users')->updateOrInsert(
+            ['email' => $user['email']],
+            $user
+        );
     }
 }

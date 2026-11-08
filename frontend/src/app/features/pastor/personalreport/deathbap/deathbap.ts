@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -25,6 +26,19 @@ import {
   ReportPeriodSelector,
   ReportQuarterOption
 } from '../../../../shared/reports/period-selector/report-period-selector';
+import {
+  csvFilenamePart,
+  downloadCsv,
+  downloadStyledQuarterlyExcel
+} from '../../../../shared/utils/csv-export';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
+import {
+  captureReportReturnQueryParams,
+  clearReportReturnQueryParams
+} from '../../../../shared/utils/report-navigation';
+
+const PERSONAL_RECORD_ACCESS_MESSAGE =
+  'Baptism and death records must be accessed through the personal records page.';
 
 interface Baptism {
   baptism_id: number;
@@ -71,7 +85,7 @@ interface Death {
     ReportPeriodSelector
   ],
   templateUrl: './deathbap.html',
-  host: { class: 'block min-h-full bg-[#f5f7f6]' }
+  host: { class: 'block min-h-full' }
 })
 export class DeathbapComponent implements OnInit {
 
@@ -82,6 +96,7 @@ export class DeathbapComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private reportReturnQueryParams: Record<string, string> = {};
 
   selectedRecord: 'baptism' | 'death' | 'ministerial' | 'mission' = 'baptism';
 
@@ -98,6 +113,10 @@ export class DeathbapComponent implements OnInit {
   deathPage = 1;
 
   selectedQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q1';
+  selectedSummaryQuarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' | null = null;
+  personalRecordPreviewOpen = false;
+  personalRecordPreviewRows: unknown[][] = [];
+  exportingPersonalRecordExcel = false;
 
   quarterOptions: ('Q1' | 'Q2' | 'Q3' | 'Q4')[] = [
     'Q1',
@@ -120,8 +139,15 @@ export class DeathbapComponent implements OnInit {
 
   churchId = 0;
   districtId = 0;
+  districtName = '';
   departmentId = 0;
   isReadOnly = false;
+  private readonly districtReportChurch: Church = {
+    church_id: 0,
+    name: '',
+    address: '',
+    parent_id: null
+  };
 
   baptisms: Baptism[] = [];
   deaths: Death[] = [];
@@ -166,6 +192,8 @@ export class DeathbapComponent implements OnInit {
   deathError = '';
 
   ngOnInit(): void {
+    this.reportReturnQueryParams = captureReportReturnQueryParams(this.route);
+    clearReportReturnQueryParams(this.router, this.route);
 
     this.departmentId =
       Number(this.route.snapshot.paramMap.get('departmentId')) || 0;
@@ -176,16 +204,44 @@ export class DeathbapComponent implements OnInit {
     this.districtId =
       Number(this.route.snapshot.paramMap.get('districtId')) || 0;
 
+    const requestedYear = Number(this.route.snapshot.queryParamMap.get('year'));
+    if (Number.isInteger(requestedYear) && requestedYear > 0) {
+      this.selectedYear = requestedYear;
+    }
+
+    const requestedQuarter = this.quarterOptions.find(quarter =>
+      quarter === this.normalizeQuarter(
+        this.route.snapshot.queryParamMap.get('quarter')
+      )
+    );
+    if (requestedQuarter) {
+      this.selectedQuarter = requestedQuarter;
+    }
+
     this.isReadOnly =
       this.router.url.startsWith('/assistant') ||
       this.router.url.startsWith('/director');
 
-    if (this.departmentId === 16) {
-      this.selectedRecord = 'ministerial';
+    // Read the requested record tab from the URL.
+    const requestedRecord = this.route.snapshot.queryParamMap.get('record');
+
+    if (
+      requestedRecord === 'baptism' ||
+      requestedRecord === 'death' ||
+      requestedRecord === 'ministerial' ||
+      requestedRecord === 'mission'
+    ) {
+      this.selectedRecord = requestedRecord;
+    } else if (this.departmentId === 16) {
+      this.selectedRecord = this.isReadOnly ? 'baptism' : 'ministerial';
     } else if (this.departmentId === 20) {
       this.selectedRecord = 'mission';
     } else if (this.departmentId === 23) {
       this.selectedRecord = 'death';
+    }
+
+    if (this.isDistrictPersonalSummaryView) {
+      this.selectedSummaryQuarter = requestedQuarter ?? null;
     }
 
     this.loadChurches();
@@ -204,11 +260,15 @@ export class DeathbapComponent implements OnInit {
       );
     }
 
-    if (this.selectedDepartmentId) {
-      const personalChurchId = Number(this.auth.getCurrentUser()?.church_id);
-      return this.churches.filter(
-        church => Number(church.church_id) === personalChurchId
-      );
+    if (this.selectedDepartmentId && !this.isReadOnly) {
+      if (this.districtId <= 0) {
+        return [];
+      }
+
+      this.districtReportChurch.church_id = this.districtId;
+      this.districtReportChurch.name = this.districtName;
+
+      return [this.districtReportChurch];
     }
 
     return this.churches.filter(church => church.parent_id !== null);
@@ -220,14 +280,253 @@ export class DeathbapComponent implements OnInit {
     return null;
   }
 
+  get isDistrictPersonalSummaryView(): boolean {
+    return this.isReadOnly && this.departmentId === 16;
+  }
+
+  get isDistrictPersonalSummaryTab(): boolean {
+    return this.isDistrictPersonalSummaryView &&
+      (this.selectedRecord === 'baptism' || this.selectedRecord === 'death');
+  }
+
+  get districtBaptismQuarterTotals(): Record<'Q1' | 'Q2' | 'Q3' | 'Q4', number> {
+    return this.quarterOptions.reduce((totals, quarter) => {
+      totals[quarter] = this.baptisms.filter(record =>
+        this.getYearFromDate(record.date_of_baptism) === this.selectedYear &&
+        this.normalizeQuarter(record.quarter) === quarter
+      ).length;
+      return totals;
+    }, { Q1: 0, Q2: 0, Q3: 0, Q4: 0 });
+  }
+
+  get districtDeathQuarterTotals(): Record<'Q1' | 'Q2' | 'Q3' | 'Q4', number> {
+    return this.quarterOptions.reduce((totals, quarter) => {
+      totals[quarter] = this.deaths.filter(record =>
+        this.getYearFromDate(record.date_of_death) === this.selectedYear &&
+        this.normalizeQuarter(record.quarter) === quarter
+      ).length;
+      return totals;
+    }, { Q1: 0, Q2: 0, Q3: 0, Q4: 0 });
+  }
+
+  get districtBaptismTotal(): number {
+    return Object.values(this.districtBaptismQuarterTotals)
+      .reduce((total, quarterTotal) => total + quarterTotal, 0);
+  }
+
+  get districtDeathTotal(): number {
+    return Object.values(this.districtDeathQuarterTotals)
+      .reduce((total, quarterTotal) => total + quarterTotal, 0);
+  }
+
+  get personalRecordTitle(): string {
+    return this.selectedRecord === 'baptism' ? 'Baptism Record' : 'Death Record';
+  }
+
+  buildPersonalRecordExportRows(): unknown[][] {
+    const period = this.isDistrictPersonalSummaryTab && !this.selectedSummaryQuarter
+      ? `Annual ${this.selectedYear}`
+      : `${this.selectedSummaryQuarter ?? (this.isAnnualView ? 'Annual' : this.selectedQuarter)} ${this.selectedYear}`;
+    const rows: unknown[][] = [
+      ['Year', this.selectedYear],
+      ['Reporting period', period],
+      ['Church / District', this.reportLocation || this.districtName || '—'],
+      []
+    ];
+
+    if (this.selectedRecord === 'baptism') {
+      if (this.isDistrictPersonalSummaryTab && !this.selectedSummaryQuarter) {
+        rows.push(['Quarter', 'Baptisms Reported']);
+        for (const quarter of this.quarterOptions) {
+          rows.push([quarter, this.districtBaptismQuarterTotals[quarter]]);
+        }
+        rows.push(['Total', this.districtBaptismTotal]);
+        return rows;
+      }
+
+      rows.push([
+        'No.',
+        'Name',
+        'Church',
+        'Date of Baptism',
+        'Officiating Minister',
+        'Place of Baptism',
+        'Gender'
+      ]);
+      const records = this.isDistrictPersonalSummaryTab
+        ? this.districtSummaryBaptisms
+        : this.displayedBaptisms;
+      records.forEach((record, index) => rows.push([
+        index + 1,
+        this.getFullName(record),
+        this.getChurchName(record.church_id),
+        this.formatDate(record.date_of_baptism),
+        record.officiating_minister || '—',
+        record.place_of_baptism || '—',
+        record.gender || '—'
+      ]));
+      return rows;
+    }
+
+    if (this.isDistrictPersonalSummaryTab && !this.selectedSummaryQuarter) {
+      rows.push(['Quarter', 'Deaths Reported']);
+      for (const quarter of this.quarterOptions) {
+        rows.push([quarter, this.districtDeathQuarterTotals[quarter]]);
+      }
+      rows.push(['Total', this.districtDeathTotal]);
+      return rows;
+    }
+
+    rows.push([
+      'No.',
+      'Name',
+      'Church',
+      'Birthdate',
+      'Date of Death',
+      'Age at Death',
+      'Gender',
+      'Marital Status'
+    ]);
+    const records = this.isDistrictPersonalSummaryTab
+      ? this.districtSummaryDeaths
+      : this.displayedDeaths;
+    records.forEach((record, index) => {
+      const baptism = this.getDeathBaptism(record);
+      rows.push([
+        index + 1,
+        this.getFullName(baptism),
+        this.getChurchName(baptism?.church_id),
+        this.formatDate(baptism?.birthdate || ''),
+        this.formatDate(record.date_of_death),
+        this.calculateAgeAtDeath(baptism?.birthdate || '', record.date_of_death),
+        baptism?.gender || '—',
+        baptism?.marital_status || '—'
+      ]);
+    });
+    return rows;
+  }
+
+  openPersonalRecordPreview(): void {
+    this.personalRecordPreviewRows = this.buildPersonalRecordExportRows();
+    this.personalRecordPreviewOpen = true;
+  }
+
+  closePersonalRecordPreview(): void {
+    this.personalRecordPreviewOpen = false;
+  }
+
+  exportPersonalRecordCsv(): void {
+    if (!this.personalRecordPreviewRows.length) {
+      return;
+    }
+
+    downloadCsv(
+      `${csvFilenamePart(this.personalRecordTitle)}-${this.selectedYear}.csv`,
+      this.personalRecordPreviewRows
+    );
+  }
+
+  async exportPersonalRecordExcel(): Promise<void> {
+    if (!this.personalRecordPreviewRows.length || this.exportingPersonalRecordExcel) {
+      return;
+    }
+
+    this.exportingPersonalRecordExcel = true;
+    try {
+      await downloadStyledQuarterlyExcel(
+        `${csvFilenamePart(this.personalRecordTitle)}-${this.selectedYear}.xlsx`,
+        this.personalRecordPreviewRows
+      );
+    } catch (error) {
+      console.error(`Unable to export ${this.personalRecordTitle} as Excel.`, error);
+      void showAppAlert({
+        icon: 'error',
+        title: 'Export failed',
+        text: 'Unable to create the Excel file. Please try again.'
+      });
+    } finally {
+      this.exportingPersonalRecordExcel = false;
+    }
+  }
+
+  printPersonalRecord(): void {
+    if (!this.personalRecordPreviewRows.length) {
+      return;
+    }
+
+    window.print();
+  }
+
+  get districtSummaryBaptisms(): Baptism[] {
+    const quarter = this.selectedSummaryQuarter;
+    return quarter === null ? [] : this.baptisms.filter(record =>
+      this.getYearFromDate(record.date_of_baptism) === this.selectedYear &&
+      this.normalizeQuarter(record.quarter) === quarter
+    );
+  }
+
+  get districtSummaryDeaths(): Death[] {
+    const quarter = this.selectedSummaryQuarter;
+    return quarter === null ? [] : this.deaths.filter(record =>
+      this.getYearFromDate(record.date_of_death) === this.selectedYear &&
+      this.normalizeQuarter(record.quarter) === quarter
+    );
+  }
+
+  selectSummaryQuarter(quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'): void {
+    if (!this.isDistrictPersonalSummaryTab) {
+      return;
+    }
+
+    this.selectedSummaryQuarter =
+      this.selectedSummaryQuarter === quarter ? null : quarter;
+    if (this.selectedSummaryQuarter) {
+      this.selectedQuarter = quarter;
+      this.isAnnualView = false;
+    }
+    this.resetPagination();
+  }
+
+  closeSummaryQuarter(): void {
+    this.selectedSummaryQuarter = null;
+  }
+
   get canComment(): boolean {
     const role = String(this.auth.getCurrentUser()?.role ?? '')
       .toLowerCase()
       .trim()
       .replace(/[_-]/g, ' ');
 
-    return ['pastor', 'district pastor', 'assistant', 'administrative assistant']
+    return [
+      'pastor',
+      'district pastor',
+      'assistant',
+      'administrative assistant',
+      'head assistant',
+      'head director',
+      'director'
+    ]
       .includes(role);
+  }
+
+  get isHeadAssistant(): boolean {
+    return String(this.auth.getCurrentUser()?.role ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]/g, ' ') === 'head assistant';
+  }
+
+  private get canSelectDistrictRecords(): boolean {
+    const role = String(this.auth.getCurrentUser()?.role ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]/g, ' ');
+
+    return ['head assistant', 'head director'].includes(role) ||
+      (
+        this.departmentId === 16 &&
+        ['assistant', 'administrative assistant', 'director'].includes(role)
+      );
   }
 
   get visibleComments(): ReportComment[] {
@@ -351,6 +650,7 @@ export class DeathbapComponent implements OnInit {
   onYearChange(value: number): void {
     if (Number.isInteger(value) && value > 0) {
       this.selectedYear = value;
+      this.selectedSummaryQuarter = null;
       this.resetPagination();
       this.updateCommentQuarter();
     }
@@ -544,7 +844,7 @@ export class DeathbapComponent implements OnInit {
   /** Filter baptism records by church, year, quarter, and search text. */
   get displayedBaptisms(): Baptism[] {
 
-    const records = this.churchId
+    const records = this.churchId && !this.isReadOnly
       ? this.baptisms.filter(
           record =>
             Number(record.church_id) === Number(this.churchId)
@@ -583,7 +883,7 @@ export class DeathbapComponent implements OnInit {
   /** Filter death records by church, year, quarter, and search text. */
   get displayedDeaths(): Death[] {
 
-    const records = this.churchId
+    const records = this.churchId && !this.isReadOnly
       ? this.deaths.filter(
           record =>
             Number(this.getDeathBaptism(record)?.church_id) ===
@@ -629,7 +929,7 @@ export class DeathbapComponent implements OnInit {
   /** Find matching baptism records across all loaded years and quarters. */
   private getBaptismSearchMatches(query: string): Baptism[] {
 
-    const records = this.churchId
+    const records = this.churchId && !this.isReadOnly
       ? this.baptisms.filter(
           record => Number(record.church_id) === Number(this.churchId)
         )
@@ -660,7 +960,7 @@ export class DeathbapComponent implements OnInit {
   /** Find matching death records across all loaded years and quarters. */
   private getDeathSearchMatches(query: string): Death[] {
 
-    const records = this.churchId
+    const records = this.churchId && !this.isReadOnly
       ? this.deaths.filter(
           record =>
             Number(this.getDeathBaptism(record)?.church_id) ===
@@ -859,16 +1159,22 @@ export class DeathbapComponent implements OnInit {
   }
 
   backToReports(): void {
-
     if (!this.isReadOnly) {
       return;
     }
 
     this.router.navigate([
-      `${this.router.url.startsWith('/assistant') ? '/assistant' : '/director'}/reports/programs`,
-      this.districtId,
-      this.churchId
-    ]);
+      `${this.router.url.startsWith('/assistant') ? '/assistant' : '/director'}/reports`
+    ], {
+      queryParams: this.monitoringReturnParams()
+    });
+  }
+
+  private monitoringReturnParams(): Record<string, string> {
+    const returnParams = Object.keys(this.reportReturnQueryParams).length
+      ? this.reportReturnQueryParams
+      : captureReportReturnQueryParams(this.route);
+    return { ...returnParams, return_to: 'monitoring' };
   }
 
   selectRecord(
@@ -876,6 +1182,7 @@ export class DeathbapComponent implements OnInit {
   ): void {
 
     this.selectedRecord = record;
+    this.selectedSummaryQuarter = null;
     this.searchTerm = '';
     this.resetPagination();
 
@@ -939,8 +1246,7 @@ export class DeathbapComponent implements OnInit {
 
       error: error => {
 
-        this.commentsError =
-          error?.error?.message || 'Unable to load comments.';
+        this.setCommentsError(error, 'Unable to load comments.');
 
         this.commentsLoading = false;
         this.cdr.detectChanges();
@@ -970,14 +1276,31 @@ export class DeathbapComponent implements OnInit {
 
         error: error => {
 
-          this.commentsError =
-            error?.error?.message ||
-            'Unable to load report quarter for comments.';
+          this.setCommentsError(
+            error,
+            'Unable to load report quarter for comments.'
+          );
 
           this.cdr.detectChanges();
         }
       });
     }
+  }
+
+  private setCommentsError(error: unknown, fallback: string): void {
+    const response = error && typeof error === 'object' && 'error' in error
+      ? error.error
+      : null;
+    const message = response &&
+      typeof response === 'object' &&
+      'message' in response &&
+      typeof response.message === 'string'
+      ? response.message
+      : null;
+
+    this.commentsError = message === PERSONAL_RECORD_ACCESS_MESSAGE
+      ? ''
+      : message || fallback;
   }
 
   private updateCommentQuarter(
@@ -1060,8 +1383,7 @@ export class DeathbapComponent implements OnInit {
 
           this.savingComment = false;
 
-          this.commentsError =
-            error?.error?.message || 'Unable to save comment.';
+          this.setCommentsError(error, 'Unable to save comment.');
 
           this.cdr.detectChanges();
         }
@@ -1080,7 +1402,9 @@ export class DeathbapComponent implements OnInit {
     console.log('Loading baptism records...');
 
     this.http
-      .get<any>('http://127.0.0.1:8000/api/baptisms')
+      .get<any>('/api/baptisms', {
+        params: this.districtRecordQueryParams
+      })
       .pipe(
         timeout(10000),
         finalize(() => {
@@ -1163,7 +1487,9 @@ export class DeathbapComponent implements OnInit {
     console.log('Loading death records...');
 
     this.http
-      .get<any>('http://127.0.0.1:8000/api/deaths')
+      .get<any>('/api/deaths', {
+        params: this.districtRecordQueryParams
+      })
       .pipe(
         timeout(10000),
         finalize(() => {
@@ -1250,6 +1576,7 @@ export class DeathbapComponent implements OnInit {
 
           this.districtId =
             Number(response.district?.church_id) || this.districtId;
+          this.districtName = response.district?.name || '';
 
           this.churches = (response.data || []).map(church => ({
             church_id: Number(church.church_id),
@@ -1294,7 +1621,7 @@ export class DeathbapComponent implements OnInit {
     console.log('Loading churches...');
 
     this.http
-      .get<any>('http://127.0.0.1:8000/api/churches')
+      .get<any>('/api/churches')
       .subscribe({
         next: response => {
 
@@ -1341,6 +1668,12 @@ export class DeathbapComponent implements OnInit {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private get districtRecordQueryParams(): Record<string, number> {
+    return this.isReadOnly && this.canSelectDistrictRecords && this.districtId > 0
+      ? { district_id: this.districtId }
+      : {};
   }
 
   // =================================================

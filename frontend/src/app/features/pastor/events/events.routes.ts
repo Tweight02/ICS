@@ -40,6 +40,7 @@ const PARTICIPANTS: ParticipantsConfig = {
   basePath: BASE,
   crumbRoot: 'My Events',
   eyebrow: 'MY EVENTS / EVENT DETAILS / PARTICIPANTS',
+  churchFilter: true,
 };
 
 const FORM: EventFormConfig = {

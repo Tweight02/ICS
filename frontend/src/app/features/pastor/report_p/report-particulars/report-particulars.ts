@@ -1,5 +1,6 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import {
+  AfterViewInit,
   Component,
   Input,
   OnChanges,
@@ -22,8 +23,22 @@ import { AuthService } from '../../../../core/services/auth/auth-service';
 import { UserRole } from '../../../../core/models/user.model';
 import { SaveReportItem } from '../../../../core/models/report.model';
 import { Button } from '../../../../shared/components/button/button';
-import { ReportPeriodSelector } from '../../../../shared/reports/period-selector/report-period-selector';
-import Swal from 'sweetalert2';
+import {
+  ReportPeriodSelector,
+  type ReportPeriodStatus
+} from '../../../../shared/reports/period-selector/report-period-selector';
+import { showAppAlert } from '../../../../shared/utils/app-alert';
+import {
+  captureReportReturnQueryParams,
+  clearReportReturnQueryParams
+} from '../../../../shared/utils/report-navigation';
+import {
+  buildQuarterlyFormCsvItems,
+  buildQuarterlyFormCsvRows,
+  csvFilenamePart,
+  downloadCsv,
+  downloadStyledQuarterlyExcel
+} from '../../../../shared/utils/csv-export';
 
 interface QuarterRecord {
   quarter_id: number;
@@ -69,8 +84,6 @@ interface Report {
   programs: Program[];
 }
 
-type StewardshipTab = 'activities' | 'offering';
-
 const STEWARDSHIP_MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
@@ -101,13 +114,22 @@ interface QuarterRef {
   imports: [CommonModule, FormsModule, Button, ReportPeriodSelector],
   templateUrl: '../../../../shared/reports/report-particulars/report-particulars.html'
 })
-export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
+export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterViewInit {
   expandFirstSection = true;
   showInputsWhenReadOnly = false;
   autoSaveStatus: 'idle' | 'pending' | 'saving' | 'saved' | 'error' = 'idle';
 
+  blurNumberInputOnWheel(event: WheelEvent): void {
+    if (event.currentTarget instanceof HTMLInputElement) {
+      event.currentTarget.blur();
+    }
+  }
+
   @ViewChild('commentMessages')
   private commentMessages?: ElementRef<HTMLUListElement>;
+
+  @ViewChild('quarterlyReportPreviewOverlay')
+  private quarterlyReportPreviewOverlay?: ElementRef<HTMLElement>;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -117,12 +139,16 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);
   private readonly auth = inject(AuthService);
+  private readonly document = inject(DOCUMENT);
+  private quarterlyReportPreviewParent: Node | null = null;
+  private reportReturnQueryParams: Record<string, string> = {};
 
   @Input() embedded = false;
   @Input() churchId = 0;
   @Input() churchName = '';
   @Input() districtId = 0;
   @Input() districtName = '';
+  districtPastorName = '';
   @Input() departmentId = 0;
   report: Report | null = null;
 
@@ -132,7 +158,10 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   selectedYear: number | null = null;
   selectedQuarterId: number | null = null;
   selectedProgramId: number | null = null;
-  activeStewardshipTab: StewardshipTab = 'activities';
+  quarterlyReportPreviewOpen = false;
+  quarterlyReportPreviewRows: unknown[][] = [];
+  quarterlyReportPreviewColumnCount = 1;
+  exportingQuarterReportExcel = false;
 
   isAnnualView = false;
   private readonly loadingState = signal(false);
@@ -178,6 +207,11 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   private readonly commentPollingIntervalMs = 5000;
 
   ngOnInit(): void {
+    if (!this.embedded) {
+      this.reportReturnQueryParams = captureReportReturnQueryParams(this.route);
+      clearReportReturnQueryParams(this.router, this.route);
+    }
+
     const user = this.auth.getCurrentUser();
     this.currentUserRole = user?.role ?? null;
     this.currentUserId = Number(user?.user_id) || 0;
@@ -190,6 +224,10 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['districtId'] && this.districtId > 0) {
+      this.resolveDistrictPastor();
+    }
+
     if (
       this.embedded &&
       !changes['departmentId']?.firstChange &&
@@ -202,10 +240,21 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopCommentPolling();
+    this.restoreQuarterlyReportPreviewOverlay();
+  }
+
+  ngAfterViewInit(): void {
+    const overlay = this.quarterlyReportPreviewOverlay?.nativeElement;
+    if (!overlay || !this.document.body) {
+      return;
+    }
+
+    this.quarterlyReportPreviewParent = overlay.parentNode;
+    this.document.body.appendChild(overlay);
   }
 
   get canComment(): boolean {
-    return ['pastor', 'district pastor', 'assistant', 'administrative assistant']
+    return ['pastor', 'district pastor', 'assistant', 'administrative assistant', 'head assistant']
       .includes(this.normalizedUserRole);
   }
 
@@ -221,6 +270,122 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     return this.embedded &&
       [16, 20].includes(this.departmentId) &&
       ['pastor', 'district pastor'].includes(this.normalizedUserRole);
+  }
+
+  get canExportQuarterReport(): boolean {
+    const role = String(this.auth.getCurrentUser()?.role ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]/g, ' ');
+    return [
+      'director',
+      'head director',
+      'assistant',
+      'administrative assistant',
+      'head assistant',
+      'pastor',
+      'district pastor',
+      'representative'
+    ]
+      .includes(role);
+  }
+
+  isRepresentative(): boolean {
+    return this.normalizedUserRole === 'representative';
+  }
+
+  openQuarterReportPreview(): void {
+    const quarter = this.getSelectedQuarter();
+    const program = this.getSelectedProgram();
+    if (!this.canExportQuarterReport || this.isAnnualView || !quarter || !program) {
+      return;
+    }
+
+    this.quarterlyReportPreviewRows = this.buildQuarterReportRows(quarter, program);
+    this.quarterlyReportPreviewColumnCount = Math.max(
+      1,
+      ...this.quarterlyReportPreviewRows.map(row => row.length)
+    );
+    this.quarterlyReportPreviewOpen = true;
+  }
+
+  closeQuarterReportPreview(): void {
+    this.quarterlyReportPreviewOpen = false;
+  }
+
+  private restoreQuarterlyReportPreviewOverlay(): void {
+    const overlay = this.quarterlyReportPreviewOverlay?.nativeElement;
+    if (overlay && this.quarterlyReportPreviewParent) {
+      this.quarterlyReportPreviewParent.appendChild(overlay);
+      this.quarterlyReportPreviewParent = null;
+    }
+  }
+
+  isQuarterlyReportHeaderRow(row: readonly unknown[]): boolean {
+    return row.some(cell =>
+      typeof cell === 'string' &&
+      ['PARTICULAR', 'CHURCH', 'CHURCHES/COMPANY', 'QUARTER'].includes(cell.toUpperCase())
+    );
+  }
+
+  exportQuarterReportCsv(): void {
+    if (!this.canExportQuarterReport || !this.quarterlyReportPreviewRows.length) {
+      return;
+    }
+
+    const quarter = this.getSelectedQuarter();
+    const filename = `${csvFilenamePart(this.report?.department?.department_name ?? 'department')}-${quarter?.year ?? this.selectedYear}-${quarter?.quarter.toLowerCase() ?? 'quarter'}-report.csv`;
+    downloadCsv(filename, this.quarterlyReportPreviewRows);
+  }
+
+  async exportQuarterReportExcel(): Promise<void> {
+    if (!this.canExportQuarterReport || !this.quarterlyReportPreviewRows.length || this.exportingQuarterReportExcel) {
+      return;
+    }
+
+    const quarter = this.getSelectedQuarter();
+    const filename = `${csvFilenamePart(this.report?.department?.department_name ?? 'department')}-${quarter?.year ?? this.selectedYear}-${quarter?.quarter.toLowerCase() ?? 'quarter'}-report.xlsx`;
+    this.exportingQuarterReportExcel = true;
+    try {
+      await downloadStyledQuarterlyExcel(filename, this.quarterlyReportPreviewRows);
+    } catch (error) {
+      console.error('Unable to export the quarterly report as Excel.', error);
+      void showAppAlert({
+        icon: 'error',
+        title: 'Export failed',
+        text: 'Unable to create the formatted Excel report. Please try again.'
+      });
+    } finally {
+      this.exportingQuarterReportExcel = false;
+    }
+  }
+
+  printQuarterReport(): void {
+    if (!this.canExportQuarterReport || !this.quarterlyReportPreviewRows.length) {
+      return;
+    }
+    window.print();
+  }
+
+  private buildQuarterReportRows(quarter: Quarter, program: Program): unknown[][] {
+    const quarterCode = quarter.quarter.toUpperCase() as 'Q1' | 'Q2' | 'Q3' | 'Q4';
+    const items = buildQuarterlyFormCsvItems(
+      program.sections,
+      quarter.year,
+      quarterCode
+    );
+    return buildQuarterlyFormCsvRows({
+      departmentId: Number(this.report?.department?.department_id ?? this.departmentId),
+      departmentName: this.report?.department?.department_name ?? 'Department',
+      programName: program.program_name,
+      churchName: this.churchName,
+      districtName: this.districtName,
+      districtPastorName: this.districtPastorName,
+      year: quarter.year,
+      quarter: quarterCode,
+      items,
+      months: this.isStewardshipReport ? this.getQuarterMonthNames(quarter) : []
+    });
   }
 
   canSubmitSelectedQuarter(): boolean {
@@ -262,7 +427,29 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     }
 
     this.resolveChurchLabels();
+    this.resolveDistrictPastor();
     this.loadReport();
+  }
+
+  private resolveDistrictPastor(): void {
+    if (!this.districtId) {
+      this.districtPastorName = '';
+      return;
+    }
+
+    this.churchService.getDistricts().subscribe({
+      next: response => {
+        const district = response.data.find(
+          item => Number(item.church_id) === this.districtId
+        );
+        this.districtPastorName = district?.pastor_name ?? '';
+        this.cdr.detectChanges();
+      },
+      error: error => {
+        console.error('Unable to resolve assigned district pastor:', error);
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private resolveChurchLabels(): void {
@@ -296,6 +483,7 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
       .subscribe({
         next: (response: any) => {
           this.report = (response?.data ?? response) as Report;
+          this.useCombinedValuesForInputs();
           this.initializeSelections();
           this.loading = false;
           this.cdr.detectChanges();
@@ -308,6 +496,24 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private useCombinedValuesForInputs(): void {
+    for (const program of this.report?.programs ?? []) {
+      for (const section of program.sections ?? []) {
+        for (const particular of section.particulars ?? []) {
+          for (const record of particular.quarters ?? []) {
+            if (record.monthly_values) continue;
+
+            if (record.combined_value !== null && record.combined_value !== undefined) {
+              record.value = record.combined_value;
+            } else if ((record.participant_count ?? 0) > 0) {
+              record.value = record.participant_count ?? 0;
+            }
+          }
+        }
+      }
+    }
   }
 
   private initializeSelections(): void {
@@ -354,14 +560,29 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
       ...new Set(this.availableQuarters.map(quarter => quarter.year))
     ].sort((a, b) => b - a);
 
-    if (
+    const queryParams = this.route.snapshot.queryParamMap;
+    const requestedYear = Number(queryParams.get('year'));
+    if (this.availableYears.includes(requestedYear)) {
+      this.selectedYear = requestedYear;
+    } else if (
       this.selectedYear === null ||
       !this.availableYears.includes(this.selectedYear)
     ) {
       this.selectedYear = this.availableYears[0] ?? null;
     }
 
-    if (
+    const requestedQuarter = String(queryParams.get('quarter') ?? '')
+      .toUpperCase()
+      .match(/(?:Q|QUARTER\s*)?([1-4])/);
+    const requestedQuarterNumber = requestedQuarter
+      ? Number(requestedQuarter[1])
+      : 0;
+    const matchingRequestedQuarter = this.getQuartersForYear().find(
+      quarter => this.quarterNumber(quarter.quarter) === requestedQuarterNumber
+    );
+    if (matchingRequestedQuarter) {
+      this.selectedQuarterId = matchingRequestedQuarter.quarter_id;
+    } else if (
       !this.getQuartersForYear().some(
         quarter => quarter.quarter_id === this.selectedQuarterId
       )
@@ -383,6 +604,18 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     return this.availableQuarters.filter(
       quarter => quarter.year === this.selectedYear
     );
+  }
+
+  getQuarterStatuses(): Record<number, ReportPeriodStatus> {
+    const statuses: Record<number, ReportPeriodStatus> = {};
+    for (const quarter of this.getQuartersForYear()) {
+      statuses[quarter.quarter_id] = this.isQuarterApproved(quarter)
+        ? 'approved'
+        : this.isQuarterEndorsed(quarter)
+          ? 'endorsed'
+          : null;
+    }
+    return statuses;
   }
 
   getVisibleQuarters(): Quarter[] {
@@ -434,18 +667,13 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     return Number(this.report?.department?.department_id ?? this.departmentId) === 14;
   }
 
-  getVisibleSections(program: Program): Section[] {
-    if (!this.isStewardshipReport) {
-      return program.sections;
-    }
-
-    return program.sections.filter(section =>
-      this.isOfferingSection(section) === (this.activeStewardshipTab === 'offering')
-    );
+  get isAyQuarterlyStatisticsReport(): boolean {
+    return Number(this.report?.department?.department_id ?? this.departmentId) === 17 &&
+      /statistics/i.test(this.getSelectedProgram()?.program_name ?? '');
   }
 
-  selectStewardshipTab(tab: StewardshipTab): void {
-    this.activeStewardshipTab = tab;
+  getVisibleSections(program: Program): Section[] {
+    return program.sections;
   }
 
   getStewardshipTotal(type: 'offering' | 'tithe'): number {
@@ -866,7 +1094,6 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
 
           this.newComment = '';
           this.savingComment = false;
-          this.showSuccess('Comment published.');
           this.cdr.detectChanges();
           this.scrollCommentMessagesToLatest();
         },
@@ -1010,7 +1237,7 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   }
 
   private showSuccess(message: string): void {
-    void Swal.fire({
+    void showAppAlert({
       icon: 'success',
       title: 'Success',
       text: message,
@@ -1023,13 +1250,37 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
   }
 
   backToPrograms(): void {
+    const returnParams = Object.keys(this.reportReturnQueryParams).length
+      ? this.reportReturnQueryParams
+      : captureReportReturnQueryParams(this.route);
+
     if (this.portalPrefix() === '/pastor') {
-      this.router.navigate(['/pastor/reports/details']);
+      if (returnParams['return_to'] === 'district-reports') {
+        this.router.navigate(['/pastor/reports/details'], {
+          queryParams: {
+            year: String(this.selectedYear),
+            return_to: 'district-reports',
+            return_church: returnParams['return_church'] ?? '',
+            return_scroll: returnParams['return_scroll'] ?? '0'
+          }
+        });
+        return;
+      }
+
+      this.router.navigate(['/pastor/reports/details'], {
+        queryParams: {
+          year: String(this.selectedYear),
+          ...returnParams
+        }
+      });
       return;
     }
 
-    if (this.route.snapshot.queryParamMap.get('return_to') === 'monitoring') {
-      this.router.navigate([`${this.portalPrefix()}/reports`]);
+    if (returnParams['return_to'] === 'monitoring') {
+      this.reportReturnQueryParams = returnParams;
+      this.router.navigate([`${this.portalPrefix()}/reports`], {
+        queryParams: this.monitoringReturnParams()
+      });
       return;
     }
 
@@ -1043,6 +1294,13 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy {
     }
 
     this.router.navigate([`${this.portalPrefix()}/reports/programs`]);
+  }
+
+  private monitoringReturnParams(): Record<string, string> {
+    const returnParams = Object.keys(this.reportReturnQueryParams).length
+      ? this.reportReturnQueryParams
+      : captureReportReturnQueryParams(this.route);
+    return { ...returnParams, return_to: 'monitoring' };
   }
 
   private portalPrefix(): '/pastor' | '/assistant' | '/director' {

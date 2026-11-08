@@ -11,14 +11,17 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Church } from '../../../../core/models/church.model';
-import { RunningLoader } from '../../../../shared/components/running-loader/running-loader';
 import { Button } from '../../../../shared/components/button/button';
 import { QuarterStatus } from '../../../../shared/reports/quarter-status/quarter-status';
+import {
+  captureReportReturnQueryParams,
+  clearReportReturnQueryParams
+} from '../../../../shared/utils/report-navigation';
 
 @Component({
   selector: 'app-reports-details',
   standalone: true,
-  imports: [CommonModule, RunningLoader, Button, QuarterStatus],
+  imports: [CommonModule, Button, QuarterStatus],
   templateUrl: '../../../../shared/reports/reports-details/reports-details.html'
 })
 export class ReportsDetails implements OnInit {
@@ -27,6 +30,7 @@ export class ReportsDetails implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private churchService = inject(ChurchService);
+  private reportReturnQueryParams: Record<string, string> = {};
 
   districtId = 0;
   districtName = '';
@@ -44,6 +48,8 @@ export class ReportsDetails implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    this.reportReturnQueryParams = captureReportReturnQueryParams(this.route);
+    clearReportReturnQueryParams(this.router, this.route);
 
     const id = this.route.snapshot.paramMap.get('id');
 
@@ -117,7 +123,8 @@ export class ReportsDetails implements OnInit {
       {
         queryParams: {
           district_id: this.districtId,
-          district_name: this.districtName
+          district_name: this.districtName,
+          ...this.monitoringReturnParams()
         }
       }
     );
@@ -127,7 +134,8 @@ export class ReportsDetails implements OnInit {
   backToDistricts(): void {
 
     this.router.navigate(
-      [`${this.portalPrefix()}/reports`]
+      [`${this.portalPrefix()}/reports`],
+      { queryParams: this.monitoringReturnParams() }
     );
 
   }
@@ -144,9 +152,22 @@ export class ReportsDetails implements OnInit {
         `${this.portalPrefix()}/reports/programs`,
         this.districtId,
         church.church_id
-      ]
+      ],
+      {
+        queryParams: {
+          district_id: this.districtId,
+          district_name: this.districtName,
+          church_id: church.church_id,
+          church_name: church.name,
+          ...this.monitoringReturnParams()
+        }
+      }
     );
 
+  }
+
+  private monitoringReturnParams(): Record<string, string> {
+    return { ...this.reportReturnQueryParams };
   }
 
   private portalPrefix(): '/director' | '/assistant' {

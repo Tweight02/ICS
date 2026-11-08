@@ -7,14 +7,31 @@ import { ReportsDetails } from './reports-details';
 describe('ReportsDetails', () => {
   let component: ReportsDetails;
   let fixture: ComponentFixture<ReportsDetails>;
+  let navigate: ReturnType<typeof vi.fn>;
+  let returnQueryParams: Record<string, string>;
 
   beforeEach(async () => {
+    navigate = vi.fn();
+    returnQueryParams = {
+      return_to: 'monitoring',
+      return_department: '17',
+      return_expanded: '1',
+      return_search: 'North',
+      return_scroll: '240'
+    };
     await TestBed.configureTestingModule({
       imports: [ReportsDetails],
       providers: [
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ id: '1' }) } }
+          useValue: {
+            snapshot: {
+              paramMap: convertToParamMap({ id: '1' }),
+              get queryParamMap() {
+                return convertToParamMap(returnQueryParams);
+              }
+            }
+          }
         },
         {
           provide: ChurchService,
@@ -44,7 +61,7 @@ describe('ReportsDetails', () => {
             })
           }
         },
-        { provide: Router, useValue: { url: '/assistant/reports/details/1', navigate: () => undefined } }
+        { provide: Router, useValue: { url: '/assistant/reports/details/1', navigate } }
       ]
     }).compileComponents();
 
@@ -62,5 +79,29 @@ describe('ReportsDetails', () => {
       progress: 50,
       approved: false
     });
+  });
+
+  it('preserves monitoring state when returning to monitoring', () => {
+    component.backToDistricts();
+
+    expect(navigate).toHaveBeenCalledWith(
+      ['/assistant/reports'],
+      { queryParams: returnQueryParams }
+    );
+  });
+
+  it('preserves monitoring state when opening department reports', () => {
+    component.openDepartmentReports();
+
+    expect(navigate).toHaveBeenCalledWith(
+      ['/assistant/reports/programs'],
+      {
+        queryParams: {
+          district_id: 1,
+          district_name: 'Batanes',
+          ...returnQueryParams
+        }
+      }
+    );
   });
 });

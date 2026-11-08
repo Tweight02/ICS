@@ -8,6 +8,12 @@ export type UserRole =
   | 'administrative assistant'
   | 'administrative_assistant'
   | 'administrative-assistant'
+  | 'head assistant'
+  | 'head_assistant'
+  | 'head-assistant'
+  | 'head director'
+  | 'head_director'
+  | 'head-director'
   | 'director'
   | 'events';
 
@@ -24,7 +30,7 @@ export interface User {
   profile_image?: string | null;
   role: UserRole;
   status?: 'active' | 'inactive';
-  department_id?: number;
+  department_id?: number | null;
   church_id?: number;
   created_at?: string;
   updated_at?: string;
