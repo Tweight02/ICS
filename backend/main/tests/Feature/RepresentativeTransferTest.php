@@ -153,6 +153,38 @@ test('representative creation rejects an email used by an account at another chu
         ->assertJsonValidationErrors('email');
 });
 
+test('representative creation allows a pastor without a department', function () {
+    $fixture = representativeTransferFixture();
+    $fixture['pastor']->update(['department_id' => null]);
+    $churchId = DB::table('churches')->insertGetId([
+        'name' => 'New Church',
+        'address' => 'North District',
+        'parent_id' => $fixture['pastor']->church_id,
+    ]);
+
+    $response = $this->actingAs($fixture['pastor'], 'sanctum')
+        ->postJson('/api/pastor/representatives', [
+            'church_id' => $churchId,
+            'first_name' => 'New',
+            'middle_name' => '',
+            'last_name' => 'Representative',
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'email' => 'new-representative@example.com',
+            'password' => 'password123',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('user.department_id', null);
+
+    $this->assertDatabaseHas('users', [
+        'user_id' => $response->json('user.user_id'),
+        'church_id' => $churchId,
+        'role' => 'representative',
+        'department_id' => null,
+    ]);
+});
+
 test('representative creation rejects a person who already has another role', function () {
     $fixture = representativeTransferFixture();
 
