@@ -176,6 +176,7 @@ describe('ReportParticulars', () => {
 
     const preview = document.querySelector('#quarterly-report-preview-title')?.parentElement;
     expect(preview?.textContent).toContain('Pasuc');
+    expect(preview?.closest('.report-export-overlay')?.parentElement).toBe(document.body);
     expect(component.quarterlyReportPreviewRows.flat().join(' ')).toContain('Pasuc');
   });
 

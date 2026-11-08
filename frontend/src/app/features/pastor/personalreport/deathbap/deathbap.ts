@@ -1,12 +1,16 @@
 
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
+  AfterViewInit,
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  OnDestroy,
   OnInit,
   inject,
-  signal
+  signal,
+  ViewChild
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -87,8 +91,9 @@ interface Death {
   templateUrl: './deathbap.html',
   host: { class: 'block min-h-full' }
 })
-export class DeathbapComponent implements OnInit {
+export class DeathbapComponent implements OnInit, AfterViewInit, OnDestroy {
 
+  private document = inject(DOCUMENT);
   private http = inject(HttpClient);
   private churchService = inject(ChurchService);
   private reportService = inject(ReportService);
@@ -117,6 +122,9 @@ export class DeathbapComponent implements OnInit {
   personalRecordPreviewOpen = false;
   personalRecordPreviewRows: unknown[][] = [];
   exportingPersonalRecordExcel = false;
+  @ViewChild('personalRecordPreviewOverlay')
+  private personalRecordPreviewOverlay?: ElementRef<HTMLElement>;
+  private personalRecordPreviewParent: Node | null = null;
 
   quarterOptions: ('Q1' | 'Q2' | 'Q3' | 'Q4')[] = [
     'Q1',
@@ -250,6 +258,24 @@ export class DeathbapComponent implements OnInit {
 
     if (this.selectedRecord === 'baptism' || this.selectedRecord === 'death') {
       this.loadLatestComment();
+    }
+  }
+
+  ngAfterViewInit(): void {
+    const overlay = this.personalRecordPreviewOverlay?.nativeElement;
+    if (!overlay || !this.document.body) {
+      return;
+    }
+
+    this.personalRecordPreviewParent = overlay.parentNode;
+    this.document.body.appendChild(overlay);
+  }
+
+  ngOnDestroy(): void {
+    const overlay = this.personalRecordPreviewOverlay?.nativeElement;
+    if (overlay && this.personalRecordPreviewParent) {
+      this.personalRecordPreviewParent.appendChild(overlay);
+      this.personalRecordPreviewParent = null;
     }
   }
 
@@ -409,10 +435,22 @@ export class DeathbapComponent implements OnInit {
   openPersonalRecordPreview(): void {
     this.personalRecordPreviewRows = this.buildPersonalRecordExportRows();
     this.personalRecordPreviewOpen = true;
+    this.setPersonalRecordPreviewVisibility(true);
   }
 
   closePersonalRecordPreview(): void {
     this.personalRecordPreviewOpen = false;
+    this.setPersonalRecordPreviewVisibility(false);
+  }
+
+  private setPersonalRecordPreviewVisibility(visible: boolean): void {
+    const overlay = this.personalRecordPreviewOverlay?.nativeElement;
+    if (!overlay) {
+      return;
+    }
+
+    overlay.style.display = visible ? 'flex' : 'none';
+    overlay.setAttribute('aria-hidden', String(!visible));
   }
 
   exportPersonalRecordCsv(): void {
