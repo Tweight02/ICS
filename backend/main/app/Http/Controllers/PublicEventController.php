@@ -16,6 +16,7 @@ class PublicEventController extends Controller
     {
         $today = now('Asia/Manila')->toDateString();
         $events = Event::query()
+            ->whereRaw('LOWER(status) != ?', ['cancelled'])
             ->orderByRaw('CASE WHEN date_end >= ? THEN 0 ELSE 1 END', [$today])
             ->orderBy('date_start')
             ->orderBy('time_start')
@@ -29,7 +30,10 @@ class PublicEventController extends Controller
     public function show(Request $request, int $event)
     {
         $today = now('Asia/Manila')->toDateString();
-        $event = Event::query()->where('date_end', '>=', $today)->findOrFail($event);
+        $event = Event::query()
+            ->whereDate('date_end', '>=', $today)
+            ->whereRaw('LOWER(status) != ?', ['cancelled'])
+            ->findOrFail($event);
 
         $data = $this->eventData($event);
         $churchId = $this->registrationChurchId($request, $event);
@@ -43,7 +47,10 @@ class PublicEventController extends Controller
     public function register(Request $request, int $event)
     {
         $today = now('Asia/Manila')->toDateString();
-        $event = Event::query()->where('date_end', '>=', $today)->findOrFail($event);
+        $event = Event::query()
+            ->whereDate('date_end', '>=', $today)
+            ->whereRaw('LOWER(status) != ?', ['cancelled'])
+            ->findOrFail($event);
         $churchId = $this->registrationChurchId($request, $event);
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
@@ -120,11 +127,13 @@ class PublicEventController extends Controller
     {
         $church = EventsOrg::church((int) $event->church_id);
         $hostChurch = EventsOrg::church((int) $event->host_church_id);
-        $districts = $event->districts()->get(['churches.name']);
+        $districts = $event->scope_type === 'MISSION'
+            ? EventsOrg::districts()
+            : $event->districts()->get(['churches.name']);
         $churches = $event->churches()->get(['churches.name']);
         $scopeNames = $districts->pluck('name')->all();
-        $allDistrictsSelected = $districts->isNotEmpty()
-            && $districts->count() === EventsOrg::districts()->count();
+        $allDistrictsSelected = $event->scope_type === 'MISSION'
+            || ($districts->isNotEmpty() && $districts->count() === EventsOrg::districts()->count());
         if ($scopeNames === []) {
             $scopeNames = $churches->pluck('name')->all();
         }
@@ -162,7 +171,8 @@ class PublicEventController extends Controller
                 'director' => 'Director',
                 default => null,
             },
-            'registration_open' => ($event->end_date?->toDateString() ?? '') >= now('Asia/Manila')->toDateString(),
+            'registration_open' => strtoupper((string) $event->status) !== 'CANCELLED'
+                && ($event->end_date?->toDateString() ?? '') >= now('Asia/Manila')->toDateString(),
         ];
     }
 }

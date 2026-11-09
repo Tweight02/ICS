@@ -7,6 +7,7 @@ use App\Support\EventParticulars;
 use App\Support\EventsOrg;
 use App\Support\EventUser;
 use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -19,6 +20,16 @@ class EventRequest extends FormRequest
         return EventUser::fromRequest($this)->canWrite();
     }
 
+    protected function failedAuthorization(): void
+    {
+        $user = EventUser::fromRequest($this);
+        $message = $user->role === 'director'
+            ? 'Directors cannot create or edit events.'
+            : 'Your role cannot create or edit events.';
+
+        throw new AuthorizationException($message);
+    }
+
     public function rules(): array
     {
         $user = EventUser::fromRequest($this);
@@ -27,10 +38,10 @@ class EventRequest extends FormRequest
             'district_pastor' => [
                 'church_ids' => ['required', 'array', 'min:1'],
                 'church_ids.*' => ['integer', 'distinct', Rule::exists('churches', 'church_id')],
+                'district_id' => ['sometimes', 'required', 'integer', Rule::exists('churches', 'church_id')],
             ],
-            'assistant' => [
-                'district_ids' => ['required', 'array', 'min:1'],
-                'district_ids.*' => ['integer', 'distinct', Rule::exists('churches', 'church_id')],
+            'church_representative' => [
+                'church_id' => ['sometimes', 'required', 'integer', Rule::exists('churches', 'church_id')],
             ],
             default => [],
         };
@@ -90,7 +101,23 @@ class EventRequest extends FormRequest
                 return;
             }
 
-            $districtIds = array_map('intval', $this->input('district_ids', []));
+            $districtIds = $user->role === 'assistant'
+                ? EventsOrg::districts()->pluck('id')->map(fn ($id) => (int) $id)->all()
+                : [];
+            if (
+                $user->role === 'district_pastor'
+                && $this->input('district_id') !== null
+                && (int) $this->input('district_id') !== $user->districtId
+            ) {
+                $validator->errors()->add('district_id', 'You can only create events for your assigned district.');
+            }
+            if (
+                $user->role === 'church_representative'
+                && $this->input('church_id') !== null
+                && (int) $this->input('church_id') !== $user->churchId
+            ) {
+                $validator->errors()->add('church_id', 'You can only create events for your own church.');
+            }
             $allowedHostChurchIds = $this->allowedHostChurchIds($user);
             $requestedHostChurchId = $this->input('host_church_id');
             if (
@@ -113,17 +140,7 @@ class EventRequest extends FormRequest
                 $allowed = array_map('intval', array_filter($allowed));
                 $reportChurchIds = array_map('intval', $this->input('church_ids', []));
                 if (array_diff($reportChurchIds, $allowed)) {
-                    $validator->errors()->add('church_ids', 'Choose only churches from your own district.');
-                }
-            }
-
-            if ($user->role === 'assistant') {
-                $validDistrictCount = DB::table('churches')
-                    ->whereIn('church_id', $districtIds)
-                    ->whereNull('parent_id')
-                    ->count();
-                if ($validDistrictCount !== count($districtIds)) {
-                    $validator->errors()->add('district_ids', 'Choose one or more valid districts.');
+                    $validator->errors()->add('church_ids', 'You can only create events for your assigned district.');
                 }
             }
 
@@ -184,8 +201,10 @@ class EventRequest extends FormRequest
                 array_map('intval', $this->input('church_ids', [])),
                 EventsOrg::churchIdsOfDistrict($user->districtId)
             )),
-            'assistant' => collect(array_map('intval', $this->input('district_ids', [])))
-                ->flatMap(fn (int $districtId) => EventsOrg::churchIdsOfDistrict($districtId))
+            'assistant' => EventsOrg::districts()
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->flatMap(fn (int $districtId) => EventsOrg::churchIdsOfDistrict($districtId) ?: [$districtId])
                 ->map(fn ($churchId) => (int) $churchId)
                 ->all(),
             default => [],

@@ -112,7 +112,7 @@ test('event seeder creates three church events plus pastor and assistant events 
     $this->assertSame(4, DB::table('events')
         ->whereIn('event_id', $eventIds)
         ->where('quarter_id', $quarterId)
-        ->where('status', 'completed')
+        ->where('status', 'ACTIVE')
         ->count());
     $this->assertSame(4, DB::table('events')
         ->whereIn('event_id', $eventIds)

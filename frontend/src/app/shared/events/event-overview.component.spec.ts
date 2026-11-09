@@ -36,6 +36,7 @@ describe('EventOverviewComponent', () => {
               title: 'Completed event',
               host_church_name: 'North Local Church',
               created_by: 'District Pastor',
+              abilities: { confirm_participants: true },
               participants: { total: 50, confirmed: 50, pending: 0 },
               programs: [],
             }),
@@ -89,5 +90,26 @@ describe('EventOverviewComponent', () => {
     expect(link.searchParams.has('church_id')).toBe(false);
     expect(attribution.get('church_id')).toBe('9');
     expect(attribution.get('registration_token')).toBe('signed-token');
+  });
+
+  it('hides the registration link and prevents generating one for completed events', () => {
+    const component = fixture.componentInstance;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toISOString().slice(0, 10);
+    component.event = {
+      ...component.event,
+      start_date: yesterdayString,
+      end_date: yesterdayString,
+    };
+    fixture.detectChanges();
+
+    expect(component.status).toBe('Past');
+    expect(component.canShareRegistrationLink).toBe(false);
+    expect(fixture.nativeElement.textContent).not.toContain('Participant registration link');
+    expect(fixture.nativeElement.textContent).not.toContain('Generate church registration link');
+
+    component.generateRegistrationLink();
+    expect(getEventRegistrationLink).not.toHaveBeenCalled();
   });
 });
