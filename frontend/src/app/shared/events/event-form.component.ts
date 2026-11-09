@@ -238,7 +238,7 @@ export class EventFormComponent implements OnInit, OnDestroy {
   );
 
   get hostChurchLoading(): boolean {
-    return this.config.coverage === 'districts'
+    return this.config.coverage === 'districts' || this.config.coverage === 'mission'
       ? this.loadingHostChurchesState()
       : this.config.coverage === 'churches' && this.loadingChurches;
   }
@@ -273,7 +273,7 @@ export class EventFormComponent implements OnInit, OnDestroy {
     this.summaryOpen = this.config.coverage === 'church';
 
     this.loadUser();
-    if (this.config.coverage === 'districts') {
+    if (this.config.coverage === 'districts' || this.config.coverage === 'mission') {
       this.loadDistricts();
       this.loadHostChurches();
     }
@@ -426,7 +426,11 @@ export class EventFormComponent implements OnInit, OnDestroy {
       next: (res) => {
         const raw = res?.data ?? res;
         const list: any[] = Array.isArray(raw) ? raw : [];
-        this.districts = list.map((d) => ({ id: d.church_id ?? d.id, name: d.name, selected: false }));
+        this.districts = list.map((d) => ({
+          id: d.church_id ?? d.id,
+          name: d.name,
+          selected: this.config.coverage === 'mission',
+        }));
         this.districtsLoaded = true;
         this.applyPendingCoverage();
         this.ensureHostChurchSelection();
@@ -607,7 +611,9 @@ export class EventFormComponent implements OnInit, OnDestroy {
 
   private applyPendingCoverage(): void {
     if (this.districts.length) {
-      if (this.pendingDistrictIds) {
+      if (this.config.coverage === 'mission') {
+        this.districts = this.districts.map((district) => ({ ...district, selected: true }));
+      } else if (this.pendingDistrictIds) {
         const ids = this.pendingDistrictIds;
         this.districts = this.districts.map((district) => ({
           ...district,
@@ -983,7 +989,7 @@ export class EventFormComponent implements OnInit, OnDestroy {
     this.saveEvent(this.buildPayload());
   }
 
-  private saveEvent(payload: Record<string, unknown>, confirmedOverlap = false): void {
+  private saveEvent(payload: Record<string, unknown>): void {
     const request = this.isEdit
       ? this.http.put<any>(`${API_URL}/events/${this.eventId}`, payload)
       : this.http.post<any>(`${API_URL}/events`, payload);
@@ -1011,30 +1017,6 @@ export class EventFormComponent implements OnInit, OnDestroy {
         navigateToEvent();
       },
       error: (err) => {
-        if (
-          err?.status === 409 &&
-          err?.error?.code === 'EVENT_SCHEDULE_OVERLAP' &&
-          !confirmedOverlap
-        ) {
-          void showAppAlert({
-            icon: 'warning',
-            title: 'Schedule overlap',
-            text: err.error.message,
-            showCancelButton: true,
-            confirmButtonText: 'Create anyway',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true
-          }).then(result => {
-            if (result.isConfirmed) {
-              this.saving = true;
-              this.saveEvent({ ...payload, confirm_overlap: true }, true);
-            } else {
-              this.saving = false;
-            }
-          });
-          return;
-        }
-
         console.error('Failed to save the event', err);
         this.saving = false;
         const errors = err?.error?.errors;

@@ -446,7 +446,7 @@ class EventSaveTest extends TestCase
                     'value' => 1,
                 ]);
             } else {
-                $events->assertJsonMissing(['id' => $eventId, 'title' => 'Multi-district Youth Gathering']);
+                $events->assertJsonFragment(['id' => $eventId, 'title' => 'Multi-district Youth Gathering']);
             }
         }
         Sanctum::actingAs($assistant);
@@ -982,6 +982,12 @@ class EventSaveTest extends TestCase
             'details',
             'status',
             'location',
+            'created_by',
+            'creator_role',
+            'scope_type',
+            'scope_id',
+            'district_id',
+            'department_id',
         ], Schema::getColumnListing('events'));
     }
 

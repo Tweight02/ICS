@@ -337,7 +337,23 @@
         <p class="mt-2 text-xs leading-5 text-slate-500">This is your assigned church. Church representatives cannot change this value.</p>
       </div>
 
-      <!-- B) Assistant: districts (accordion) -->
+      <div *ngIf="config.coverage === 'mission'" class="flex-1 rounded-xl border border-emerald-100 bg-white p-4 shadow-sm">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-gray-900">
+          <i class="bi bi-globe-americas text-emerald-800"></i> Mission-wide event
+        </h3>
+        <p class="mt-2 text-xs leading-relaxed text-gray-600">
+          This event will be visible to all districts and churches across the mission.
+        </p>
+        <p *ngIf="districtsError" class="mt-2 text-xs text-red-600">
+          {{ districtsError }}
+          <button type="button" (click)="loadDistricts()" class="font-semibold underline">Try again</button>
+        </p>
+        <p *ngIf="!districtsError" class="mt-2 text-xs font-medium text-emerald-800">
+          {{ districts.length }} district{{ districts.length === 1 ? '' : 's' }} included
+        </p>
+      </div>
+
+      <!-- B) Assistant: optional district coverage for other event configurations -->
       <div *ngIf="config.coverage === 'districts'" class="flex-1 min-h-0 flex flex-col bg-white border rounded-xl shadow-sm overflow-hidden"
            [ngClass]="tried2 && coverageError() ? 'border-red-300' : 'border-gray-200'">
         <button type="button" (click)="districtsOpen = !districtsOpen" [attr.aria-expanded]="districtsOpen"

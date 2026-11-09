@@ -81,11 +81,12 @@ export class EventOverviewComponent implements OnInit {
   }
 
   get canShareRegistrationLink(): boolean {
-    return this.event?.abilities?.confirm_participants === true;
+    return this.event?.abilities?.confirm_participants === true
+      && this.status !== 'Past';
   }
 
   generateRegistrationLink(): void {
-    if (this.registrationLinkLoading) return;
+    if (!this.canShareRegistrationLink || this.registrationLinkLoading) return;
     this.registrationLinkLoading = true;
     this.registrationLinkMessage = '';
     this.registrationLinkCopiedState.set(false);
