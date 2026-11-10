@@ -16,6 +16,7 @@ class EventResource extends JsonResource
         $quarter = $this->quarterDetails();
         $church = EventsOrg::church((int) $this->church_id);
         $hostChurch = EventsOrg::church((int) $this->host_church_id);
+        $hostName = $this->scope_type === 'MISSION' ? 'Mission' : $hostChurch?->name;
         $creator = $this->createdBy()->first(['users.first_name', 'users.last_name']);
         $particulars = $this->particulars()->with('program')->get();
         $departmentId = (int) (
@@ -109,8 +110,8 @@ class EventResource extends JsonResource
                 ? 'Multiple churches'
                 : ($churches->first()->name ?? $church->name ?? null),
             'host_church_id' => $this->host_church_id ? (int) $this->host_church_id : null,
-            'host_church_name' => $hostChurch?->name,
-            'host' => $hostChurch?->name,
+            'host_church_name' => $hostName,
+            'host' => $hostName,
             'created_by' => $creator
                 ? trim($creator->first_name.' '.$creator->last_name)
                 : null,

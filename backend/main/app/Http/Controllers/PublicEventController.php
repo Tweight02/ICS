@@ -127,6 +127,7 @@ class PublicEventController extends Controller
     {
         $church = EventsOrg::church((int) $event->church_id);
         $hostChurch = EventsOrg::church((int) $event->host_church_id);
+        $hostName = $event->scope_type === 'MISSION' ? 'Mission' : $hostChurch?->name;
         $districts = $event->scope_type === 'MISSION'
             ? EventsOrg::districts()
             : $event->districts()->get(['churches.name']);
@@ -159,8 +160,8 @@ class PublicEventController extends Controller
                 ? 'Multiple churches'
                 : ($churches->first()->name ?? $church->name ?? null),
             'host_church_id' => $event->host_church_id ? (int) $event->host_church_id : null,
-            'host_church_name' => $hostChurch?->name,
-            'host' => $hostChurch?->name,
+            'host_church_name' => $hostName,
+            'host' => $hostName,
             'scope' => $scopeNames,
             'all_districts' => $allDistrictsSelected,
             'created_by' => match ($creator?->role) {

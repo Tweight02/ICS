@@ -50,6 +50,9 @@ class EventRequest extends FormRequest
         $department = $canSelectDepartment
             ? ['department_id' => ['required', 'integer', Rule::exists('departments', 'department_id')]]
             : [];
+        $hostChurch = $user->role === 'assistant'
+            ? []
+            : ['host_church_id' => ['sometimes', 'required', 'integer', Rule::exists('churches', 'church_id')]];
 
         return [
             'title' => ['required', 'string', 'max:255'],
@@ -60,9 +63,8 @@ class EventRequest extends FormRequest
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
-            'host_church_id' => ['sometimes', 'required', 'integer', Rule::exists('churches', 'church_id')],
             'notes' => ['nullable', 'string'],
-        ] + $scope + $department;
+        ] + $scope + $department + $hostChurch;
     }
 
     public function after(): array
@@ -121,7 +123,8 @@ class EventRequest extends FormRequest
             $allowedHostChurchIds = $this->allowedHostChurchIds($user);
             $requestedHostChurchId = $this->input('host_church_id');
             if (
-                $requestedHostChurchId !== null
+                $user->role !== 'assistant'
+                && $requestedHostChurchId !== null
                 && ! in_array((int) $requestedHostChurchId, $allowedHostChurchIds, true)
             ) {
                 $validator->errors()->add('host_church_id', 'Choose a host church included in this event’s coverage.');
@@ -177,8 +180,12 @@ class EventRequest extends FormRequest
         return $departmentId;
     }
 
-    public function hostChurchId(): int
+    public function hostChurchId(): ?int
     {
+        if (EventUser::fromRequest($this)->role === 'assistant') {
+            return null;
+        }
+
         $hostChurchId = $this->validated('host_church_id');
         if ($hostChurchId !== null) {
             return (int) $hostChurchId;
@@ -201,12 +208,6 @@ class EventRequest extends FormRequest
                 array_map('intval', $this->input('church_ids', [])),
                 EventsOrg::churchIdsOfDistrict($user->districtId)
             )),
-            'assistant' => EventsOrg::districts()
-                ->pluck('id')
-                ->map(fn ($id) => (int) $id)
-                ->flatMap(fn (int $districtId) => EventsOrg::churchIdsOfDistrict($districtId) ?: [$districtId])
-                ->map(fn ($churchId) => (int) $churchId)
-                ->all(),
             default => [],
         };
     }
