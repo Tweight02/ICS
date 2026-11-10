@@ -22,7 +22,8 @@
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          <button *ngIf="summary()" type="button" (click)="openSummaryPreview()"
+          <button *ngIf="summary() && (!isAssistantPortal || selectedDepartmentId() === null || (!loadingDepartmentDetails() && selectedReport()))"
+            type="button" (click)="openSummaryPreview()"
             class="report-export-trigger">
             <i class="bi bi-printer" aria-hidden="true"></i> Export / Print
           </button>
@@ -665,7 +666,9 @@
   <section class="report-export-dialog">
     <header class="report-export-header">
       <div>
-        <h2 id="summary-preview-title" class="text-lg font-bold text-emerald-950">Report summary preview</h2>
+        <h2 id="summary-preview-title" class="text-lg font-bold text-emerald-950">
+          {{ isAssistantPortal && selectedDepartmentId() !== null ? 'Report particulars preview' : 'Report summary preview' }}
+        </h2>
         <p class="text-sm text-slate-600">{{ selectedYear() }} · {{ summaryExportScope() }}</p>
       </div>
       <button type="button" (click)="closeSummaryPreview()" aria-label="Close preview"
@@ -673,13 +676,16 @@
     </header>
     <div class="report-export-content">
       <div data-summary-report-print-preview class="summary-report-print-preview">
-        <h1 class="mb-1 text-center text-xl font-bold text-emerald-950">Report Summary</h1>
+        <h1 class="mb-1 text-center text-xl font-bold text-emerald-950">
+          {{ isAssistantPortal && selectedDepartmentId() !== null ? 'Report particulars' : 'Report Summary' }}
+        </h1>
         <p class="mb-4 text-center text-sm text-slate-700">{{ selectedYear() }} · {{ summaryExportScope() }}</p>
         <table class="w-full border-collapse text-left text-xs sm:text-sm">
           <tbody>
             <tr *ngFor="let row of summaryPreviewRows(); let rowIndex = index" class="border-b border-slate-200">
               <ng-container *ngFor="let cell of row">
-                <th *ngIf="rowIndex === 3; else summaryCell" scope="col" class="border border-slate-300 bg-emerald-50 px-2 py-2 font-bold text-emerald-950">{{ cell }}</th>
+                <th *ngIf="rowIndex === (isAssistantPortal && selectedDepartmentId() !== null ? 4 : 3); else summaryCell"
+                  scope="col" class="border border-slate-300 bg-emerald-50 px-2 py-2 font-bold text-emerald-950">{{ cell }}</th>
                 <ng-template #summaryCell>
                   <td class="border border-slate-300 px-2 py-2 text-slate-800">{{ cell }}</td>
                 </ng-template>
