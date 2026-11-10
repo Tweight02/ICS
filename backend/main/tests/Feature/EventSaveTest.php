@@ -113,17 +113,30 @@ class EventSaveTest extends TestCase
         ]);
 
         Sanctum::actingAs($assistant);
-        $this->postJson('/api/events', [
+        $response = $this->postJson('/api/events', [
             'title' => 'Mission-wide Youth Gathering',
             'location' => 'Global Assistant District',
             'department_id' => $departmentId,
             'particular_ids' => [$particularId],
             'district_ids' => [$districtId],
+            'host_church_id' => $districtId,
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-10',
             'start_time' => '09:00',
             'end_time' => '11:00',
-        ])->assertCreated();
+        ])->assertCreated()
+            ->assertJsonPath('data.host_church_id', null)
+            ->assertJsonPath('data.host_church_name', 'Mission')
+            ->assertJsonPath('data.host', 'Mission');
+        $this->assertDatabaseHas('events', [
+            'event_id' => $response->json('data.id'),
+            'host_church_id' => null,
+        ]);
+        $this->getJson('/api/public/events/'.$response->json('data.id'))
+            ->assertOk()
+            ->assertJsonPath('data.host_church_id', null)
+            ->assertJsonPath('data.host_church_name', 'Mission')
+            ->assertJsonPath('data.host', 'Mission');
 
         $this->getJson('/api/events?status=all')
             ->assertOk()
