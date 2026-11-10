@@ -16,7 +16,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { expand, reduce, timeout } from 'rxjs/operators';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
-import { showAppAlert } from '../../../../shared/utils/app-alert';
+import { showPersistentAppAlert as showAppAlert } from '../../../../shared/utils/app-alert';
 
 interface Church {
   church_id: number;
@@ -304,92 +304,41 @@ export class BapaddrecComponent implements OnInit {
   }
 
   /**
-   * Return the first and last month numbers for a selected quarter.
-   */
-  private getQuarterMonthRange(
-    quarter: string
-  ): { startMonth: number; endMonth: number } | null {
-    const ranges: Record<string, { startMonth: number; endMonth: number }> = {
-      Q1: { startMonth: 1, endMonth: 3 },
-      Q2: { startMonth: 4, endMonth: 6 },
-      Q3: { startMonth: 7, endMonth: 9 },
-      Q4: { startMonth: 10, endMonth: 12 }
-    };
-
-    return ranges[quarter] ?? null;
-  }
-
-  /**
-   * Check whether a date belongs to the selected quarter and reporting year.
-   */
-  private isDateWithinSelectedQuarter(value: string): boolean {
-    if (!value || !this.baptism.quarter || !this.isValidDateString(value)) {
-      return false;
-    }
-
-    const range = this.getQuarterMonthRange(this.baptism.quarter);
-
-    if (!range) {
-      return false;
-    }
-
-    const [year, month] = value.split('-').map(Number);
-
-    return (
-      year === this.baptismDateYear &&
-      month >= range.startMonth &&
-      month <= range.endMonth
-    );
-  }
-
-  /**
    * Update the date picker's minimum and maximum dates based on:
-   * 1. The selected quarter and reporting year.
+   * 1. The reporting year.
    * 2. The member's 8th birthday.
    * 3. Today's date.
    */
   updateBaptismDateRange(): void {
-    const range = this.getQuarterMonthRange(this.baptism.quarter);
+    const yearStart = `${this.baptismDateYear}-01-01`;
+    const yearEnd = `${this.baptismDateYear}-12-31`;
 
-    if (!range) {
-      this.baptismDateMin = this.minimumBaptismDate || '';
-      this.baptismDateMax = this.today;
-      return;
-    }
-
-    const quarterStart = `${this.baptismDateYear}-${String(range.startMonth).padStart(2, '0')}-01`;
-    const quarterEndDate = new Date(
-      this.baptismDateYear,
-      range.endMonth,
-      0
-    );
-    const quarterEnd = [
-      quarterEndDate.getFullYear(),
-      String(quarterEndDate.getMonth() + 1).padStart(2, '0'),
-      String(quarterEndDate.getDate()).padStart(2, '0')
-    ].join('-');
-
-    const minimumDate = this.minimumBaptismDate;
-
-    this.baptismDateMin =
-      minimumDate && minimumDate > quarterStart
-        ? minimumDate
-        : quarterStart;
-
-    this.baptismDateMax =
-      quarterEnd < this.today
-        ? quarterEnd
-        : this.today;
+    this.baptismDateMin = this.minimumBaptismDate > yearStart
+      ? this.minimumBaptismDate
+      : yearStart;
+    this.baptismDateMax = yearEnd < this.today ? yearEnd : this.today;
   }
 
   /**
-   * Recalculate the allowed date range when the selected quarter changes.
+   * Keep the selected date's quarter in sync with the quarter selector.
    */
   onQuarterChange(quarter: string): void {
     this.baptism.quarter = quarter;
     this.baptismDateError = '';
+    if (this.baptism.date_of_baptism) {
+      this.updateQuarterFromBaptismDate();
+    }
     this.updateBaptismDateRange();
     this.validateBaptismDate();
+  }
+
+  private updateQuarterFromBaptismDate(): void {
+    if (!this.isValidDateString(this.baptism.date_of_baptism)) {
+      return;
+    }
+
+    const month = Number(this.baptism.date_of_baptism.substring(5, 7));
+    this.baptism.quarter = `Q${Math.ceil(month / 3)}`;
   }
 
   /**
@@ -412,7 +361,7 @@ export class BapaddrecComponent implements OnInit {
    * 1. Date of baptism must be valid.
    * 2. Member must be at least 8 years old.
    * 3. Date of baptism cannot be later than today.
-   * 4. Date of baptism must belong to the selected quarter and year.
+   * 4. Date of baptism must belong to the reporting year.
    */
   validateBaptismDate(): void {
     this.baptismDateError = '';
@@ -436,12 +385,14 @@ export class BapaddrecComponent implements OnInit {
       return;
     }
 
-    if (!this.isDateWithinSelectedQuarter(baptismDate)) {
+    if (!baptismDate.startsWith(`${this.baptismDateYear}-`)) {
       this.baptism.date_of_baptism = '';
       this.baptismDateError =
-        `Date of baptism must fall within ${this.baptism.quarter} of ${this.baptismDateYear}.`;
+        `Date of baptism must be within ${this.baptismDateYear}.`;
       return;
     }
+
+    this.updateQuarterFromBaptismDate();
 
     if (baptismDate > this.today) {
       this.baptism.date_of_baptism = '';
@@ -475,7 +426,7 @@ export class BapaddrecComponent implements OnInit {
 
     return (
       !this.isValidDateString(baptismDate) ||
-      !this.isDateWithinSelectedQuarter(baptismDate) ||
+      !baptismDate.startsWith(`${this.baptismDateYear}-`) ||
       baptismDate > this.today ||
       (!!minimumDate && baptismDate < minimumDate)
     );
@@ -487,6 +438,7 @@ export class BapaddrecComponent implements OnInit {
 
   private getValidationErrors(): string[] {
     const errors: string[] = [];
+    this.updateQuarterFromBaptismDate();
 
     const firstName = this.baptism.first_name.trim();
     const middleName = this.baptism.middle_name.trim();
@@ -557,14 +509,8 @@ export class BapaddrecComponent implements OnInit {
       const minimumDate =
         this.getMinimumBaptismDate(this.baptism.birthdate);
 
-      // Date must belong to the selected quarter and reporting year.
-      if (
-        this.getQuarterMonthRange(this.baptism.quarter) &&
-        !this.isDateWithinSelectedQuarter(this.baptism.date_of_baptism)
-      ) {
-        errors.push(
-          `Date of Baptism must fall within ${this.baptism.quarter} of ${this.baptismDateYear}.`
-        );
+      if (!this.baptism.date_of_baptism.startsWith(`${this.baptismDateYear}-`)) {
+        errors.push(`Date of Baptism must be within ${this.baptismDateYear}.`);
       }
 
       // Member must be at least 8 years old.

@@ -403,6 +403,7 @@ describe('ReportParticulars', () => {
   });
 
   it('submits every program and fills untouched items with zero', () => {
+    vi.mocked(Swal.fire).mockClear();
     component.saveReport();
 
     expect(saveDepartmentReport).toHaveBeenCalledOnce();
@@ -412,6 +413,10 @@ describe('ReportParticulars', () => {
       { particular_id: 13, quarter_id: 19, value: 0, value_includes_participants: true }
     ]);
     expect(saveDepartmentReport.mock.calls[0][3]).toBe(true);
+    expect(Swal.fire).toHaveBeenCalledWith(expect.not.objectContaining({
+      timer: 3000,
+      timerProgressBar: true
+    }));
   });
 
   it('blocks submission until every item in the previous quarter is approved', () => {

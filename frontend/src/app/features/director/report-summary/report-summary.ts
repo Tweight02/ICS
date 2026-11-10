@@ -130,7 +130,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
       return [];
     }
 
-    if (this.isAssistantPortal && this.selectedDepartmentId() !== null) {
+    if (this.selectedDepartmentId() !== null && !this.isBaptismDirector) {
       const department = this.selectedDepartmentSummary();
       const report = this.selectedReport();
       if (!department || !report) {
@@ -138,7 +138,6 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
       }
 
       return [
-        ['Report particulars', department.department_name],
         ['Report', report.report_name],
         ['Year', this.selectedYear()],
         [],
@@ -154,23 +153,43 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
       ];
     }
 
-    const rows: unknown[][] = [
-      ['Report summary', this.summaryExportScope()],
-      ['Year', this.selectedYear()],
-      [],
-      [
-        'Type',
-        'Department',
-        'Report',
-        'Particular',
-        'Submitted reports',
-        'Q1',
-        'Q2',
-        'Q3',
-        'Q4',
-        'Total report value'
+    if (!this.isBaptismDirector) {
+      return [];
+    }
+
+    const rows: unknown[][] = this.isAssistantPortal
+      ? [
+        ['Report summary', this.summaryExportScope()],
+        ['Year', this.selectedYear()],
+        [],
+        [
+          'Type',
+          'Department',
+          'Report',
+          'Particular',
+          'Submitted reports',
+          'Q1',
+          'Q2',
+          'Q3',
+          'Q4',
+          'Total report value'
+        ]
       ]
-    ];
+      : [
+        ['Report summary', this.summaryExportScope()],
+        ['Year', this.selectedYear()],
+        [],
+        [
+          'Report / Summary',
+          'Particular',
+          'Submitted reports',
+          'Q1',
+          'Q2',
+          'Q3',
+          'Q4',
+          'Total report value'
+        ]
+      ];
 
     const selectedDepartmentId = this.isAssistantPortal ? this.selectedDepartmentId() : null;
     const departments = selectedDepartmentId === null
@@ -180,46 +199,81 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
       );
 
     for (const department of departments) {
-      rows.push([
-        'Department',
-        department.department_name,
-        '',
-        '',
-        department.submitted_reports,
-        department.quarter_totals.q1,
-        department.quarter_totals.q2,
-        department.quarter_totals.q3,
-        department.quarter_totals.q4,
-        department.total_report_value
-      ]);
+      if (this.isAssistantPortal) {
+        rows.push([
+          'Department',
+          department.department_name,
+          '',
+          '',
+          department.submitted_reports,
+          department.quarter_totals.q1,
+          department.quarter_totals.q2,
+          department.quarter_totals.q3,
+          department.quarter_totals.q4,
+          department.total_report_value
+        ]);
+      } else {
+        rows.push([
+          'Overall total',
+          '',
+          department.submitted_reports,
+          department.quarter_totals.q1,
+          department.quarter_totals.q2,
+          department.quarter_totals.q3,
+          department.quarter_totals.q4,
+          department.total_report_value
+        ]);
+      }
 
       for (const report of department.reports) {
-        rows.push([
-          'Report',
-          department.department_name,
-          report.report_name,
-          '',
-          report.submitted_reports,
-          report.quarter_totals.q1,
-          report.quarter_totals.q2,
-          report.quarter_totals.q3,
-          report.quarter_totals.q4,
-          report.total_report_value
-        ]);
-
-        for (const particular of report.particulars ?? []) {
-          rows.push([
-            'Particular',
+        rows.push(this.isAssistantPortal
+          ? [
+            'Report',
             department.department_name,
             report.report_name,
-            particular.particular_name,
-            particular.submitted_reports,
-            particular.quarter_totals.q1,
-            particular.quarter_totals.q2,
-            particular.quarter_totals.q3,
-            particular.quarter_totals.q4,
-            particular.total_report_value
+            '',
+            report.submitted_reports,
+            report.quarter_totals.q1,
+            report.quarter_totals.q2,
+            report.quarter_totals.q3,
+            report.quarter_totals.q4,
+            report.total_report_value
+          ]
+          : [
+            report.report_name,
+            '',
+            report.submitted_reports,
+            report.quarter_totals.q1,
+            report.quarter_totals.q2,
+            report.quarter_totals.q3,
+            report.quarter_totals.q4,
+            report.total_report_value
           ]);
+
+        for (const particular of report.particulars ?? []) {
+          rows.push(this.isAssistantPortal
+            ? [
+              'Particular',
+              department.department_name,
+              report.report_name,
+              particular.particular_name,
+              particular.submitted_reports,
+              particular.quarter_totals.q1,
+              particular.quarter_totals.q2,
+              particular.quarter_totals.q3,
+              particular.quarter_totals.q4,
+              particular.total_report_value
+            ]
+            : [
+              report.report_name,
+              particular.particular_name,
+              particular.submitted_reports,
+              particular.quarter_totals.q1,
+              particular.quarter_totals.q2,
+              particular.quarter_totals.q3,
+              particular.quarter_totals.q4,
+              particular.total_report_value
+            ]);
         }
       }
     }
@@ -232,7 +286,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    downloadCsv(`report-summary-${this.selectedYear()}.csv`, this.summaryPreviewRows());
+    downloadCsv(`report-${this.selectedYear()}.csv`, this.summaryPreviewRows());
   }
 
   async exportSummaryExcel(): Promise<void> {
@@ -243,11 +297,11 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     this.exportingSummaryExcel.set(true);
     try {
       await downloadStyledQuarterlyExcel(
-        `report-summary-${this.selectedYear()}.xlsx`,
+        `report-${this.selectedYear()}.xlsx`,
         this.summaryPreviewRows()
       );
     } catch (error) {
-      console.error('Unable to export the report summary as Excel.', error);
+      console.error('Unable to export the report as Excel.', error);
       void showAppAlert({
         icon: 'error',
         title: 'Export failed',
@@ -263,7 +317,12 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.summaryPreviewRows.set(this.buildSummaryCsvRows());
+    const rows = this.buildSummaryCsvRows();
+    if (!rows.length) {
+      return;
+    }
+
+    this.summaryPreviewRows.set(rows);
     this.summaryPreviewOpen.set(true);
     this.setSummaryPreviewVisibility(true);
   }

@@ -4,7 +4,8 @@ import Swal, {
 } from 'sweetalert2';
 
 export function showAppAlert(
-  options: SweetAlertOptions
+  options: SweetAlertOptions,
+  autoDismiss = true
 ): Promise<SweetAlertResult> {
   const isDecisionDialog = Boolean(
     options.showCancelButton ||
@@ -14,8 +15,14 @@ export function showAppAlert(
 
   return Swal.fire({
     ...options,
-    ...(!isDecisionDialog
+    ...(autoDismiss && !isDecisionDialog
       ? { timer: 3000, timerProgressBar: true }
       : {})
   });
+}
+
+export function showPersistentAppAlert(
+  options: SweetAlertOptions
+): Promise<SweetAlertResult> {
+  return showAppAlert(options, false);
 }

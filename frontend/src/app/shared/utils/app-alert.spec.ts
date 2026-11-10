@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2';
-import { showAppAlert } from './app-alert';
+import { showAppAlert, showPersistentAppAlert } from './app-alert';
 
 describe('showAppAlert', () => {
   afterEach(() => {
@@ -38,6 +38,21 @@ describe('showAppAlert', () => {
 
     expect(fire).toHaveBeenCalledWith(expect.not.objectContaining({
       timer: 3000
+    }));
+  });
+
+  it('does not show a timed loading/progress bar for persistent alerts', async () => {
+    const fire = vi.spyOn(Swal, 'fire').mockResolvedValue({
+      isConfirmed: false,
+      isDenied: false,
+      isDismissed: false
+    });
+
+    await showPersistentAppAlert({ icon: 'warning', title: 'Please check your input' });
+
+    expect(fire).toHaveBeenCalledWith(expect.not.objectContaining({
+      timer: 3000,
+      timerProgressBar: true
     }));
   });
 });

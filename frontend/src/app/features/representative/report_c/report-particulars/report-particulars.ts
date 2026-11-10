@@ -22,7 +22,7 @@ import {
   ReportPeriodSelector,
   type ReportPeriodStatus
 } from '../../../../shared/reports/period-selector/report-period-selector';
-import { showAppAlert } from '../../../../shared/utils/app-alert';
+import { showPersistentAppAlert as showAppAlert } from '../../../../shared/utils/app-alert';
 import {
   captureReportReturnQueryParams,
   clearReportReturnQueryParams

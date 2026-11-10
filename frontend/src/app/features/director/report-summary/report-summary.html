@@ -15,14 +15,47 @@
           <h1 class="!text-xl font-bold tracking-tight text-emerald-950 sm:!text-2xl">
             {{ isMissionWideSummary ? 'Mission-wide report summary' : 'Department report summary' }}
           </h1>
-          <p class="mt-1 text-xs font-medium text-emerald-900/70">
+          <p id="summary-report-subtitle" class="mt-1 text-xs font-medium text-emerald-900/70">
             {{ isMissionWideSummary
               ? 'Quarterly totals across all departments'
               : 'Quarterly totals for your assigned department' }}
           </p>
+          <div class="mt-3 flex flex-wrap items-end gap-3">
+            <label for="summary-report-year" class="grid w-fit grid-cols-1 gap-1.5">
+              <span class="block text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">REPORTING YEAR</span>
+              <select
+                id="summary-report-year"
+                class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+                [value]="selectedYear()"
+                (change)="onYearChange($event)">
+                <option *ngFor="let year of reportYears" [value]="year">{{ year }}</option>
+              </select>
+            </label>
+            <label *ngIf="isAssistantPortal && !loadingDepartments()"
+              for="summary-report-department" class="grid w-full max-w-sm grid-cols-1 gap-1.5">
+              <span class="block text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">DEPARTMENT</span>
+              <select
+                id="summary-report-department"
+                class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+                [value]="selectedDepartmentId() ?? ''"
+                [disabled]="loadingDepartments()"
+                (change)="onDepartmentChange($event)">
+                <option value="">Select a department</option>
+                <option *ngFor="let department of departments()" [value]="department.department_id">
+                  {{ department.department_name }}
+                </option>
+              </select>
+            </label>
+            <div *ngIf="isAssistantPortal && loadingDepartments()" class="w-full max-w-sm space-y-2"
+              role="status" aria-label="Loading departments" aria-busy="true">
+              <span class="report-skeleton-block h-3 w-24"></span>
+              <span class="report-skeleton-block h-10 w-full rounded-xl"></span>
+              <span class="sr-only">Loading department options.</span>
+            </div>
+          </div>
         </div>
         <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          <button *ngIf="summary() && (!isAssistantPortal || selectedDepartmentId() === null || (!loadingDepartmentDetails() && selectedReport()))"
+          <button *ngIf="summary() && (isBaptismDirector || (!loadingDepartmentDetails() && selectedReport()))"
             type="button" (click)="openSummaryPreview()"
             class="report-export-trigger">
             <i class="bi bi-printer" aria-hidden="true"></i> Export / Print
@@ -40,37 +73,6 @@
         </div>
       </div>
 
-      <div class="relative mt-2 flex flex-col gap-4 border-t border-emerald-900/10 pt-5 sm:flex-row sm:items-end">
-        <label for="summary-report-year" class="grid w-fit grid-cols-1 gap-1.5">
-          <span class="block text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">REPORTING YEAR</span>
-          <select
-            id="summary-report-year"
-            class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
-            [value]="selectedYear()"
-            (change)="onYearChange($event)">
-            <option *ngFor="let year of reportYears" [value]="year">{{ year }}</option>
-          </select>
-        </label>
-        <label *ngIf="isAssistantPortal && !loadingDepartments()" for="summary-report-department" class="grid w-full max-w-sm grid-cols-1 gap-1.5">
-          <span class="block text-[10px] font-bold tracking-[0.14em] text-emerald-800/80">DEPARTMENT</span>
-          <select
-            id="summary-report-department"
-            class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
-            [value]="selectedDepartmentId() ?? ''"
-            [disabled]="loadingDepartments()"
-            (change)="onDepartmentChange($event)">
-            <option value="">Select a department</option>
-            <option *ngFor="let department of departments()" [value]="department.department_id">
-              {{ department.department_name }}
-            </option>
-          </select>
-        </label>
-        <div *ngIf="isAssistantPortal && loadingDepartments()" class="w-full max-w-sm space-y-2" role="status" aria-label="Loading departments" aria-busy="true">
-          <span class="report-skeleton-block h-3 w-24"></span>
-          <span class="report-skeleton-block h-10 w-full rounded-xl"></span>
-          <span class="sr-only">Loading department options.</span>
-        </div>
-      </div>
       <p *ngIf="departmentsErrorMessage()" class="mt-2 text-sm text-red-700" role="alert">
         {{ departmentsErrorMessage() }}
       </p>
@@ -667,7 +669,7 @@
     <header class="report-export-header">
       <div>
         <h2 id="summary-preview-title" class="text-lg font-bold text-emerald-950">
-          {{ isAssistantPortal && selectedDepartmentId() !== null ? 'Report particulars preview' : 'Report summary preview' }}
+          {{ selectedReport()?.report_name ?? (isBaptismDirector ? 'Report summary' : 'Report') }} preview
         </h2>
         <p class="text-sm text-slate-600">{{ selectedYear() }} · {{ summaryExportScope() }}</p>
       </div>
@@ -677,14 +679,14 @@
     <div class="report-export-content">
       <div data-summary-report-print-preview class="summary-report-print-preview">
         <h1 class="mb-1 text-center text-xl font-bold text-emerald-950">
-          {{ isAssistantPortal && selectedDepartmentId() !== null ? 'Report particulars' : 'Report Summary' }}
+          {{ selectedReport()?.report_name ?? (isBaptismDirector ? 'Report Summary' : 'Report') }}
         </h1>
         <p class="mb-4 text-center text-sm text-slate-700">{{ selectedYear() }} · {{ summaryExportScope() }}</p>
         <table class="w-full border-collapse text-left text-xs sm:text-sm">
           <tbody>
             <tr *ngFor="let row of summaryPreviewRows(); let rowIndex = index" class="border-b border-slate-200">
               <ng-container *ngFor="let cell of row">
-                <th *ngIf="rowIndex === (isAssistantPortal && selectedDepartmentId() !== null ? 4 : 3); else summaryCell"
+                <th *ngIf="rowIndex === 3; else summaryCell"
                   scope="col" class="border border-slate-300 bg-emerald-50 px-2 py-2 font-bold text-emerald-950">{{ cell }}</th>
                 <ng-template #summaryCell>
                   <td class="border border-slate-300 px-2 py-2 text-slate-800">{{ cell }}</td>

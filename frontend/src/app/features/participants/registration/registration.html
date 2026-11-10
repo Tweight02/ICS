@@ -42,10 +42,6 @@
                 <i class="bi bi-map mt-0.5 shrink-0 text-white/80"></i>
                 <span class="text-white">{{ selectedEvent?.church }}</span>
               </p>
-              <p *ngIf="selectedEvent?.registrationChurch" class="flex min-w-0 items-start gap-3">
-                <i class="bi bi-building mt-0.5 shrink-0 text-white/80"></i>
-                <span class="text-white">Church: {{ selectedEvent?.registrationChurch }}</span>
-              </p>
               <p *ngIf="selectedEvent?.host" class="flex min-w-0 items-start gap-3">
                 <i class="bi bi-building mt-0.5 shrink-0 text-white/80"></i>
                 <span class="text-white">Host Church: {{ selectedEvent?.host }}</span>
