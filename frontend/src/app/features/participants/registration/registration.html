@@ -79,9 +79,6 @@
           </div>
 
           <form #registrationForm="ngForm" (ngSubmit)="onSubmit(registrationForm)" class="flex flex-col gap-4" novalidate>
-            <p *ngIf="errorVisible" role="alert" class="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-              {{ errorMessage }}
-            </p>
             <div class="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-4 sm:gap-y-4">
               <div>
                 <label for="first_name" class="mb-1 block text-xs font-semibold text-slate-700">First Name <span class="text-red-500">*</span></label>
