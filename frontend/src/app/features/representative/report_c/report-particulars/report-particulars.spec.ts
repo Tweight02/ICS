@@ -178,6 +178,15 @@ describe('ReportParticulars', () => {
     expect(preview?.textContent).toContain('Pasuc');
     expect(preview?.closest('.report-export-overlay')?.parentElement).toBe(document.body);
     expect(component.quarterlyReportPreviewRows.flat().join(' ')).toContain('Pasuc');
+
+    const overlay = document.querySelector('.report-export-overlay');
+    expect(overlay?.querySelector('.report-export-button-close')).toBeNull();
+    const closeButton = overlay?.querySelector('[aria-label="Close report preview"]') as HTMLButtonElement;
+    expect(closeButton).not.toBeNull();
+
+    closeButton.click();
+    fixture.detectChanges();
+    expect(component.quarterlyReportPreviewOpen).toBe(false);
   });
 
   it('returns to the same representative report list selection', () => {

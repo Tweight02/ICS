@@ -666,7 +666,7 @@
     <header class="report-export-header">
       <div>
         <h2 id="summary-preview-title" class="text-lg font-bold text-emerald-950">Report summary preview</h2>
-        <p class="text-sm text-slate-600">{{ selectedYear() }} · {{ isAssistantPortal ? 'Mission-wide' : selectedDepartmentName() }}</p>
+        <p class="text-sm text-slate-600">{{ selectedYear() }} · {{ summaryExportScope() }}</p>
       </div>
       <button type="button" (click)="closeSummaryPreview()" aria-label="Close preview"
         class="report-export-close">×</button>
@@ -674,7 +674,7 @@
     <div class="report-export-content">
       <div data-summary-report-print-preview class="summary-report-print-preview">
         <h1 class="mb-1 text-center text-xl font-bold text-emerald-950">Report Summary</h1>
-        <p class="mb-4 text-center text-sm text-slate-700">{{ selectedYear() }} · {{ isAssistantPortal ? 'Mission-wide' : selectedDepartmentName() }}</p>
+        <p class="mb-4 text-center text-sm text-slate-700">{{ selectedYear() }} · {{ summaryExportScope() }}</p>
         <table class="w-full border-collapse text-left text-xs sm:text-sm">
           <tbody>
             <tr *ngFor="let row of summaryPreviewRows(); let rowIndex = index" class="border-b border-slate-200">
@@ -690,8 +690,6 @@
       </div>
     </div>
     <footer class="report-export-actions">
-      <button type="button" (click)="closeSummaryPreview()"
-        class="report-export-button report-export-button-close">Close</button>
       <button type="button" (click)="exportSummaryCsv()"
         class="report-export-button report-export-button-csv">
         <i class="bi bi-download" aria-hidden="true"></i> Export CSV

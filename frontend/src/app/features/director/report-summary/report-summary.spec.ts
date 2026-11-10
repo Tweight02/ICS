@@ -246,11 +246,75 @@ describe('DirectorReportSummary', () => {
     expect(preview.textContent).toContain('Export Excel (.xlsx)');
     expect(preview.querySelector('[data-summary-report-print-preview]')).not.toBeNull();
     expect(component.summaryPreviewRows()).toEqual(component.buildSummaryCsvRows());
+    expect(preview.querySelector('.report-export-button-close')).toBeNull();
 
-    component.closeSummaryPreview();
+    const closeButton = preview.querySelector('[aria-label="Close preview"]') as HTMLButtonElement;
+    expect(closeButton).not.toBeNull();
+    closeButton.click();
     fixture.detectChanges();
+    expect(component.summaryPreviewOpen()).toBe(false);
     expect(preview.style.display).toBe('none');
     expect(preview.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('limits preview and export rows to the selected assistant department', () => {
+    currentUser.role = 'assistant';
+    currentUser.department_id = null;
+    routerUrl = '/assistant/reports/summary';
+    getMissionReportSummary.mockClear();
+    fixture.destroy();
+    fixture = TestBed.createComponent(DirectorReportSummary);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const reportSummary = component.summary();
+    expect(reportSummary).not.toBeNull();
+    component.summary.set({
+      ...reportSummary!,
+      departments: [
+        ...reportSummary!.departments,
+        {
+          department_id: 21,
+          department_name: 'Communication',
+          submitted_reports: 1,
+          total_report_value: 42,
+          quarter_totals: { q1: 42, q2: 0, q3: 0, q4: 0 },
+          reports: [{
+            program_id: 9,
+            report_name: 'Communication Report',
+            submitted_reports: 1,
+            total_report_value: 42,
+            quarter_totals: { q1: 42, q2: 0, q3: 0, q4: 0 },
+            particulars: [{
+              particular_id: 5,
+              particular_name: 'Communication activities',
+              submitted_reports: 1,
+              total_report_value: 42,
+              quarter_totals: { q1: 42, q2: 0, q3: 0, q4: 0 }
+            }]
+          }]
+        }
+      ]
+    });
+
+    const departmentSelect = fixture.nativeElement.querySelector(
+      '#summary-report-department'
+    ) as HTMLSelectElement;
+    departmentSelect.value = '17';
+    component.onDepartmentChange({ target: departmentSelect } as unknown as Event);
+
+    const rows = component.buildSummaryCsvRows();
+    expect(rows[0]).toEqual(['Report summary', 'Youth Ministries']);
+    expect(rows.some(row => row.includes('Communication'))).toBe(false);
+    expect(rows.some(row => row.includes('Youth Ministries'))).toBe(true);
+
+    component.openSummaryPreview();
+    fixture.detectChanges();
+    expect(component.summaryPreviewRows()).toEqual(rows);
+    expect(document.body.querySelector('[aria-labelledby="summary-preview-title"]')?.textContent)
+      .toContain('Youth Ministries');
+    expect(document.body.querySelector('[data-summary-report-print-preview]')?.textContent)
+      .not.toContain('Communication');
   });
 
   it('reloads totals and updates the year query parameter', () => {

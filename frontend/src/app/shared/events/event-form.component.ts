@@ -1,4 +1,14 @@
-import { Component, Input, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  Input,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  signal
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -54,6 +64,8 @@ interface EventFormValues {
 })
 export class EventFormComponent implements OnInit, OnDestroy {
   @Input({ required: true }) config!: EventFormConfig;
+
+  @ViewChild('hostChurchDropdown') private hostChurchDropdownElement?: ElementRef<HTMLElement>;
 
   private readonly stepState = signal<1 | 2>(1);
   get step(): 1 | 2 { return this.stepState(); }
@@ -205,6 +217,10 @@ export class EventFormComponent implements OnInit, OnDestroy {
   set hostChurchSearch(value: string) { this.hostChurchSearchState.set(value); }
 
   readonly hostChurchOptions = computed(() => {
+    if (this.config.coverage === 'mission') {
+      return [];
+    }
+
     if (this.config.coverage === 'church') {
       return this.userChurchId && this.userChurchName
         ? [{ id: this.userChurchId, name: this.userChurchName }]
@@ -231,14 +247,18 @@ export class EventFormComponent implements OnInit, OnDestroy {
       : options;
   });
 
-  readonly hostChurchError = computed(() =>
-    this.hostChurchOptions().some((church) => church.id === this.selectedHostChurchId)
+  readonly hostChurchError = computed(() => {
+    if (this.config.coverage === 'mission') {
+      return '';
+    }
+
+    return this.hostChurchOptions().some((church) => church.id === this.selectedHostChurchId)
       ? ''
-      : 'Choose a host church included in the event coverage.',
-  );
+      : 'Choose a host church included in the event coverage.';
+  });
 
   get hostChurchLoading(): boolean {
-    return this.config.coverage === 'districts' || this.config.coverage === 'mission'
+    return this.config.coverage === 'districts'
       ? this.loadingHostChurchesState()
       : this.config.coverage === 'churches' && this.loadingChurches;
   }
@@ -248,6 +268,10 @@ export class EventFormComponent implements OnInit, OnDestroy {
   }
 
   get selectedHostChurchName(): string {
+    if (this.config.coverage === 'mission') {
+      return 'Mission';
+    }
+
     return this.hostChurchOptions().find((church) => church.id === this.selectedHostChurchId)?.name ?? '';
   }
 
@@ -275,7 +299,9 @@ export class EventFormComponent implements OnInit, OnDestroy {
     this.loadUser();
     if (this.config.coverage === 'districts' || this.config.coverage === 'mission') {
       this.loadDistricts();
-      this.loadHostChurches();
+      if (this.config.coverage === 'districts') {
+        this.loadHostChurches();
+      }
     }
 
     if (this.isEdit) {
@@ -534,6 +560,21 @@ export class EventFormComponent implements OnInit, OnDestroy {
     this.hostChurchDropdownOpenState.set(true);
   }
 
+  @HostListener('document:click', ['$event'])
+  closeHostChurchDropdownOnOutsideClick(event: MouseEvent): void {
+    const dropdown = this.hostChurchDropdownElement?.nativeElement;
+    const target = event.target;
+
+    if (
+      this.hostChurchDropdownOpen &&
+      dropdown &&
+      target instanceof Node &&
+      !dropdown.contains(target)
+    ) {
+      this.hostChurchDropdownOpenState.set(false);
+    }
+  }
+
   selectHostChurch(churchId: number): void {
     this.selectedHostChurchId = churchId;
     this.hostChurchSearch = '';
@@ -576,7 +617,9 @@ export class EventFormComponent implements OnInit, OnDestroy {
         end_time: String(e.end_time ?? '').slice(0, 5),
         notes: e.notes ?? '',
       };
-      this.selectedHostChurchId = Number(e.host_church_id) || null;
+      this.selectedHostChurchId = this.config.coverage === 'mission'
+        ? null
+        : Number(e.host_church_id) || null;
 
       this.selectedParticularIds = Array.isArray(e.particular_ids)
         ? e.particular_ids.map(Number)
@@ -948,7 +991,7 @@ export class EventFormComponent implements OnInit, OnDestroy {
     const payload: any = {
       ...this.form,
       particular_ids: this.selectedParticularIds,
-      host_church_id: this.selectedHostChurchId,
+      host_church_id: this.config.coverage === 'mission' ? null : this.selectedHostChurchId,
     };
 
     if (this.canChooseDepartment) {

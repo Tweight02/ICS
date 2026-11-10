@@ -86,6 +86,11 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     )?.department_name ??
     'Department'
   );
+  readonly summaryExportScope = computed(() =>
+    this.isAssistantPortal && this.selectedDepartmentId() === null
+      ? 'Mission-wide'
+      : this.selectedDepartmentName()
+  );
 
   private readonly churchService = inject(ChurchService);
   private readonly authService = inject(AuthService);
@@ -126,7 +131,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const rows: unknown[][] = [
-      ['Report summary', this.isAssistantPortal ? 'Mission-wide' : this.selectedDepartmentName()],
+      ['Report summary', this.summaryExportScope()],
       ['Year', this.selectedYear()],
       [],
       [
@@ -143,7 +148,14 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
       ]
     ];
 
-    for (const department of reportSummary.departments) {
+    const selectedDepartmentId = this.isAssistantPortal ? this.selectedDepartmentId() : null;
+    const departments = selectedDepartmentId === null
+      ? reportSummary.departments
+      : reportSummary.departments.filter(
+        department => department.department_id === selectedDepartmentId
+      );
+
+    for (const department of departments) {
       rows.push([
         'Department',
         department.department_name,

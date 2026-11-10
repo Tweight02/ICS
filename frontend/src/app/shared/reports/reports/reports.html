@@ -12,27 +12,29 @@
           Expand a district and church, then select a quarter to open its department report
         </p>
       </div>
-      <button app-button variant="create" size="md"
-          *ngIf="canCreateReportTemplate"
-          type="button"
-          (click)="createReportTemplate()"
-          class="relative !min-h-10 self-start sm:self-auto">
+      <div class="relative flex flex-wrap items-center gap-3 self-start sm:self-auto">
+        <button app-button variant="create" size="md"
+            *ngIf="canCreateReportTemplate"
+            type="button"
+            (click)="createReportTemplate()"
+            class="relative !min-h-10">
           <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
             <path d="M10 3v14M3 10h14" />
           </svg>
           New report
-      </button>
-      <button
-          *ngIf="canViewReportSummary"
-          type="button"
-          (click)="openMissionSummary()"
-          class="relative inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-full border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 sm:self-auto"
-          style="border-radius: 9999px">
+        </button>
+        <button
+            *ngIf="canViewReportSummary"
+            type="button"
+            (click)="openMissionSummary()"
+            class="relative inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
+            style="border-radius: 9999px">
           <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 16.5h14M5 13V9m5 4V4m5 9V7" />
           </svg>
           Report summary
-      </button>
+        </button>
+      </div>
     </header>
 
     <!-- Error -->
@@ -49,22 +51,8 @@
       </button>
     </div>
 
-    <div *ngIf="loadingDistricts()" class="space-y-3" role="status" aria-label="Loading report monitoring" aria-busy="true">
-      <article *ngFor="let row of [1, 2, 3]" class="overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-4 shadow-sm sm:p-5">
-        <div class="flex items-center gap-3">
-          <span class="report-skeleton-block h-11 w-11 rounded-xl"></span>
-          <div class="min-w-0 flex-1 space-y-2">
-            <span class="report-skeleton-block report-skeleton-block-dark h-4 w-2/5"></span>
-            <span class="report-skeleton-block h-3 w-1/4"></span>
-          </div>
-          <span class="report-skeleton-block h-5 w-5 rounded-full"></span>
-        </div>
-      </article>
-      <span class="sr-only">Loading districts and report monitoring.</span>
-    </div>
-
     <section
-      *ngIf="(hasAllDepartmentAccess && departments().length > 0) || (!loadingDistricts() && districts().length > 0)"
+      *ngIf="loadingDistricts() || (hasAllDepartmentAccess && departments().length > 0) || districts().length > 0"
       class="mb-4 rounded-2xl border border-slate-200/80 bg-white/90 p-3 shadow-[0_8px_24px_rgba(15,74,48,0.07)] backdrop-blur sm:p-4">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
         <div class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
@@ -120,6 +108,20 @@
         </dl>
       </div>
     </section>
+
+    <div *ngIf="loadingDistricts()" class="space-y-3" role="status" aria-label="Loading report monitoring" aria-busy="true">
+      <article *ngFor="let row of [1, 2, 3]" class="overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-4 shadow-sm sm:p-5">
+        <div class="flex items-center gap-3">
+          <span class="report-skeleton-block h-11 w-11 rounded-xl"></span>
+          <div class="min-w-0 flex-1 space-y-2">
+            <span class="report-skeleton-block report-skeleton-block-dark h-4 w-2/5"></span>
+            <span class="report-skeleton-block h-3 w-1/4"></span>
+          </div>
+          <span class="report-skeleton-block h-5 w-5 rounded-full"></span>
+        </div>
+      </article>
+      <span class="sr-only">Loading districts and report monitoring.</span>
+    </div>
 
     <!-- Districts -->
     <section
