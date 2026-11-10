@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 import { User } from '../../../../core/models/user.model';
 import { AuthService } from '../../../../core/services/auth/auth-service';
 import { ChurchService } from '../../../../core/services/church/church-service';
@@ -320,6 +320,11 @@ describe('Reports', () => {
     ).find(button => button.textContent?.includes('Report summary')) as
       HTMLButtonElement | undefined;
     expect(summaryButton).toBeDefined();
+    const newReportButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).find(button => button.textContent?.includes('New report'));
+    expect(newReportButton?.parentElement).toBe(summaryButton?.parentElement);
+    expect(summaryButton?.parentElement?.classList.contains('gap-3')).toBe(true);
 
     component.openMissionSummary();
     expect(navigation).toEqual({
@@ -332,6 +337,27 @@ describe('Reports', () => {
         }
       }
     });
+  });
+
+  it('keeps the year filter above the loading skeleton', () => {
+    getDistricts.mockReturnValue(NEVER);
+
+    component.loadDistricts();
+    fixture.detectChanges();
+
+    const yearFilter = fixture.nativeElement.querySelector(
+      '#report-year-filter'
+    ) as HTMLSelectElement | null;
+    const loadingStatus = fixture.nativeElement.querySelector(
+      '[aria-label="Loading report monitoring"]'
+    ) as HTMLElement | null;
+
+    expect(yearFilter).not.toBeNull();
+    expect(loadingStatus).not.toBeNull();
+    expect(
+      yearFilter!.closest('section')!.compareDocumentPosition(loadingStatus!) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
   it('gives an assistant without a department access to every department', () => {
