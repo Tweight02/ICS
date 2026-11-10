@@ -12,7 +12,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, timeout } from 'rxjs/operators';
-import { showAppAlert } from '../../../../shared/utils/app-alert';
+import { showPersistentAppAlert as showAppAlert } from '../../../../shared/utils/app-alert';
 import { ChurchService } from '../../../../core/services/church/church-service';
 import { Button } from '../../../../shared/components/button/button';
 
@@ -211,80 +211,62 @@ export class EditbapComponent implements OnInit {
   ========================================= */
 
   /**
-   * The selected quarter is restricted to the calendar year of the
-   * currently loaded baptism date. If there is no date yet, the current
-   * year is used.
+   * Baptism dates remain within the calendar year of the loaded record.
    */
-  get quarterStartDate(): string {
-    const quarterNumber =
-      Number(this.normalizeQuarter(this.baptism.quarter).substring(1)) || 1;
-    const firstMonth = (quarterNumber - 1) * 3 + 1;
-
-    return `${this.baptismQuarterYear}-${String(firstMonth).padStart(2, '0')}-01`;
+  get reportYearStartDate(): string {
+    return `${this.baptismQuarterYear}-01-01`;
   }
 
-  get quarterEndDate(): string {
-    const quarterNumber =
-      Number(this.normalizeQuarter(this.baptism.quarter).substring(1)) || 1;
-    const lastMonth = quarterNumber * 3;
-    const lastDay = new Date(
-      this.baptismQuarterYear,
-      lastMonth,
-      0
-    ).getDate();
-
-    return `${this.baptismQuarterYear}-${String(lastMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  get reportYearEndDate(): string {
+    return `${this.baptismQuarterYear}-12-31`;
   }
 
   /**
-   * Combine the selected quarter with the existing age requirement.
-   * The date picker cannot allow a date before the member's 8th birthday.
+   * Combine the record year with the existing age requirement.
    */
   get dateOfBaptismMin(): string {
     if (
       this.minimumBaptismDate &&
-      this.minimumBaptismDate > this.quarterStartDate
+      this.minimumBaptismDate > this.reportYearStartDate
     ) {
       return this.minimumBaptismDate;
     }
 
-    return this.quarterStartDate;
+    return this.reportYearStartDate;
   }
 
   /**
-   * The latest selectable date is the earlier of the quarter end and today.
+   * The latest selectable date is the earlier of the record year end and today.
    */
   get dateOfBaptismMax(): string {
-    return this.quarterEndDate < this.today
-      ? this.quarterEndDate
+    return this.reportYearEndDate < this.today
+      ? this.reportYearEndDate
       : this.today;
   }
 
-  /**
-   * Clear the existing date if it does not belong to the newly selected quarter.
-   */
   onQuarterChange(): void {
-    const baptismDate = this.baptism.date_of_baptism;
-
-    if (
-      baptismDate &&
-      (
-        baptismDate < this.quarterStartDate ||
-        baptismDate > this.quarterEndDate
-      )
-    ) {
-      this.baptism.date_of_baptism = '';
+    if (this.baptism.date_of_baptism) {
+      this.updateQuarterFromBaptismDate();
     }
 
     this.baptismDateError = '';
     this.validateBaptismDate();
   }
 
-  /**
-   * Validate a date selected from the quarter-limited date picker.
-   */
   onBaptismDateChange(): void {
+    this.updateQuarterFromBaptismDate();
     this.validateBaptismDate();
+  }
+
+  private updateQuarterFromBaptismDate(): void {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(this.baptism.date_of_baptism)) {
+      return;
+    }
+
+    const month = Number(this.baptism.date_of_baptism.substring(5, 7));
+    if (month >= 1 && month <= 12) {
+      this.baptism.quarter = `Q${Math.ceil(month / 3)}`;
+    }
   }
 
   /**
@@ -344,13 +326,14 @@ export class EditbapComponent implements OnInit {
       return;
     }
 
-    // YYYY-MM-DD strings can be compared directly.
+    this.updateQuarterFromBaptismDate();
+
     if (
-      baptismDate < this.quarterStartDate ||
-      baptismDate > this.quarterEndDate
+      baptismDate < this.reportYearStartDate ||
+      baptismDate > this.reportYearEndDate
     ) {
       this.baptismDateError =
-        'Date of baptism must be within the selected quarter.';
+        `Date of baptism must be within ${this.baptismQuarterYear}.`;
       return;
     }
 
@@ -381,8 +364,8 @@ export class EditbapComponent implements OnInit {
         !!this.minimumBaptismDate &&
         baptismDate < this.minimumBaptismDate
       ) ||
-      baptismDate < this.quarterStartDate ||
-      baptismDate > this.quarterEndDate
+      baptismDate < this.reportYearStartDate ||
+      baptismDate > this.reportYearEndDate
     );
   }
 
@@ -808,16 +791,16 @@ export class EditbapComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    // Do not allow a baptism date outside the selected quarter.
+    // Do not allow a baptism date outside the record year.
     if (
       this.baptism.date_of_baptism &&
       (
-        this.baptism.date_of_baptism < this.quarterStartDate ||
-        this.baptism.date_of_baptism > this.quarterEndDate
+        this.baptism.date_of_baptism < this.reportYearStartDate ||
+        this.baptism.date_of_baptism > this.reportYearEndDate
       )
     ) {
       this.baptismDateError =
-        'Date of baptism must be within the selected quarter.';
+        `Date of baptism must be within ${this.baptismQuarterYear}.`;
 
       this.showBaptismDateError();
       return;
@@ -840,6 +823,8 @@ export class EditbapComponent implements OnInit {
       this.showBaptismDateError();
       return;
     }
+
+    this.updateQuarterFromBaptismDate();
 
     if (!formIsValid) {
       this.errorMessage =

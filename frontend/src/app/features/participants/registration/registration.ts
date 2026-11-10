@@ -12,7 +12,6 @@ type RegistrationEvent = {
   id: number;
   title: string;
   church: string;
-  registrationChurch: string;
   createdBy: string;
   host: string;
   date: string;
@@ -153,7 +152,6 @@ export class Registration implements OnInit, OnDestroy {
             : (event.scope ?? []).join(', ')
             || event.church_name
             || 'Not specified',
-          registrationChurch: event.registration_church_name ?? '',
           createdBy: event.created_by ?? '',
           host: event.host_church_name ?? event.host_church?.name ?? '',
           date: formatDateRange(event.start_date, event.end_date),

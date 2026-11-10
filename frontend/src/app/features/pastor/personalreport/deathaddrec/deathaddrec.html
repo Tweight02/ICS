@@ -491,7 +491,7 @@
           <section class="w-full min-w-0 rounded-xl border border-[#d7e4df] bg-white p-4 max-[768px]:p-3">
             <div class="mb-3 border-b border-[#e8eeeb] pb-2">
               <h3 class="m-0 text-sm font-bold tracking-[0.04em] text-[#193c32]">DEATH INFORMATION</h3>
-              <p class="mb-0 mt-1 text-[11px] text-slate-500">Enter the reporting quarter and date of death.</p>
+              <p class="mb-0 mt-1 text-[11px] text-slate-500">Enter the date of death; the reporting quarter follows the selected date.</p>
             </div>
 
             <div class="grid w-full grid-cols-1 gap-3 max-[768px]:gap-2.5">
@@ -529,7 +529,6 @@
                   [(ngModel)]="death.date_of_death"
                   [min]="getMinimumDeathDateForQuarter()"
                   [max]="getMaximumDeathDate()"
-                  [disabled]="!death.quarter || !hasValidDeathDateRange"
                   (change)="validateDeathDate()"
                   [attr.aria-describedby]="deathDateError ? 'dateOfDeathError' : null"
                   required>
@@ -537,13 +536,13 @@
                 <small
                   *ngIf="death.quarter && hasValidDeathDateRange && !deathDateError"
                   class="mt-1 block text-[11px] font-normal text-slate-500">
-                  Select a date within {{ death.quarter }} of {{ deathDateYear }}.
+                  Select a date in {{ deathDateYear }}; the quarter updates automatically from the date.
                 </small>
 
                 <small
                   *ngIf="death.quarter && !hasValidDeathDateRange"
                   class="mt-1 block text-[11px] font-normal text-red-600">
-                  No valid date is available in this quarter based on the birthdate and today's date.
+                  No valid date is available in this reporting year based on the birthdate and today's date.
                 </small>
 
                 <small

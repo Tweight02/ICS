@@ -12,7 +12,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { showAppAlert } from '../../../../shared/utils/app-alert';
+import { showPersistentAppAlert as showAppAlert } from '../../../../shared/utils/app-alert';
 import { Button } from '../../../../shared/components/button/button';
 import { ChurchService } from '../../../../core/services/church/church-service';
 
@@ -284,56 +284,22 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * Return the start and end dates for the selected quarter
-   * within the reporting year.
+   * Return the date limits for the reporting year.
    */
-  private getQuarterDateBounds(): { start: string; end: string } | null {
-    const quarterRanges: Record<
-      string,
-      { startMonth: number; endMonth: number }
-    > = {
-      Q1: { startMonth: 1, endMonth: 3 },
-      Q2: { startMonth: 4, endMonth: 6 },
-      Q3: { startMonth: 7, endMonth: 9 },
-      Q4: { startMonth: 10, endMonth: 12 }
+  private getReportingYearBounds(): { start: string; end: string } {
+    return {
+      start: `${this.deathDateYear}-01-01`,
+      end: `${this.deathDateYear}-12-31`
     };
-
-    const range = quarterRanges[this.death.quarter];
-
-    if (!range) {
-      return null;
-    }
-
-    const start =
-      `${this.deathDateYear}-${String(range.startMonth).padStart(2, '0')}-01`;
-
-    const lastDay = new Date(
-      this.deathDateYear,
-      range.endMonth,
-      0
-    );
-
-    const end = [
-      lastDay.getFullYear(),
-      String(lastDay.getMonth() + 1).padStart(2, '0'),
-      String(lastDay.getDate()).padStart(2, '0')
-    ].join('-');
-
-    return { start, end };
   }
 
   /**
    * The earliest selectable death date must be:
-   * - within the selected quarter; and
+   * - within the reporting year; and
    * - at least one day after the member's birthdate.
    */
   getMinimumDeathDateForQuarter(): string {
-    const bounds = this.getQuarterDateBounds();
-
-    if (!bounds) {
-      return '';
-    }
-
+    const bounds = this.getReportingYearBounds();
     const minimumAfterBirth = this.getMinimumDeathDate();
 
     return minimumAfterBirth && minimumAfterBirth > bounds.start
@@ -342,40 +308,28 @@ export class DeathaddrecComponent implements OnInit {
   }
 
   /**
-   * The latest selectable death date must be within the quarter
-   * and cannot be later than today.
+   * The latest selectable death date must be within the year and cannot be later than today.
    */
   getMaximumDeathDate(): string {
-    const bounds = this.getQuarterDateBounds();
-
-    if (!bounds) {
-      return this.today;
-    }
-
+    const bounds = this.getReportingYearBounds();
     return bounds.end < this.today
       ? bounds.end
       : this.today;
   }
 
   /**
-   * Check if the selected quarter has at least one valid date.
+   * Check if the reporting year has at least one valid date.
    */
   get hasValidDeathDateRange(): boolean {
-    if (!this.death.quarter) {
-      return false;
-    }
-
     return (
       this.getMinimumDeathDateForQuarter() <=
       this.getMaximumDeathDate()
     );
   }
 
-  /**
-   * Check whether a date belongs to the selected quarter and year.
-   */
-  private isDateWithinSelectedQuarter(value: string): boolean {
-    const bounds = this.getQuarterDateBounds();
+  /** Check whether a date belongs to the selected reporting year. */
+  private isDateWithinReportingYear(value: string): boolean {
+    const bounds = this.getReportingYearBounds();
 
     return !!bounds &&
       this.isValidDate(value) &&
@@ -383,25 +337,23 @@ export class DeathaddrecComponent implements OnInit {
       value <= bounds.end;
   }
 
-  /**
-   * Update the selected quarter and remove an incompatible death date.
-   */
+  /** Keep the selected date's quarter in sync with the quarter selector. */
   onQuarterChange(quarter: string): void {
     this.death.quarter = quarter;
     this.deathDateError = '';
-
-    if (!this.death.date_of_death) {
-      return;
+    if (this.death.date_of_death) {
+      this.updateQuarterFromDeathDate();
     }
-
-    if (!this.isDateWithinSelectedQuarter(this.death.date_of_death)) {
-      this.death.date_of_death = '';
-      this.deathDateError =
-        `The selected date was cleared because it does not belong to ${quarter} of ${this.deathDateYear}.`;
-      return;
-    }
-
     this.validateDeathDate();
+  }
+
+  private updateQuarterFromDeathDate(): void {
+    if (!this.isValidDate(this.death.date_of_death)) {
+      return;
+    }
+
+    const month = Number(this.death.date_of_death.substring(5, 7));
+    this.death.quarter = `Q${Math.ceil(month / 3)}`;
   }
 
   /**
@@ -422,16 +374,12 @@ export class DeathaddrecComponent implements OnInit {
       return;
     }
 
-    if (!this.death.quarter) {
-      this.death.date_of_death = '';
-      this.deathDateError = 'Please select a quarter before selecting the date of death.';
-      return;
-    }
+    this.updateQuarterFromDeathDate();
 
-    if (!this.isDateWithinSelectedQuarter(dateOfDeath)) {
+    if (!this.isDateWithinReportingYear(dateOfDeath)) {
       this.death.date_of_death = '';
       this.deathDateError =
-        `Date of Death must fall within ${this.death.quarter} of ${this.deathDateYear}.`;
+        `Date of Death must be within ${this.deathDateYear}.`;
       return;
     }
 
@@ -453,7 +401,7 @@ export class DeathaddrecComponent implements OnInit {
     if (!this.hasValidDeathDateRange) {
       this.death.date_of_death = '';
       this.deathDateError =
-        'There is no valid date available within the selected quarter.';
+        'There is no valid date available in the reporting year based on the birthdate and today.';
     }
   }
 
@@ -1049,6 +997,7 @@ export class DeathaddrecComponent implements OnInit {
    */
   private validateDeathForm(): string[] {
     const errors: string[] = [];
+    this.updateQuarterFromDeathDate();
 
     const validQuarters = ['Q1', 'Q2', 'Q3', 'Q4'];
 
@@ -1061,9 +1010,9 @@ export class DeathaddrecComponent implements OnInit {
     } else if (!this.isValidDate(this.death.date_of_death)) {
       errors.push('Please enter a valid date of death.');
     } else {
-      if (!this.isDateWithinSelectedQuarter(this.death.date_of_death)) {
+      if (!this.isDateWithinReportingYear(this.death.date_of_death)) {
         errors.push(
-          `Date of Death must fall within ${this.death.quarter} of ${this.deathDateYear}.`
+          `Date of Death must be within ${this.deathDateYear}.`
         );
       }
 
@@ -1073,7 +1022,7 @@ export class DeathaddrecComponent implements OnInit {
 
       if (!this.hasValidDeathDateRange) {
         errors.push(
-          'There is no valid date available within the selected quarter based on the birthdate and today.'
+          'There is no valid date available in the reporting year based on the birthdate and today.'
         );
       }
     }

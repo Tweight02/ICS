@@ -180,6 +180,12 @@ describe('DirectorReportSummary', () => {
   it('shows Q1 through Q4 totals and each report total', () => {
     expect(getMissionReportSummary).toHaveBeenCalledWith(CURRENT_REPORT_YEAR);
     expect(getMissionReportSummary).toHaveBeenCalledWith(CURRENT_REPORT_YEAR, 17);
+    const subtitle = fixture.nativeElement.querySelector(
+      '#summary-report-subtitle'
+    ) as HTMLParagraphElement;
+    expect(subtitle.textContent).toContain('Quarterly totals for your assigned department');
+    expect(subtitle.nextElementSibling?.querySelector('#summary-report-year')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#summary-report-department')).toBeNull();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Q1');
     expect(text).toContain('Q2');
@@ -195,36 +201,28 @@ describe('DirectorReportSummary', () => {
     expect(fixture.nativeElement.querySelector('#summary-report-program')).not.toBeNull();
   });
 
-  it('exports summary rows for departments, reports, and particulars', () => {
+  it('exports only the selected director report and its particulars', () => {
     const exportButton = Array.from(
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
     ).find(button => button.textContent?.includes('Export / Print'));
 
     expect(exportButton).toBeDefined();
-    expect(component.buildSummaryCsvRows()).toContainEqual([
-      'Department',
-      'Youth Ministries',
-      '',
-      '',
-      2,
-      10,
-      25,
-      0,
-      0,
-      35
+    const reportSelect = fixture.nativeElement.querySelector(
+      '#summary-report-program'
+    ) as HTMLSelectElement;
+    reportSelect.value = '8';
+    component.onReportChange({ target: reportSelect } as unknown as Event);
+
+    const rows = component.buildSummaryCsvRows();
+    expect(rows).toEqual([
+      ['Report', 'Camp Report'],
+      ['Year', CURRENT_REPORT_YEAR],
+      [],
+      ['Report / Particular', 'Q1', 'Q2', 'Q3', 'Q4', 'Total'],
+      ['Camp attendees', 18, 0, 0, 0, 18]
     ]);
-    expect(component.buildSummaryCsvRows()).toContainEqual([
-      'Particular',
-      'Youth Ministries',
-      'Attendance Report',
-      'Number of attendees',
-      2,
-      10,
-      25,
-      0,
-      0,
-      35
-    ]);
+    expect(rows.some(row => row.includes('Attendance Report'))).toBe(false);
+    expect(rows.some(row => row.includes('Report summary'))).toBe(false);
   });
 
   it('previews the same summary rows used for CSV export', () => {
@@ -242,10 +240,12 @@ describe('DirectorReportSummary', () => {
     expect(component.summaryPreviewOpen()).toBe(true);
     expect(preview.style.display).toBe('flex');
     expect(preview.getAttribute('aria-hidden')).toBe('false');
-    expect(preview.textContent).toContain('Report summary preview');
+    expect(preview.textContent).toContain('Attendance Report preview');
     expect(preview.textContent).toContain('Export Excel (.xlsx)');
     expect(preview.querySelector('[data-summary-report-print-preview]')).not.toBeNull();
     expect(component.summaryPreviewRows()).toEqual(component.buildSummaryCsvRows());
+    expect(preview.textContent).not.toContain('Type');
+    expect(preview.textContent).not.toContain('Department');
     expect(preview.querySelector('.report-export-button-close')).toBeNull();
 
     const closeButton = preview.querySelector('[aria-label="Close preview"]') as HTMLButtonElement;
@@ -297,6 +297,11 @@ describe('DirectorReportSummary', () => {
       ]
     });
 
+    expect(component.buildSummaryCsvRows()).toEqual([]);
+    expect(Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).some(button => button.textContent?.includes('Export / Print'))).toBe(false);
+
     const departmentSelect = fixture.nativeElement.querySelector(
       '#summary-report-department'
     ) as HTMLSelectElement;
@@ -305,7 +310,6 @@ describe('DirectorReportSummary', () => {
 
     const rows = component.buildSummaryCsvRows();
     expect(rows).toEqual([
-      ['Report particulars', 'Youth Ministries'],
       ['Report', 'Attendance Report'],
       ['Year', CURRENT_REPORT_YEAR],
       [],
@@ -319,7 +323,7 @@ describe('DirectorReportSummary', () => {
     fixture.detectChanges();
     expect(component.summaryPreviewRows()).toEqual(rows);
     expect(document.body.querySelector('[aria-labelledby="summary-preview-title"]')?.textContent)
-      .toContain('Report particulars preview');
+      .toContain('Attendance Report preview');
     expect(document.body.querySelector('[data-summary-report-print-preview]')?.textContent)
       .not.toContain('Communication');
     expect(document.body.querySelector('[data-summary-report-print-preview]')?.textContent)
@@ -659,7 +663,10 @@ describe('DirectorReportSummary', () => {
     expect(fixture.nativeElement.textContent).toContain('Quarterly totals across all departments');
     expect(fixture.nativeElement.textContent).not.toContain('Submitted reports');
     expect(fixture.nativeElement.textContent).not.toContain('Mission total');
-    expect(fixture.nativeElement.querySelector('#summary-report-department')).not.toBeNull();
+    const yearSelect = fixture.nativeElement.querySelector('#summary-report-year') as HTMLSelectElement;
+    const departmentSelect = fixture.nativeElement.querySelector('#summary-report-department') as HTMLSelectElement;
+    expect(departmentSelect).not.toBeNull();
+    expect(yearSelect.parentElement?.parentElement).toBe(departmentSelect.parentElement?.parentElement);
 
     component.backToReports();
     expect(navigation).toEqual({
