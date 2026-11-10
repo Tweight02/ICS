@@ -130,6 +130,30 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
       return [];
     }
 
+    if (this.isAssistantPortal && this.selectedDepartmentId() !== null) {
+      const department = this.selectedDepartmentSummary();
+      const report = this.selectedReport();
+      if (!department || !report) {
+        return [];
+      }
+
+      return [
+        ['Report particulars', department.department_name],
+        ['Report', report.report_name],
+        ['Year', this.selectedYear()],
+        [],
+        ['Report / Particular', 'Q1', 'Q2', 'Q3', 'Q4', 'Total'],
+        ...(report.particulars ?? []).map(particular => [
+          particular.particular_name,
+          particular.quarter_totals.q1,
+          particular.quarter_totals.q2,
+          particular.quarter_totals.q3,
+          particular.quarter_totals.q4,
+          particular.total_report_value
+        ])
+      ];
+    }
+
     const rows: unknown[][] = [
       ['Report summary', this.summaryExportScope()],
       ['Year', this.selectedYear()],

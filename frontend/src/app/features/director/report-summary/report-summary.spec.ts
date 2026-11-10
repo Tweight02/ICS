@@ -304,17 +304,28 @@ describe('DirectorReportSummary', () => {
     component.onDepartmentChange({ target: departmentSelect } as unknown as Event);
 
     const rows = component.buildSummaryCsvRows();
-    expect(rows[0]).toEqual(['Report summary', 'Youth Ministries']);
+    expect(rows).toEqual([
+      ['Report particulars', 'Youth Ministries'],
+      ['Report', 'Attendance Report'],
+      ['Year', CURRENT_REPORT_YEAR],
+      [],
+      ['Report / Particular', 'Q1', 'Q2', 'Q3', 'Q4', 'Total'],
+      ['Number of attendees', 10, 25, 0, 0, 35]
+    ]);
     expect(rows.some(row => row.includes('Communication'))).toBe(false);
-    expect(rows.some(row => row.includes('Youth Ministries'))).toBe(true);
+    expect(rows.some(row => row.includes('Camp attendees'))).toBe(false);
 
     component.openSummaryPreview();
     fixture.detectChanges();
     expect(component.summaryPreviewRows()).toEqual(rows);
     expect(document.body.querySelector('[aria-labelledby="summary-preview-title"]')?.textContent)
-      .toContain('Youth Ministries');
+      .toContain('Report particulars preview');
     expect(document.body.querySelector('[data-summary-report-print-preview]')?.textContent)
       .not.toContain('Communication');
+    expect(document.body.querySelector('[data-summary-report-print-preview]')?.textContent)
+      .toContain('Number of attendees');
+    expect(document.body.querySelector('[data-summary-report-print-preview]')?.textContent)
+      .not.toContain('Camp attendees');
   });
 
   it('reloads totals and updates the year query parameter', () => {
