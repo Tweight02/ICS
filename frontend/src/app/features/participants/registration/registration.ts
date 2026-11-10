@@ -76,10 +76,6 @@ export class Registration implements OnInit, OnDestroy {
   get saving(): boolean { return this.savingState(); }
   set saving(value: boolean) { this.savingState.set(value); }
 
-  private readonly errorVisibleState = signal(false);
-  get errorVisible(): boolean { return this.errorVisibleState(); }
-  set errorVisible(value: boolean) { this.errorVisibleState.set(value); }
-
   private readonly errorMessageState = signal('Could not save your registration. Please try again.');
   get errorMessage(): string { return this.errorMessageState(); }
   set errorMessage(value: string) { this.errorMessageState.set(value); }
@@ -250,7 +246,6 @@ export class Registration implements OnInit, OnDestroy {
   private async submitRegistration(): Promise<void> {
     if (!this.eventId) return;
     this.saving = true;
-    this.errorVisible = false;
 
     try {
       const record = await firstValueFrom(this.eventService.registerPublicParticipant(this.eventId, {
@@ -289,7 +284,6 @@ export class Registration implements OnInit, OnDestroy {
       this.errorMessage = error?.status === 422 && error?.error?.errors
         ? Object.values(error.error.errors).flat().join(' ')
         : 'Could not save your registration. Please try again.';
-      this.errorVisible = true;
       this.showErrorAlert(this.errorMessage);
     } finally {
       this.saving = false;
