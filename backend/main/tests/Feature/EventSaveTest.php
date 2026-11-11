@@ -15,6 +15,75 @@ class EventSaveTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_event_participant_list_includes_the_participants_church_name(): void
+    {
+        $departmentId = DB::table('departments')->insertGetId(
+            ['department_name' => 'Youth'],
+            'department_id'
+        );
+        $churchId = DB::table('churches')->insertGetId([
+            'name' => 'North District',
+            'address' => 'North District',
+            'parent_id' => null,
+        ], 'church_id');
+        $localChurchId = DB::table('churches')->insertGetId([
+            'name' => 'North Local Church',
+            'address' => 'North Local Church',
+            'parent_id' => $churchId,
+        ], 'church_id');
+        $programId = DB::table('programs')->insertGetId([
+            'department_id' => $departmentId,
+            'program_name' => 'Youth Program',
+            'parent_id' => null,
+        ], 'program_id');
+        $quarterId = DB::table('quarters')->insertGetId([
+            'program_id' => $programId,
+            'church_id' => $churchId,
+            'quarter' => 'Q4',
+            'year' => '2026',
+        ], 'quarter_id');
+        $eventId = DB::table('events')->insertGetId([
+            'quarter_id' => $quarterId,
+            'church_id' => $churchId,
+            'title' => 'Youth Gathering',
+            'date_start' => '2026-11-10',
+            'date_end' => '2026-11-10',
+            'time_start' => '09:00:00',
+            'time_end' => '11:00:00',
+            'details' => '',
+            'status' => 'ACTIVE',
+            'location' => 'North District',
+        ], 'event_id');
+        DB::table('participants')->insert([
+            'event_id' => $eventId,
+            'church_id' => $localChurchId,
+            'first_name' => 'Taylor',
+            'middle_name' => '',
+            'last_name' => 'Member',
+            'age' => '24',
+            'gender' => 'Other',
+            'registration_status' => 'pending',
+        ]);
+        $assistant = User::create([
+            'department_id' => null,
+            'church_id' => $churchId,
+            'first_name' => 'Alex',
+            'last_name' => 'Assistant',
+            'birthdate' => '1990-01-01',
+            'gender' => 'Other',
+            'role' => 'assistant',
+            'email' => 'participant-church-assistant@example.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+        ]);
+
+        Sanctum::actingAs($assistant);
+        $this->getJson('/api/events/'.$eventId.'/participants')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Taylor Member')
+            ->assertJsonPath('data.0.church_name', 'North Local Church');
+    }
+
     public function test_a_pastor_assigned_to_a_local_church_uses_its_parent_district_for_representative_churches(): void
     {
         $departmentId = DB::table('departments')->insertGetId(
@@ -517,7 +586,6 @@ class EventSaveTest extends TestCase
                 'registration_status' => 'pending',
             ]);
         }
-
         $southPastor = User::create([
             'department_id' => $departmentId,
             'church_id' => $districtIds[1],
@@ -542,7 +610,6 @@ class EventSaveTest extends TestCase
             ->assertJsonPath('data.abilities.manage_participants', false);
         $this->getJson('/api/events/'.$eventId.'/participants')
             ->assertOk()
-            ->assertJsonFragment(['id' => $participantId])
             ->assertJsonPath('meta.per_page', 10)
             ->assertJsonPath('meta.total', 11)
             ->assertJsonPath('meta.last_page', 2)

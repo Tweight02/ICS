@@ -984,11 +984,12 @@ test('a later quarter cannot be approved until the first quarter is approved', f
             "/api/churches/{$fixture['churchId']}/departments/{$fixture['departmentId']}/report/endorse",
             ['program_id' => $fixture['programId'], 'year' => 2026, 'quarter' => 'Q2']
         )
-        ->assertOk();
+        ->assertOk()
+        ->assertJsonPath('message', 'Youth Program report endorsed for Q2 2026. The administrative assistant can now review it.');
     $this->assertDatabaseHas('comments', [
         'quarter_id' => $q2Id,
         'commented_by' => $pastor->user_id,
-        'details' => 'Report endorsed.',
+        'details' => 'Youth Program report endorsed for Q2 2026.',
     ]);
 
     $assistant = createReportAssistant($fixture['churchId'], $fixture['departmentId']);
@@ -1029,11 +1030,12 @@ test('a later quarter cannot be approved until the first quarter is approved', f
             'year' => 2026,
             'quarter' => 'Q2',
         ])
-        ->assertOk();
+        ->assertOk()
+        ->assertJsonPath('message', 'Youth Program report approved for Q2 2026.');
     $this->assertDatabaseHas('comments', [
         'quarter_id' => $q2Id,
         'commented_by' => $assistant->user_id,
-        'details' => 'Report approved.',
+        'details' => 'Youth Program report approved for Q2 2026.',
     ]);
 
     $this->assertDatabaseHas('quarters', [
@@ -1192,16 +1194,15 @@ test('endorsement is rejected until every report quarter has been submitted', fu
         );
 });
 
-test('pastor personal report submission automatically endorses and remains pending assistant approval', function () {
+test('pastor personal report submission names its department and automatically endorses', function (int $departmentId, string $departmentName) {
     $churchId = DB::table('churches')->insertGetId([
         'name' => 'Personal Report District',
         'address' => 'Test region',
         'parent_id' => null,
     ]);
-    $departmentId = 16;
     DB::table('departments')->insert([
         'department_id' => $departmentId,
-        'department_name' => 'Ministerial & Evangelism',
+        'department_name' => $departmentName,
     ]);
     $programId = DB::table('programs')->insertGetId([
         'department_id' => $departmentId,
@@ -1241,8 +1242,15 @@ test('pastor personal report submission automatically endorses and remains pendi
         ->assertOk()
         ->assertJsonPath(
             'message',
-            'Personal report submitted and endorsed. The assistant can now review it.'
+            "{$departmentName} personal report submitted and endorsed. The assistant can now review it."
         );
+    $this->assertDatabaseHas('comments', [
+        'quarter_id' => $quarterId,
+        'church_id' => $churchId,
+        'department_id' => $departmentId,
+        'commented_by' => $pastor->user_id,
+        'details' => "{$departmentName} personal report submitted and endorsed.",
+    ]);
 
     $this->assertDatabaseHas('quarters', [
         'quarter_id' => $quarterId,
@@ -1251,20 +1259,25 @@ test('pastor personal report submission automatically endorses and remains pendi
         'mission_approve' => null,
     ]);
 
-    $assistant = createReportAssistant($churchId, $departmentId);
-    $this->actingAs($assistant, 'sanctum')
-        ->postJson("{$reportUrl}/approve", [
-            'program_id' => $programId,
-            'year' => 2026,
-            'quarter' => 'Q1',
-        ])
-        ->assertOk();
+    if ($departmentId === 16) {
+        $assistant = createReportAssistant($churchId, $departmentId);
+        $this->actingAs($assistant, 'sanctum')
+            ->postJson("{$reportUrl}/approve", [
+                'program_id' => $programId,
+                'year' => 2026,
+                'quarter' => 'Q1',
+            ])
+            ->assertOk();
 
-    $this->assertDatabaseHas('quarters', [
-        'quarter_id' => $quarterId,
-        'mission_approve' => now()->toDateString(),
-    ]);
-});
+        $this->assertDatabaseHas('quarters', [
+            'quarter_id' => $quarterId,
+            'mission_approve' => now()->toDateString(),
+        ]);
+    }
+})->with([
+    [16, 'Ministerial & Evangelism'],
+    [20, 'Adventist Mission'],
+]);
 
 test('approved report values cannot be changed', function () {
     $fixture = reportSubmissionFixture();

@@ -10,7 +10,7 @@ use RuntimeException;
 
 class CompletedEventSeeder extends Seeder
 {
-    private const REPRESENTATIVE_EMAIL = 'seed.church-user.department-13@example.com';
+    private const REPRESENTATIVE_EMAIL = 'seed.completed-event.representative@example.com';
 
     private const EVENT_TITLE = 'Seeded Completed Event';
 
