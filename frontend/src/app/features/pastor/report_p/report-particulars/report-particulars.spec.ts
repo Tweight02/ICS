@@ -459,7 +459,30 @@ describe('ReportParticulars', () => {
     expect(saveDepartmentReport).toHaveBeenCalledWith(2, 16, [{
       particular_id: 3,
       quarter_id: 9,
-      value: 45
+      value: 45,
+      value_includes_participants: true
     }], true);
+  });
+
+  it('auto-saves edited personal report particulars after the debounce', async () => {
+    fixture.componentRef.setInput('embedded', true);
+    fixture.componentRef.setInput('departmentId', 16);
+    fixture.componentRef.setInput('churchId', 2);
+    component.currentUserRole = 'pastor';
+    fixture.detectChanges();
+
+    const particular = component.getSelectedProgram()!.sections[0].particulars[0];
+    const quarter = component.getSelectedQuarter()!;
+    component.updateReportValue(particular, quarter, 55);
+
+    await new Promise(resolve => setTimeout(resolve, 850));
+
+    expect(saveDepartmentReport).toHaveBeenCalledOnce();
+    expect(saveDepartmentReport).toHaveBeenCalledWith(2, 16, [{
+      particular_id: 3,
+      quarter_id: 9,
+      value: 55,
+      value_includes_participants: true
+    }]);
   });
 });
