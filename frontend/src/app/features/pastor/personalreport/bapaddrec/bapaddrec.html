@@ -1,29 +1,33 @@
 
-<div class="flex min-h-screen items-start justify-center bg-[#f5f7fa] px-3 py-4 max-[576px]:p-2">
-  <div class="mx-auto w-full max-w-[540px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.06)] max-[576px]:max-w-full max-[576px]:rounded-[10px]">
+<div class="min-h-screen bg-[#f4f7f6] px-4 pt-4 pb-6 text-[#18352c] max-[650px]:px-2 max-[650px]:pt-2 max-[650px]:pb-4">
+  <div class="mx-auto w-full max-w-[1050px] overflow-hidden rounded-[18px] border border-[#e1eae5] bg-white shadow-[0_15px_40px_rgba(17,65,47,0.08)]">
 
     <!-- Header -->
-    <div class="rounded-t-xl border-b border-[#e9edf2] bg-white px-5 py-3 max-[576px]:px-4 max-[576px]:py-3">
-      <div class="mb-0 text-base font-extrabold tracking-[1px] text-[#087d6f]">
-        ADD BAPTISM RECORD
+    <header class="flex items-start justify-between gap-2.5 border-b border-[#e7eee9] bg-[linear-gradient(135deg,#fff,#f6faf7)] px-6 py-4 max-[650px]:px-4 max-[650px]:py-3">
+      <div>
+        <p class="mb-0 pt-0 text-[23px] font-extrabold tracking-[0.8px] text-[#16805b] max-[650px]:text-xl">BAPTISM RECORDS</p>
+        <p class="mt-1 text-[13px] leading-[1.5] text-[#728279]">
+          Add a member's personal and baptism information.
+        </p>
       </div>
-    </div>
+    </header>
 
     <!-- Form -->
     <form #baptismForm="ngForm" novalidate (ngSubmit)="saveBaptism()">
-      <div class="space-y-4 px-5 py-4 max-[576px]:p-3">
+      <div class="px-6 pt-4 pb-5 max-[650px]:px-4 max-[650px]:py-4">
 
         <!-- PERSONAL INFORMATION -->
-        <section class="rounded-xl border border-[#e2e9e6] bg-white p-4 max-[576px]:p-3">
-          <div class="mb-3 border-b border-[#edf1ef] pb-2">
-            <h3 class="m-0 text-sm font-bold tracking-[0.04em] text-[#193c32]">PERSONAL INFORMATION</h3>
-            <p class="mb-0 mt-1 text-[11px] text-slate-500">Enter the member's personal details.</p>
+        <section class="[&+section]:mt-5 [&+section]:border-t [&+section]:border-[#e8efeb] [&+section]:pt-4">
+          <div class="section-heading mb-3">
+            <div>
+              <h2 class="m-0 text-[17px] font-bold text-[#204738]">Personal Information</h2>
+            </div>
           </div>
 
-          <div class="grid w-full grid-cols-1 gap-3 max-[576px]:gap-2.5">
+          <div class="grid grid-cols-2 gap-x-4 gap-y-3 max-[650px]:grid-cols-1 max-[650px]:gap-3">
 
             <!-- NAME FIELDS: FOUR FIELDS IN ONE ROW -->
-            <div class="col-span-full grid w-full grid-cols-4 gap-2 max-[576px]:grid-cols-2">
+            <div class="col-span-full grid w-full grid-cols-4 gap-2 max-[650px]:grid-cols-2">
 
               <!-- First Name -->
               <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
@@ -80,18 +84,6 @@
 
             </div>
 
-            <!-- Address -->
-            <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
-              <label for="address">Address</label>
-              <input
-                id="address"
-                type="text"
-                name="address"
-                class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                [(ngModel)]="baptism.address"
-                placeholder="Enter complete address">
-            </div>
-
             <!-- Birthdate -->
             <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
               <label for="birthdate">Birthdate</label>
@@ -141,17 +133,30 @@
               </select>
             </div>
 
+            <!-- Address -->
+            <div class="col-span-full m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600 max-[650px]:col-auto">
+              <label for="address">Address</label>
+              <input
+                id="address"
+                type="text"
+                name="address"
+                class="box-border block h-[40px] w-full cursor-pointer rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 px-2.5 py-2 text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                [(ngModel)]="baptism.address"
+                placeholder="Enter complete address">
+            </div>
+
           </div>
         </section>
 
         <!-- BAPTISM INFORMATION -->
-        <section class="rounded-xl border border-[#e2e9e6] bg-white p-4 max-[576px]:p-3">
-          <div class="mb-3 border-b border-[#edf1ef] pb-2">
-            <h3 class="m-0 text-sm font-bold tracking-[0.04em] text-[#193c32]">BAPTISM INFORMATION</h3>
-            <p class="mb-0 mt-1 text-[11px] text-slate-500">Enter the church and baptism details.</p>
+        <section class="[&+section]:mt-5 [&+section]:border-t [&+section]:border-[#e8efeb] [&+section]:pt-4">
+          <div class="section-heading mb-3">
+            <div>
+              <h2 class="m-0 text-[17px] font-bold text-[#204738]">Baptism Information</h2>
+            </div>
           </div>
 
-          <div class="grid w-full grid-cols-1 gap-3 max-[576px]:gap-2.5">
+          <div class="grid grid-cols-2 gap-x-4 gap-y-3 max-[650px]:grid-cols-1 max-[650px]:gap-3">
 
             <!-- Church: Searchable Dropdown -->
             <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
@@ -279,24 +284,6 @@
               </select>
             </div>
 
-            <!-- Baptism Status -->
-            <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
-              <label for="is_reclaimed">Baptism Status</label>
-              <select
-                id="is_reclaimed"
-                class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
-                name="is_reclaimed"
-                [(ngModel)]="baptism.is_reclaimed"
-                required>
-
-                <option [ngValue]="null" disabled>
-                  Select baptism status
-                </option>
-                <option [ngValue]="false">Newly Baptized</option>
-                <option [ngValue]="true">Reclaimed Member</option>
-              </select>
-            </div>
-
             <!-- Date of Baptism -->
             <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
               <label for="date_of_baptism">Date of Baptism</label>
@@ -308,7 +295,6 @@
                 [(ngModel)]="baptism.date_of_baptism"
                 [min]="baptismDateMin"
                 [max]="baptismDateMax"
-                [disabled]="!baptism.quarter"
                 (change)="validateBaptismDate()"
                 [attr.aria-describedby]="baptismDateError ? 'baptismDateError' : null"
                 required>
@@ -316,7 +302,7 @@
               <p
                 *ngIf="baptism.quarter && !baptismDateError"
                 class="mt-1 text-[11px] font-normal text-slate-500">
-                Select a date within {{ baptism.quarter }} of {{ baptismDateYear }}.
+                Select a date in {{ baptismDateYear }}; the quarter updates automatically from the date.
               </p>
 
               <p
@@ -353,12 +339,30 @@
                 placeholder="Enter place of baptism">
             </div>
 
+            <!-- Baptism Status -->
+            <div class="m-0 flex w-full min-w-0 flex-col [&_label]:mb-1 [&_label]:text-xs [&_label]:font-medium [&_label]:tracking-[0.3px] [&_label]:text-slate-600">
+              <label for="is_reclaimed">Baptism Status</label>
+              <select
+                id="is_reclaimed"
+                class="box-border block h-[40px] w-full cursor-pointer appearance-none rounded-lg border border-[rgba(22,75,60,0.12)] bg-white/80 bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat px-2.5 py-2 pr-[38px] text-[13px] text-[#123f33] shadow-none transition-[border-color,box-shadow] focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 [background-image:url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2016%2016%27%3E%3Cpath%20d=%27m4%206%204%204%204-4%27%20fill=%27none%27%20stroke=%27%2364748b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')]"
+                name="is_reclaimed"
+                [(ngModel)]="baptism.is_reclaimed"
+                required>
+
+                <option [ngValue]="null" disabled>
+                  Select baptism status
+                </option>
+                <option [ngValue]="false">Newly Baptized</option>
+                <option [ngValue]="true">Reclaimed Member</option>
+              </select>
+            </div>
+
           </div>
         </section>
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center justify-end gap-2 rounded-b-xl border-t border-[#e9edf2] bg-[#fafbfc] px-5 py-3 max-[576px]:px-3 max-[576px]:py-2.5">
+      <div class="mt-5 flex items-center justify-end gap-2 border-t border-[#e8efeb] pt-4 pb-4 max-[650px]:flex-col-reverse">
 
         <!-- Cancel Button -->
         <button

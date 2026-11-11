@@ -180,6 +180,7 @@ describe('ReportParticulars', () => {
 
     expect(component.quarterlyReportPreviewOpen).toBe(true);
     expect(component.quarterlyReportPreviewRows.length).toBeGreaterThan(0);
+    expect(document.querySelector('.report-export-overlay')?.parentElement).toBe(document.body);
 
     component.printQuarterReport();
     expect(print).toHaveBeenCalledOnce();
@@ -453,6 +454,7 @@ describe('ReportParticulars', () => {
     expect(fixture.nativeElement.textContent).toContain('Submit report');
     expect(fixture.nativeElement.textContent).not.toContain('Endorse to assistant');
 
+    vi.mocked(Swal.fire).mockClear();
     component.submitPersonalReport();
 
     expect(saveDepartmentReport).toHaveBeenCalledWith(2, 16, [{
@@ -460,5 +462,9 @@ describe('ReportParticulars', () => {
       quarter_id: 9,
       value: 45
     }], true);
+    expect(Swal.fire).toHaveBeenCalledWith(expect.not.objectContaining({
+      timer: 3000,
+      timerProgressBar: true
+    }));
   });
 });

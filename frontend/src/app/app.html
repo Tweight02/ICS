@@ -23,7 +23,7 @@
     '!bg-transparent': isPersonalReportsPage
   }"
 >
-  @if (!isLoginPage && !isPersonalReportsPage) {
+  @if (!isLoginPage) {
     <img
       src="/assets/Golden%20Mountain%20Valley%20at%20Sunrise.png"
       alt=""
@@ -36,7 +36,6 @@
     />
   }
 
-  @if (!isPersonalReportsPage) {
   <div
     class="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.08)),radial-gradient(ellipse_at_20%_25%,rgba(255,255,255,0.14),transparent_72%),radial-gradient(ellipse_at_78%_72%,rgba(255,255,255,0.12),transparent_80%)] transition-[left] duration-200 motion-reduce:transition-none"
     [ngClass]="{
@@ -44,7 +43,6 @@
       'lg:left-[76px]': showSidebar && collapsed
     }"
   ></div>
-  }
 
   <!-- Main page content -->
   <div

@@ -180,6 +180,12 @@ describe('DirectorReportSummary', () => {
   it('shows Q1 through Q4 totals and each report total', () => {
     expect(getMissionReportSummary).toHaveBeenCalledWith(CURRENT_REPORT_YEAR);
     expect(getMissionReportSummary).toHaveBeenCalledWith(CURRENT_REPORT_YEAR, 17);
+    const subtitle = fixture.nativeElement.querySelector(
+      '#summary-report-subtitle'
+    ) as HTMLParagraphElement;
+    expect(subtitle.textContent).toContain('Quarterly totals for your assigned department');
+    expect(subtitle.nextElementSibling?.querySelector('#summary-report-year')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#summary-report-department')).toBeNull();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Q1');
     expect(text).toContain('Q2');
@@ -195,47 +201,135 @@ describe('DirectorReportSummary', () => {
     expect(fixture.nativeElement.querySelector('#summary-report-program')).not.toBeNull();
   });
 
-  it('exports summary rows for departments, reports, and particulars', () => {
+  it('exports only the selected director report and its particulars', () => {
     const exportButton = Array.from(
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
     ).find(button => button.textContent?.includes('Export / Print'));
 
     expect(exportButton).toBeDefined();
-    expect(component.buildSummaryCsvRows()).toContainEqual([
-      'Department',
-      'Youth Ministries',
-      '',
-      '',
-      2,
-      10,
-      25,
-      0,
-      0,
-      35
+    const reportSelect = fixture.nativeElement.querySelector(
+      '#summary-report-program'
+    ) as HTMLSelectElement;
+    reportSelect.value = '8';
+    component.onReportChange({ target: reportSelect } as unknown as Event);
+
+    const rows = component.buildSummaryCsvRows();
+    expect(rows).toEqual([
+      ['Report', 'Camp Report'],
+      ['Year', CURRENT_REPORT_YEAR],
+      [],
+      ['Report / Particular', 'Q1', 'Q2', 'Q3', 'Q4', 'Total'],
+      ['Camp attendees', 18, 0, 0, 0, 18]
     ]);
-    expect(component.buildSummaryCsvRows()).toContainEqual([
-      'Particular',
-      'Youth Ministries',
-      'Attendance Report',
-      'Number of attendees',
-      2,
-      10,
-      25,
-      0,
-      0,
-      35
-    ]);
+    expect(rows.some(row => row.includes('Attendance Report'))).toBe(false);
+    expect(rows.some(row => row.includes('Report summary'))).toBe(false);
   });
 
   it('previews the same summary rows used for CSV export', () => {
+    const preview = document.body.querySelector(
+      '[aria-labelledby="summary-preview-title"]'
+    ) as HTMLElement;
+    expect(preview).not.toBeNull();
+    expect(preview.parentElement).toBe(document.body);
+    expect(preview.style.display).toBe('none');
+    expect(preview.getAttribute('aria-hidden')).toBe('true');
+
     component.openSummaryPreview();
     fixture.detectChanges();
 
     expect(component.summaryPreviewOpen()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Report summary preview');
-    expect(fixture.nativeElement.textContent).toContain('Export Excel (.xlsx)');
-    expect(fixture.nativeElement.querySelector('[data-summary-report-print-preview]')).not.toBeNull();
+    expect(preview.style.display).toBe('flex');
+    expect(preview.getAttribute('aria-hidden')).toBe('false');
+    expect(preview.textContent).toContain('Attendance Report preview');
+    expect(preview.textContent).toContain('Export Excel (.xlsx)');
+    expect(preview.querySelector('[data-summary-report-print-preview]')).not.toBeNull();
     expect(component.summaryPreviewRows()).toEqual(component.buildSummaryCsvRows());
+    expect(preview.textContent).not.toContain('Type');
+    expect(preview.textContent).not.toContain('Department');
+    expect(preview.querySelector('.report-export-button-close')).toBeNull();
+
+    const closeButton = preview.querySelector('[aria-label="Close preview"]') as HTMLButtonElement;
+    expect(closeButton).not.toBeNull();
+    closeButton.click();
+    fixture.detectChanges();
+    expect(component.summaryPreviewOpen()).toBe(false);
+    expect(preview.style.display).toBe('none');
+    expect(preview.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('limits preview and export rows to the selected assistant department', () => {
+    currentUser.role = 'assistant';
+    currentUser.department_id = null;
+    routerUrl = '/assistant/reports/summary';
+    getMissionReportSummary.mockClear();
+    fixture.destroy();
+    fixture = TestBed.createComponent(DirectorReportSummary);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const reportSummary = component.summary();
+    expect(reportSummary).not.toBeNull();
+    component.summary.set({
+      ...reportSummary!,
+      departments: [
+        ...reportSummary!.departments,
+        {
+          department_id: 21,
+          department_name: 'Communication',
+          submitted_reports: 1,
+          total_report_value: 42,
+          quarter_totals: { q1: 42, q2: 0, q3: 0, q4: 0 },
+          reports: [{
+            program_id: 9,
+            report_name: 'Communication Report',
+            submitted_reports: 1,
+            total_report_value: 42,
+            quarter_totals: { q1: 42, q2: 0, q3: 0, q4: 0 },
+            particulars: [{
+              particular_id: 5,
+              particular_name: 'Communication activities',
+              submitted_reports: 1,
+              total_report_value: 42,
+              quarter_totals: { q1: 42, q2: 0, q3: 0, q4: 0 }
+            }]
+          }]
+        }
+      ]
+    });
+
+    expect(component.buildSummaryCsvRows()).toEqual([]);
+    expect(Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).some(button => button.textContent?.includes('Export / Print'))).toBe(false);
+
+    const departmentSelect = fixture.nativeElement.querySelector(
+      '#summary-report-department'
+    ) as HTMLSelectElement;
+    departmentSelect.value = '17';
+    component.onDepartmentChange({ target: departmentSelect } as unknown as Event);
+
+    const rows = component.buildSummaryCsvRows();
+    expect(rows).toEqual([
+      ['Report', 'Attendance Report'],
+      ['Year', CURRENT_REPORT_YEAR],
+      [],
+      ['Report / Particular', 'Q1', 'Q2', 'Q3', 'Q4', 'Total'],
+      ['Number of attendees', 10, 25, 0, 0, 35]
+    ]);
+    expect(rows.some(row => row.includes('Communication'))).toBe(false);
+    expect(rows.some(row => row.includes('Camp attendees'))).toBe(false);
+
+    component.openSummaryPreview();
+    fixture.detectChanges();
+    expect(component.summaryPreviewRows()).toEqual(rows);
+    expect(document.body.querySelector('[aria-labelledby="summary-preview-title"]')?.textContent)
+      .toContain('Attendance Report preview');
+    expect(document.body.querySelector('[data-summary-report-print-preview]')?.textContent)
+      .not.toContain('Communication');
+    expect(document.body.querySelector('[data-summary-report-print-preview]')?.textContent)
+      .toContain('Number of attendees');
+    expect(document.body.querySelector('[data-summary-report-print-preview]')?.textContent)
+      .not.toContain('Camp attendees');
   });
 
   it('reloads totals and updates the year query parameter', () => {
@@ -569,7 +663,10 @@ describe('DirectorReportSummary', () => {
     expect(fixture.nativeElement.textContent).toContain('Quarterly totals across all departments');
     expect(fixture.nativeElement.textContent).not.toContain('Submitted reports');
     expect(fixture.nativeElement.textContent).not.toContain('Mission total');
-    expect(fixture.nativeElement.querySelector('#summary-report-department')).not.toBeNull();
+    const yearSelect = fixture.nativeElement.querySelector('#summary-report-year') as HTMLSelectElement;
+    const departmentSelect = fixture.nativeElement.querySelector('#summary-report-department') as HTMLSelectElement;
+    expect(departmentSelect).not.toBeNull();
+    expect(yearSelect.parentElement?.parentElement).toBe(departmentSelect.parentElement?.parentElement);
 
     component.backToReports();
     expect(navigation).toEqual({

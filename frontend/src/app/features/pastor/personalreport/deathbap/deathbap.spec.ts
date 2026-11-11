@@ -262,10 +262,23 @@ describe('Deathbap', () => {
     ).find(button => button.textContent?.includes('Export / Print'));
     expect(exportButton).toBeTruthy();
 
+    const preview = document.body.querySelector(
+      '[aria-labelledby="personal-record-preview-title"]'
+    ) as HTMLElement;
+    expect(preview).not.toBeNull();
+    expect(preview.parentElement).toBe(document.body);
+    expect(preview.style.display).toBe('none');
+    expect(preview.getAttribute('aria-hidden')).toBe('true');
+
     exportButton?.click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('[aria-labelledby="personal-record-preview-title"]'))
-      .not.toBeNull();
+    expect(preview.style.display).toBe('flex');
+    expect(preview.getAttribute('aria-hidden')).toBe('false');
+
+    component.closePersonalRecordPreview();
+    fixture.detectChanges();
+    expect(preview.style.display).toBe('none');
+    expect(preview.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('builds the baptism export from all currently displayed records', () => {

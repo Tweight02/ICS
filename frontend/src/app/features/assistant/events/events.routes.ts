@@ -21,7 +21,7 @@ const HOME: EventsHomeConfig = {
   bannerTitle: 'Plan with purpose. Serve together.',
   bannerSubtitle: 'Mission-wide',
   workspaceTitle: 'Mission-wide',
-  workspaceText: 'Coordinate mission events across one, several, or all districts.',
+  workspaceText: 'Coordinate events for the whole mission.',
   workspaceChip: 'Assistant',
 };
 
@@ -45,8 +45,8 @@ const PARTICIPANTS: ParticipantsConfig = {
 const FORM: EventFormConfig = {
   basePath: BASE,
   crumbRoot: 'My Events',
-  coverage: 'districts',
-  subtitleCreate: 'Create a mission event and choose which districts are included.',
+  coverage: 'mission',
+  subtitleCreate: 'Create an event for the whole mission.',
 };
 
 @Component({

@@ -1,5 +1,15 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   BaptismSummaryRecord,
@@ -27,7 +37,7 @@ import {
   imports: [CommonModule],
   templateUrl: './report-summary.html'
 })
-export class DirectorReportSummary implements OnInit {
+export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
   private static readonly BAPTISM_RECORD_DEPARTMENT_ID = 22;
   private static readonly DEATH_RECORD_DEPARTMENT_ID = 23;
 
@@ -37,6 +47,9 @@ export class DirectorReportSummary implements OnInit {
   readonly summaryPreviewOpen = signal(false);
   readonly summaryPreviewRows = signal<unknown[][]>([]);
   readonly exportingSummaryExcel = signal(false);
+  @ViewChild('summaryReportPreviewOverlay')
+  private summaryReportPreviewOverlay?: ElementRef<HTMLElement>;
+  private summaryReportPreviewParent: Node | null = null;
   readonly departments = signal<Department[]>([]);
   readonly selectedDepartmentId = signal<number | null>(null);
   readonly departmentDetails = signal<MissionReportSummary | null>(null);
@@ -73,11 +86,35 @@ export class DirectorReportSummary implements OnInit {
     )?.department_name ??
     'Department'
   );
+  readonly summaryExportScope = computed(() =>
+    this.isAssistantPortal && this.selectedDepartmentId() === null
+      ? 'Mission-wide'
+      : this.selectedDepartmentName()
+  );
 
   private readonly churchService = inject(ChurchService);
   private readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
+
+  ngAfterViewInit(): void {
+    const overlay = this.summaryReportPreviewOverlay?.nativeElement;
+    if (!overlay || !this.document.body) {
+      return;
+    }
+
+    this.summaryReportPreviewParent = overlay.parentNode;
+    this.document.body.appendChild(overlay);
+  }
+
+  ngOnDestroy(): void {
+    const overlay = this.summaryReportPreviewOverlay?.nativeElement;
+    if (overlay && this.summaryReportPreviewParent) {
+      this.summaryReportPreviewParent.appendChild(overlay);
+      this.summaryReportPreviewParent = null;
+    }
+  }
 
   get isAssistantPortal(): boolean {
     return this.router.url.startsWith('/assistant');
@@ -93,65 +130,150 @@ export class DirectorReportSummary implements OnInit {
       return [];
     }
 
-    const rows: unknown[][] = [
-      ['Report summary', this.isAssistantPortal ? 'Mission-wide' : this.selectedDepartmentName()],
-      ['Year', this.selectedYear()],
-      [],
-      [
-        'Type',
-        'Department',
-        'Report',
-        'Particular',
-        'Submitted reports',
-        'Q1',
-        'Q2',
-        'Q3',
-        'Q4',
-        'Total report value'
-      ]
-    ];
+    if (this.selectedDepartmentId() !== null && !this.isBaptismDirector) {
+      const department = this.selectedDepartmentSummary();
+      const report = this.selectedReport();
+      if (!department || !report) {
+        return [];
+      }
 
-    for (const department of reportSummary.departments) {
-      rows.push([
-        'Department',
-        department.department_name,
-        '',
-        '',
-        department.submitted_reports,
-        department.quarter_totals.q1,
-        department.quarter_totals.q2,
-        department.quarter_totals.q3,
-        department.quarter_totals.q4,
-        department.total_report_value
-      ]);
+      return [
+        ['Report', report.report_name],
+        ['Year', this.selectedYear()],
+        [],
+        ['Report / Particular', 'Q1', 'Q2', 'Q3', 'Q4', 'Total'],
+        ...(report.particulars ?? []).map(particular => [
+          particular.particular_name,
+          particular.quarter_totals.q1,
+          particular.quarter_totals.q2,
+          particular.quarter_totals.q3,
+          particular.quarter_totals.q4,
+          particular.total_report_value
+        ])
+      ];
+    }
+
+    if (!this.isBaptismDirector) {
+      return [];
+    }
+
+    const rows: unknown[][] = this.isAssistantPortal
+      ? [
+        ['Report summary', this.summaryExportScope()],
+        ['Year', this.selectedYear()],
+        [],
+        [
+          'Type',
+          'Department',
+          'Report',
+          'Particular',
+          'Submitted reports',
+          'Q1',
+          'Q2',
+          'Q3',
+          'Q4',
+          'Total report value'
+        ]
+      ]
+      : [
+        ['Report summary', this.summaryExportScope()],
+        ['Year', this.selectedYear()],
+        [],
+        [
+          'Report / Summary',
+          'Particular',
+          'Submitted reports',
+          'Q1',
+          'Q2',
+          'Q3',
+          'Q4',
+          'Total report value'
+        ]
+      ];
+
+    const selectedDepartmentId = this.isAssistantPortal ? this.selectedDepartmentId() : null;
+    const departments = selectedDepartmentId === null
+      ? reportSummary.departments
+      : reportSummary.departments.filter(
+        department => department.department_id === selectedDepartmentId
+      );
+
+    for (const department of departments) {
+      if (this.isAssistantPortal) {
+        rows.push([
+          'Department',
+          department.department_name,
+          '',
+          '',
+          department.submitted_reports,
+          department.quarter_totals.q1,
+          department.quarter_totals.q2,
+          department.quarter_totals.q3,
+          department.quarter_totals.q4,
+          department.total_report_value
+        ]);
+      } else {
+        rows.push([
+          'Overall total',
+          '',
+          department.submitted_reports,
+          department.quarter_totals.q1,
+          department.quarter_totals.q2,
+          department.quarter_totals.q3,
+          department.quarter_totals.q4,
+          department.total_report_value
+        ]);
+      }
 
       for (const report of department.reports) {
-        rows.push([
-          'Report',
-          department.department_name,
-          report.report_name,
-          '',
-          report.submitted_reports,
-          report.quarter_totals.q1,
-          report.quarter_totals.q2,
-          report.quarter_totals.q3,
-          report.quarter_totals.q4,
-          report.total_report_value
-        ]);
-
-        for (const particular of report.particulars ?? []) {
-          rows.push([
-            'Particular',
+        rows.push(this.isAssistantPortal
+          ? [
+            'Report',
             department.department_name,
             report.report_name,
-            particular.particular_name,
-            particular.submitted_reports,
-            particular.quarter_totals.q1,
-            particular.quarter_totals.q2,
-            particular.quarter_totals.q3,
-            particular.quarter_totals.q4,
-            particular.total_report_value
+            '',
+            report.submitted_reports,
+            report.quarter_totals.q1,
+            report.quarter_totals.q2,
+            report.quarter_totals.q3,
+            report.quarter_totals.q4,
+            report.total_report_value
+          ]
+          : [
+            report.report_name,
+            '',
+            report.submitted_reports,
+            report.quarter_totals.q1,
+            report.quarter_totals.q2,
+            report.quarter_totals.q3,
+            report.quarter_totals.q4,
+            report.total_report_value
           ]);
+
+        for (const particular of report.particulars ?? []) {
+          rows.push(this.isAssistantPortal
+            ? [
+              'Particular',
+              department.department_name,
+              report.report_name,
+              particular.particular_name,
+              particular.submitted_reports,
+              particular.quarter_totals.q1,
+              particular.quarter_totals.q2,
+              particular.quarter_totals.q3,
+              particular.quarter_totals.q4,
+              particular.total_report_value
+            ]
+            : [
+              report.report_name,
+              particular.particular_name,
+              particular.submitted_reports,
+              particular.quarter_totals.q1,
+              particular.quarter_totals.q2,
+              particular.quarter_totals.q3,
+              particular.quarter_totals.q4,
+              particular.total_report_value
+            ]);
         }
       }
     }
@@ -164,7 +286,7 @@ export class DirectorReportSummary implements OnInit {
       return;
     }
 
-    downloadCsv(`report-summary-${this.selectedYear()}.csv`, this.summaryPreviewRows());
+    downloadCsv(`report-${this.selectedYear()}.csv`, this.summaryPreviewRows());
   }
 
   async exportSummaryExcel(): Promise<void> {
@@ -175,11 +297,11 @@ export class DirectorReportSummary implements OnInit {
     this.exportingSummaryExcel.set(true);
     try {
       await downloadStyledQuarterlyExcel(
-        `report-summary-${this.selectedYear()}.xlsx`,
+        `report-${this.selectedYear()}.xlsx`,
         this.summaryPreviewRows()
       );
     } catch (error) {
-      console.error('Unable to export the report summary as Excel.', error);
+      console.error('Unable to export the report as Excel.', error);
       void showAppAlert({
         icon: 'error',
         title: 'Export failed',
@@ -195,12 +317,29 @@ export class DirectorReportSummary implements OnInit {
       return;
     }
 
-    this.summaryPreviewRows.set(this.buildSummaryCsvRows());
+    const rows = this.buildSummaryCsvRows();
+    if (!rows.length) {
+      return;
+    }
+
+    this.summaryPreviewRows.set(rows);
     this.summaryPreviewOpen.set(true);
+    this.setSummaryPreviewVisibility(true);
   }
 
   closeSummaryPreview(): void {
     this.summaryPreviewOpen.set(false);
+    this.setSummaryPreviewVisibility(false);
+  }
+
+  private setSummaryPreviewVisibility(visible: boolean): void {
+    const overlay = this.summaryReportPreviewOverlay?.nativeElement;
+    if (!overlay) {
+      return;
+    }
+
+    overlay.style.display = visible ? 'flex' : 'none';
+    overlay.setAttribute('aria-hidden', String(!visible));
   }
 
   printSummaryReport(): void {

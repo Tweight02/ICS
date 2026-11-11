@@ -61,7 +61,6 @@ describe('Registration', () => {
 
   it('loads the selected event using church attribution from the registration link', () => {
     expect(component.selectedEvent?.id).toBe(42);
-    expect(component.selectedEvent?.registrationChurch).toBe('North Local Church');
     expect(component.selectedEvent?.host).toBe('North Local Church');
     expect(getPublicEventById).toHaveBeenCalledWith(42, {
       church_id: 9,
@@ -81,13 +80,21 @@ describe('Registration', () => {
     );
   });
 
+  it('does not show the registration church line on the event card', () => {
+    const eventDetails = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('p')
+    ).map((paragraph) => paragraph.textContent?.trim());
+
+    expect(eventDetails).not.toContain('Church: North Local Church');
+    expect(eventDetails).toContain('Host Church: North Local Church');
+  });
+
   it('shows a sweet alert when registration submission fails', async () => {
     const alertSpy = vi.spyOn(appAlertModule, 'showAppAlert').mockResolvedValue({} as never);
     component.selectedEvent = {
       id: 42,
       title: 'Community Event',
       church: 'North Local Church',
-      registrationChurch: 'North Local Church',
       createdBy: 'Pastor',
       host: 'North Local Church',
       date: 'Nov 10, 2026',
@@ -126,7 +133,6 @@ describe('Registration', () => {
       id: 42,
       title: 'Community Event',
       church: 'North Local Church',
-      registrationChurch: 'North Local Church',
       createdBy: 'Pastor',
       host: 'North Local Church',
       date: 'Nov 10, 2026',

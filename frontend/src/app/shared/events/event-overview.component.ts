@@ -87,7 +87,7 @@ export class EventOverviewComponent implements OnInit {
   }
 
   generateRegistrationLink(): void {
-    if (this.registrationLinkLoading) return;
+    if (!this.canShareRegistrationLink || this.registrationLinkLoading) return;
     this.registrationLinkLoading = true;
     this.registrationLinkMessage = '';
     this.registrationLinkCopiedState.set(false);

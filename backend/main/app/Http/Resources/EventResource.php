@@ -16,14 +16,23 @@ class EventResource extends JsonResource
         $quarter = $this->quarterDetails();
         $church = EventsOrg::church((int) $this->church_id);
         $hostChurch = EventsOrg::church((int) $this->host_church_id);
+        $hostName = $this->scope_type === 'MISSION' ? 'Mission' : $hostChurch?->name;
         $creator = $this->createdBy()->first(['users.first_name', 'users.last_name']);
         $particulars = $this->particulars()->with('program')->get();
-        $departmentId = (int) ($quarter->department_id ?? $particulars->first()?->program?->department_id ?? 0);
+        $departmentId = (int) (
+            $this->department_id
+            ?? $quarter->department_id
+            ?? $particulars->first()?->program?->department_id
+            ?? 0
+        );
         $department = EventsOrg::department($departmentId);
         $districts = $this->districts()->get(['churches.church_id as id', 'churches.name']);
         $churches = $this->churches()->get(['churches.church_id as id', 'churches.name']);
-        $allDistrictsSelected = $districts->isNotEmpty()
-            && $districts->count() === EventsOrg::districts()->count();
+        $allDistrictsSelected = $this->scope_type === 'MISSION'
+            || ($districts->isNotEmpty() && $districts->count() === EventsOrg::districts()->count());
+        if ($this->scope_type === 'MISSION') {
+            $districts = EventsOrg::districts();
+        }
         $participantQuery = $this->participants();
         if ($user->role === 'church_representative') {
             $participantQuery->where('church_id', $user->churchId ?? 0);
@@ -55,6 +64,12 @@ class EventResource extends JsonResource
             'start_time' => substr($this->start_time, 0, 5),
             'end_time' => substr($this->end_time, 0, 5),
             'status' => $this->status,
+            'scope_type' => $this->scope_type,
+            'scope_id' => $this->scope_id ? (int) $this->scope_id : null,
+            'district_id' => $this->district_id ? (int) $this->district_id : null,
+            'department_id' => $departmentId ?: null,
+            'creator_user_id' => $this->created_by ? (int) $this->created_by : null,
+            'creator_role' => $this->creator_role,
             'notes' => $this->notes,
             'department' => $department ? [
                 'id' => $department['id'],
@@ -95,10 +110,10 @@ class EventResource extends JsonResource
                 ? 'Multiple churches'
                 : ($churches->first()->name ?? $church->name ?? null),
             'host_church_id' => $this->host_church_id ? (int) $this->host_church_id : null,
-            'host_church_name' => $hostChurch?->name,
-            'host' => $hostChurch?->name,
+            'host_church_name' => $hostName,
+            'host' => $hostName,
             'created_by' => $creator
-                ? trim($creator->first_name . ' ' . $creator->last_name)
+                ? trim($creator->first_name.' '.$creator->last_name)
                 : null,
             'organized_by' => null,
             'participants' => ['total' => $total, 'confirmed' => $confirmed, 'pending' => $total - $confirmed],

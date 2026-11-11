@@ -7,7 +7,7 @@ export interface Crumb {
 }
 
 /** The event's church, district audience, or selected churches. */
-export type Coverage = 'church' | 'districts' | 'churches';
+export type Coverage = 'church' | 'districts' | 'churches' | 'mission';
 
 export interface EventsHomeConfig {
   crumb: string; // last part of the breadcrumb, e.g. "Events"

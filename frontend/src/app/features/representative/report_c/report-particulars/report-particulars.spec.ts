@@ -176,7 +176,17 @@ describe('ReportParticulars', () => {
 
     const preview = document.querySelector('#quarterly-report-preview-title')?.parentElement;
     expect(preview?.textContent).toContain('Pasuc');
+    expect(preview?.closest('.report-export-overlay')?.parentElement).toBe(document.body);
     expect(component.quarterlyReportPreviewRows.flat().join(' ')).toContain('Pasuc');
+
+    const overlay = document.querySelector('.report-export-overlay');
+    expect(overlay?.querySelector('.report-export-button-close')).toBeNull();
+    const closeButton = overlay?.querySelector('[aria-label="Close report preview"]') as HTMLButtonElement;
+    expect(closeButton).not.toBeNull();
+
+    closeButton.click();
+    fixture.detectChanges();
+    expect(component.quarterlyReportPreviewOpen).toBe(false);
   });
 
   it('returns to the same representative report list selection', () => {
@@ -393,6 +403,7 @@ describe('ReportParticulars', () => {
   });
 
   it('submits every program and fills untouched items with zero', () => {
+    vi.mocked(Swal.fire).mockClear();
     component.saveReport();
 
     expect(saveDepartmentReport).toHaveBeenCalledOnce();
@@ -402,6 +413,10 @@ describe('ReportParticulars', () => {
       { particular_id: 13, quarter_id: 19, value: 0, value_includes_participants: true }
     ]);
     expect(saveDepartmentReport.mock.calls[0][3]).toBe(true);
+    expect(Swal.fire).toHaveBeenCalledWith(expect.not.objectContaining({
+      timer: 3000,
+      timerProgressBar: true
+    }));
   });
 
   it('blocks submission until every item in the previous quarter is approved', () => {

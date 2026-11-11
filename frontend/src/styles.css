@@ -201,6 +201,10 @@ details[open] > summary .report-accordion-indicator {
     margin: 10mm;
   }
 
+  .report-export-overlay[aria-hidden='true'] {
+    display: none !important;
+  }
+
   body * {
     visibility: hidden !important;
   }
@@ -277,5 +281,25 @@ details[open] > summary .report-accordion-indicator {
 @media (min-width: 640px) {
   .report-export-overlay {
     padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  body:has(app-root.report-preview-sidebar-expanded) .report-export-overlay {
+    left: 235px;
+  }
+
+  body:has(app-root.report-preview-sidebar-collapsed) .report-export-overlay {
+    left: 76px;
+  }
+}
+
+@media (max-width: 1024px) {
+  body:has(app-root.report-preview-sidebar-expanded) .report-export-overlay {
+    left: 252px;
+  }
+
+  body:has(app-root.report-preview-sidebar-collapsed) .report-export-overlay {
+    left: 44px;
   }
 }

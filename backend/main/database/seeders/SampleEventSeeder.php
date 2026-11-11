@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Support\EventParticularType;
+use App\Support\EventUser;
 use App\Support\ReportParticipantCoverage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,9 @@ class SampleEventSeeder extends Seeder
             ->whereBetween('report_programs.department_id', [13, 21])
             ->select([
                 'representatives.user_id',
+                'representatives.role as creator_role',
                 'churches.church_id',
+                'churches.parent_id',
                 'report_programs.department_id',
                 'report_programs.program_id',
                 'quarters.quarter_id',
@@ -67,7 +70,7 @@ class SampleEventSeeder extends Seeder
                 ->where('church_id', $creator->church_id)
                 ->orderByRaw('CASE WHEN department_id = ? THEN 0 ELSE 1 END', [$creator->department_id])
                 ->orderBy('user_id')
-                ->first(['user_id']);
+                ->first(['user_id', 'role']);
 
             if ($churchUser === null) {
                 throw new RuntimeException(
@@ -76,6 +79,7 @@ class SampleEventSeeder extends Seeder
             }
 
             $creator->user_id = $churchUser->user_id;
+            $creator->creator_role = $churchUser->role;
         }
         $purposeParticular = $candidate->first(
             fn ($row): bool => EventParticularType::isEventPurpose((string) $row->particular_name)
@@ -138,6 +142,20 @@ class SampleEventSeeder extends Seeder
             $participants,
             $now
         ): void {
+            $role = EventUser::normalize((string) $creator->creator_role);
+            $districtId = $creator->parent_id
+                ? (int) $creator->parent_id
+                : (int) $creator->church_id;
+            $scopeType = match ($role) {
+                'assistant' => 'MISSION',
+                'district_pastor' => 'DISTRICT',
+                default => 'CHURCH',
+            };
+            $scopeId = match ($scopeType) {
+                'MISSION' => 1,
+                'DISTRICT' => $districtId,
+                default => (int) $creator->church_id,
+            };
             foreach ($eventDefinitions as $definition) {
                 $eventDate = $now->copy()
                     ->setDate((int) $year, (($quarterNumber - 1) * 3) + 1, $definition['day'])
@@ -151,8 +169,14 @@ class SampleEventSeeder extends Seeder
                     'time_start' => '09:00:00',
                     'time_end' => '16:00:00',
                     'details' => $definition['details'],
-                    'status' => 'completed',
+                    'status' => 'ACTIVE',
                     'location' => $definition['location'],
+                    'created_by' => (int) $creator->user_id,
+                    'creator_role' => strtoupper(str_replace('-', '_', $role)),
+                    'scope_type' => $scopeType,
+                    'scope_id' => $scopeId,
+                    'district_id' => $scopeType === 'MISSION' ? null : $districtId,
+                    'department_id' => (int) $creator->department_id,
                 ];
                 $existingEvent = DB::table('events')
                     ->where('church_id', $creator->church_id)
@@ -170,6 +194,22 @@ class SampleEventSeeder extends Seeder
                     ['event_id' => $eventId],
                     ['user_id' => (int) $creator->user_id]
                 );
+                if ($scopeType === 'MISSION') {
+                    $districtIds = DB::table('churches')
+                        ->whereNull('parent_id')
+                        ->pluck('church_id');
+                    foreach ($districtIds as $missionDistrictId) {
+                        DB::table('event_district')->insertOrIgnore([
+                            'event_id' => $eventId,
+                            'district_id' => $missionDistrictId,
+                        ]);
+                    }
+                } elseif ($scopeType === 'DISTRICT') {
+                    DB::table('event_district')->insertOrIgnore([
+                        'event_id' => $eventId,
+                        'district_id' => $districtId,
+                    ]);
+                }
 
                 foreach ($particularIds as $particularId) {
                     DB::table('event_particular')->insertOrIgnore([

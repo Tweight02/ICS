@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { DIRECTOR_EVENTS_ROUTES } from './events/events.routes';
+
 export const DIRECTOR_ROUTES: Routes = [
   {
     path: '',
@@ -60,13 +62,9 @@ export const DIRECTOR_ROUTES: Routes = [
       import('../pastor/report_p/report-particulars/report-particulars')
         .then(m => m.ReportParticulars)
   },
-  // director.routes.ts
   {
-  path: 'events',
-  loadComponent: () =>
-    import('./events/events.routes')
-      .then(m => m.DirectorEventsComponent)
-}
-
+    path: 'events',
+    children: DIRECTOR_EVENTS_ROUTES,
+  },
 
 ];
