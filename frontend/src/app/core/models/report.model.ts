@@ -63,6 +63,7 @@ export interface SaveReportItem {
   particular_id: number;
   quarter_id: number;
   value: number | null;
+  value_includes_participants?: boolean;
   monthly_values?: Record<string, number | null>;
 }
 
