@@ -201,24 +201,27 @@ details[open] > summary .report-accordion-indicator {
     margin: 10mm;
   }
 
-  .report-export-overlay[aria-hidden='true'] {
+  body * {
     display: none !important;
   }
 
-  body * {
-    visibility: hidden !important;
+  body *:has(.report-export-overlay[aria-hidden='false'] [data-quarterly-report-print-preview]),
+  body *:has(.report-export-overlay[aria-hidden='false'] [data-summary-report-print-preview]) {
+    display: contents !important;
   }
 
-  [data-quarterly-report-print-preview],
-  [data-quarterly-report-print-preview] *,
-  [data-summary-report-print-preview],
-  [data-summary-report-print-preview] * {
-    visibility: visible !important;
+  .report-export-overlay[aria-hidden='false']:has([data-quarterly-report-print-preview]),
+  .report-export-overlay[aria-hidden='false']:has([data-summary-report-print-preview]),
+  .report-export-dialog:has([data-quarterly-report-print-preview]),
+  .report-export-dialog:has([data-summary-report-print-preview]),
+  .report-export-content:has([data-quarterly-report-print-preview]),
+  .report-export-content:has([data-summary-report-print-preview]) {
+    display: contents !important;
   }
 
   [data-quarterly-report-print-preview] {
-    position: fixed !important;
-    inset: 0 !important;
+    position: static !important;
+    display: block !important;
     width: 100% !important;
     min-width: 0 !important;
     margin: 0 !important;
@@ -227,6 +230,11 @@ details[open] > summary .report-accordion-indicator {
     background: white !important;
     box-shadow: none !important;
     color: black !important;
+  }
+
+  [data-quarterly-report-print-preview] *,
+  [data-summary-report-print-preview] * {
+    display: revert !important;
   }
 
   .quarterly-report-preview-dialog {
@@ -259,8 +267,8 @@ details[open] > summary .report-accordion-indicator {
   }
 
   [data-summary-report-print-preview] {
-    position: fixed !important;
-    inset: 0 !important;
+    position: static !important;
+    display: block !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
