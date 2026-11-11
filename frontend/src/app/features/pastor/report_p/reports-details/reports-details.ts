@@ -163,6 +163,12 @@ export class ReportsDetails implements OnInit {
     this.router.navigate(['/pastor/baptism']);
   }
 
+  openSummaryReport(): void {
+    this.router.navigate(['/pastor/reports/summary'], {
+      queryParams: { year: this.selectedYear() }
+    });
+  }
+
   toggleChurch(church: Church): void {
     if (this.expandedChurchId() === church.church_id) {
       this.expandedChurchId.set(null);
@@ -263,9 +269,7 @@ export class ReportsDetails implements OnInit {
       submitted: !!department[`${quarter}_submitted`]
     });
 
-    return status.tone === 'empty'
-      ? { label: '—', tone: 'empty' }
-      : status;
+    return status;
   }
 
   private restoreDistrictScroll(): void {

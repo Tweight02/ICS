@@ -37,16 +37,14 @@ export function resolveQuarterStatus(quarter: {
   }
 
   if (quarter.progress === null) {
-    return { label: '—', tone: 'empty' };
+    return { label: '-', tone: 'empty' };
   }
 
-  if (quarter.progress === 100) {
-    return { label: 'Ready to submit', tone: 'ready' };
+  if (quarter.progress <= 0) {
+    return { label: '-', tone: 'not-started' };
   }
 
-  return quarter.progress > 0
-    ? { label: 'In progress', tone: 'in-progress' }
-    : { label: 'Not started', tone: 'not-started' };
+  return { label: 'In progress', tone: 'in-progress' };
 }
 
 @Component({

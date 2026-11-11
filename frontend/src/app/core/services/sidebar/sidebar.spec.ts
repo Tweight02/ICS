@@ -21,5 +21,6 @@ describe('Sidebar', () => {
       route: '/pastor/view-representatives'
     });
     expect(menu.some(item => item.label === 'Personal Report')).toBe(false);
+    expect(menu.some(item => item.label === 'Summary Report')).toBe(false);
   });
 });

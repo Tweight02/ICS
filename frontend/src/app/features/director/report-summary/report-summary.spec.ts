@@ -14,11 +14,12 @@ describe('DirectorReportSummary', () => {
     first_name: string;
     last_name: string;
     email: string;
-    role: 'director' | 'assistant' | 'administrative assistant' | 'head assistant';
+    role: 'director' | 'assistant' | 'administrative assistant' | 'head assistant' | 'pastor';
     department_id: number | null;
   };
   let routerUrl: string;
   let getMissionReportSummary: ReturnType<typeof vi.fn>;
+  let getReportSummaryDrilldown: ReturnType<typeof vi.fn>;
   let getDepartments: ReturnType<typeof vi.fn>;
   let getBaptismRecordsForQuarter: ReturnType<typeof vi.fn>;
   let getDeathRecordsForQuarter: ReturnType<typeof vi.fn>;
@@ -78,11 +79,14 @@ describe('DirectorReportSummary', () => {
         }]
       }
     }));
+    getReportSummaryDrilldown = vi.fn();
     getDepartments = vi.fn().mockReturnValue(of({
       success: true,
       data: [
+        { department_id: 16, department_name: 'Ministerial & Evangelism' },
         { department_id: 17, department_name: 'Youth Ministries' },
         { department_id: 21, department_name: 'Communication' },
+        { department_id: 20, department_name: 'Adventist Mission' },
         { department_id: 22, department_name: 'Baptism Record' },
         { department_id: 23, department_name: 'Death Record' }
       ]
@@ -93,6 +97,8 @@ describe('DirectorReportSummary', () => {
         baptism_id: 27,
         church_id: 3,
         church_name: 'Sample Church',
+        district_id: 2,
+        district_name: 'Sample District',
         first_name: 'Sample',
         middle_name: 'B.',
         last_name: 'Member',
@@ -114,6 +120,8 @@ describe('DirectorReportSummary', () => {
         baptism_id: 27,
         church_id: 3,
         church_name: 'Sample Church',
+        district_id: 2,
+        district_name: 'Sample District',
         first_name: 'Sample',
         middle_name: 'B.',
         last_name: 'Member',
@@ -152,6 +160,7 @@ describe('DirectorReportSummary', () => {
           provide: ChurchService,
           useValue: {
             getMissionReportSummary,
+            getReportSummaryDrilldown,
             getDepartments,
             getBaptismRecordsForQuarter,
             getDeathRecordsForQuarter
@@ -177,7 +186,7 @@ describe('DirectorReportSummary', () => {
     fixture.detectChanges();
   });
 
-  it('shows Q1 through Q4 totals and each report total', () => {
+  it('shows department particulars without the mission-wide quarterly totals card', () => {
     expect(getMissionReportSummary).toHaveBeenCalledWith(CURRENT_REPORT_YEAR);
     expect(getMissionReportSummary).toHaveBeenCalledWith(CURRENT_REPORT_YEAR, 17);
     const subtitle = fixture.nativeElement.querySelector(
@@ -193,12 +202,358 @@ describe('DirectorReportSummary', () => {
     expect(text).toContain('Q4');
     expect(text).toContain('Attendance Report');
     expect(text).toContain('35');
-    expect(text).toContain('Department total');
+    expect(text).not.toContain('Report totals by quarter');
+    expect(text).not.toContain('Department / report');
+    expect(text).not.toContain('Submitted reports');
+    expect(text).not.toContain('Department total');
     expect(text).toContain('Youth Ministries report particulars');
     expect(text).toContain('Number of attendees');
+    const reportTotalRow = fixture.nativeElement.querySelector(
+      '#summary-report-total'
+    ) as HTMLTableRowElement;
+    expect(reportTotalRow.textContent).toContain('Total — Attendance Report');
+    expect(reportTotalRow.textContent).toContain('10');
+    expect(reportTotalRow.textContent).toContain('25');
+    expect(reportTotalRow.textContent).toContain('35');
+    const particularsTable = Array.from(
+      fixture.nativeElement.querySelectorAll('table') as NodeListOf<HTMLTableElement>
+    ).find(table => table.querySelector('thead th')?.textContent?.trim().toLowerCase() ===
+      'report / particular') as HTMLTableElement;
+    expect(Array.from(particularsTable.querySelectorAll('thead th') as NodeListOf<HTMLElement>)
+      .slice(1)
+      .every(header => header.className.includes('text-center'))).toBe(true);
+    const particularRow = particularsTable.querySelector('tbody tr') as HTMLTableRowElement;
+    expect(Array.from(particularRow.querySelectorAll('td') as NodeListOf<HTMLElement>)
+      .every(cell => cell.className.includes('text-center'))).toBe(true);
+    expect(Array.from(reportTotalRow.querySelectorAll('td') as NodeListOf<HTMLElement>)
+      .every(cell => cell.className.includes('text-center'))).toBe(true);
+    expect(fixture.nativeElement.querySelector(
+      '[aria-label="View total district breakdown for Number of attendees"]'
+    )).not.toBeNull();
     expect(text).not.toContain('Mission total');
     expect(fixture.nativeElement.querySelector('#summary-report-department')).toBeNull();
     expect(fixture.nativeElement.querySelector('#summary-report-program')).not.toBeNull();
+  });
+
+  it('lets District Pastors select a department and shows only their district church list', () => {
+    fixture.destroy();
+    routerUrl = '/pastor/reports/summary';
+    currentUser = {
+      user_id: 7,
+      first_name: 'District',
+      last_name: 'Pastor',
+      email: 'pastor@example.com',
+      role: 'pastor',
+      department_id: null
+    };
+    getReportSummaryDrilldown.mockReturnValueOnce(of({
+      success: true,
+      data: {
+        level: 'churches',
+        year: String(CURRENT_REPORT_YEAR),
+        quarter: 'Q1',
+        department_name: 'Youth Ministries',
+        report_name: 'Attendance Report',
+        particular_name: 'Number of attendees',
+        district_id: 2,
+        district_name: 'North District',
+        entries: [{
+          church_id: 5,
+          church_name: 'North Church',
+          value: 10,
+          submitted_reports: 1
+        }]
+      }
+    }));
+
+    fixture = TestBed.createComponent(DirectorReportSummary);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.isDistrictPastorPortal).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('District report summary');
+    expect(fixture.nativeElement.querySelector('#summary-report-department')).not.toBeNull();
+    const departmentSelect = fixture.nativeElement.querySelector(
+      '#summary-report-department'
+    ) as HTMLSelectElement;
+    expect(component.selectableDepartments().map(department => department.department_id))
+      .toEqual([17, 21]);
+    departmentSelect.value = '17';
+    departmentSelect.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const quarterButton = fixture.nativeElement.querySelector(
+      '[aria-label="View Q1 district breakdown for Number of attendees"]'
+    ) as HTMLButtonElement;
+    quarterButton.click();
+    fixture.detectChanges();
+
+    expect(getReportSummaryDrilldown).toHaveBeenCalledWith({
+      year: CURRENT_REPORT_YEAR,
+      department_id: 17,
+      program_id: 7,
+      particular_id: 3,
+      quarter: 'Q1'
+    });
+    expect(fixture.nativeElement.textContent).toContain('North Church');
+    const drilldownHeading = fixture.nativeElement.querySelector(
+      '#report-summary-drilldown h2'
+    ) as HTMLHeadingElement;
+    expect(drilldownHeading.textContent).not.toContain(String(CURRENT_REPORT_YEAR));
+    expect(drilldownHeading.querySelector('span')?.className).toContain('text-sm');
+    expect(fixture.nativeElement.querySelector(
+      '#report-summary-drilldown button'
+    )?.textContent).not.toContain('Back to districts');
+    expect(fixture.nativeElement.querySelector(
+      '#report-summary-drilldown tbody tr'
+    )?.className).not.toContain('cursor-pointer');
+  });
+
+  it('drills from a report quarter to districts and stops at the church list', () => {
+    getReportSummaryDrilldown
+      .mockReturnValueOnce(of({
+        success: true,
+        data: {
+          level: 'districts',
+          year: String(CURRENT_REPORT_YEAR),
+          quarter: 'Q1',
+          department_name: 'Youth Ministries',
+          report_name: 'Attendance Report',
+          particular_name: 'Number of attendees',
+          entries: [{
+            church_id: 3,
+            church_name: 'North District',
+            value: 10,
+            submitted_reports: 1
+          }]
+        }
+      }))
+      .mockReturnValueOnce(of({
+        success: true,
+        data: {
+          level: 'churches',
+          year: String(CURRENT_REPORT_YEAR),
+          quarter: 'Q1',
+          department_name: 'Youth Ministries',
+          report_name: 'Attendance Report',
+          particular_name: 'Number of attendees',
+          district_id: 3,
+          district_name: 'North District',
+          entries: [{
+            church_id: 4,
+            church_name: 'Sample Church',
+            value: 10,
+            submitted_reports: 1
+          }]
+        }
+      }))
+    const reportQuarterButton = fixture.nativeElement.querySelector(
+      '[aria-label="View Q1 district breakdown for Number of attendees"]'
+    ) as HTMLButtonElement;
+    reportQuarterButton.click();
+    fixture.detectChanges();
+
+    expect(getReportSummaryDrilldown).toHaveBeenNthCalledWith(1, {
+      year: CURRENT_REPORT_YEAR,
+      department_id: 17,
+      program_id: 7,
+      particular_id: 3,
+      quarter: 'Q1'
+    });
+
+    expect(fixture.nativeElement.textContent).toContain('North District');
+    const drilldownTable = fixture.nativeElement.querySelector(
+      '#report-summary-drilldown table'
+    ) as HTMLTableElement;
+    expect(drilldownTable.className).toContain('table-fixed');
+    const districtRow = fixture.nativeElement.querySelector(
+      '[aria-label="View churches in North District"]'
+    ) as HTMLTableRowElement;
+    expect(districtRow.className).toContain('cursor-pointer');
+    districtRow.click();
+    fixture.detectChanges();
+    expect(getReportSummaryDrilldown).toHaveBeenNthCalledWith(2, {
+      year: CURRENT_REPORT_YEAR,
+      department_id: 17,
+      program_id: 7,
+      particular_id: 3,
+      quarter: 'Q1',
+      district_id: 3
+    });
+    expect(fixture.nativeElement.textContent).toContain('Sample Church');
+
+    const churchRow = fixture.nativeElement.querySelector(
+      '#report-summary-drilldown-table tbody tr'
+    ) as HTMLTableRowElement;
+    expect(churchRow.className).not.toContain('cursor-pointer');
+    churchRow.click();
+    fixture.detectChanges();
+    expect(getReportSummaryDrilldown).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.textContent).toContain('District: North District');
+    expect(fixture.nativeElement.textContent).not.toContain('Report particular');
+  });
+
+  it('keeps the district label visible in church details when the district name is missing', () => {
+    component.reportDrilldown.set({
+      level: 'particulars',
+      year: String(CURRENT_REPORT_YEAR),
+      quarter: 'Q1',
+      department_name: 'Youth Ministries',
+      report_name: 'Attendance Report',
+      particular_name: 'Number of attendees',
+      church_id: 4,
+      church_name: 'Sample Church',
+      particulars: []
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('District: Unavailable');
+    expect(fixture.nativeElement.textContent).toContain('Church: Sample Church');
+  });
+
+  it('opens the same drilldown from a particular annual total', () => {
+    getReportSummaryDrilldown.mockReturnValueOnce(of({
+      success: true,
+      data: {
+        level: 'districts',
+        year: String(CURRENT_REPORT_YEAR),
+        quarter: 'TOTAL',
+        department_name: 'Youth Ministries',
+        report_name: 'Attendance Report',
+        particular_name: 'Number of attendees',
+        entries: []
+      }
+    }));
+
+    const totalButton = fixture.nativeElement.querySelector(
+      '[aria-label="View total district breakdown for Number of attendees"]'
+    ) as HTMLButtonElement;
+    totalButton.click();
+    fixture.detectChanges();
+
+    expect(getReportSummaryDrilldown).toHaveBeenCalledWith({
+      year: CURRENT_REPORT_YEAR,
+      department_id: 17,
+      program_id: 7,
+      particular_id: 3,
+      quarter: 'TOTAL'
+    });
+    expect(fixture.nativeElement.textContent).toContain('Annual total');
+  });
+
+  it('shows totals for districts, multiple churches, and report particulars', () => {
+    component.reportDrilldown.set({
+      level: 'districts',
+      year: String(CURRENT_REPORT_YEAR),
+      quarter: 'Q1',
+      department_name: 'Youth Ministries',
+      report_name: 'Attendance Report',
+      particular_name: 'All report particulars',
+      entries: [
+        { church_id: 3, church_name: 'North District', value: 10, submitted_reports: 1 },
+        { church_id: 5, church_name: 'South District', value: 15, submitted_reports: 1 }
+      ]
+    });
+    fixture.detectChanges();
+
+    let totalRow = Array.from(
+      fixture.nativeElement.querySelectorAll('#report-summary-drilldown tbody tr') as NodeListOf<HTMLTableRowElement>
+    ).find(row => row.textContent?.includes('Total'));
+    expect(totalRow?.textContent).toContain('25');
+
+    component.reportDrilldown.set({
+      level: 'churches',
+      year: String(CURRENT_REPORT_YEAR),
+      quarter: 'Q1',
+      department_name: 'Youth Ministries',
+      report_name: 'Attendance Report',
+      particular_name: 'All report particulars',
+      district_id: 3,
+      district_name: 'North District',
+      entries: [
+        { church_id: 4, church_name: 'North Church A', value: 10, submitted_reports: 1 },
+        { church_id: 6, church_name: 'North Church B', value: 15, submitted_reports: 1 }
+      ]
+    });
+    fixture.detectChanges();
+
+    totalRow = Array.from(
+      fixture.nativeElement.querySelectorAll('#report-summary-drilldown tbody tr') as NodeListOf<HTMLTableRowElement>
+    ).find(row => row.textContent?.includes('Total'));
+    expect(totalRow?.textContent).toContain('25');
+
+    component.reportDrilldown.set({
+      level: 'churches',
+      year: String(CURRENT_REPORT_YEAR),
+      quarter: 'Q1',
+      department_name: 'Youth Ministries',
+      report_name: 'Attendance Report',
+      particular_name: 'All report particulars',
+      district_id: 3,
+      district_name: 'North District',
+      entries: [
+        { church_id: 4, church_name: 'North Church A', value: 10, submitted_reports: 1 }
+      ]
+    });
+    fixture.detectChanges();
+    expect(Array.from(
+      fixture.nativeElement.querySelectorAll('#report-summary-drilldown tbody tr') as NodeListOf<HTMLTableRowElement>
+    ).some(row => row.textContent?.includes('Total'))).toBe(false);
+
+    component.reportDrilldown.set({
+      level: 'particulars',
+      year: String(CURRENT_REPORT_YEAR),
+      quarter: 'Q1',
+      department_name: 'Youth Ministries',
+      report_name: 'Attendance Report',
+      particular_name: 'All report particulars',
+      district_id: 3,
+      district_name: 'North District',
+      church_id: 4,
+      church_name: 'North Church A',
+      particulars: [
+        { particular_id: 3, particular_name: 'Number of attendees', value: 10 },
+        { particular_id: 4, particular_name: 'Camp attendees', value: 15 }
+      ]
+    });
+    fixture.detectChanges();
+
+    totalRow = Array.from(
+      fixture.nativeElement.querySelectorAll('#report-summary-drilldown tbody tr') as NodeListOf<HTMLTableRowElement>
+    ).find(row => row.textContent?.includes('Total — Attendance Report'));
+    expect(totalRow?.textContent).toContain('25');
+  });
+
+  it('drills down from the selected report quarterly total without changing particular links', () => {
+    getReportSummaryDrilldown.mockReturnValueOnce(of({
+      success: true,
+      data: {
+        level: 'districts',
+        year: String(CURRENT_REPORT_YEAR),
+        quarter: 'Q2',
+        department_name: 'Youth Ministries',
+        report_name: 'Attendance Report',
+        particular_name: 'All report particulars',
+        entries: []
+      }
+    }));
+
+    const totalButton = fixture.nativeElement.querySelector(
+      '[aria-label="View Q2 total district breakdown for Attendance Report"]'
+    ) as HTMLButtonElement;
+    totalButton.click();
+    fixture.detectChanges();
+
+    expect(getReportSummaryDrilldown).toHaveBeenCalledWith({
+      year: CURRENT_REPORT_YEAR,
+      department_id: 17,
+      program_id: 7,
+      quarter: 'Q2'
+    });
+    expect(fixture.nativeElement.textContent).toContain('Q2');
+    expect(fixture.nativeElement.querySelector(
+      '[aria-label="View Q2 district breakdown for Number of attendees"]'
+    )).not.toBeNull();
   });
 
   it('exports only the selected director report and its particulars', () => {
@@ -412,9 +767,53 @@ describe('DirectorReportSummary', () => {
 
     expect(getBaptismRecordsForQuarter).toHaveBeenCalledWith(CURRENT_REPORT_YEAR, 'Q2');
     expect(fixture.nativeElement.querySelector('#baptism-records-results')).not.toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Q2 baptism records');
+    expect(fixture.nativeElement.textContent).toContain(
+      `Baptism Record · ${CURRENT_REPORT_YEAR} · District: All districts`
+    );
+    expect(fixture.nativeElement.textContent).toContain('Sample District');
+    let recordsTable = fixture.nativeElement.querySelector(
+      '#baptism-records-results table'
+    ) as HTMLTableElement;
+    expect(Array.from(recordsTable.querySelectorAll('thead th') as NodeListOf<HTMLElement>)
+      .map(header => header.textContent?.trim())).toEqual(['District', 'Records']);
+    const baptismTotalRow = Array.from(
+      recordsTable.querySelectorAll('tbody tr') as NodeListOf<HTMLTableRowElement>
+    ).find(row => row.textContent?.includes('Total'));
+    baptismTotalRow?.querySelector('button')?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Records across all districts');
+    recordsTable = fixture.nativeElement.querySelector(
+      '#baptism-records-results table'
+    ) as HTMLTableElement;
+    expect(Array.from(recordsTable.querySelectorAll('thead th') as NodeListOf<HTMLElement>)
+      .map(header => header.textContent?.trim())).toEqual([
+        'Name',
+        'District',
+        'Church',
+        'Date of baptism',
+        'Officiating minister',
+        'Place of baptism',
+        'Gender'
+      ]);
+    Array.from(
+      fixture.nativeElement.querySelectorAll('#baptism-records-results button') as NodeListOf<HTMLButtonElement>
+    ).find(button => button.textContent?.trim() === 'Back to districts')?.click();
+    fixture.detectChanges();
+    recordsTable = fixture.nativeElement.querySelector(
+      '#baptism-records-results table'
+    ) as HTMLTableElement;
+    expect(Array.from(recordsTable.querySelectorAll('thead th') as NodeListOf<HTMLElement>)
+      .map(header => header.textContent?.trim())).toEqual(['District', 'Records']);
+    recordsTable.querySelector('tbody button')?.dispatchEvent(new MouseEvent('click'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Records in Sample District');
+    recordsTable = fixture.nativeElement.querySelector(
+      '#baptism-records-results table'
+    ) as HTMLTableElement;
+    expect(fixture.nativeElement.textContent).toContain('District: Sample District');
     expect(fixture.nativeElement.textContent).toContain('Sample B. Member');
-    expect(fixture.nativeElement.textContent).toContain('Sample Church');
     expect(Array.from(
       fixture.nativeElement.querySelectorAll('#baptism-records-results thead th') as NodeListOf<HTMLElement>
     ).map(header => header.textContent?.trim())).toEqual([
@@ -425,6 +824,16 @@ describe('DirectorReportSummary', () => {
       'Place of baptism',
       'Gender'
     ]);
+    expect(
+      (fixture.nativeElement.querySelector('#baptism-records-results table') as HTMLTableElement)
+        .className
+    ).toContain('table-fixed');
+    const baptismHeaders = Array.from(
+      fixture.nativeElement.querySelectorAll('#baptism-records-results thead th') as NodeListOf<HTMLElement>
+    );
+    expect(baptismHeaders[1].className).toContain('md:table-cell');
+    expect(baptismHeaders[3].className).toContain('lg:table-cell');
+    expect(baptismHeaders[4].className).toContain('xl:table-cell');
 
     const baptismRow = fixture.nativeElement.querySelector(
       '#baptism-records-results tbody tr[tabindex="0"]'
@@ -435,6 +844,7 @@ describe('DirectorReportSummary', () => {
     expect(fixture.nativeElement.textContent).toContain('Baptism record details');
     expect(fixture.nativeElement.textContent).toContain('Sample Street');
     expect(fixture.nativeElement.textContent).toContain('May 10, 1990');
+
   });
 
   it('lets assistants click the selected baptism department quarter totals', () => {
@@ -495,8 +905,25 @@ describe('DirectorReportSummary', () => {
     fixture.detectChanges();
 
     expect(getBaptismRecordsForQuarter).toHaveBeenCalledWith(CURRENT_REPORT_YEAR, 'Q2');
-    expect(fixture.nativeElement.textContent).toContain('Q2 baptism records');
+    expect(fixture.nativeElement.textContent).toContain(
+      `Baptism Record · ${CURRENT_REPORT_YEAR} · District: All districts`
+    );
+    const recordsSection = fixture.nativeElement.querySelector('#baptism-records-results') as HTMLElement;
+    recordsSection.querySelector('tbody button')?.dispatchEvent(new MouseEvent('click'));
+    fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Sample B. Member');
+    const baptismReportRow = Array.from(
+      fixture.nativeElement.querySelectorAll('tbody tr') as NodeListOf<HTMLTableRowElement>
+    ).find(row => row.textContent?.includes('Baptisms Reported'));
+    const annualTotalButton = baptismReportRow?.lastElementChild?.querySelector('button') as HTMLButtonElement;
+    annualTotalButton.click();
+    fixture.detectChanges();
+
+    expect(getBaptismRecordsForQuarter).toHaveBeenLastCalledWith(CURRENT_REPORT_YEAR, 'TOTAL');
+    expect(fixture.nativeElement.textContent).toContain('TOTAL');
+    expect(Array.from(
+      fixture.nativeElement.querySelectorAll('#baptism-records-results thead th') as NodeListOf<HTMLElement>
+    ).map(header => header.textContent?.trim())).toEqual(['District', 'Records']);
   });
 
   it('lets assistants click the selected death department quarter totals', () => {
@@ -557,9 +984,60 @@ describe('DirectorReportSummary', () => {
     fixture.detectChanges();
 
     expect(getDeathRecordsForQuarter).toHaveBeenCalledWith(CURRENT_REPORT_YEAR, 'Q2');
-    expect(fixture.nativeElement.textContent).toContain('Q2 death records');
+    expect(fixture.nativeElement.textContent).toContain(
+      `Death Record · ${CURRENT_REPORT_YEAR} · District: All districts`
+    );
+    expect(fixture.nativeElement.textContent).toContain('Sample District');
+    let recordsTable = fixture.nativeElement.querySelector(
+      '#baptism-records-results table'
+    ) as HTMLTableElement;
+    expect(Array.from(recordsTable.querySelectorAll('thead th') as NodeListOf<HTMLElement>)
+      .map(header => header.textContent?.trim())).toEqual(['District', 'Records']);
+    const deathTotalRow = Array.from(
+      recordsTable.querySelectorAll('tbody tr') as NodeListOf<HTMLTableRowElement>
+    ).find(row => row.textContent?.includes('Total'));
+    deathTotalRow?.querySelector('button')?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Records across all districts');
+    recordsTable = fixture.nativeElement.querySelector(
+      '#baptism-records-results table'
+    ) as HTMLTableElement;
+    expect(Array.from(recordsTable.querySelectorAll('thead th') as NodeListOf<HTMLElement>)
+      .map(header => header.textContent?.trim())).toEqual([
+        'Name',
+        'District',
+        'Church',
+        'Date of death',
+        'Gender',
+        'Quarter'
+      ]);
+    Array.from(
+      fixture.nativeElement.querySelectorAll('#baptism-records-results button') as NodeListOf<HTMLButtonElement>
+    ).find(button => button.textContent?.trim() === 'Back to districts')?.click();
+    fixture.detectChanges();
+    recordsTable = fixture.nativeElement.querySelector(
+      '#baptism-records-results table'
+    ) as HTMLTableElement;
+    recordsTable.querySelector('tbody button')?.dispatchEvent(new MouseEvent('click'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Records in Sample District');
+    expect(fixture.nativeElement.textContent).toContain('District: Sample District');
     expect(fixture.nativeElement.textContent).toContain('Sample B. Member');
-    expect(fixture.nativeElement.textContent).toContain('Sample Church');
+    expect(Array.from(
+      fixture.nativeElement.querySelectorAll('#baptism-records-results thead th') as NodeListOf<HTMLElement>
+    ).map(header => header.textContent?.trim())).toEqual([
+      'Name',
+      'Church',
+      'Date of death',
+      'Gender',
+      'Quarter'
+    ]);
+    const deathHeaders = Array.from(
+      fixture.nativeElement.querySelectorAll('#baptism-records-results thead th') as NodeListOf<HTMLElement>
+    );
+    expect(deathHeaders[1].className).toContain('md:table-cell');
+    expect(deathHeaders[3].className).toContain('sm:table-cell');
+    expect(deathHeaders[4].className).toContain('md:table-cell');
     const deathRow = fixture.nativeElement.querySelector(
       '#baptism-records-results tbody tr[tabindex="0"]'
     ) as HTMLTableRowElement;
@@ -639,7 +1117,9 @@ describe('DirectorReportSummary', () => {
     fixture.detectChanges();
 
     expect(getDeathRecordsForQuarter).toHaveBeenCalledWith(CURRENT_REPORT_YEAR, 'Q1');
-    expect(fixture.nativeElement.textContent).toContain('Q1 death records');
+    expect(fixture.nativeElement.textContent).toContain(
+      `Death Record · ${CURRENT_REPORT_YEAR} · District: All districts`
+    );
 
     currentUser.department_id = 22;
     expect(component.isDeathDepartmentSelected).toBe(false);
@@ -746,6 +1226,12 @@ describe('DirectorReportSummary', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Camp attendees');
     expect(fixture.nativeElement.textContent).not.toContain('Number of attendees');
+    const selectedReportTotalRow = fixture.nativeElement.querySelector(
+      '#summary-report-total'
+    ) as HTMLTableRowElement;
+    expect(selectedReportTotalRow.textContent).toContain('Total — Camp Report');
+    expect(selectedReportTotalRow.textContent).toContain('18');
+    expect(selectedReportTotalRow.textContent).not.toContain('35');
     expect(navigation).toEqual({
       commands: [],
       extras: {

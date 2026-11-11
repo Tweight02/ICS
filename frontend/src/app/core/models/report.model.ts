@@ -160,10 +160,40 @@ export interface MissionReportParticularSummary {
   quarter_totals: MissionReportQuarterTotals;
 }
 
+export interface ReportSummaryDrilldownEntry {
+  church_id: number;
+  church_name: string;
+  value: number;
+  submitted_reports: number;
+}
+
+export interface ReportSummaryDrilldownParticular {
+  particular_id: number;
+  particular_name: string;
+  value: number;
+}
+
+export interface ReportSummaryDrilldown {
+  level: 'districts' | 'churches' | 'particulars';
+  year: string;
+  quarter: string;
+  department_name: string;
+  report_name: string;
+  particular_name: string;
+  district_id?: number;
+  district_name?: string;
+  church_id?: number;
+  church_name?: string;
+  entries?: ReportSummaryDrilldownEntry[];
+  particulars?: ReportSummaryDrilldownParticular[];
+}
+
 export interface BaptismSummaryRecord {
   baptism_id: number;
   church_id: number;
   church_name: string;
+  district_id: number;
+  district_name: string | null;
   first_name: string;
   middle_name: string | null;
   last_name: string;
@@ -183,6 +213,8 @@ export interface DeathSummaryRecord {
   baptism_id: number;
   church_id: number;
   church_name: string;
+  district_id: number;
+  district_name: string | null;
   first_name: string;
   middle_name: string | null;
   last_name: string;

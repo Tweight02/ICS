@@ -45,7 +45,7 @@ describe('QuarterStatus', () => {
 
   it('resolves quarter monitoring data into consistent report labels', () => {
     expect(resolveQuarterStatus({ progress: null, approved: false, submitted: false }))
-      .toEqual({ label: '—', tone: 'empty' });
+      .toEqual({ label: '-', tone: 'empty' });
     expect(resolveQuarterStatus({ progress: 40, approved: false, submitted: true }))
       .toEqual({ label: 'Submitted', tone: 'submitted' });
     expect(resolveQuarterStatus({ progress: 40, approved: false, endorsed: true, submitted: false }))
@@ -57,9 +57,9 @@ describe('QuarterStatus', () => {
     expect(resolveQuarterStatus({ progress: 100, approved: true, submitted: false }))
       .toEqual({ label: 'Approved', tone: 'approved' });
     expect(resolveQuarterStatus({ progress: 100, approved: false, submitted: false }))
-      .toEqual({ label: 'Ready to submit', tone: 'ready' });
+      .toEqual({ label: 'In progress', tone: 'in-progress' });
     expect(resolveQuarterStatus({ progress: 0, approved: false, submitted: false }))
-      .toEqual({ label: 'Not started', tone: 'not-started' });
+      .toEqual({ label: '-', tone: 'not-started' });
     expect(resolveQuarterStatus({ progress: 50, approved: false, submitted: false }))
       .toEqual({ label: 'In progress', tone: 'in-progress' });
   });

@@ -17,7 +17,8 @@ import { Department } from '../../models/department.model';
 import {
   BaptismSummaryRecord,
   DeathSummaryRecord,
-  MissionReportSummary
+  MissionReportSummary,
+  ReportSummaryDrilldown
 } from '../../models/report.model';
 
 export interface DistrictResponse {
@@ -98,6 +99,21 @@ getMyDistrictChurches(year?: number): Observable<MyDistrictChurchesResponse> {
         ...(departmentId ? { department_id: departmentId } : {})
       }
     });
+  }
+
+  getReportSummaryDrilldown(params: {
+    year: number;
+    department_id: number;
+    program_id: number;
+    particular_id?: number;
+    quarter: string;
+    district_id?: number;
+    church_id?: number;
+  }): Observable<{ success: boolean; data: ReportSummaryDrilldown }> {
+    return this.http.get<{ success: boolean; data: ReportSummaryDrilldown }>(
+      `${this.apiUrl}/reports/mission-summary/drilldown`,
+      { params: { ...params } }
+    );
   }
 
   getBaptismRecordsForQuarter(year: number, quarter: string): Observable<{

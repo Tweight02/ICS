@@ -325,7 +325,14 @@ test('mission summary counts baptism and death records from their database table
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.first_name', 'Another')
-        ->assertJsonPath('data.0.church_name', 'Personal Records District');
+        ->assertJsonPath('data.0.church_name', 'Personal Records District')
+        ->assertJsonPath('data.0.district_id', $churchId)
+        ->assertJsonPath('data.0.district_name', 'Personal Records District');
+
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/baptisms?year='.$currentYear.'&quarter=TOTAL')
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
 
     $this->actingAs($assistant, 'sanctum')
         ->getJson('/api/reports/mission-summary/deaths?year='.$currentYear.'&quarter=Q3')
@@ -333,7 +340,14 @@ test('mission summary counts baptism and death records from their database table
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.first_name', 'Deceased')
         ->assertJsonPath('data.0.date_of_death', $currentQ3)
-        ->assertJsonPath('data.0.church_name', 'Personal Records District');
+        ->assertJsonPath('data.0.church_name', 'Personal Records District')
+        ->assertJsonPath('data.0.district_id', $churchId)
+        ->assertJsonPath('data.0.district_name', 'Personal Records District');
+
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/deaths?year='.$currentYear.'&quarter=TOTAL')
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
 
     $this->actingAs($assistant, 'sanctum')
         ->getJson('/api/reports/mission-summary?year='.$currentYear.'&department_id=23')
@@ -380,4 +394,385 @@ test('mission summary counts baptism and death records from their database table
     $this->actingAs($director, 'sanctum')
         ->getJson('/api/reports/mission-summary/deaths?year='.$currentYear.'&quarter=Q3')
         ->assertForbidden();
+});
+
+test('authorized users can drill from a submitted report particular to districts churches and church particulars', function () {
+    $districtIds = [];
+    foreach (['North District', 'South District'] as $name) {
+        $districtIds[] = DB::table('churches')->insertGetId([
+            'name' => $name,
+            'address' => $name,
+            'parent_id' => null,
+        ]);
+    }
+
+    $churchIds = [];
+    foreach ([
+        ['North Church A', $districtIds[0]],
+        ['North Church B', $districtIds[0]],
+        ['North Unsubmitted Church', $districtIds[0]],
+        ['South Church', $districtIds[1]],
+    ] as [$name, $districtId]) {
+        $churchIds[] = DB::table('churches')->insertGetId([
+            'name' => $name,
+            'address' => $name,
+            'parent_id' => $districtId,
+        ]);
+    }
+
+    $departmentId = DB::table('departments')->insertGetId([
+        'department_name' => 'Drilldown Department',
+    ]);
+    $programId = DB::table('programs')->insertGetId([
+        'department_id' => $departmentId,
+        'program_name' => 'Communication Report',
+        'parent_id' => null,
+    ]);
+    $sectionId = DB::table('programs')->insertGetId([
+        'department_id' => $departmentId,
+        'program_name' => 'Communication',
+        'parent_id' => $programId,
+    ]);
+    $particularIds = [];
+    foreach (['Visited interests', 'Radio given'] as $name) {
+        $particularIds[] = DB::table('particulars')->insertGetId([
+            'program_id' => $sectionId,
+            'particular_name' => $name,
+        ]);
+    }
+
+    $currentYear = (string) now()->year;
+    foreach ([
+        [$churchIds[0], [10, 8], true],
+        [$churchIds[1], [15, null], true],
+        [$churchIds[2], [1000, null], false],
+        [$churchIds[3], [99, null], true],
+    ] as [$churchId, $values, $isSubmitted]) {
+        $quarterId = DB::table('quarters')->insertGetId([
+            'program_id' => $programId,
+            'church_id' => $churchId,
+            'quarter' => 'Q2',
+            'year' => $currentYear,
+            'date_submitted' => $isSubmitted ? now()->toDateString() : null,
+        ]);
+        foreach ($values as $index => $value) {
+            if ($value !== null) {
+                DB::table('particular_items')->insert([
+                    'particular_id' => $particularIds[$index],
+                    'quarter_id' => $quarterId,
+                    'value' => $value,
+                ]);
+            }
+        }
+    }
+    $q1QuarterId = DB::table('quarters')->insertGetId([
+        'program_id' => $programId,
+        'church_id' => $churchIds[0],
+        'quarter' => 'Q1',
+        'year' => $currentYear,
+        'date_submitted' => now()->toDateString(),
+    ]);
+    foreach ([$particularIds[0] => 5, $particularIds[1] => 2] as $particularId => $value) {
+        DB::table('particular_items')->insert([
+            'particular_id' => $particularId,
+            'quarter_id' => $q1QuarterId,
+            'value' => $value,
+        ]);
+    }
+
+    $assistant = missionReportSummaryUser($districtIds[0], null, 'assistant');
+    $query = http_build_query([
+        'year' => $currentYear,
+        'quarter' => 'Q2',
+        'department_id' => $departmentId,
+        'program_id' => $programId,
+        'particular_id' => $particularIds[0],
+    ]);
+
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$query)
+        ->assertOk()
+        ->assertJsonPath('data.level', 'districts')
+        ->assertJsonCount(2, 'data.entries')
+        ->assertJsonPath('data.entries.0.church_name', 'North District')
+        ->assertJsonPath('data.entries.0.value', 25);
+
+    $reportTotalQuery = http_build_query([
+        'year' => $currentYear,
+        'quarter' => 'Q2',
+        'department_id' => $departmentId,
+        'program_id' => $programId,
+    ]);
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$reportTotalQuery)
+        ->assertOk()
+        ->assertJsonPath('data.particular_name', 'All report particulars')
+        ->assertJsonPath('data.entries.0.church_name', 'North District')
+        ->assertJsonPath('data.entries.0.value', 33);
+
+    $reportDistrictQuery = $reportTotalQuery.'&district_id='.$districtIds[0];
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$reportDistrictQuery)
+        ->assertOk()
+        ->assertJsonPath('data.entries.0.church_name', 'North Church A')
+        ->assertJsonPath('data.entries.0.value', 18)
+        ->assertJsonPath('data.entries.1.church_name', 'North Church B')
+        ->assertJsonPath('data.entries.1.value', 15);
+
+    $reportChurchQuery = $reportDistrictQuery.'&church_id='.$churchIds[0];
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$reportChurchQuery)
+        ->assertOk()
+        ->assertJsonPath('data.particulars.0.value', 10)
+        ->assertJsonPath('data.particulars.1.value', 8);
+
+    $districtQuery = $query.'&district_id='.$districtIds[0];
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$districtQuery)
+        ->assertOk()
+        ->assertJsonPath('data.level', 'churches')
+        ->assertJsonCount(2, 'data.entries')
+        ->assertJsonPath('data.entries.0.church_name', 'North Church A')
+        ->assertJsonPath('data.entries.0.value', 10)
+        ->assertJsonPath('data.entries.1.church_name', 'North Church B')
+        ->assertJsonPath('data.entries.1.value', 15);
+
+    $churchQuery = $districtQuery.'&church_id='.$churchIds[0];
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$churchQuery)
+        ->assertOk()
+        ->assertJsonPath('data.level', 'particulars')
+        ->assertJsonPath('data.district_name', 'North District')
+        ->assertJsonPath('data.church_name', 'North Church A')
+        ->assertJsonCount(2, 'data.particulars')
+        ->assertJsonPath('data.particulars.0.particular_name', 'Visited interests')
+        ->assertJsonPath('data.particulars.0.value', 10)
+        ->assertJsonPath('data.particulars.1.particular_name', 'Radio given')
+        ->assertJsonPath('data.particulars.1.value', 8);
+
+    $annualQuery = str_replace('quarter=Q2', 'quarter=TOTAL', $query);
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$annualQuery)
+        ->assertOk()
+        ->assertJsonPath('data.level', 'districts')
+        ->assertJsonPath('data.quarter', 'TOTAL')
+        ->assertJsonPath('data.entries.0.church_name', 'North District')
+        ->assertJsonPath('data.entries.0.value', 30);
+
+    $annualDistrictQuery = $annualQuery.'&district_id='.$districtIds[0];
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$annualDistrictQuery)
+        ->assertOk()
+        ->assertJsonPath('data.entries.0.church_name', 'North Church A')
+        ->assertJsonPath('data.entries.0.value', 15);
+
+    $annualChurchQuery = $annualDistrictQuery.'&church_id='.$churchIds[0];
+    $this->actingAs($assistant, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$annualChurchQuery)
+        ->assertOk()
+        ->assertJsonPath('data.particulars.0.value', 15)
+        ->assertJsonPath('data.particulars.1.value', 10);
+
+    $director = missionReportSummaryUser($districtIds[0], $departmentId, 'director');
+    $this->actingAs($director, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$query)
+        ->assertOk()
+        ->assertJsonPath('data.entries.0.value', 25);
+
+    $otherDepartmentId = DB::table('departments')->insertGetId([
+        'department_name' => 'Other Drilldown Department',
+    ]);
+    $this->actingAs($director, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.http_build_query([
+            'year' => $currentYear,
+            'quarter' => 'Q2',
+            'department_id' => $otherDepartmentId,
+            'program_id' => $programId,
+            'particular_id' => $particularIds[0],
+        ]))
+        ->assertForbidden();
+});
+
+test('district pastors see only their district totals and church-level drilldowns', function () {
+    $districtId = DB::table('churches')->insertGetId([
+        'name' => 'Pastor District',
+        'address' => 'Pastor District',
+        'parent_id' => null,
+    ]);
+    $otherDistrictId = DB::table('churches')->insertGetId([
+        'name' => 'Other District',
+        'address' => 'Other District',
+        'parent_id' => null,
+    ]);
+    $churchIds = [];
+    foreach ([
+        ['Pastor Church A', $districtId],
+        ['Pastor Church B', $districtId],
+        ['Other Church', $otherDistrictId],
+    ] as [$name, $parentId]) {
+        $churchIds[] = DB::table('churches')->insertGetId([
+            'name' => $name,
+            'address' => $name,
+            'parent_id' => $parentId,
+        ]);
+    }
+
+    $departmentId = DB::table('departments')->insertGetId([
+        'department_name' => 'Pastor Summary Department',
+    ]);
+    $programId = DB::table('programs')->insertGetId([
+        'department_id' => $departmentId,
+        'program_name' => 'Pastor Summary Report',
+        'parent_id' => null,
+    ]);
+    $sectionId = DB::table('programs')->insertGetId([
+        'department_id' => $departmentId,
+        'program_name' => 'Pastor Summary Section',
+        'parent_id' => $programId,
+    ]);
+    $particularId = DB::table('particulars')->insertGetId([
+        'program_id' => $sectionId,
+        'particular_name' => 'Pastor Summary Particular',
+    ]);
+    $currentYear = (string) now()->year;
+
+    foreach ([$churchIds[0] => 10, $churchIds[1] => 5, $churchIds[2] => 100] as $churchId => $value) {
+        $quarterId = DB::table('quarters')->insertGetId([
+            'program_id' => $programId,
+            'church_id' => $churchId,
+            'quarter' => 'Q1',
+            'year' => $currentYear,
+            'date_submitted' => now()->toDateString(),
+        ]);
+        DB::table('particular_items')->insert([
+            'particular_id' => $particularId,
+            'quarter_id' => $quarterId,
+            'value' => $value,
+        ]);
+    }
+
+    $pastor = missionReportSummaryUser($districtId, null, 'pastor');
+    $this->actingAs($pastor, 'sanctum')
+        ->getJson('/api/reports/mission-summary?'.http_build_query([
+            'year' => $currentYear,
+            'department_id' => $departmentId,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('data.total_report_value', 15)
+        ->assertJsonPath('data.departments.0.reports.0.particulars.0.quarter_totals.q1', 15);
+
+    $query = http_build_query([
+        'year' => $currentYear,
+        'quarter' => 'Q1',
+        'department_id' => $departmentId,
+        'program_id' => $programId,
+        'particular_id' => $particularId,
+    ]);
+    $this->actingAs($pastor, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$query)
+        ->assertOk()
+        ->assertJsonPath('data.level', 'churches')
+        ->assertJsonPath('data.district_id', $districtId)
+        ->assertJsonCount(2, 'data.entries')
+        ->assertJsonPath('data.entries.0.church_name', 'Pastor Church A')
+        ->assertJsonPath('data.entries.0.value', 10)
+        ->assertJsonPath('data.entries.1.church_name', 'Pastor Church B')
+        ->assertJsonPath('data.entries.1.value', 5);
+
+    $this->actingAs($pastor, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$query.'&district_id='.$otherDistrictId)
+        ->assertForbidden();
+
+    $this->actingAs($pastor, 'sanctum')
+        ->getJson('/api/reports/mission-summary/drilldown?'.$query.'&district_id='.$districtId.'&church_id='.$churchIds[0])
+        ->assertForbidden();
+});
+
+test('district pastor personal record summaries and drilldowns are district scoped', function () {
+    $districtId = DB::table('churches')->insertGetId([
+        'name' => 'Personal Report District',
+        'address' => 'Personal Report District',
+        'parent_id' => null,
+    ]);
+    $otherDistrictId = DB::table('churches')->insertGetId([
+        'name' => 'Outside District',
+        'address' => 'Outside District',
+        'parent_id' => null,
+    ]);
+    $churchIds = [];
+    foreach ([
+        ['Personal Report Church', $districtId],
+        ['Outside Church', $otherDistrictId],
+    ] as [$name, $parentId]) {
+        $churchIds[] = DB::table('churches')->insertGetId([
+            'name' => $name,
+            'address' => $name,
+            'parent_id' => $parentId,
+        ]);
+    }
+
+    $programIds = [];
+    foreach ([
+        22 => 'Baptism Record',
+        23 => 'Death Record',
+    ] as $departmentId => $departmentName) {
+        DB::table('departments')->insert([
+            'department_id' => $departmentId,
+            'department_name' => $departmentName,
+        ]);
+        $programIds[$departmentId] = DB::table('programs')->insertGetId([
+            'department_id' => $departmentId,
+            'program_name' => $departmentName,
+            'parent_id' => null,
+        ]);
+    }
+
+    $baptismIds = [];
+    foreach ($churchIds as $churchId) {
+        $baptismIds[] = DB::table('baptisms')->insertGetId([
+            'church_id' => $churchId,
+            'quarter' => 'Q1',
+            'first_name' => 'Sample',
+            'middle_name' => '',
+            'last_name' => 'Member',
+            'extension_name' => null,
+            'birthdate' => '1990-01-01',
+            'gender' => 'other',
+            'address' => 'Sample Address',
+            'officiating_minister' => 'Sample Pastor',
+            'place_of_baptism' => 'Sample Church',
+            'date_of_baptism' => now()->startOfYear()->addMonth()->toDateString(),
+            'marital_status' => 'single',
+            'is_reclaimed' => false,
+        ]);
+        DB::table('deaths')->insert([
+            'baptism_id' => end($baptismIds),
+            'quarter' => 'Q1',
+            'date_of_death' => now()->startOfYear()->addMonth()->toDateString(),
+        ]);
+    }
+
+    $pastor = missionReportSummaryUser($districtId, null, 'pastor');
+    $this->actingAs($pastor, 'sanctum')
+        ->getJson('/api/reports/mission-summary?year='.now()->year)
+        ->assertOk()
+        ->assertJsonPath('data.departments.0.department_id', 22)
+        ->assertJsonPath('data.departments.0.quarter_totals.q1', 1)
+        ->assertJsonPath('data.departments.1.department_id', 23)
+        ->assertJsonPath('data.departments.1.quarter_totals.q1', 1);
+
+    foreach ([22 => $programIds[22], 23 => $programIds[23]] as $departmentId => $programId) {
+        $this->actingAs($pastor, 'sanctum')
+            ->getJson('/api/reports/mission-summary/drilldown?'.http_build_query([
+                'year' => now()->year,
+                'quarter' => 'Q1',
+                'department_id' => $departmentId,
+                'program_id' => $programId,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('data.level', 'churches')
+            ->assertJsonCount(1, 'data.entries')
+            ->assertJsonPath('data.entries.0.church_name', 'Personal Report Church')
+            ->assertJsonPath('data.entries.0.value', 1);
+    }
 });

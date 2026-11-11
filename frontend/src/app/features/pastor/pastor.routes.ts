@@ -13,6 +13,12 @@ export const PASTOR_ROUTES: Routes = [
   },
 
   {
+    path: 'reports/summary',
+    loadComponent: () =>
+      import('../director/report-summary/report-summary')
+        .then(m => m.DirectorReportSummary)
+  },
+  {
     path: 'reports/details',
     loadComponent: () =>
       import('./report_p/reports-details/reports-details')

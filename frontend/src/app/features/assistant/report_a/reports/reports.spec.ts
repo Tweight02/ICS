@@ -475,7 +475,7 @@ describe('Reports', () => {
     ).not.toBeNull();
   });
 
-  it('uses the requested four labels for District Pastor Report quarter statuses', () => {
+  it('shows submitted and in-progress statuses and dashes for empty District Pastor quarters', () => {
     component.districtPastorMonitoring.set({
       7: {
         q1: null,
@@ -491,8 +491,32 @@ describe('Reports', () => {
     expect(component.getDistrictPastorQuarterStatus(7, 'q1').status).toBe('Approved');
     expect(component.getDistrictPastorQuarterStatus(7, 'q2').status).toBe('Endorsed');
     expect(component.getDistrictPastorQuarterStatus(7, 'q3').status).toBe('Submitted');
-    expect(component.getDistrictPastorQuarterStatus(7, 'q4').status).toBe('Not submitted');
-    expect(component.getDistrictPastorQuarterStatus(8, 'q1').status).toBe('Not submitted');
+    expect(component.getDistrictPastorQuarterStatus(7, 'q4').status).toBe('-');
+    expect(component.getDistrictPastorQuarterStatus(8, 'q1').status).toBe('-');
+  });
+
+  it('shows complete-but-unsubmitted church reports as in progress and empty quarters as a dash', () => {
+    const church = {
+      church_id: 8,
+      name: 'North Church',
+      address: null,
+      parent_id: 7,
+      monitoring: {
+        q1: 100,
+        q1_approved: false,
+        q1_endorsed: false,
+        q1_submitted: false,
+        q2: 0,
+        q2_approved: false,
+        q2_endorsed: false,
+        q2_submitted: false,
+        q3: 0,
+        q4: 0
+      }
+    };
+
+    expect(component.getQuarterStatus(church, 'q1')?.status).toBe('In progress');
+    expect(component.getQuarterStatus(church, 'q2')?.status).toBe('-');
   });
 
   it('opens the district personal report from its quarter monitoring cell', () => {

@@ -292,7 +292,8 @@
                             'text-emerald-700': status.status === 'Approved',
                             'text-teal-700': status.status === 'Endorsed',
                             'text-amber-800': status.status === 'Submitted',
-                            'text-slate-400': status.status === 'Not submitted'
+                            'text-blue-700': status.status === 'In progress',
+                            'text-slate-400': status.status === '-' || status.status === 'Not submitted'
                           }">
                           {{ status.status }}
                         </span>

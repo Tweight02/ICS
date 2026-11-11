@@ -115,7 +115,7 @@ describe('ReportPrograms', () => {
     expect(quarterCells[1].textContent.trim()).toBe('✓');
     expect(quarterCells[1].querySelector('[aria-label="Approved"]')).not.toBeNull();
     expect(quarterCells[2].textContent.trim()).toBe('✓');
-    expect(quarterCells[3].textContent.trim()).toBe('—');
+    expect(quarterCells[3].textContent.trim()).toBe('-');
   });
 
   it('shows submitted progress and an explicit review status in the table', () => {
@@ -133,16 +133,22 @@ describe('ReportPrograms', () => {
     });
   });
 
-  it('uses the assistant quarter status labels for endorsed and not-started reports', () => {
+  it('uses the assistant quarter status labels for endorsed, ready, and not-started reports', () => {
     const youth = component.departments.find(department => department.department_name === 'Youth');
     expect(youth).toBeDefined();
     youth!.q1_endorsed = true;
     youth!.q4_data_progress = 0;
+    youth!.q3_data_progress = 100;
+    youth!.q3_approved = false;
+    youth!.q3_endorsed = false;
+    youth!.q3_submitted = false;
 
     expect(component.getQuarterStatus(component.getMonitoring(0).q1))
       .toEqual({ label: 'Endorsed', tone: 'endorsed' });
     expect(component.getQuarterStatus(component.getMonitoring(0).q4))
-      .toEqual({ label: 'Not started', tone: 'not-started' });
+      .toEqual({ label: '-', tone: 'not-started' });
+    expect(component.getQuarterStatus(component.getMonitoring(0).q3))
+      .toEqual({ label: 'In progress', tone: 'in-progress' });
   });
 
   it('shows all departments except pastor personal report departments', () => {

@@ -14,7 +14,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   BaptismSummaryRecord,
   DeathSummaryRecord,
-  MissionReportSummary
+  MissionReportSummary,
+  PERSONAL_REPORT_DEPARTMENT_IDS,
+  ReportSummaryDrilldown
 } from '../../../core/models/report.model';
 import { Department } from '../../../core/models/department.model';
 import { AuthService } from '../../../core/services/auth/auth-service';
@@ -30,6 +32,15 @@ import {
   captureReportReturnQueryParams,
   clearReportReturnQueryParams
 } from '../../../shared/utils/report-navigation';
+
+type PersonalRecord = BaptismSummaryRecord | DeathSummaryRecord;
+const PERSONAL_REPORT_DEPARTMENT_ID_SET = new Set<number>(PERSONAL_REPORT_DEPARTMENT_IDS);
+
+interface PersonalRecordDistrict {
+  district_id: number;
+  district_name: string;
+  record_count: number;
+}
 
 @Component({
   selector: 'app-director-report-summary',
@@ -51,6 +62,13 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
   private summaryReportPreviewOverlay?: ElementRef<HTMLElement>;
   private summaryReportPreviewParent: Node | null = null;
   readonly departments = signal<Department[]>([]);
+  readonly selectableDepartments = computed(() =>
+    this.isDistrictPastorPortal
+      ? this.departments().filter(department =>
+        !PERSONAL_REPORT_DEPARTMENT_ID_SET.has(department.department_id)
+      )
+      : this.departments()
+  );
   readonly selectedDepartmentId = signal<number | null>(null);
   readonly departmentDetails = signal<MissionReportSummary | null>(null);
   readonly selectedReportId = signal<number | null>(null);
@@ -61,7 +79,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
   readonly departmentsErrorMessage = signal('');
   readonly departmentDetailsErrorMessage = signal('');
   private reportReturnQueryParams: Record<string, string> = {};
-  readonly selectedRecordQuarter = signal<'Q1' | 'Q2' | 'Q3' | 'Q4' | null>(null);
+  readonly selectedRecordQuarter = signal<'Q1' | 'Q2' | 'Q3' | 'Q4' | 'TOTAL' | null>(null);
   readonly selectedBaptismQuarter = this.selectedRecordQuarter;
   readonly baptismRecords = signal<BaptismSummaryRecord[]>([]);
   readonly loadingBaptismRecords = signal(false);
@@ -69,8 +87,64 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
   readonly deathRecords = signal<DeathSummaryRecord[]>([]);
   readonly loadingDeathRecords = signal(false);
   readonly deathRecordsErrorMessage = signal('');
+  readonly selectedPersonalRecordDistrictId = signal<number | null>(null);
+  readonly showAllPersonalRecords = signal(false);
   readonly selectedBaptismRecord = signal<BaptismSummaryRecord | null>(null);
   readonly selectedDeathRecord = signal<DeathSummaryRecord | null>(null);
+  readonly personalRecordDistricts = computed<PersonalRecordDistrict[]>(() => {
+    const districts = new Map<number, PersonalRecordDistrict>();
+    for (const record of this.personalRecords()) {
+      const district = districts.get(record.district_id);
+      if (district) {
+        district.record_count += 1;
+      } else {
+        districts.set(record.district_id, {
+          district_id: record.district_id,
+          district_name: record.district_name ?? 'Unavailable',
+          record_count: 1
+        });
+      }
+    }
+    return [...districts.values()].sort((first, second) =>
+      first.district_name.localeCompare(second.district_name)
+    );
+  });
+  readonly personalRecordTotal = computed(() => this.personalRecords().length);
+  readonly selectedPersonalRecordDistrict = computed(() =>
+    this.personalRecordDistricts().find(
+      district => district.district_id === this.selectedPersonalRecordDistrictId()
+    ) ?? null
+  );
+  readonly selectedBaptismDistrictRecords = computed(() => {
+    const districtId = this.selectedPersonalRecordDistrictId();
+    return districtId === null || this.showAllPersonalRecords()
+      ? []
+      : this.baptismRecords().filter(record => record.district_id === districtId);
+  });
+  readonly selectedDeathDistrictRecords = computed(() => {
+    const districtId = this.selectedPersonalRecordDistrictId();
+    return districtId === null || this.showAllPersonalRecords()
+      ? []
+      : this.deathRecords().filter(record => record.district_id === districtId);
+  });
+  readonly allBaptismRecords = computed(() =>
+    this.showAllPersonalRecords() ? this.baptismRecords() : []
+  );
+  readonly allDeathRecords = computed(() =>
+    this.showAllPersonalRecords() ? this.deathRecords() : []
+  );
+  readonly reportDrilldown = signal<ReportSummaryDrilldown | null>(null);
+  readonly loadingReportDrilldown = signal(false);
+  readonly reportDrilldownErrorMessage = signal('');
+  private readonly reportDrilldownContext = signal<{
+    quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'TOTAL';
+    particularId: number | null;
+  } | null>(null);
+  private readonly reportDrilldownLocation = signal<{
+    districtId?: number;
+    churchId?: number;
+  } | null>(null);
+  private reportDrilldownRequestId = 0;
   readonly selectedDepartmentSummary = computed(
     () => this.departmentDetails()?.departments[0] ?? null
   );
@@ -118,6 +192,14 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
 
   get isAssistantPortal(): boolean {
     return this.router.url.startsWith('/assistant');
+  }
+
+  get isDistrictPastorPortal(): boolean {
+    return this.router.url.startsWith('/pastor');
+  }
+
+  get isDepartmentSelectorPortal(): boolean {
+    return this.isAssistantPortal || this.isDistrictPastorPortal;
   }
 
   get isMissionWideSummary(): boolean {
@@ -383,7 +465,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     this.selectedYear.set(
       resolveReportYear(this.route.snapshot.queryParamMap.get('year'))
     );
-    if (this.isAssistantPortal) {
+    if (this.isDepartmentSelectorPortal) {
       this.loadDepartments();
     } else {
       this.selectedDepartmentId.set(this.assignedDepartmentId);
@@ -406,6 +488,9 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.selectedYear.set(year);
+    this.closeReportDrilldown();
+    this.selectedPersonalRecordDistrictId.set(null);
+    this.showAllPersonalRecords.set(false);
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { year },
@@ -432,11 +517,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  isBaptismReport(departmentId: number): boolean {
-    return this.isPersonalRecordReport(departmentId);
-  }
-
-  selectRecordQuarter(quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'): void {
+  selectRecordQuarter(quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'TOTAL'): void {
     if (!this.isPersonalRecordsDepartmentSelected) {
       return;
     }
@@ -447,12 +528,14 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.selectedRecordQuarter.set(quarter);
+    this.selectedPersonalRecordDistrictId.set(null);
+    this.showAllPersonalRecords.set(false);
     this.baptismRecords.set([]);
     this.deathRecords.set([]);
     this.loadSelectedRecords();
   }
 
-  selectBaptismQuarter(quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'): void {
+  selectBaptismQuarter(quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'TOTAL'): void {
     this.selectRecordQuarter(quarter);
   }
 
@@ -466,6 +549,8 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
 
   closeReportRecords(): void {
     this.selectedRecordQuarter.set(null);
+    this.selectedPersonalRecordDistrictId.set(null);
+    this.showAllPersonalRecords.set(false);
     this.closePersonDetails();
     this.baptismRecords.set([]);
     this.baptismRecordsErrorMessage.set('');
@@ -473,6 +558,23 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     this.deathRecords.set([]);
     this.deathRecordsErrorMessage.set('');
     this.loadingDeathRecords.set(false);
+  }
+
+  selectPersonalRecordDistrict(districtId: number): void {
+    this.showAllPersonalRecords.set(false);
+    this.selectedPersonalRecordDistrictId.set(districtId);
+    this.scrollToResults('personal-records-detail-table');
+  }
+
+  selectAllPersonalRecords(): void {
+    this.selectedPersonalRecordDistrictId.set(null);
+    this.showAllPersonalRecords.set(true);
+    this.scrollToResults('personal-records-detail-table');
+  }
+
+  backToPersonalRecordDistricts(): void {
+    this.selectedPersonalRecordDistrictId.set(null);
+    this.showAllPersonalRecords.set(false);
   }
 
   closeBaptismRecords(): void {
@@ -509,13 +611,14 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     if (
       departmentId !== null &&
       (!Number.isInteger(departmentId) ||
-        !this.departments().some(department => department.department_id === departmentId))
+        !this.selectableDepartments().some(department => department.department_id === departmentId))
     ) {
       return;
     }
 
     this.selectedDepartmentId.set(departmentId);
     this.selectedReportId.set(null);
+    this.closeReportDrilldown();
     this.departmentDetails.set(null);
     this.departmentDetailsErrorMessage.set('');
     this.closeReportRecords();
@@ -535,6 +638,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.selectedReportId.set(reportId);
+    this.closeReportDrilldown();
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { report_id: reportId },
@@ -543,12 +647,172 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  openReportDrilldown(
+    quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'TOTAL',
+    particularId: number
+  ): void {
+    if (this.isPersonalRecordsDepartmentSelected || !this.selectedReport()) {
+      return;
+    }
+
+    this.reportDrilldownContext.set({ quarter, particularId });
+    this.loadReportDrilldown();
+  }
+
+  openReportTotalDrilldown(quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'TOTAL'): void {
+    if (this.isPersonalRecordsDepartmentSelected || !this.selectedReport()) {
+      return;
+    }
+
+    this.reportDrilldownContext.set({ quarter, particularId: null });
+    this.loadReportDrilldown();
+  }
+
+  openReportDrilldownDistrict(districtId: number): void {
+    const context = this.reportDrilldownContext();
+    if (!context) {
+      return;
+    }
+
+    this.loadReportDrilldown(context.quarter, context.particularId, districtId);
+  }
+
+  openReportDrilldownChurch(churchId: number): void {
+    const context = this.reportDrilldownContext();
+    const districtId = this.reportDrilldown()?.district_id;
+    if (!context || districtId === undefined) {
+      return;
+    }
+
+    this.loadReportDrilldown(context.quarter, context.particularId, districtId, churchId);
+  }
+
+  backToReportDrilldownDistricts(): void {
+    const context = this.reportDrilldownContext();
+    if (context) {
+      this.loadReportDrilldown(context.quarter, context.particularId);
+    }
+  }
+
+  backToReportDrilldownChurches(): void {
+    const context = this.reportDrilldownContext();
+    const districtId = this.reportDrilldown()?.district_id;
+    if (context && districtId !== undefined) {
+      this.loadReportDrilldown(context.quarter, context.particularId, districtId);
+    }
+  }
+
+  closeReportDrilldown(): void {
+    this.reportDrilldownRequestId += 1;
+    this.reportDrilldownContext.set(null);
+    this.reportDrilldownLocation.set(null);
+    this.reportDrilldown.set(null);
+    this.loadingReportDrilldown.set(false);
+    this.reportDrilldownErrorMessage.set('');
+  }
+
+  retryReportDrilldown(): void {
+    const context = this.reportDrilldownContext();
+    const location = this.reportDrilldownLocation();
+    if (!context || !location) {
+      return;
+    }
+
+    this.loadReportDrilldown(
+      context.quarter,
+      context.particularId,
+      location.districtId,
+      location.churchId
+    );
+  }
+
+  reportDrilldownEntriesTotal(): number {
+    return this.reportDrilldown()?.entries?.reduce(
+      (total, entry) => total + entry.value,
+      0
+    ) ?? 0;
+  }
+
+  reportDrilldownParticularsTotal(): number {
+    return this.reportDrilldown()?.particulars?.reduce(
+      (total, particular) => total + particular.value,
+      0
+    ) ?? 0;
+  }
+
+  private loadReportDrilldown(
+    quarter?: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'TOTAL',
+    particularId?: number | null,
+    districtId?: number,
+    churchId?: number
+  ): void {
+    const context = quarter !== undefined && particularId !== undefined
+      ? { quarter, particularId }
+      : this.reportDrilldownContext();
+    const report = this.selectedReport();
+    const departmentId = this.selectedDepartmentId() ?? this.assignedDepartmentId;
+    if (!context || !report || departmentId === null) {
+      return;
+    }
+
+    if (quarter && particularId) {
+      this.reportDrilldownContext.set(context);
+    }
+    this.reportDrilldownLocation.set({
+      ...(districtId !== undefined ? { districtId } : {}),
+      ...(churchId !== undefined ? { churchId } : {})
+    });
+    const requestId = ++this.reportDrilldownRequestId;
+    const requestedYear = this.selectedYear();
+    this.loadingReportDrilldown.set(true);
+    this.reportDrilldownErrorMessage.set('');
+    this.scrollToResults('report-summary-drilldown');
+    this.churchService.getReportSummaryDrilldown({
+      year: requestedYear,
+      department_id: departmentId,
+      program_id: report.program_id,
+      ...(context.particularId !== null ? { particular_id: context.particularId } : {}),
+      quarter: context.quarter,
+      ...(districtId !== undefined ? { district_id: districtId } : {}),
+      ...(churchId !== undefined ? { church_id: churchId } : {})
+    }).subscribe({
+      next: response => {
+        if (requestId !== this.reportDrilldownRequestId) {
+          return;
+        }
+        if (!response?.success || !response.data) {
+          this.reportDrilldown.set(null);
+          this.reportDrilldownErrorMessage.set('Unable to load report details for this quarter.');
+          this.loadingReportDrilldown.set(false);
+          return;
+        }
+
+        this.reportDrilldown.set(response.data);
+        this.loadingReportDrilldown.set(false);
+        this.scrollToResults('report-summary-drilldown-table');
+      },
+      error: error => {
+        if (requestId !== this.reportDrilldownRequestId) {
+          return;
+        }
+        console.error('Failed to load report summary drilldown:', error);
+        this.reportDrilldown.set(null);
+        this.reportDrilldownErrorMessage.set('Unable to load report details for this quarter.');
+        this.loadingReportDrilldown.set(false);
+      }
+    });
+  }
+
   retryDepartmentDetails(): void {
     this.loadDepartmentDetails();
   }
 
   backToReports(): void {
-    const portalPrefix = this.isAssistantPortal ? '/assistant' : '/director';
+    const portalPrefix = this.isAssistantPortal
+      ? '/assistant'
+      : this.isDistrictPastorPortal
+        ? '/pastor'
+        : '/director';
     const returnParams: Record<string, string | number> = { year: this.selectedYear() };
     Object.assign(returnParams, this.reportReturnQueryParams);
 
@@ -575,7 +839,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
         );
         if (
           Number.isInteger(requestedDepartmentId) &&
-          this.departments().some(department => department.department_id === requestedDepartmentId)
+          this.selectableDepartments().some(department => department.department_id === requestedDepartmentId)
         ) {
           this.selectedDepartmentId.set(requestedDepartmentId);
           this.loadDepartmentDetails();
@@ -653,6 +917,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     const requestedDepartmentId = this.selectedDepartmentId();
     this.loadingBaptismRecords.set(true);
     this.baptismRecordsErrorMessage.set('');
+    this.scrollToResults('baptism-records-results');
     this.churchService.getBaptismRecordsForQuarter(requestedYear, quarter).subscribe({
       next: response => {
         if (
@@ -671,6 +936,11 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
 
         this.baptismRecords.set(response.data);
         this.loadingBaptismRecords.set(false);
+        this.scrollToResults(
+          this.selectedPersonalRecordDistrictId() === null && !this.showAllPersonalRecords()
+            ? 'personal-records-district-table'
+            : 'personal-records-detail-table'
+        );
       },
       error: error => {
         if (
@@ -698,6 +968,7 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     const requestedDepartmentId = this.selectedDepartmentId();
     this.loadingDeathRecords.set(true);
     this.deathRecordsErrorMessage.set('');
+    this.scrollToResults('baptism-records-results');
     this.churchService.getDeathRecordsForQuarter(requestedYear, quarter).subscribe({
       next: response => {
         if (
@@ -716,6 +987,11 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
 
         this.deathRecords.set(response.data);
         this.loadingDeathRecords.set(false);
+        this.scrollToResults(
+          this.selectedPersonalRecordDistrictId() === null && !this.showAllPersonalRecords()
+            ? 'personal-records-district-table'
+            : 'personal-records-detail-table'
+        );
       },
       error: error => {
         if (
@@ -741,6 +1017,20 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private scrollToResults(elementId: string): void {
+    const view = this.document.defaultView;
+    if (!view) {
+      return;
+    }
+
+    view.requestAnimationFrame(() => {
+      const target = this.document.getElementById(elementId);
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+
   deathRecordName(record: DeathSummaryRecord): string {
     return [
       record.first_name,
@@ -750,8 +1040,12 @@ export class DirectorReportSummary implements OnInit, AfterViewInit, OnDestroy {
     ].filter(Boolean).join(' ');
   }
 
+  private personalRecords(): PersonalRecord[] {
+    return this.isBaptismDepartmentSelected ? this.baptismRecords() : this.deathRecords();
+  }
+
   loadSummary(): void {
-    if (!this.isAssistantPortal && this.assignedDepartmentId === null) {
+    if (!this.isDepartmentSelectorPortal && this.assignedDepartmentId === null) {
       this.summary.set(null);
       this.errorMessage.set('A department must be assigned to your Director account.');
       this.loading.set(false);

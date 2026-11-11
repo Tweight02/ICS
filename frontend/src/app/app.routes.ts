@@ -11,15 +11,12 @@ export const routes: Routes = [
       import('./features/login/login')
         .then(m => m.Login)
   },
-
   {
     path: 'profile',
     loadComponent: () =>
       import('./features/profile/profile')
         .then(m => m.ProfileComponent)
   },
-
-
 
   /* ==============================
      ASSISTANT
