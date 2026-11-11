@@ -47,12 +47,24 @@ test('completed event seeder creates the demo representative when missing', func
         'quarter' => 'Q4',
         'year' => '2026',
     ]);
+    DB::table('users')->insert([
+        'department_id' => null,
+        'church_id' => $churchId,
+        'first_name' => 'Church',
+        'last_name' => 'Representative',
+        'birthdate' => '1990-01-01',
+        'gender' => 'other',
+        'role' => 'representative',
+        'email' => 'seed.church-user.department-13@example.com',
+        'password' => 'password',
+        'status' => 'active',
+    ]);
 
     $this->seed(CompletedEventSeeder::class);
     $this->seed(CompletedEventSeeder::class);
 
     $representativeId = DB::table('users')
-        ->where('email', 'seed.church-user.department-13@example.com')
+        ->where('email', 'seed.completed-event.representative@example.com')
         ->value('user_id');
     $event = DB::table('events')
         ->where('title', 'Seeded Completed Event')
@@ -61,6 +73,8 @@ test('completed event seeder creates the demo representative when missing', func
     expect(DB::table('events')->where('title', 'Seeded Completed Event')->count())->toBe(1)
         ->and($representativeId)->not->toBeNull()
         ->and(DB::table('users')->where('user_id', $representativeId)->value('church_id'))->toBe($churchId)
+        ->and(DB::table('users')->where('email', 'seed.church-user.department-13@example.com')
+            ->value('department_id'))->toBeNull()
         ->and($event)->not->toBeNull()
         ->and($event->quarter_id)->toBe($quarterId)
         ->and($event->status)->toBe('completed')
@@ -134,7 +148,7 @@ test('completed event seeder creates an idempotent past event for the demo repre
         'birthdate' => '1990-01-01',
         'gender' => 'other',
         'role' => 'representative',
-        'email' => 'seed.church-user.department-13@example.com',
+        'email' => 'seed.completed-event.representative@example.com',
         'password' => 'password',
         'status' => 'active',
     ]);

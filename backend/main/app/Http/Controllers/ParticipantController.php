@@ -44,7 +44,7 @@ class ParticipantController extends Controller
         ]);
 
         $user = EventUser::fromRequest($request);
-        $query = $event->participants();
+        $query = $event->participants()->with('church:church_id,name');
         $summaryQuery = $event->participants();
         if ($user->role === 'church_representative') {
             $query->where('participants.church_id', $user->churchId ?? 0);

@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EventParticipant extends Model
 {
     protected $table = 'participants';
+
     protected $primaryKey = 'participant_id';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -19,6 +21,11 @@ class EventParticipant extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class, 'event_id', 'event_id');
+    }
+
+    public function church(): BelongsTo
+    {
+        return $this->belongsTo(Church::class, 'church_id', 'church_id');
     }
 
     public function getNameAttribute(): string

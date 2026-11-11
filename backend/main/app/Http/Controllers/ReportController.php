@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Baptism;
 use App\Models\Death;
+use App\Models\User;
 use App\Services\ReportMonitoringService;
 use App\Support\ReportParticipantCoverage;
 use Illuminate\Http\JsonResponse;
@@ -617,6 +617,11 @@ class ReportController extends Controller
             && $user
             && $this->isPastorRole($this->normalizeRole((string) ($user->role ?? '')))
             && in_array((int) $departmentId, [16, 20], true);
+        $personalReportName = match ((int) $departmentId) {
+            16 => 'Ministerial & Evangelism',
+            20 => 'Adventist Mission',
+            default => 'Personal',
+        };
 
         if ($submitted && $user && $this->isRepresentativeRole($user)) {
             $targetQuarterIds = collect($validated['items'])
@@ -888,8 +893,8 @@ class ReportController extends Controller
                     (int) $request->user()->user_id,
                     $autoEndorsePersonalReport
                         ? ($wasPreviouslySubmitted
-                            ? 'Personal report resubmitted and endorsed.'
-                            : 'Personal report submitted and endorsed.')
+                            ? "{$personalReportName} personal report resubmitted and endorsed."
+                            : "{$personalReportName} personal report submitted and endorsed.")
                         : ($wasPreviouslySubmitted ? 'Report resubmitted.' : 'Report submitted.')
                 );
             }
@@ -898,7 +903,7 @@ class ReportController extends Controller
 
             return response()->json([
                 'message' => $autoEndorsePersonalReport
-                    ? 'Personal report submitted and endorsed. The assistant can now review it.'
+                    ? "{$personalReportName} personal report submitted and endorsed. The assistant can now review it."
                     : 'Report saved successfully.',
                 'saved_count' => $savedCount,
             ]);
@@ -1394,6 +1399,11 @@ class ReportController extends Controller
             ], 404);
         }
 
+        $programName = (string) DB::table('programs')
+            ->where('program_id', $programId)
+            ->value('program_name');
+        $workflowMessage = "{$programName} report endorsed for {$data['quarter']} {$data['year']}.";
+
         $quarters = DB::table('quarters')
             ->whereIn('quarter_id', $quarterIds)
             ->get();
@@ -1425,7 +1435,8 @@ class ReportController extends Controller
             $churchId,
             $departmentId,
             $user,
-            $today
+            $today,
+            $workflowMessage
         ): void {
             DB::table('quarters')
                 ->whereIn('quarter_id', $quarterIds)
@@ -1445,12 +1456,12 @@ class ReportController extends Controller
                 $churchId,
                 $departmentId,
                 (int) $user->user_id,
-                'Report endorsed.'
+                $workflowMessage
             );
         });
 
         return response()->json([
-            'message' => 'Report endorsed. The administrative assistant can now review it.',
+            'message' => "{$workflowMessage} The administrative assistant can now review it.",
         ]);
     }
 
@@ -1519,6 +1530,11 @@ class ReportController extends Controller
             ], 404);
         }
 
+        $programName = (string) DB::table('programs')
+            ->where('program_id', $programId)
+            ->value('program_name');
+        $workflowMessage = "{$programName} report approved for {$data['quarter']} {$data['year']}.";
+
         $quarters = DB::table('quarters')
             ->whereIn('quarter_id', $quarterIds)
             ->get();
@@ -1561,7 +1577,8 @@ class ReportController extends Controller
             $quarterIds,
             $churchId,
             $departmentId,
-            $user
+            $user,
+            $workflowMessage
         ): void {
             DB::table('quarters')
                 ->whereIn('quarter_id', $quarterIds)
@@ -1574,12 +1591,12 @@ class ReportController extends Controller
                 $churchId,
                 $departmentId,
                 (int) $user->user_id,
-                'Report approved.'
+                $workflowMessage
             );
         });
 
         return response()->json([
-            'message' => 'Report approved successfully.',
+            'message' => $workflowMessage,
         ]);
     }
 
