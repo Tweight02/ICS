@@ -82,7 +82,8 @@ export class EventOverviewComponent implements OnInit {
 
   get canShareRegistrationLink(): boolean {
     return this.event?.abilities?.confirm_participants === true
-      && this.status !== 'Past';
+      && this.status !== 'Past'
+      && String(this.event?.status ?? '').toLowerCase() !== 'completed';
   }
 
   generateRegistrationLink(): void {
