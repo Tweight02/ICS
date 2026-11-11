@@ -4,6 +4,15 @@
 
 This guide covers the Administrative Assistant pages and actions available in ICS, from signing in through logging out. Screenshots use numbered red callouts. Personal information in the participant screenshot is masked. Actions and data can differ by account, department, event, and permissions; use the controls shown for your account.
 
+### Quick start
+
+- Sign in with your assigned email and password to open the Administrative Assistant dashboard.
+- Use **Pastors** to create, edit, and assign pastor accounts.
+- Use **Events** to find, review, and manage event registration and participant status.
+- Use **Reports** to monitor quarter-by-quarter report progress, review data, and approve eligible reports.
+- Use your profile menu to update your own account information.
+- Select **Log out** when you finish, especially on shared or public devices.
+
 ## 1. SIGN IN AND NAVIGATE
 
 ### Sign in

@@ -140,10 +140,11 @@ class ReportController extends Controller
 
         $isAssistant = $user && $this->isAssistantRole($role);
         $isDirector = $user && in_array($role, ['director', 'head director'], true);
+        $isPastor = $user && $this->isPastorRole($role);
 
-        if (! $isAssistant && ! $isDirector) {
+        if (! $isAssistant && ! $isDirector && ! $isPastor) {
             return response()->json([
-                'message' => 'Only assistants and directors can access the report summary.',
+                'message' => 'Only assistants, directors, and district pastors can access the report summary.',
             ], 403);
         }
 
@@ -157,19 +158,164 @@ class ReportController extends Controller
             'year' => ['sometimes', 'integer', 'min:1900', 'max:'.now()->year],
             'department_id' => ['sometimes', 'integer', 'exists:departments,department_id'],
         ]);
+        $districtId = $isPastor ? $this->assignedDistrictId($user) : null;
+        if ($isPastor && $districtId === null) {
+            return response()->json([
+                'message' => 'A valid district must be assigned to your Pastor account.',
+            ], 403);
+        }
         $year = isset($validated['year'])
             ? (string) $validated['year']
             : (string) config('app.reporting_year', now()->year);
         $summaryDepartmentId = $isAssistant
             ? (isset($validated['department_id']) ? (int) $validated['department_id'] : null)
-            : (int) $user->department_id;
+            : ($isDirector
+                ? (int) $user->department_id
+                : (isset($validated['department_id']) ? (int) $validated['department_id'] : null));
 
         return response()->json([
             'success' => true,
             'data' => $monitoring->missionSummary(
                 $year,
                 $summaryDepartmentId,
-                $summaryDepartmentId !== null
+                $summaryDepartmentId !== null,
+                $districtId
+            ),
+        ]);
+    }
+
+    public function missionSummaryDrilldown(
+        Request $request,
+        ReportMonitoringService $monitoring
+    ): JsonResponse {
+        $user = $request->user();
+        $role = $user
+            ? $this->normalizeRole((string) ($user->role ?? ''))
+            : '';
+        $isAssistant = $user && $this->isAssistantRole($role);
+        $isDirector = $user && in_array($role, ['director', 'head director'], true);
+        $isPastor = $user && $this->isPastorRole($role);
+
+        if (! $isAssistant && ! $isDirector && ! $isPastor) {
+            return response()->json([
+                'message' => 'Only assistants, directors, and district pastors can access report summary details.',
+            ], 403);
+        }
+        $assignedDistrictId = $isPastor ? $this->assignedDistrictId($user) : null;
+        if ($isPastor && $assignedDistrictId === null) {
+            return response()->json([
+                'message' => 'A valid district must be assigned to your Pastor account.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'year' => ['required', 'integer', 'min:1900', 'max:'.now()->year],
+            'quarter' => ['required', 'in:Q1,Q2,Q3,Q4,TOTAL'],
+            'department_id' => ['required', 'integer', 'exists:departments,department_id'],
+            'program_id' => ['required', 'integer'],
+            'particular_id' => ['sometimes', 'integer'],
+            'district_id' => ['sometimes', 'integer', 'exists:churches,church_id', 'required_with:church_id'],
+            'church_id' => ['sometimes', 'integer', 'exists:churches,church_id'],
+        ]);
+        $departmentId = (int) $validated['department_id'];
+
+        if ($isDirector && (int) $user->department_id !== $departmentId) {
+            return response()->json([
+                'message' => 'You can only access reports for your assigned department.',
+            ], 403);
+        }
+
+        if ($isPastor && isset($validated['church_id'])) {
+            return response()->json([
+                'message' => 'District pastors can view the church list but not church-level report details.',
+            ], 403);
+        }
+
+        if (
+            $isPastor &&
+            isset($validated['district_id']) &&
+            (int) $validated['district_id'] !== $assignedDistrictId
+        ) {
+            return response()->json([
+                'message' => 'You can only access reports for your assigned district.',
+            ], 403);
+        }
+
+        if (
+            ! ($isPastor && in_array($departmentId, [22, 23], true)) &&
+            ($denied = $this->departmentAccessDenied($request, $departmentId))
+        ) {
+            return $denied;
+        }
+
+        $programId = (int) $validated['program_id'];
+        $particularId = isset($validated['particular_id'])
+            ? (int) $validated['particular_id']
+            : null;
+        $programExists = DB::table('programs')
+            ->where('program_id', $programId)
+            ->where('department_id', $departmentId)
+            ->whereNull('parent_id')
+            ->exists();
+        $particularExists = $particularId === null || DB::table('particulars')
+            ->join('programs as sections', 'sections.program_id', '=', 'particulars.program_id')
+            ->where('sections.parent_id', $programId)
+            ->where('particulars.particular_id', $particularId)
+            ->exists();
+
+        if (! $programExists || ! $particularExists) {
+            return response()->json([
+                'message' => 'The selected report particular was not found.',
+            ], 404);
+        }
+
+        $districtId = $isPastor
+            ? $assignedDistrictId
+            : (isset($validated['district_id']) ? (int) $validated['district_id'] : null);
+        $churchId = isset($validated['church_id'])
+            ? (int) $validated['church_id']
+            : null;
+
+        if ($districtId !== null) {
+            $districtExists = DB::table('churches')
+                ->where('church_id', $districtId)
+                ->whereNull('parent_id')
+                ->exists();
+            if (! $districtExists) {
+                return response()->json([
+                    'message' => 'The selected district was not found.',
+                ], 404);
+            }
+        }
+
+        if ($churchId !== null) {
+            $churchMatchesDistrict = DB::table('churches')
+                ->where('church_id', $churchId)
+                ->where(function ($query) use ($districtId) {
+                    $query->where('parent_id', $districtId)
+                        ->orWhere(function ($districtQuery) use ($districtId) {
+                            $districtQuery->where('church_id', $districtId)
+                                ->whereNull('parent_id');
+                        });
+                })
+                ->exists();
+            if (! $churchMatchesDistrict) {
+                return response()->json([
+                    'message' => 'The selected church does not belong to this district.',
+                ], 404);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $monitoring->missionSummaryDrilldown(
+                (int) $validated['year'],
+                $validated['quarter'],
+                $departmentId,
+                $programId,
+                $particularId,
+                $districtId,
+                $churchId
             ),
         ]);
     }
@@ -193,17 +339,23 @@ class ReportController extends Controller
 
         $validated = $request->validate([
             'year' => ['required', 'integer', 'min:1900', 'max:'.now()->year],
-            'quarter' => ['required', 'in:Q1,Q2,Q3,Q4'],
+            'quarter' => ['required', 'in:Q1,Q2,Q3,Q4,TOTAL'],
         ]);
 
         $records = Baptism::query()
             ->join('churches', 'churches.church_id', '=', 'baptisms.church_id')
+            ->leftJoin('churches as districts', 'districts.church_id', '=', 'churches.parent_id')
             ->whereNotNull('baptisms.date_of_baptism')
             ->whereYear('baptisms.date_of_baptism', $validated['year'])
-            ->whereRaw('UPPER(TRIM(baptisms.quarter)) = ?', [$validated['quarter']])
+            ->when(
+                $validated['quarter'] !== 'TOTAL',
+                fn ($query) => $query->whereRaw('UPPER(TRIM(baptisms.quarter)) = ?', [$validated['quarter']])
+            )
             ->select(
                 'baptisms.*',
-                'churches.name as church_name'
+                'churches.name as church_name',
+                DB::raw('COALESCE(districts.church_id, churches.church_id) as district_id'),
+                DB::raw('COALESCE(districts.name, churches.name) as district_name')
             )
             ->orderByDesc('baptisms.date_of_baptism')
             ->get();
@@ -233,15 +385,19 @@ class ReportController extends Controller
 
         $validated = $request->validate([
             'year' => ['required', 'integer', 'min:1900', 'max:'.now()->year],
-            'quarter' => ['required', 'in:Q1,Q2,Q3,Q4'],
+            'quarter' => ['required', 'in:Q1,Q2,Q3,Q4,TOTAL'],
         ]);
 
         $records = Death::query()
             ->join('baptisms', 'baptisms.baptism_id', '=', 'deaths.baptism_id')
             ->join('churches', 'churches.church_id', '=', 'baptisms.church_id')
+            ->leftJoin('churches as districts', 'districts.church_id', '=', 'churches.parent_id')
             ->whereNotNull('deaths.date_of_death')
             ->whereYear('deaths.date_of_death', $validated['year'])
-            ->whereRaw('UPPER(TRIM(deaths.quarter)) = ?', [$validated['quarter']])
+            ->when(
+                $validated['quarter'] !== 'TOTAL',
+                fn ($query) => $query->whereRaw('UPPER(TRIM(deaths.quarter)) = ?', [$validated['quarter']])
+            )
             ->select(
                 'deaths.death_id',
                 'deaths.baptism_id',
@@ -260,7 +416,9 @@ class ReportController extends Controller
                 'baptisms.place_of_baptism',
                 'baptisms.officiating_minister',
                 'baptisms.is_reclaimed',
-                'churches.name as church_name'
+                'churches.name as church_name',
+                DB::raw('COALESCE(districts.church_id, churches.church_id) as district_id'),
+                DB::raw('COALESCE(districts.name, churches.name) as district_name')
             )
             ->orderByDesc('deaths.date_of_death')
             ->get();
@@ -1678,6 +1836,24 @@ class ReportController extends Controller
     private function isPastorRole(string $role): bool
     {
         return in_array($role, ['pastor', 'district pastor'], true);
+    }
+
+    private function assignedDistrictId(User $user): ?int
+    {
+        $assignedChurch = DB::table('churches')
+            ->where('church_id', $user->church_id)
+            ->first(['church_id', 'parent_id']);
+        if (! $assignedChurch) {
+            return null;
+        }
+
+        $districtId = (int) ($assignedChurch->parent_id ?? $assignedChurch->church_id);
+        $districtExists = DB::table('churches')
+            ->where('church_id', $districtId)
+            ->whereNull('parent_id')
+            ->exists();
+
+        return $districtExists ? $districtId : null;
     }
 
     private function isAssistantRole(string $role): bool

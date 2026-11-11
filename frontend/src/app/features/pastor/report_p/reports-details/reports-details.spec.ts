@@ -90,6 +90,27 @@ describe('ReportsDetails', () => {
     expect(navigate).toHaveBeenCalledWith(['/pastor/baptism']);
   });
 
+  it('opens the summary report from the reports page button for the selected year', () => {
+    component.openSummaryReport();
+
+    expect(navigate).toHaveBeenCalledWith(['/pastor/reports/summary'], {
+      queryParams: { year: CURRENT_REPORT_YEAR }
+    });
+  });
+
+  it('shows the summary report button beside the personal report button', () => {
+    const personalReportButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).find(button => button.textContent?.includes('Personal Report'));
+    const summaryReportButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).find(button => button.textContent?.includes('Summary Report'));
+
+    expect(personalReportButton).toBeTruthy();
+    expect(summaryReportButton).toBeTruthy();
+    expect(personalReportButton?.parentElement).toBe(summaryReportButton?.parentElement);
+  });
+
   it('expands a church inline to show department statuses and loads them once', () => {
     const church = component.churches()[0];
 

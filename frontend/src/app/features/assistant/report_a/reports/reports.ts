@@ -28,7 +28,7 @@ import {
 interface MonitoringAlert {
   quarter: string;
   status: string;
-  tone: 'complete' | 'endorsed' | 'pending' | 'in-progress' | 'not-started';
+  tone: 'complete' | 'endorsed' | 'pending' | 'in-progress' | 'not-started' | 'empty';
 }
 
 const HIDDEN_HEAD_ASSISTANT_DEPARTMENTS = new Set([
@@ -667,18 +667,18 @@ export class Reports implements OnInit {
     }
 
     if (progress === null) {
-      return null;
+      return { quarter: quarter.toUpperCase(), status: '-', tone: 'empty' };
     }
 
     if (progress === 100) {
-      return { quarter: quarter.toUpperCase(), status: 'Ready to submit', tone: 'pending' };
+      return { quarter: quarter.toUpperCase(), status: 'In progress', tone: 'in-progress' };
     }
 
     if (progress > 0) {
       return { quarter: quarter.toUpperCase(), status: 'In progress', tone: 'in-progress' };
     }
 
-    return { quarter: quarter.toUpperCase(), status: 'Not started', tone: 'not-started' };
+    return { quarter: quarter.toUpperCase(), status: '-', tone: 'not-started' };
   }
 
   getDistrictPastorQuarterStatus(
@@ -693,13 +693,13 @@ export class Reports implements OnInit {
       monitoring: this.districtPastorMonitoring()[districtId]
     }, quarter);
 
-    if (status && ['Approved', 'Endorsed', 'Submitted'].includes(status.status)) {
+    if (status) {
       return status;
     }
 
     return {
       quarter: quarter.toUpperCase(),
-      status: 'Not submitted',
+      status: '-',
       tone: 'not-started'
     };
   }

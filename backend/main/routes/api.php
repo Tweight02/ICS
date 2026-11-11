@@ -190,6 +190,11 @@ Route::get('/reports/mission-summary', [
     'missionSummary',
 ])->middleware('auth:sanctum');
 
+Route::get('/reports/mission-summary/drilldown', [
+    ReportController::class,
+    'missionSummaryDrilldown',
+])->middleware('auth:sanctum');
+
 Route::get('/reports/mission-summary/baptisms', [
     ReportController::class,
     'missionBaptismRecords',

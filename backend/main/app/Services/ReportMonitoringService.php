@@ -12,6 +12,219 @@ class ReportMonitoringService
     private const DEATH_RECORD_DEPARTMENT_ID = 23;
 
     /**
+     * @return array<string, mixed>
+     */
+    public function missionSummaryDrilldown(
+        int $year,
+        string $quarter,
+        int $departmentId,
+        int $programId,
+        ?int $particularId,
+        ?int $districtId = null,
+        ?int $churchId = null
+    ): array {
+        $report = DB::table('programs')
+            ->join('departments', 'departments.department_id', '=', 'programs.department_id')
+            ->where('programs.program_id', $programId)
+            ->whereNull('programs.parent_id')
+            ->select('programs.program_name', 'departments.department_name')
+            ->first();
+
+        $particularName = $particularId === null
+            ? 'All report particulars'
+            : DB::table('particulars')
+                ->join('programs as sections', 'sections.program_id', '=', 'particulars.program_id')
+                ->where('sections.parent_id', $programId)
+                ->where('particulars.particular_id', $particularId)
+                ->value('particular_name');
+
+        $data = [
+            'year' => (string) $year,
+            'quarter' => $quarter,
+            'department_name' => (string) $report->department_name,
+            'report_name' => (string) $report->program_name,
+            'particular_name' => (string) $particularName,
+        ];
+
+        if ($churchId !== null) {
+            $church = DB::table('churches')
+                ->where('church_id', $churchId)
+                ->first(['church_id', 'name']);
+            $quarterIds = DB::table('quarters')
+                ->where('program_id', $programId)
+                ->where('church_id', $churchId)
+                ->where('year', (string) $year)
+                ->when(
+                    $quarter !== 'TOTAL',
+                    fn ($query) => $query->whereRaw('UPPER(TRIM(quarter)) = ?', [$quarter])
+                )
+                ->whereNotNull('date_submitted')
+                ->pluck('quarter_id');
+            $particulars = [];
+
+            $particulars = DB::table('programs as report')
+                ->join('programs as sections', 'sections.parent_id', '=', 'report.program_id')
+                ->join('particulars', 'particulars.program_id', '=', 'sections.program_id')
+                ->leftJoin('particular_items', function ($join) use ($quarterIds) {
+                    $join->on('particular_items.particular_id', '=', 'particulars.particular_id')
+                        ->whereIn('particular_items.quarter_id', $quarterIds);
+                })
+                ->where('report.program_id', $programId)
+                ->select('particulars.particular_id', 'particulars.particular_name')
+                ->selectRaw('COALESCE(SUM(particular_items.value), 0) AS value')
+                ->groupBy('particulars.particular_id', 'particulars.particular_name')
+                ->orderBy('particulars.particular_id')
+                ->get()
+                ->map(static fn ($row) => [
+                    'particular_id' => (int) $row->particular_id,
+                    'particular_name' => (string) $row->particular_name,
+                    'value' => (int) $row->value,
+                ])
+                ->all();
+
+            return [
+                ...$data,
+                'level' => 'particulars',
+                'district_id' => $districtId,
+                'district_name' => $districtId === null
+                    ? null
+                    : (string) DB::table('churches')
+                        ->where('church_id', $districtId)
+                        ->value('name'),
+                'church_id' => (int) $church->church_id,
+                'church_name' => (string) $church->name,
+                'particulars' => $particulars,
+            ];
+        }
+
+        if ($districtId !== null && in_array($departmentId, [
+            self::BAPTISM_RECORD_DEPARTMENT_ID,
+            self::DEATH_RECORD_DEPARTMENT_ID,
+        ], true)) {
+            $table = $departmentId === self::BAPTISM_RECORD_DEPARTMENT_ID ? 'baptisms' : 'deaths';
+            $dateColumn = $departmentId === self::BAPTISM_RECORD_DEPARTMENT_ID
+                ? 'date_of_baptism'
+                : 'date_of_death';
+            $recordQuery = DB::table($table.' as records');
+            $recordChurchColumn = 'records.church_id';
+            if ($departmentId === self::DEATH_RECORD_DEPARTMENT_ID) {
+                $recordQuery->join(
+                    'baptisms as baptism_record',
+                    'baptism_record.baptism_id',
+                    '=',
+                    'records.baptism_id'
+                );
+                $recordChurchColumn = 'baptism_record.church_id';
+            }
+            $entries = $recordQuery
+                ->join('churches as church', 'church.church_id', '=', $recordChurchColumn)
+                ->where('church.parent_id', $districtId)
+                ->whereYear('records.'.$dateColumn, $year)
+                ->when(
+                    $quarter !== 'TOTAL',
+                    fn ($query) => $query->whereRaw('UPPER(TRIM(records.quarter)) = ?', [$quarter])
+                )
+                ->select('church.church_id', 'church.name as church_name')
+                ->selectRaw('COUNT(*) AS value')
+                ->selectRaw('COUNT(*) AS submitted_reports')
+                ->groupBy('church.church_id', 'church.name')
+                ->orderBy('church.name')
+                ->get()
+                ->map(static fn ($row) => [
+                    'church_id' => (int) $row->church_id,
+                    'church_name' => (string) $row->church_name,
+                    'value' => (int) $row->value,
+                    'submitted_reports' => (int) $row->submitted_reports,
+                ])
+                ->all();
+
+            return [
+                ...$data,
+                'level' => 'churches',
+                'district_id' => $districtId,
+                'district_name' => (string) DB::table('churches')
+                    ->where('church_id', $districtId)
+                    ->value('name'),
+                'entries' => $entries,
+            ];
+        }
+
+        $query = DB::table('quarters')
+            ->leftJoin('particular_items', function ($join) use ($particularId) {
+                $join->on('particular_items.quarter_id', '=', 'quarters.quarter_id')
+                    ->when(
+                        $particularId !== null,
+                        fn ($itemQuery) => $itemQuery->where('particular_items.particular_id', '=', $particularId)
+                    );
+            })
+            ->join('churches as report_church', 'report_church.church_id', '=', 'quarters.church_id')
+            ->leftJoin('churches as parent_district', 'parent_district.church_id', '=', 'report_church.parent_id')
+            ->join('churches as district', function ($join) {
+                $join->on('district.church_id', '=', DB::raw('COALESCE(parent_district.church_id, report_church.church_id)'));
+            })
+            ->where('quarters.program_id', $programId)
+            ->where('quarters.year', (string) $year)
+            ->when(
+                $quarter !== 'TOTAL',
+                fn ($query) => $query->whereRaw('UPPER(TRIM(quarters.quarter)) = ?', [$quarter])
+            )
+            ->whereNotNull('quarters.date_submitted')
+            ->whereNull('district.parent_id');
+
+        if ($districtId !== null) {
+            $entries = $query
+                ->where('district.church_id', $districtId)
+                ->select(
+                    'report_church.church_id',
+                    'report_church.name as church_name'
+                )
+                ->selectRaw('COALESCE(SUM(particular_items.value), 0) AS value')
+                ->selectRaw('COUNT(DISTINCT quarters.quarter_id) AS submitted_reports')
+                ->groupBy('report_church.church_id', 'report_church.name')
+                ->orderBy('report_church.name')
+                ->get()
+                ->map(static fn ($row) => [
+                    'church_id' => (int) $row->church_id,
+                    'church_name' => (string) $row->church_name,
+                    'value' => (int) $row->value,
+                    'submitted_reports' => (int) $row->submitted_reports,
+                ])
+                ->all();
+
+            return [
+                ...$data,
+                'level' => 'churches',
+                'district_id' => $districtId,
+                'district_name' => (string) DB::table('churches')
+                    ->where('church_id', $districtId)
+                    ->value('name'),
+                'entries' => $entries,
+            ];
+        }
+
+        $entries = $query
+            ->select('district.church_id', 'district.name as church_name')
+            ->selectRaw('COALESCE(SUM(particular_items.value), 0) AS value')
+            ->selectRaw('COUNT(DISTINCT quarters.quarter_id) AS submitted_reports')
+            ->groupBy('district.church_id', 'district.name')
+            ->orderBy('district.name')
+            ->get()
+            ->map(static fn ($row) => [
+                'church_id' => (int) $row->church_id,
+                'church_name' => (string) $row->church_name,
+                'value' => (int) $row->value,
+                'submitted_reports' => (int) $row->submitted_reports,
+            ])
+            ->all();
+
+        return [
+            ...$data,
+            'level' => 'districts',
+            'entries' => $entries,
+        ];
+    }
+
+    /**
      * @return array{
      *     year: string,
      *     total_submitted_reports: int,
@@ -43,14 +256,22 @@ class ReportMonitoringService
     public function missionSummary(
         string $year,
         ?int $departmentId = null,
-        bool $includeParticulars = false
+        bool $includeParticulars = false,
+        ?int $districtId = null
     ): array
     {
         $rows = DB::table('programs')
             ->join('departments', 'departments.department_id', '=', 'programs.department_id')
-            ->leftJoin('quarters', function ($join) use ($year) {
+            ->leftJoin('quarters', function ($join) use ($year, $districtId) {
                 $join->on('quarters.program_id', '=', 'programs.program_id')
                     ->where('quarters.year', '=', $year);
+                if ($districtId !== null) {
+                    $join->whereIn('quarters.church_id', function ($query) use ($districtId) {
+                        $query->select('church_id')
+                            ->from('churches')
+                            ->where('parent_id', $districtId);
+                    });
+                }
             })
             ->leftJoin('particular_items', 'particular_items.quarter_id', '=', 'quarters.quarter_id')
             ->whereNull('programs.parent_id')
@@ -95,20 +316,27 @@ class ReportMonitoringService
         $personalRecordQuarterTotals = [];
         if ($departmentId === null || $departmentId === self::BAPTISM_RECORD_DEPARTMENT_ID) {
             $personalRecordQuarterTotals[self::BAPTISM_RECORD_DEPARTMENT_ID] =
-                $this->personalRecordQuarterTotals('baptisms', 'date_of_baptism', $year);
+            $this->personalRecordQuarterTotals('baptisms', 'date_of_baptism', $year, $districtId);
         }
         if ($departmentId === null || $departmentId === self::DEATH_RECORD_DEPARTMENT_ID) {
             $personalRecordQuarterTotals[self::DEATH_RECORD_DEPARTMENT_ID] =
-                $this->personalRecordQuarterTotals('deaths', 'date_of_death', $year);
+            $this->personalRecordQuarterTotals('deaths', 'date_of_death', $year, $districtId);
         }
 
         $particularsByProgram = [];
         if ($includeParticulars && $departmentId !== null) {
             $particularRows = DB::table('programs')
                 ->join('departments', 'departments.department_id', '=', 'programs.department_id')
-                ->leftJoin('quarters', function ($join) use ($year) {
+                ->leftJoin('quarters', function ($join) use ($year, $districtId) {
                     $join->on('quarters.program_id', '=', 'programs.program_id')
                         ->where('quarters.year', '=', $year);
+                    if ($districtId !== null) {
+                        $join->whereIn('quarters.church_id', function ($query) use ($districtId) {
+                            $query->select('church_id')
+                                ->from('churches')
+                                ->where('parent_id', $districtId);
+                        });
+                    }
                 })
                 ->leftJoin('programs as sections', 'sections.parent_id', '=', 'programs.program_id')
                 ->leftJoin('particulars', 'particulars.program_id', '=', 'sections.program_id')
@@ -241,12 +469,31 @@ class ReportMonitoringService
     private function personalRecordQuarterTotals(
         string $table,
         string $dateColumn,
-        string $year
+        string $year,
+        ?int $districtId = null
     ): array {
-        $counts = DB::table($table)
-            ->whereYear($dateColumn, $year)
-            ->selectRaw('UPPER(TRIM(quarter)) AS normalized_quarter, COUNT(*) AS record_count')
-            ->groupByRaw('UPPER(TRIM(quarter))')
+        $query = DB::table($table.' as personal_records')
+            ->whereYear('personal_records.'.$dateColumn, $year);
+        if ($districtId !== null) {
+            $churchColumn = 'personal_records.church_id';
+            if ($table === 'deaths') {
+                $query->join(
+                    'baptisms as baptism_record',
+                    'baptism_record.baptism_id',
+                    '=',
+                    'personal_records.baptism_id'
+                );
+                $churchColumn = 'baptism_record.church_id';
+            }
+            $query->whereIn($churchColumn, function ($churchQuery) use ($districtId) {
+                $churchQuery->select('church_id')
+                    ->from('churches')
+                    ->where('parent_id', $districtId);
+            });
+        }
+        $counts = $query
+            ->selectRaw('UPPER(TRIM(personal_records.quarter)) AS normalized_quarter, COUNT(*) AS record_count')
+            ->groupByRaw('UPPER(TRIM(personal_records.quarter))')
             ->pluck('record_count', 'normalized_quarter');
 
         return [

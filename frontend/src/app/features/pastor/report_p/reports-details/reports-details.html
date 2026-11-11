@@ -26,20 +26,31 @@
           <strong class="mr-1 text-emerald-950">{{ churches().length }}</strong>
           {{ churches().length === 1 ? 'Church' : 'Churches' }}
         </span>
-        <button type="button" (click)="openPersonalReport()"
-          class="group inline-flex min-h-11 items-center gap-3 !rounded-full border border-emerald-700/80 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-950/10 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-900 hover:shadow-lg hover:shadow-emerald-950/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.98]"
-          style="border-radius: 9999px !important">
-          <span class="grid h-8 w-8 place-items-center rounded-lg bg-white/15 ring-1 ring-inset ring-white/15 transition group-hover:bg-white/20"
-            aria-hidden="true">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="8" r="3.25" />
-              <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
-              <path d="M19 5v4M17 7h4" />
-            </svg>
-          </span>
-          <span class="whitespace-nowrap">Personal Report</span>
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" (click)="openPersonalReport()"
+            class="group inline-flex min-h-11 items-center gap-3 !rounded-full border border-emerald-700/80 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-950/10 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-900 hover:shadow-lg hover:shadow-emerald-950/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.98]"
+            style="border-radius: 9999px !important">
+            <span class="grid h-8 w-8 place-items-center rounded-lg bg-white/15 ring-1 ring-inset ring-white/15 transition group-hover:bg-white/20"
+              aria-hidden="true">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="3.25" />
+                <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+                <path d="M19 5v4M17 7h4" />
+              </svg>
+            </span>
+            <span class="whitespace-nowrap">Personal Report</span>
+          </button>
+          <button type="button" (click)="openSummaryReport()"
+            class="group inline-flex min-h-11 items-center gap-3 !rounded-full border border-emerald-700/80 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.98]"
+            style="border-radius: 9999px !important">
+            <span class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-100 text-emerald-800"
+              aria-hidden="true">
+              <i class="bi bi-bar-chart-line text-base"></i>
+            </span>
+            <span class="whitespace-nowrap">Summary Report</span>
+          </button>
+        </div>
       </div>
     </header>
 
