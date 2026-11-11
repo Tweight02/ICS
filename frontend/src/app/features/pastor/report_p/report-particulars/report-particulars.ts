@@ -108,6 +108,8 @@ interface QuarterRef {
   year?: number | string;
 }
 
+type AutoSaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
+
 @Component({
   selector: 'app-report-particulars',
   standalone: true,
@@ -117,7 +119,36 @@ interface QuarterRef {
 export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterViewInit {
   expandFirstSection = true;
   showInputsWhenReadOnly = false;
-  autoSaveStatus: 'idle' | 'pending' | 'saving' | 'saved' | 'error' = 'idle';
+  private readonly autoSaveStatusState = signal<AutoSaveStatus>('idle');
+  private savedStatusTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly autoSaveDelayMs = 800;
+  private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private autoSaving = false;
+  private autoSaveQueue: SaveReportItem[] | null = null;
+  private pendingSubmission: SaveReportItem[] | null = null;
+  private destroyed = false;
+
+  get autoSaveStatus(): AutoSaveStatus {
+    return this.autoSaveStatusState();
+  }
+
+  set autoSaveStatus(value: AutoSaveStatus) {
+    this.autoSaveStatusState.set(value);
+    if (this.savedStatusTimer) {
+      clearTimeout(this.savedStatusTimer);
+      this.savedStatusTimer = null;
+    }
+
+    if (value === 'saved' && !this.destroyed) {
+      this.savedStatusTimer = setTimeout(() => {
+        this.savedStatusTimer = null;
+        if (this.autoSaveStatus === 'saved') {
+          this.autoSaveStatusState.set('idle');
+          this.refreshView();
+        }
+      }, 3000);
+    }
+  }
 
   blurNumberInputOnWheel(event: WheelEvent): void {
     if (event.currentTarget instanceof HTMLInputElement) {
@@ -239,6 +270,12 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterVie
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    if (this.savedStatusTimer) {
+      clearTimeout(this.savedStatusTimer);
+      this.savedStatusTimer = null;
+    }
+    this.flushAutoSave();
     this.stopCommentPolling();
     this.restoreQuarterlyReportPreviewOverlay();
   }
@@ -634,6 +671,9 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterVie
   }
 
   selectYear(year: number): void {
+    if (this.savingAction) return;
+
+    this.flushAutoSave();
     this.selectedYear = Number(year);
     this.isAnnualView = false;
     this.selectedQuarterId =
@@ -642,17 +682,26 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterVie
   }
 
   selectQuarter(quarter: Quarter): void {
+    if (this.savingAction) return;
+
+    this.flushAutoSave();
     this.isAnnualView = false;
     this.selectedQuarterId = quarter.quarter_id;
     this.clearMessages();
   }
 
   selectAnnual(): void {
+    if (this.savingAction) return;
+
+    this.flushAutoSave();
     this.isAnnualView = true;
     this.clearMessages();
   }
 
   selectProgram(programId: number): void {
+    if (this.savingAction) return;
+
+    this.flushAutoSave();
     this.selectedProgramId = programId;
     this.clearMessages();
   }
@@ -726,12 +775,29 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterVie
 
   updateReportStewardshipMonth(
     _particular: Particular,
-    _quarter: Quarter,
+    quarter: Quarter,
     record: QuarterRecord,
     month: string,
     value: number | string | null
   ): void {
-    this.updateStewardshipMonth(record, month, value);
+    if (
+      !this.canEditDepartmentReport ||
+      this.isAnnualView ||
+      this.savingAction ||
+      this.isQuarterApproved(quarter)
+    ) {
+      return;
+    }
+
+    const monthValue = value === '' || value === null ? null : Number(value);
+    if (monthValue !== null && (!Number.isFinite(monthValue) || monthValue < 0)) {
+      this.errorMessage = 'Enter a valid non-negative number.';
+      return;
+    }
+
+    this.updateStewardshipMonth(record, month, monthValue);
+    this.clearMessages();
+    this.scheduleAutoSave();
   }
 
   getStewardshipMonthValue(record: QuarterRecord, month: string): number | null {
@@ -748,14 +814,43 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterVie
   }
 
   updateReportValue(
-    _particular: Particular,
-    _quarter: Quarter,
+    particular: Particular,
+    quarter: Quarter,
     value: number | string | null
   ): void {
-    const record = this.getParticularQuarterRecord(_particular, _quarter);
-    if (record) {
-      record.value = value;
+    if (
+      !this.canEditDepartmentReport ||
+      this.isAnnualView ||
+      this.savingAction ||
+      this.isQuarterApproved(quarter)
+    ) {
+      return;
     }
+
+    const record = this.getParticularQuarterRecord(particular, quarter);
+    if (!record) {
+      this.errorMessage = 'This report quarter is unavailable.';
+      return;
+    }
+
+    const minimum =
+      (record.participant_count ?? 0) + (record.completed_event_count ?? 0);
+    if (value === '' || value === null) {
+      record.value = minimum > 0 ? minimum : null;
+      record.combined_value =
+        typeof record.value === 'number' ? record.value : null;
+    } else {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric) || numeric < 0) {
+        this.errorMessage = 'Enter a valid non-negative number.';
+        return;
+      }
+      record.value = Math.max(numeric, minimum);
+      record.combined_value = record.value;
+    }
+
+    this.clearMessages();
+    this.scheduleAutoSave();
   }
 
   private hasFlag(value: unknown): boolean {
@@ -1118,6 +1213,30 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterVie
       return;
     }
 
+    if (this.autoSaveTimer) {
+      clearTimeout(this.autoSaveTimer);
+      this.autoSaveTimer = null;
+    }
+    this.autoSaveQueue = null;
+
+    const items = this.buildReportItems(quarter);
+    if (!items) return;
+
+    if (items.length === 0) {
+      this.errorMessage = 'No report items are available to submit.';
+      return;
+    }
+
+    if (this.autoSaving) {
+      this.pendingSubmission = items;
+      this.savingAction = true;
+      return;
+    }
+
+    this.sendSubmission(items);
+  }
+
+  private buildReportItems(quarter: Quarter): SaveReportItem[] | null {
     const items: SaveReportItem[] = [];
     for (const program of this.report?.programs ?? []) {
       for (const section of program.sections ?? []) {
@@ -1130,24 +1249,116 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterVie
             : Number(record.value);
           if (value !== null && (!Number.isFinite(value) || value < 0)) {
             this.errorMessage = `Enter a valid non-negative value for ${particular.particular_name}.`;
-            return;
+            return null;
           }
 
           items.push({
             particular_id: particular.particular_id,
-            quarter_id: quarter.quarter_id,
+            quarter_id: record.quarter_id,
             value,
+            ...(!record.monthly_values ? { value_includes_participants: true } : {}),
             ...(record.monthly_values ? { monthly_values: record.monthly_values } : {})
           });
         }
       }
     }
+    return items;
+  }
 
-    if (items.length === 0) {
-      this.errorMessage = 'No report items are available to submit.';
+  private scheduleAutoSave(): void {
+    if (this.autoSaveTimer) {
+      clearTimeout(this.autoSaveTimer);
+    }
+
+    this.autoSaveStatus = 'pending';
+    this.autoSaveTimer = setTimeout(() => {
+      this.autoSaveTimer = null;
+      this.autoSave();
+    }, this.autoSaveDelayMs);
+  }
+
+  private flushAutoSave(): void {
+    if (!this.autoSaveTimer) return;
+
+    clearTimeout(this.autoSaveTimer);
+    this.autoSaveTimer = null;
+    this.autoSave();
+  }
+
+  private autoSave(): void {
+    const quarter = this.getSelectedQuarter();
+    if (
+      !this.canEditDepartmentReport ||
+      this.isAnnualView ||
+      !quarter ||
+      this.isQuarterApproved(quarter)
+    ) {
+      this.autoSaveStatus = 'idle';
       return;
     }
 
+    const items = this.buildReportItems(quarter);
+    if (!items) {
+      this.autoSaveStatus = 'error';
+      this.refreshView();
+      return;
+    }
+    if (items.length === 0) {
+      this.autoSaveStatus = 'idle';
+      return;
+    }
+
+    this.sendAutoSave(items);
+  }
+
+  private sendAutoSave(items: SaveReportItem[]): void {
+    if (this.autoSaving) {
+      this.autoSaveQueue = items;
+      return;
+    }
+
+    this.autoSaving = true;
+    this.autoSaveStatus = 'saving';
+    this.refreshView();
+    this.reportService
+      .saveDepartmentReport(this.churchId, this.departmentId, items)
+      .subscribe({
+        next: () => this.finishAutoSave(true),
+        error: error => this.finishAutoSave(false, error)
+      });
+  }
+
+  private finishAutoSave(
+    success: boolean,
+    error?: { error?: { message?: string } }
+  ): void {
+    this.autoSaving = false;
+    if (success) {
+      this.autoSaveStatus = this.autoSaveTimer ? 'pending' : 'saved';
+    } else {
+      this.autoSaveStatus = 'error';
+      this.errorMessage =
+        error?.error?.message || 'Auto-save failed. Please try again.';
+    }
+
+    if (this.pendingSubmission) {
+      const items = this.pendingSubmission;
+      this.pendingSubmission = null;
+      this.autoSaveQueue = null;
+      this.sendSubmission(items);
+      return;
+    }
+
+    const queued = this.autoSaveQueue;
+    if (queued) {
+      this.autoSaveQueue = null;
+      this.sendAutoSave(queued);
+      return;
+    }
+    this.refreshView();
+  }
+
+  private sendSubmission(items: SaveReportItem[]): void {
     this.savingAction = true;
     this.errorMessage = '';
     this.reportService
@@ -1155,6 +1366,7 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterVie
       .subscribe({
         next: response => {
           this.savingAction = false;
+          this.autoSaveStatus = 'saved';
           this.showSuccess(response?.message || 'Report submitted.');
           this.loadReport();
         },
@@ -1164,6 +1376,12 @@ export class ReportParticulars implements OnInit, OnChanges, OnDestroy, AfterVie
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private refreshView(): void {
+    if (!this.destroyed) {
+      this.cdr.detectChanges();
+    }
   }
 
   endorseReport(): void {
