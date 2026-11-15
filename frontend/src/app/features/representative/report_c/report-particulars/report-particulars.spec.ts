@@ -168,14 +168,15 @@ describe('ReportParticulars', () => {
     expect(fixture.nativeElement.textContent).toContain('Export / Print');
   });
 
-  it('includes the assigned church name in the representative preview and export rows', () => {
+  it('keeps the representative preview header clean while still showing the church in export rows', () => {
     expect(component.churchName).toBe('Pasuc');
 
     component.openQuarterReportPreview();
     fixture.detectChanges();
 
     const preview = document.querySelector('#quarterly-report-preview-title')?.parentElement;
-    expect(preview?.textContent).toContain('Pasuc');
+    expect(preview?.textContent).toContain('Report preview');
+    expect(preview?.textContent).not.toContain('Pasuc');
     expect(preview?.closest('.report-export-overlay')?.parentElement).toBe(document.body);
     expect(component.quarterlyReportPreviewRows.flat().join(' ')).toContain('Pasuc');
 

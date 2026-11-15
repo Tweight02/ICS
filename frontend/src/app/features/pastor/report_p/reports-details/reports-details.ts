@@ -232,6 +232,14 @@ export class ReportsDetails implements OnInit {
   }
 
   openDepartment(church: Church, department: Department): void {
+    this.openDepartmentQuarter(church, department);
+  }
+
+  openDepartmentQuarter(
+    church: Church,
+    department: Department,
+    quarter?: typeof this.quarterKeys[number]
+  ): void {
     const departmentName = String(department.department_name || '').toLowerCase();
     const isBaptismOrDeath = department.department_id === 22
       || department.department_id === 23
@@ -243,18 +251,24 @@ export class ReportsDetails implements OnInit {
       return;
     }
 
+    const queryParams: Record<string, string> = {
+      year: String(this.selectedYear()),
+      return_to: 'district-reports',
+      return_church: String(church.church_id),
+      return_scroll: String(window.scrollY)
+    };
+
+    if (quarter) {
+      queryParams['quarter'] = quarter.toUpperCase();
+    }
+
     this.router.navigate([
       '/pastor/reports/particulars',
       department.department_id,
       this.districtId(),
       church.church_id
     ], {
-      queryParams: {
-        year: this.selectedYear(),
-        return_to: 'district-reports',
-        return_church: String(church.church_id),
-        return_scroll: String(window.scrollY)
-      }
+      queryParams
     });
   }
 

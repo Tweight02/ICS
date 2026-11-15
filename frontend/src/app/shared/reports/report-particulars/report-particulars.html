@@ -17,11 +17,12 @@
         class="absolute inset-0 -z-10 h-full w-full object-cover object-[center_48%] opacity-50">
       <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-emerald-50/85 to-emerald-100/45"></div>
       <div class="relative flex w-full min-w-0 flex-col items-start gap-2">
-        <div>
-          <p class="mb-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-800/80">Quarterly report</p>
-          <h1 class="max-w-3xl text-lg font-bold tracking-tight text-emerald-950 sm:text-xl">
-            {{ isStewardshipReport ? (getSelectedProgram()?.program_name || 'Stewardship Quarterly Report') : (report?.department?.department_name || 'Report Particulars') }}
-          </h1>
+        <div class="w-full min-w-0">
+          <p *ngIf="churchName || districtName" class="text-xs font-medium text-emerald-900/70 sm:text-sm">
+            <span *ngIf="churchName">{{ churchName }}</span>
+            <span *ngIf="churchName && districtName"> · </span>
+            <span *ngIf="districtName">{{ districtName }}</span>
+          </p>
         </div>
         <div *ngIf="!loading && report" class="w-full">
           <div class="grid w-full grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -45,10 +46,6 @@
             </button>
           </div>
         </div>
-        <p *ngIf="churchName" class="text-xs font-medium text-emerald-900/70 sm:text-sm">
-          {{ churchName }}
-          <span *ngIf="districtName"> · {{ districtName }}</span>
-        </p>
       </div>
     </header>
 
@@ -513,11 +510,9 @@
     (click)="$event.stopPropagation()">
     <header class="report-export-header">
       <div>
-        <h2 id="quarterly-report-preview-title" class="text-lg font-bold text-emerald-950">Report preview</h2>
-        <p class="text-sm text-slate-600">
-          {{ selectedYear }} · {{ report?.department?.department_name || 'Quarterly report' }}
-          <span *ngIf="isRepresentative() && churchName"> · {{ churchName }}</span>
-        </p>
+        <h2 id="quarterly-report-preview-title" class="text-lg font-bold text-emerald-950">
+          Report Preview
+        </h2>
       </div>
       <button type="button" (click)="closeQuarterReportPreview()"
         class="report-export-close"

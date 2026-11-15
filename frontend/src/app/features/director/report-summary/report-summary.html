@@ -969,9 +969,8 @@
     <header class="report-export-header">
       <div>
         <h2 id="summary-preview-title" class="text-lg font-bold text-emerald-950">
-          {{ selectedReport()?.report_name ?? (isBaptismDirector ? 'Report summary' : 'Report') }} preview
+          Report Preview
         </h2>
-        <p class="text-sm text-slate-600">{{ selectedYear() }} · {{ summaryExportScope() }}</p>
       </div>
       <button type="button" (click)="closeSummaryPreview()" aria-label="Close preview"
         class="report-export-close">×</button>
