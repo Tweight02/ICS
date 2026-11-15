@@ -137,6 +137,19 @@ If you need to correct a submitted quarter, use a reopen action only if it is av
 1. Use the report conversation/comments panel to send a short message about the selected department and reporting period. Comments are closed after approval.
 2. If **Export / Print** is available, select it to preview or print the report.
 3. Before printing or sharing, check the selected year, department, church, and quarter. Export options depend on the report and your access.
+4. In the preview, select **Export CSV**, **Export Excel (.xlsx)**, or **Print** as needed. Choose the export method that matches your reporting need.
+5. Close the preview after saving or printing the file. Do not share exported files outside the authorized reporting workflow.
+
+### E. HOW TO OPEN AND EXPORT THE REPORT SUMMARY
+
+1. From the **Reports** page, select **Report summary**.
+2. Choose the reporting year and, when offered, the department or church scope.
+3. Review the report summary for the selected period.
+4. Select **Export / Print** to open the summary preview.
+5. In the preview, use **Export CSV**, **Export Excel (.xlsx)**, or **Print** to save or print the summary.
+6. Check the selected year, church, and department before exporting. Handle the file as a confidential record according to your reporting process.
+
+The summary report gives a quick view of totals for the selected period. Use the detailed report when you need to review each department entry and the summary when you need a compact overview for submission or sharing.
 
 ## V. ACCOUNT MENU
 
